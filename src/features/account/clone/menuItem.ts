@@ -1,4 +1,5 @@
 import { match } from "../../../shared/regex";
+import { getFromStorage, onStorageChange } from "../../../shared/storage";
 
 const isBlacklistRoute = match({ path: '/user/shortlist', search: { blacklist: '1' } });
 
@@ -13,19 +14,42 @@ const BIN_ICON_PATHS = [
     "M18.865 21.124L18.1176 21.0617L18.1176 21.062L18.865 21.124ZM17.37 22.5L17.3701 21.75H17.37V22.5ZM6.631 22.5V21.75H6.63093L6.631 22.5ZM5.136 21.124L5.88343 21.062L5.88341 21.0617L5.136 21.124ZM4.49741 4.43769C4.46299 4.0249 4.10047 3.71818 3.68769 3.75259C3.2749 3.78701 2.96818 4.14953 3.00259 4.56231L4.49741 4.43769ZM20.9974 4.56227C21.0318 4.14949 20.7251 3.78698 20.3123 3.75259C19.8995 3.7182 19.537 4.02495 19.5026 4.43773L20.9974 4.56227ZM18.1176 21.062C18.102 21.2495 18.0165 21.4244 17.878 21.5518L18.8939 22.6555C19.3093 22.2732 19.5658 21.7486 19.6124 21.186L18.1176 21.062ZM17.878 21.5518C17.7396 21.6793 17.5583 21.75 17.3701 21.75L17.3699 23.25C17.9345 23.25 18.4785 23.0379 18.8939 22.6555L17.878 21.5518ZM17.37 21.75H6.631V23.25H17.37V21.75ZM6.63093 21.75C6.44274 21.75 6.26142 21.6793 6.12295 21.5518L5.10713 22.6555C5.52253 23.0379 6.06649 23.25 6.63107 23.25L6.63093 21.75ZM6.12295 21.5518C5.98449 21.4244 5.89899 21.2495 5.88343 21.062L4.38857 21.186C4.43524 21.7486 4.69172 22.2732 5.10713 22.6555L6.12295 21.5518ZM5.88341 21.0617L4.49741 4.43769L3.00259 4.56231L4.38859 21.1863L5.88341 21.0617ZM19.5026 4.43773L18.1176 21.0617L19.6124 21.1863L20.9974 4.56227L19.5026 4.43773Z",
 ];
 
-export interface ClonedMenuItem {
-    item: HTMLLIElement;
-    setBadgeCount(count: number): void;
+export interface MenuItemConfig {
+    label: string;
+    href: string;
+    // Storage key holding an array whose length becomes the badge count, live-updated as it
+    // changes. Omit (or pass false) for a menu item that shouldn't show a badge at all.
+    badge?: false | { storageKey: string };
+}
+
+// Only one subscription is ever active per storage key — reinserting a clone for the same key
+// (e.g. the menu reopening) replaces the old one instead of piling up listeners bound to a badge
+// element that's already been detached from the DOM.
+const activeBadgeSubscriptions = new Map<string, () => void>();
+
+async function bindBadge(storageKey: string, badge: HTMLElement): Promise<void> {
+    const setCount = (count: number): void => {
+        badge.textContent = String(count);
+        badge.hidden = count === 0;
+    };
+
+    activeBadgeSubscriptions.get(storageKey)?.();
+
+    setCount((await getFromStorage<unknown[]>(storageKey))?.length ?? 0);
+    activeBadgeSubscriptions.set(
+        storageKey,
+        onStorageChange<unknown[]>(storageKey, entries => setCount(entries?.length ?? 0)),
+    );
 }
 
 export async function cloneMenuItem(
     source: HTMLLIElement,
-    config: { label: string; href: string },
-): Promise<ClonedMenuItem> {
+    config: MenuItemConfig,
+): Promise<HTMLLIElement> {
     const item = source.cloneNode(true) as HTMLLIElement;
     const link = item.querySelector<HTMLAnchorElement>('a');
     const icon = link?.querySelector('svg');
-    const badge = link?.querySelector('span');
+    const badge = link?.querySelector<HTMLElement>('span');
 
     if (!link || !icon || !badge) throw new Error('Failed to locate account menu item elements');
 
@@ -44,19 +68,18 @@ export async function cloneMenuItem(
 
     link.href = config.href;
     link.dataset.menuItemName = config.label;
-    badge.setAttribute('data-testid', 'account-menu__blacklist-count');
 
     item.setAttribute('data-testid', 'account-menu__blacklist-item');
 
     if (isBlacklistRoute(new URL(window.location.href))) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
 
-    const setBadgeCount = (count: number): void => {
-        badge.textContent = String(count);
-        badge.hidden = count === 0;
-    };
+    if (config.badge) {
+        badge.setAttribute('data-testid', 'account-menu__blacklist-count');
+        await bindBadge(config.badge.storageKey, badge);
+    } else {
+        badge.remove();
+    }
 
-    setBadgeCount(0);
-
-    return { item, setBadgeCount };
+    return item;
 }

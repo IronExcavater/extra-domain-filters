@@ -1,4 +1,5 @@
 import { bindFilterTriggers, injectFilters } from "../features/filters";
+import { bindListingCards } from "../features/listing-cards";
 import { PageMount } from "../shared/router";
 
 const mountSearchPage: PageMount = async (context) => {
@@ -7,6 +8,7 @@ const mountSearchPage: PageMount = async (context) => {
         context,
     );
     injectFilters(context.logger, context.url);
+    bindListingCards(context);
 };
 
 export default mountSearchPage;

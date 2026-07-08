@@ -1,7 +1,5 @@
 import { Logger } from "../../shared/logging";
 import { PageContext } from "../../shared/router";
-import { BlacklistEntry } from "../../shared/settings";
-import { getFromStorage, onStorageChange } from "../../shared/storage";
 import { bindLazyTrigger } from "../../shared/trigger";
 import { cloneMenuItem } from "./clone/menuItem";
 
@@ -13,11 +11,6 @@ export function bindAccountMenuTrigger(context: PageContext): void {
         context,
     );
 }
-
-// Only one menu is ever open at a time, so a single slot for the current badge subscription is
-// enough — unsubscribing the old one before creating a new one avoids piling up listeners bound
-// to detached badge elements every time the menu reopens.
-let unsubscribeBadge: (() => void) | undefined;
 
 export async function injectAccountMenu(logger: Logger): Promise<void> {
     logger.info('Injecting account menu');
@@ -35,16 +28,13 @@ export async function injectAccountMenu(logger: Logger): Promise<void> {
         const blacklistUrl = new URL(shortlistLink.href);
         blacklistUrl.searchParams.set('blacklist', '1');
 
-        const { item: blacklistItem, setBadgeCount } = await cloneMenuItem(sourceItem as HTMLLIElement, {
+        const blacklistItem = await cloneMenuItem(sourceItem as HTMLLIElement, {
             label: 'Blacklist',
             href: blacklistUrl.href,
+            badge: { storageKey: 'blacklist' },
         });
 
         sourceItem.after(blacklistItem);
-
-        unsubscribeBadge?.();
-        setBadgeCount((await getFromStorage<BlacklistEntry[]>('blacklist'))?.length ?? 0);
-        unsubscribeBadge = onStorageChange<BlacklistEntry[]>('blacklist', entries => setBadgeCount(entries?.length ?? 0));
 
         logger.info('Appended blacklist menu item');
     }
