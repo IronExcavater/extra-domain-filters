@@ -1,6 +1,6 @@
 {
   "name": "Extra Domain Filters",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "description": "Enhance domain.com.au with extra filters to empower your search.",
   "author": "Niclas Rogulski",
   "type": "module",
@@ -32,6 +32,7 @@
     "lint-staged": "^16.4.0",
     "stylelint": "^17.14.0",
     "stylelint-config-standard": "^40.0.0",
-    "typescript-eslint": "^8.63.0"
+    "typescript-eslint": "^8.63.0",
+    "vite-plugin-zip-pack": "^1.2.4"
   }
 }

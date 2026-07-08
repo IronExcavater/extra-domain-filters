@@ -1,5 +1,5 @@
-import { createClaimTracker } from "../shared/claim";
-import { Property, PropertyKind, PropertyValue } from "../shared/property";
+import { createClaimTracker } from "../core/claim";
+import { Property, PropertyKind, PropertyValue } from "../core/property";
 
 type DraftEntry = {
     reset(): Promise<void>;

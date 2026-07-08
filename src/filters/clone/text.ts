@@ -1,5 +1,5 @@
 import { createTextProperty } from "../../bindings/text";
-import { Property } from "../../shared/property";
+import { Property } from "../../core/property";
 
 export async function cloneTextInput(
     source: HTMLDivElement,

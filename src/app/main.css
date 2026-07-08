@@ -1,0 +1,241 @@
+.edf-listing-card-button-container {
+    min-height: 40px !important;
+    padding-right: 88px !important;
+    position: relative !important;
+}
+
+.edf-listing-card-button-container > button[data-testid^="listing-card-shortlist"] {
+    position: absolute !important;
+    right: 44px !important;
+    top: 0 !important;
+}
+
+.edf-listing-card-button-container > button[data-testid="listing-card-blacklist"] {
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+}
+
+[data-testid="listing-card-project"] {
+    position: relative !important;
+}
+
+.edf-project-blacklist-button {
+    position: absolute !important;
+    right: 12px !important;
+    top: 12px !important;
+    z-index: 2 !important;
+}
+
+.edf-adaptive-foreground:not(:hover, :active, [data-active="true"], [aria-pressed="true"]) {
+    color: var(--edf-adaptive-foreground, #646463);
+}
+
+.edf-filter-panel {
+    display: grid;
+    gap: 16px;
+}
+
+.edf-blacklist-summary {
+    align-items: center;
+    background: #f2f4f7;
+    border: 1px solid #d0d5dd;
+    border-radius: 4px;
+    color: #475467;
+    display: none;
+    gap: 12px;
+    font-weight: 500;
+    justify-content: space-between;
+    line-height: 1.3;
+    min-height: 34px;
+    padding: 6px 10px;
+}
+
+.edf-blacklist-summary-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.edf-blacklist-summary-button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: #344054;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    font: inherit;
+    font-weight: 600;
+    padding: 0;
+}
+
+.edf-listing-card-blacklisted {
+    background: #f7f8fa !important;
+    max-height: 48px !important;
+    min-height: 38px !important;
+    overflow: hidden !important;
+    transition:
+        background-color 180ms ease,
+        max-height 180ms ease,
+        min-height 180ms ease;
+}
+
+.edf-listing-card-blacklisted > :not(.edf-blacklist-summary) {
+    display: none !important;
+}
+
+.edf-listing-card-blacklisted > .edf-blacklist-summary {
+    display: flex !important;
+}
+
+.edf-listing-card-blacklisted.edf-blacklist-kind-carousel-child {
+    max-height: 38px !important;
+    min-height: 34px !important;
+}
+
+.edf-listing-card-blacklisted.edf-blacklist-kind-project-child {
+    max-height: 110px !important;
+    min-height: 84px !important;
+}
+
+.edf-listing-card-blacklisted.edf-blacklist-kind-project-child > .edf-blacklist-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+}
+
+.edf-listing-card-blacklisted.edf-blacklist-kind-project-child .edf-blacklist-summary-text {
+    white-space: normal;
+}
+
+.edf-blacklist-page-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: auto;
+    margin-right: 8px;
+}
+
+.edf-blacklist-clear-button {
+    background: #fff;
+    border: 1px solid #d8d8d8;
+    border-radius: 4px;
+    color: #111;
+    cursor: pointer;
+    min-height: 40px;
+    padding: 8px 18px !important;
+}
+
+.edf-blacklist-card-list {
+    display: grid;
+    gap: 16px;
+}
+
+.edf-blacklist-card {
+    background: #fff;
+    border: 1px solid #d8d8d8;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.edf-blacklist-card-wrapper {
+    display: grid;
+    grid-template-columns: minmax(180px, 34%) 1fr;
+}
+
+.edf-blacklist-card-media {
+    background: #eee;
+    min-height: 210px;
+}
+
+.edf-blacklist-card-media img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.edf-blacklist-card-body {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+}
+
+.edf-blacklist-card-price {
+    align-items: start;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.edf-blacklist-card-price [data-testid="listing-card-price"] {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.edf-blacklist-card-price [data-testid^="listing-card-shortlist"],
+.edf-blacklist-card-price [data-testid="listing-card-blacklist"] {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 32px;
+    justify-content: center;
+    padding: 4px;
+    width: 32px;
+}
+
+.edf-blacklist-card-price [data-testid^="listing-card-shortlist"] {
+    opacity: 0.45;
+}
+
+.edf-blacklist-card h2 {
+    color: #111;
+    font-size: 18px;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.edf-blacklist-card-date {
+    color: #666;
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    margin-top: 4px;
+}
+
+.edf-blacklist-card-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.edf-blacklist-card-footer {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.edf-blacklist-card-footer a {
+    border: 1px solid #111;
+    border-radius: 4px;
+    color: #111;
+    padding: 8px 12px;
+    text-decoration: none;
+}
+
+@media (width <= 640px) {
+    .edf-blacklist-card-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .edf-blacklist-card-media {
+        min-height: 190px;
+    }
+}

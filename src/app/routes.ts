@@ -1,5 +1,5 @@
-import { match } from '../shared/regex';
-import { Route } from '../shared/router';
+import { match } from '../core/regex';
+import { Route } from '../core/router';
 
 // Real listing IDs observed are 8 digits (e.g. /28-box-drive-cotswold-hills-qld-4350-18205976),
 // not the 9-12 this previously required — no route matched any real listing page. Left open-ended

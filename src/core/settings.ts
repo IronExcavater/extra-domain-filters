@@ -1,6 +1,6 @@
-import { STRATA_MAX } from "../matching";
+import { STRATA_MAX, type ListingSnapshot } from "../matching";
 import { getFromStorage, setInStorage } from "./storage";
-import { applyPatch, DeepPartial } from "./types";
+import { applyPatch, type DeepPartial } from "./types";
 
 export interface Settings {
     flags: FlagSettings;
@@ -76,6 +76,7 @@ export interface BlacklistEntry {
     addedAt: number;
     displayAddress?: string;
     thumbnailUrl?: string;
+    listing?: ListingSnapshot;
 }
 
 export interface FilterPreset {

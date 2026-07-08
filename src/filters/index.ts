@@ -1,16 +1,16 @@
 import { createDraftProperty } from "../bindings/draft";
+import { createClaimTracker } from "../core/claim";
+import { Logger } from "../core/logging";
+import { snapPrice } from "../core/number";
+import { Property } from "../core/property";
+import { observeUrlChanges, PageContext } from "../core/router";
+import { getSettings, toggleListId, updateSettings } from "../core/settings";
+import { bindLazyTrigger } from "../core/trigger";
 import { PREFERENCES, STRATA_MAX } from "../matching";
-import { isRentMode, observeModeChanges } from "../mode";
-import { createClaimTracker } from "../shared/claim";
-import { Logger } from "../shared/logging";
-import { snapPrice } from "../shared/number";
-import { Property } from "../shared/property";
-import { observeUrlChanges, PageContext } from "../shared/router";
-import { getSettings, toggleListId, updateSettings } from "../shared/settings";
-import { bindLazyTrigger } from "../shared/trigger";
 import { cloneCheckboxInput } from "./clone/checkbox";
 import { cloneSliderInput } from "./clone/slider";
 import { cloneTextInput } from "./clone/text";
+import { isRentMode, observeModeChanges } from "./mode";
 
 function refreshPriceTitles(url: URL): void {
     for (const priceDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__price-range"]')) {
@@ -20,6 +20,41 @@ function refreshPriceTitles(url: URL): void {
 }
 
 const claim = createClaimTracker<Element>();
+const EXTRA_FILTERS_PANEL_TESTID = "extra-domain-filters__custom-filter-panel";
+
+function getCustomFiltersPanel(anchor: HTMLElement): HTMLElement | undefined {
+    const scope =
+        anchor.closest<HTMLElement>('[role="dialog"]') ??
+        anchor.closest<HTMLElement>("form") ??
+        anchor.parentElement;
+    if (!scope) return undefined;
+
+    const existing = scope.querySelector<HTMLElement>(
+        `:scope > [data-testid="${EXTRA_FILTERS_PANEL_TESTID}"]`
+    );
+    if (existing) return existing;
+
+    const panel = document.createElement("div");
+    panel.className = "edf-filter-panel";
+    panel.setAttribute("data-testid", EXTRA_FILTERS_PANEL_TESTID);
+    scope.append(panel);
+
+    return panel;
+}
+
+function appendCustomFilter(anchor: HTMLElement, filter: HTMLElement): void {
+    const panel = getCustomFiltersPanel(anchor);
+    if (!panel) return;
+
+    const testId = filter.getAttribute("data-testid");
+    if (testId) {
+        panel
+            .querySelector<HTMLElement>(`:scope > [data-testid="${testId}"]`)
+            ?.remove();
+    }
+
+    panel.append(filter);
+}
 
 export function bindFilterTriggers(selectors: string[], context: PageContext): void {
     observeUrlChanges(url => {
@@ -83,7 +118,7 @@ export async function injectFilters(logger: Logger, url: URL) {
             ));
         }
 
-        mustHaveDiv.after(couldHaveDiv);
+        appendCustomFilter(mustHaveDiv, couldHaveDiv);
 
         logger.info('Appended preferences filter');
     }
@@ -123,7 +158,7 @@ export async function injectFilters(logger: Logger, url: URL) {
         );
         excludeDiv.setAttribute('data-testid', 'dynamic-search-filters__preferences');
 
-        includeDiv.after(excludeDiv);
+        appendCustomFilter(includeDiv, excludeDiv);
 
         logger.info('Appended exclude keywords filter');
     }
@@ -156,7 +191,7 @@ export async function injectFilters(logger: Logger, url: URL) {
         );
         strataFeesDiv.setAttribute('data-testid', 'dynamic-search-filters__strata-fees');
 
-        priceDiv.after(strataFeesDiv);
+        appendCustomFilter(priceDiv, strataFeesDiv);
 
         logger.info('Appended strata fees filter');
     }

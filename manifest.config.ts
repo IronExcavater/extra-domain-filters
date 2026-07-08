@@ -30,17 +30,18 @@ export default defineManifest({
         type: 'module',
     },
     permissions: ['storage', 'alarms', 'unlimitedStorage'],
-    host_permissions: ['*://www.domain.com.au/*'],
+    host_permissions: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
     content_scripts: [
         {
-            matches: ['*://www.domain.com.au/*'],
+            matches: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
             js: ['src/app/main.ts'],
             css: ['src/app/main.css'],
+            run_at: 'document_idle',
         },
     ],
     web_accessible_resources: [
         {
-            matches: ['*://www.domain.com.au/*'],
+            matches: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
             resources: ['src/app/main.ts']
         }
     ]

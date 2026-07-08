@@ -15,7 +15,7 @@ const isLogLevel = (value: unknown): value is LogLevel =>
 
 const resolveDefaultLevel = (): LogLevel => {
     const mode = import.meta.env?.MODE ?? 'production';
-    return mode === 'development' ? 'debug' : 'warn';
+    return mode === 'development' ? 'debug' : 'info';
 }
 
 const resolveConfiguredLevel = (): LogLevel | undefined => {
