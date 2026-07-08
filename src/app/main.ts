@@ -1,7 +1,7 @@
 import '../shared/string.extensions';
 import '../shared/math.extensions';
 
-import { bindAccountMenuTrigger } from "../features/account";
+import { bindAccountMenuTrigger } from "../account";
 import { createLogger } from "../shared/logging";
 import { createRouter } from "../shared/router";
 import { routes } from "./routes";

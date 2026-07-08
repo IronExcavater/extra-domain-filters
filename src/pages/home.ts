@@ -1,4 +1,4 @@
-import { bindFilterTriggers, injectFilters } from "../features/filters";
+import { bindFilterTriggers, injectFilters } from "../filters";
 import { PageMount } from "../shared/router";
 
 const mountHomePage: PageMount = async (context) => {

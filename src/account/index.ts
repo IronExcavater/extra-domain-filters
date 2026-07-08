@@ -1,6 +1,6 @@
-import { Logger } from "../../shared/logging";
-import { PageContext } from "../../shared/router";
-import { bindLazyTrigger } from "../../shared/trigger";
+import { Logger } from "../shared/logging";
+import { PageContext } from "../shared/router";
+import { bindLazyTrigger } from "../shared/trigger";
 import { cloneMenuItem } from "./clone/menuItem";
 
 export function bindAccountMenuTrigger(context: PageContext): void {

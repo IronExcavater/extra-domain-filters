@@ -1,5 +1,5 @@
-import { match } from "../../../shared/regex";
-import { getFromStorage, onStorageChange } from "../../../shared/storage";
+import { match } from "../../shared/regex";
+import { getFromStorage, onStorageChange } from "../../shared/storage";
 
 const isBlacklistRoute = match({ path: '/user/shortlist', search: { blacklist: '1' } });
 

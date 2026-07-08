@@ -15,6 +15,15 @@ export function bindLazyTrigger(
         button.addEventListener('click', () => {
             context.logger.info('Trigger clicked', selectors.join(', '));
 
+            // If the target already exists (e.g. a menu whose DOM persists across close/reopen,
+            // just toggling visibility, unlike a panel that's fully torn down and re-rendered),
+            // there's no new mutation to wait for — a MutationObserver alone would never fire and
+            // onReady would only ever run on the very first open.
+            if (document.querySelectorAll(targetSelector).length > 0) {
+                onReady(context);
+                return;
+            }
+
             const observer = new MutationObserver(() => {
                 if (document.querySelectorAll(targetSelector).length === 0) return;
 

@@ -1,4 +1,4 @@
-import { match } from "../shared/regex";
+import { match } from "./shared/regex";
 
 const isRentUrl = match([{ prefix: '/rent' }, { search: { mode: 'rent' } }]);
 

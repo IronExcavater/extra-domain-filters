@@ -1,4 +1,4 @@
-import { STRATA_MAX } from "../features/match";
+import { STRATA_MAX } from "../matching";
 import { getFromStorage, setInStorage } from "./storage";
 import { applyPatch, DeepPartial } from "./types";
 
