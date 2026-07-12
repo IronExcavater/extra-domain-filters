@@ -43,7 +43,17 @@ export async function createDraftProperty<K extends PropertyKind>(
     }
 
     drafts.add({
-        reset: () => property.set(defaultValue),
+        // "Clear all" is Domain's own immediate action (it resets its native filters and often
+        // closes/navigates right away, unlike a per-field change which waits for "Apply") — so
+        // this must persist the default now, not just update the draft's in-memory/UI value.
+        // Persisting anything less left the underlying setting untouched, and if the dialog
+        // closed immediately after, restore() would even revert the visible reset back to the
+        // pre-clear value.
+        reset: async () => {
+            await property.set(defaultValue);
+            await target.set(defaultValue);
+            confirmed = defaultValue;
+        },
         restore: () => property.set(confirmed),
         commit: async () => {
             await target.set(await property.get());
