@@ -20,40 +20,23 @@ function refreshPriceTitles(url: URL): void {
 }
 
 const claim = createClaimTracker<Element>();
-const EXTRA_FILTERS_PANEL_TESTID = "extra-domain-filters__custom-filter-panel";
 
-function getCustomFiltersPanel(anchor: HTMLElement): HTMLElement | undefined {
-    const scope =
-        anchor.closest<HTMLElement>('[role="dialog"]') ??
-        anchor.closest<HTMLElement>("form") ??
-        anchor.parentElement;
-    if (!scope) return undefined;
-
-    const existing = scope.querySelector<HTMLElement>(
-        `:scope > [data-testid="${EXTRA_FILTERS_PANEL_TESTID}"]`
-    );
-    if (existing) return existing;
-
-    const panel = document.createElement("div");
-    panel.className = "edf-filter-panel";
-    panel.setAttribute("data-testid", EXTRA_FILTERS_PANEL_TESTID);
-    scope.append(panel);
-
-    return panel;
-}
-
+// Each custom filter is cloned from its own anchor's full filter-wrapper (see clone/*.ts), so
+// inserting it as a direct sibling right after that anchor drops it into Domain's own dialog
+// layout naturally — same grid flow, same background, same position as the section it extends.
+// A previous version collected every custom filter into one shared panel appended once at the
+// dialog root; that put strata fees/could-haves/exclude-keywords all in one lump at the bottom
+// of the dialog (in whichever position the panel happened to be created), in their own unstyled
+// column, instead of next to price/must-haves/include-keywords where they belong.
 function appendCustomFilter(anchor: HTMLElement, filter: HTMLElement): void {
-    const panel = getCustomFiltersPanel(anchor);
-    if (!panel) return;
-
     const testId = filter.getAttribute("data-testid");
     if (testId) {
-        panel
-            .querySelector<HTMLElement>(`:scope > [data-testid="${testId}"]`)
+        anchor.parentElement
+            ?.querySelector<HTMLElement>(`:scope > [data-testid="${testId}"]`)
             ?.remove();
     }
 
-    panel.append(filter);
+    anchor.after(filter);
 }
 
 export function bindFilterTriggers(selectors: string[], context: PageContext): void {
@@ -195,6 +178,11 @@ export async function injectFilters(logger: Logger, url: URL) {
 
         logger.info('Appended strata fees filter');
     }
+
+    // The mode-buttons widget (read by isRentMode) is a separate component from the filter
+    // dialog, so on first open it can still be mid-render when the block above already ran —
+    // recheck once more after React has had a frame to settle both.
+    requestAnimationFrame(() => refreshPriceTitles(url));
 
     for (const propertyTypesDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__property-types"]')) {
         if (!claim(propertyTypesDiv)) continue;
