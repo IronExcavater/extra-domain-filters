@@ -2,7 +2,7 @@ import { PageMount } from "../core/router";
 import { bindListingCards } from "../listing-cards";
 
 const mountShortlistPage: PageMount = async (context) => {
-    bindListingCards(context);
+    bindListingCards(context, { showBlacklistedView: false });
 };
 
 export default mountShortlistPage;
