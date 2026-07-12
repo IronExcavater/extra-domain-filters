@@ -19,7 +19,7 @@ async function updateButton(button: HTMLButtonElement, url: string): Promise<voi
         { url, title: "", text: "" },
         await getSettings(),
         blacklist
-    ).blacklisted;
+    ).exclusionReason === "blacklisted";
 
     button.textContent = active ? "Remove from blacklist" : "Blacklist";
     button.dataset.active = String(active);
@@ -58,7 +58,7 @@ const mountListingPage: PageMount = async (context) => {
             },
             { signal: context.signal, includeDetail: false }
         );
-        const next = matchListing(listing, await getSettings(), blacklist).blacklisted
+        const next = matchListing(listing, await getSettings(), blacklist).exclusionReason === "blacklisted"
             ? removeBlacklistEntry(blacklist, url)
             : addBlacklistEntry(blacklist, listing);
 

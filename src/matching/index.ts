@@ -64,11 +64,13 @@ export interface ListingSnapshot {
     price?: string;
     status?: string;
     thumbnailUrl?: string;
+    propertyType?: string;
 }
 
+export type ExclusionReason = "none" | "blacklisted" | "filtered";
+
 export interface ListingMatch {
-    excluded: boolean;
-    blacklisted: boolean;
+    exclusionReason: ExclusionReason;
     matchedPreferences: PreferenceRule[];
 }
 
@@ -161,6 +163,15 @@ function exceedsStrataMax(
     return Number.isFinite(amount) && amount > maximum;
 }
 
+function matchesExcludedPropertyType(
+    propertyType: string | undefined,
+    excludePropertyKeywords: readonly string[],
+): boolean {
+    if (!propertyType || excludePropertyKeywords.length === 0) return false;
+
+    return excludePropertyKeywords.includes(propertyType.trim().toLowerCase());
+}
+
 export function matchListing(
     listing: ListingSnapshot,
     settings: Settings,
@@ -168,12 +179,14 @@ export function matchListing(
 ): ListingMatch {
     const text = `${listing.title}\n${listing.text}`;
     const filters = settings.filters;
-    const blacklisted = isBlacklisted(blacklist, listing.url);
 
-    const excluded =
-        blacklisted ||
-        includesAny(text, filters.excludeKeywords) ||
-        exceedsStrataMax(text, filters.strataMaxDollars);
+    const exclusionReason: ExclusionReason = isBlacklisted(blacklist, listing.url)
+        ? "blacklisted"
+        : includesAny(text, filters.excludeKeywords) ||
+            exceedsStrataMax(text, filters.strataMaxDollars) ||
+            matchesExcludedPropertyType(listing.propertyType, filters.excludePropertyKeywords)
+            ? "filtered"
+            : "none";
 
     const matchedPreferences = PREFERENCES.filter(
         preference =>
@@ -182,8 +195,7 @@ export function matchListing(
     );
 
     return {
-        excluded,
-        blacklisted,
+        exclusionReason,
         matchedPreferences,
     };
 }
