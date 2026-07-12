@@ -1,6 +1,9 @@
 import bathSvg from "../../public/bath.svg?raw";
 import bedSvg from "../../public/bed.svg?raw";
 import binSvg from "../../public/bin.svg?raw";
+import chevronSvg from "../../public/chevron.svg?raw";
+import eyeOffSvg from "../../public/eye-off.svg?raw";
+import eyeSvg from "../../public/eye.svg?raw";
 import parkingSvg from "../../public/parking.svg?raw";
 import shortlistSvg from "../../public/shortlist.svg?raw";
 import unbinSvg from "../../public/unbin.svg?raw";
@@ -56,4 +59,16 @@ export function replaceWithBathIcon(target: SVGElement): void {
 
 export function replaceWithParkingIcon(target: SVGElement): void {
     setSvgIcon(target, parkingSvg);
+}
+
+export function replaceWithEyeIcon(target: SVGElement): void {
+    setSvgIcon(target, eyeSvg);
+}
+
+export function replaceWithEyeOffIcon(target: SVGElement): void {
+    setSvgIcon(target, eyeOffSvg);
+}
+
+export function replaceWithChevronIcon(target: SVGElement): void {
+    setSvgIcon(target, chevronSvg);
 }
