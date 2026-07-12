@@ -32,9 +32,12 @@ whole bundle cards (a project or a featured carousel, each containing multiple l
 
 ## Non-goals
 
-- No hover-popup / preview-on-hover mechanism. (Explored during brainstorming; rejected —
-  the action button already reveals the real listing directly, and a preview was judged to
-  add complexity without enough benefit.)
+- No *floating* hover-popup / preview-on-hover overlay. (Explored during brainstorming;
+  rejected — a floating preview over the list was judged to add complexity without enough
+  benefit, since the action button already reveals the real listing directly.) This is
+  distinct from the in-place hover-to-expand grouping described below, which pushes the
+  surrounding list content down rather than floating over it, and was added after the user
+  reviewed the first draft of this spec.
 - No whole-extension folder/complexity reorganization. This spec is scoped to
   `listing-cards/` and `matching/`. A broader reorg is a separate, later spec.
 - No persistence for filter-reveal overrides. Revealing a filtered listing is a session-only
@@ -94,18 +97,19 @@ rounded horizontal-line look, same structure (icon, label text, action button) �
 icon/label/action differ:
 
 | Reason | Icon | Action button | Action |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `blacklisted` | bin.svg | "Unblacklist" | `removeBlacklistEntry` (soft-delete, existing behavior unchanged) |
 | `filtered` | eye.svg (closed/crossed variant available as `eye-off.svg`) | "Show anyway" | `reveal(url)` |
 
 When a previously-filtered, now-revealed listing should be re-hidden, the *real, expanded*
-card shows an small always-visible "eye-off" affordance (using `eye-off.svg`) that calls
+card shows a small always-visible "eye-off" affordance (using `eye-off.svg`) that calls
 `unreveal(url)` — restoring the collapsed row. This is the "add an action to hide filtered
 items out again" requirement.
 
 This module also owns the animated expand/collapse transition (see below), so toggling
 between collapsed-row and real-card content is one code path regardless of which reason
-triggered it.
+triggered it. It renders both the standalone single-listing row and (reused, more compactly)
+each per-listing line inside an expanded group — see "Consolidated grouping" below.
 
 ## Animation mechanics
 
@@ -117,13 +121,51 @@ on toggle. No JS-measured heights, no layout thrashing — same lightweight appr
 proven in this codebase, just applied uniformly wherever a card/slide collapses now
 (standard cards, carousel slides, project cards).
 
+## Consolidated grouping of adjacent excluded top-level cards
+
+Added after the user reviewed the first draft of this spec. When two or more consecutive
+top-level list items (`<li>`s in the search-results list — standard cards, whole blacklisted
+projects, whole blacklisted/filtered featured-carousel cards; any mix of `blacklisted` and
+`filtered` reasons) are excluded, they consolidate into **one** group row instead of one
+collapsed row each — e.g. "3 listings hidden" rather than three separate rows stacked
+together. This groups by DOM adjacency only, not by reason — a blacklisted card next to a
+filtered card next to another blacklisted card is one group of three.
+
+This grouping is a top-level-list concept only. It's unrelated to (and doesn't change) the
+existing per-parent aggregation already designed for project children and carousel children
+below — those stay nested one level inside their own project/carousel card, never as
+siblings in the main list, so they're never candidates for this top-level grouping.
+
+**Interaction, three levels of disclosure:**
+
+1. **Group row** (default state): one collapsed row, e.g. "3 listings hidden", using the
+   same visual language as a single exclusion row.
+2. **Hovering (or focusing) the group row** expands it *in place* — pushing the rest of the
+   list down, not floating over it — into a compact per-listing list: one line per listing
+   in the group (address + a small reason indicator: bin or eye icon), each ending in a
+   chevron. Leaving the group (mouse-leave/blur) collapses it back to the single group row
+   after a short grace period, the same grace-period behavior already agreed on for the
+   (now-removed) floating popup design.
+3. **Clicking a listing's chevron** expands *that one line* further, in place, to show a
+   compact one-line summary (address + reason) plus its action button (Unblacklist / Show
+   anyway) — no photo, no features, consistent with keeping the group lightweight. Clicking
+   the chevron again collapses that one line back down without acting on it.
+
+**On restore**: clicking the action button removes that listing from the group immediately
+(same underlying toggle as a standalone excluded card) and it renders as a real, full card
+in its natural position in the results list. The group's count/consolidation updates
+accordingly — shrinking by one, or dissolving entirely if it was down to one remaining
+member (a "group" of one is just a normal single exclusion row), or disappearing if it was
+the last one.
+
 ## Behavior by card shape
 
-### Standard cards (and whole project cards, once blacklisted)
+### Standard cards (and whole project/carousel cards, once excluded)
 
-Unchanged in spirit from today's project-collapse behavior: the excluded card's entire
-visible content is replaced by the collapsed row, animated in/out via the mechanism above.
-Both `blacklisted` and `filtered` reasons use the exact same treatment here.
+The excluded card's entire visible content is replaced by the collapsed row, animated in/out
+via the mechanism above. Both `blacklisted` and `filtered` reasons use the exact same
+treatment here. When adjacent to other excluded top-level cards, they consolidate per the
+grouping behavior above instead of each rendering their own standalone row.
 
 ### Carousel children (featured/topspot carousel, and project unit carousels)
 
@@ -178,7 +220,7 @@ excluded" row.
 
 ## Module layout (within `listing-cards/` and `matching/`)
 
-```
+```text
 matching/index.ts        — ListingMatch gains exclusionReason; matchedPreferences unchanged
 listing-cards/
   card.ts                 — unchanged: selectors, card-kind detection, snapshot extraction
@@ -187,7 +229,11 @@ listing-cards/
   reveal.ts        (new)   — session-only filter-reveal tracking
   exclusion-row.ts (renamed/generalized from summary.ts)
                             — shared collapsed-row component + animated transition,
-                              parameterized by ExclusionReason
+                              parameterized by ExclusionReason; also renders the compact
+                              per-listing line used inside an expanded group
+  exclusion-group.ts (new) — detects adjacent excluded top-level cards, renders/maintains
+                              the consolidated group row, owns the hover-expand and
+                              per-listing chevron disclosure levels
   bundle.ts         (new)  — shared "whole-card blacklist button" + "aggregate row" logic
                               used by both project.ts and carousel.ts
   carousel.ts       (new)  — featured/topspot-carousel-specific: per-slide shrink/reveal,
@@ -195,7 +241,8 @@ listing-cards/
   project.ts                — updated to use bundle.ts + exclusion-row.ts instead of its
                               own bespoke summary markup
   ads.ts                    — unchanged
-  index.ts                  — orchestration, wires in carousel.ts and the new match model
+  index.ts                  — orchestration, wires in carousel.ts, exclusion-group.ts, and
+                              the new match model
 ```
 
 Exact file boundaries for `bundle.ts` vs. how much stays in `project.ts`/`carousel.ts` are
@@ -213,4 +260,5 @@ changing — only how the computed `exclusionReason` is rendered changes.
 - Whole-extension folder reorganization / general complexity reduction outside
   `listing-cards/` and `matching/` — planned as a separate, later spec.
 - Any persistence for filter-reveal state.
-- Hover-popup preview mechanism (considered and rejected).
+- A floating hover-popup preview overlay (considered and rejected in favor of the in-place
+  hover-to-expand grouping described above).
