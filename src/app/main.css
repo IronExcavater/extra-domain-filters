@@ -83,7 +83,7 @@
     opacity: 0.4 !important;
 }
 
-.edf-blacklist-summary {
+.edf-exclusion-row {
     align-items: center;
     background: #f2f4f7;
     border: 1px solid #d0d5dd;
@@ -98,13 +98,13 @@
     padding: 6px 10px;
 }
 
-.edf-blacklist-summary-text {
+.edf-exclusion-row-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.edf-blacklist-summary-button {
+.edf-exclusion-row-button {
     align-items: center;
     background: transparent;
     border: 0;
@@ -118,7 +118,10 @@
     padding: 0;
 }
 
-.edf-listing-card-blacklisted {
+/* Animated collapse: a small max-height + overflow:hidden when excluded, transitioning smoothly
+   to/from the large max-height applied when the reason clears back to "none" (see the
+   :not([data-exclusion-reason]) escape hatch below) — no JS-measured heights needed. */
+.edf-listing-card-excluded {
     background: #f7f8fa !important;
     max-height: 48px !important;
     min-height: 38px !important;
@@ -129,15 +132,15 @@
         min-height 180ms ease;
 }
 
-.edf-listing-card-blacklisted > :not(.edf-blacklist-summary) {
+.edf-listing-card-excluded > :not(.edf-exclusion-row) {
     display: none !important;
 }
 
-.edf-listing-card-blacklisted > .edf-blacklist-summary {
+.edf-listing-card-excluded > .edf-exclusion-row {
     display: flex !important;
 }
 
-.edf-listing-card-blacklisted.edf-blacklist-kind-carousel-child {
+.edf-listing-card-excluded.edf-exclusion-kind-carousel-child {
     max-height: 38px !important;
     min-height: 34px !important;
 }
@@ -249,4 +252,20 @@
 
 .edf-blacklist-row-button[data-active="true"]:hover {
     background: rgb(30 41 61 / 85%);
+}
+
+.edf-hide-again-button {
+    align-items: center;
+    background: rgb(255 255 255 / 90%);
+    border: 1px solid rgb(30 41 61 / 15%);
+    border-radius: 999px;
+    color: rgb(30 41 61 / 70%);
+    cursor: pointer;
+    display: inline-flex;
+    padding: 4px;
+}
+
+.edf-hide-again-button:hover {
+    background: #fff;
+    color: rgb(30 41 61 / 100%);
 }
