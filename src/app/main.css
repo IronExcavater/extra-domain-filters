@@ -1,39 +1,86 @@
 .edf-listing-card-button-container {
-    min-height: 40px !important;
-    padding-right: 88px !important;
-    position: relative !important;
+    align-items: center !important;
+    display: flex !important;
+    gap: 6px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
 }
 
-.edf-listing-card-button-container > button[data-testid^="listing-card-shortlist"] {
-    position: absolute !important;
-    right: 44px !important;
-    top: 0 !important;
+.edf-listing-card-button-container > [data-testid="listing-card-price"] {
+    flex: 1 1 auto !important;
 }
 
-.edf-listing-card-button-container > button[data-testid="listing-card-blacklist"] {
-    position: absolute !important;
-    right: 0 !important;
-    top: 0 !important;
+.edf-listing-card-button-container > button {
+    flex: 0 0 auto !important;
+    position: static !important;
 }
 
-[data-testid="listing-card-project"] {
-    position: relative !important;
+/* No price to grow into (e.g. "Contact Agent" listings) — hug the two buttons instead of
+   stretching to whatever width Domain's own container class assigns. */
+.edf-listing-card-button-container:not(:has([data-testid="listing-card-price"])) {
+    width: fit-content !important;
+}
+
+/* Child listing cards (project units, carousel children) are narrow horizontal rows — the two
+   buttons side by side didn't fit that column, so stack them instead. Kept tight (small gap,
+   no extra padding) so the column's height still grows less than the price/features column
+   next to it, rather than forcing the whole row (and the fixed-height carousel slide) taller. */
+[data-testid="listing-card-child-listing"] .edf-listing-card-button-container {
+    flex-direction: column !important;
+    gap: 4px !important;
+    overflow: visible !important;
+}
+
+/* Sits inline with the project's address line (see insertProjectBlacklistButton), not overlaid
+   on the hero photo any more, so the address row is a small flex row with the button pinned to
+   the opposite end. */
+.edf-project-blacklist-row {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
 }
 
 .edf-project-blacklist-button {
-    position: absolute !important;
-    right: 12px !important;
-    top: 12px !important;
-    z-index: 2 !important;
+    flex: 0 0 auto;
+}
+
+/* Layering, weakest to strongest: a static default (in case the JS below hasn't run yet or
+   never finds a sample), then the dynamic contrast-sync result, then hover/active — each rule
+   only matches while the others' states don't, so nothing needs to "win" via specificity
+   trickery. A previous version applied the static default unconditionally (no :not() guard),
+   which meant it always beat hover/active too, since nothing else covered those states. */
+.edf-project-blacklist-button:not(:hover, :active, [data-active="true"], [aria-pressed="true"]) {
+    color: #fff !important;
 }
 
 .edf-adaptive-foreground:not(:hover, :active, [data-active="true"], [aria-pressed="true"]) {
-    color: var(--edf-adaptive-foreground, #646463);
+    color: var(--edf-adaptive-foreground, #646463) !important;
 }
 
-.edf-filter-panel {
-    display: grid;
-    gap: 16px;
+.edf-adaptive-foreground:not(:hover, :active, [data-active="true"], [aria-pressed="true"]) svg {
+    color: inherit !important;
+}
+
+.edf-project-blacklist-button:hover {
+    color: #fc0 !important;
+}
+
+.edf-project-blacklist-button:active,
+.edf-project-blacklist-button[data-active="true"],
+.edf-project-blacklist-button[aria-pressed="true"] {
+    color: #c90 !important;
+}
+
+/* The blacklist button never sits over a photo except on project cards (styled above) — a flat
+   color reads better there than a dynamic contrast sync that will only ever land on this same
+   shade anyway, since the background behind it is always the plain card body. */
+[data-testid="listing-card-blacklist"]:not(.edf-project-blacklist-button) {
+    color: rgb(30 41 61 / 30%) !important;
+}
+
+.edf-blacklist-shortlist-placeholder {
+    opacity: 0.4 !important;
 }
 
 .edf-blacklist-summary {
@@ -95,20 +142,11 @@
     min-height: 34px !important;
 }
 
-.edf-listing-card-blacklisted.edf-blacklist-kind-project-child {
-    max-height: 110px !important;
-    min-height: 84px !important;
-}
-
-.edf-listing-card-blacklisted.edf-blacklist-kind-project-child > .edf-blacklist-summary {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
-    height: 100%;
-}
-
-.edf-listing-card-blacklisted.edf-blacklist-kind-project-child .edf-blacklist-summary-text {
-    white-space: normal;
+/* Blacklisted children within a project are hidden outright (see updateProjectBlacklistSummary)
+   rather than collapsed in place, so this sits on the project card itself, not per-child. */
+.edf-project-blacklist-summary {
+    display: flex !important;
+    margin: 8px 12px;
 }
 
 .edf-blacklist-page-controls {
@@ -119,123 +157,96 @@
 }
 
 .edf-blacklist-clear-button {
-    background: #fff;
-    border: 1px solid #d8d8d8;
-    border-radius: 4px;
-    color: #111;
+    background: transparent;
+    border: 1px solid rgb(30 41 61 / 25%);
+    border-radius: 999px;
+    color: rgb(30 41 61 / 85%);
     cursor: pointer;
+    font: inherit;
+    font-weight: 600;
     min-height: 40px;
     padding: 8px 18px !important;
+    transition: background-color 120ms ease, opacity 120ms ease;
 }
 
-.edf-blacklist-card-list {
-    display: grid;
-    gap: 16px;
+.edf-blacklist-clear-button:disabled {
+    cursor: default;
+    opacity: 0.4;
 }
 
-.edf-blacklist-card {
-    background: #fff;
-    border: 1px solid #d8d8d8;
-    border-radius: 4px;
-    overflow: hidden;
+.edf-blacklist-clear-button:hover:not(:disabled) {
+    background: rgb(30 41 61 / 8%);
 }
 
-.edf-blacklist-card-wrapper {
-    display: grid;
-    grid-template-columns: minmax(180px, 34%) 1fr;
-}
-
-.edf-blacklist-card-media {
-    background: #eee;
-    min-height: 210px;
-}
-
-.edf-blacklist-card-media img {
-    display: block;
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
-}
-
-.edf-blacklist-card-body {
-    display: grid;
+.edf-blacklist-row-list {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
-    padding: 16px;
 }
 
-.edf-blacklist-card-price {
-    align-items: start;
+/* A plain title row rather than a full card: the entry's address/price/features stay in
+   storage (for restoring on re-blacklist) but are deliberately not shown here. */
+.edf-blacklist-row {
+    align-items: center;
+    background: #fff;
+    border: 1px solid rgb(30 41 61 / 12%);
+    border-radius: 12px;
     display: flex;
     gap: 12px;
     justify-content: space-between;
+    padding: 14px 18px;
+    transition: opacity 120ms ease;
 }
 
-.edf-blacklist-card-price [data-testid="listing-card-price"] {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
+.edf-blacklist-row[data-active="false"] {
+    opacity: 0.6;
 }
 
-.edf-blacklist-card-price [data-testid^="listing-card-shortlist"],
-.edf-blacklist-card-price [data-testid="listing-card-blacklist"] {
+.edf-blacklist-row-title {
     align-items: center;
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-    display: inline-flex;
+    color: rgb(30 41 61 / 85%);
+    display: flex;
+    font-weight: 600;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.edf-blacklist-row-icon {
+    color: rgb(30 41 61 / 45%);
     flex: 0 0 auto;
-    height: 32px;
-    justify-content: center;
-    padding: 4px;
-    width: 32px;
 }
 
-.edf-blacklist-card-price [data-testid^="listing-card-shortlist"] {
-    opacity: 0.45;
-}
-
-.edf-blacklist-card h2 {
-    color: #111;
-    font-size: 18px;
-    line-height: 1.3;
-    margin: 0;
-}
-
-.edf-blacklist-card-date {
-    color: #666;
-    display: block;
-    font-size: 12px;
+.edf-blacklist-row-date {
+    color: rgb(30 41 61 / 45%);
     font-weight: 400;
-    margin-top: 4px;
+    white-space: nowrap;
 }
 
-.edf-blacklist-card-features {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+.edf-blacklist-row-button {
+    background: transparent;
+    border: 1px solid rgb(30 41 61 / 25%);
+    border-radius: 999px;
+    color: rgb(30 41 61 / 85%);
+    cursor: pointer;
+    flex: 0 0 auto;
+    font: inherit;
+    font-weight: 600;
+    padding: 8px 16px;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.edf-blacklist-card-footer {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-    margin-top: auto;
+.edf-blacklist-row-button:hover {
+    background: rgb(30 41 61 / 8%);
 }
 
-.edf-blacklist-card-footer a {
-    border: 1px solid #111;
-    border-radius: 4px;
-    color: #111;
-    padding: 8px 12px;
-    text-decoration: none;
+/* Active = currently blacklisted ("Unblacklist"), filled to read as the selected/pressed
+   state — the same active/inactive language as the listing-card blacklist button. */
+.edf-blacklist-row-button[data-active="true"] {
+    background: rgb(30 41 61 / 100%);
+    border-color: rgb(30 41 61 / 100%);
+    color: #fff;
 }
 
-@media (width <= 640px) {
-    .edf-blacklist-card-wrapper {
-        grid-template-columns: 1fr;
-    }
-
-    .edf-blacklist-card-media {
-        min-height: 190px;
-    }
+.edf-blacklist-row-button[data-active="true"]:hover {
+    background: rgb(30 41 61 / 85%);
 }

@@ -74,6 +74,9 @@ export function toggleListId(ids: string[], id: string, checked: boolean): strin
 export interface BlacklistEntry {
     url: string;
     addedAt: number;
+    // Set when the user unblacklists this entry. The entry is kept (not deleted) so
+    // re-blacklisting after an accidental removal restores the same listing data.
+    removedAt?: number;
     displayAddress?: string;
     thumbnailUrl?: string;
     listing?: ListingSnapshot;

@@ -87,7 +87,7 @@ export function isBlacklisted(
     entries: readonly BlacklistEntry[],
     url: string,
 ): boolean {
-    return entries.some(entry => hasUrl(entry, url));
+    return entries.some(entry => hasUrl(entry, url) && !entry.removedAt);
 }
 
 export function addBlacklistEntry(
@@ -108,11 +108,15 @@ export function addBlacklistEntry(
     ];
 }
 
+// Soft-removes: the entry stays in storage (with removedAt set) so re-blacklisting it later
+// (e.g. after an accidental unblacklist) restores the same listing data instead of starting fresh.
 export function removeBlacklistEntry(
     entries: readonly BlacklistEntry[],
     url: string,
 ): BlacklistEntry[] {
-    return entries.filter(entry => !hasUrl(entry, url));
+    return entries.map(entry =>
+        hasUrl(entry, url) ? { ...entry, removedAt: Date.now() } : entry
+    );
 }
 
 export function getBlacklistListing(

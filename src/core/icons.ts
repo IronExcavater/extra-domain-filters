@@ -1,5 +1,9 @@
+import bathSvg from "../../public/bath.svg?raw";
+import bedSvg from "../../public/bed.svg?raw";
 import binSvg from "../../public/bin.svg?raw";
+import parkingSvg from "../../public/parking.svg?raw";
 import shortlistSvg from "../../public/shortlist.svg?raw";
+import unbinSvg from "../../public/unbin.svg?raw";
 
 export type SvgAttributes = Record<string, string | number>;
 
@@ -34,6 +38,22 @@ export function replaceWithBinIcon(target: SVGElement): void {
     setSvgIcon(target, binSvg);
 }
 
+export function replaceWithUnbinIcon(target: SVGElement): void {
+    setSvgIcon(target, unbinSvg);
+}
+
 export function replaceWithShortlistIcon(target: SVGElement): void {
     setSvgIcon(target, shortlistSvg);
+}
+
+export function replaceWithBedIcon(target: SVGElement): void {
+    setSvgIcon(target, bedSvg);
+}
+
+export function replaceWithBathIcon(target: SVGElement): void {
+    setSvgIcon(target, bathSvg);
+}
+
+export function replaceWithParkingIcon(target: SVGElement): void {
+    setSvgIcon(target, parkingSvg);
 }

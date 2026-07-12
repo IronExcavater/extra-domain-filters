@@ -46,8 +46,17 @@ export async function cacheListing(listing: ListingSnapshot): Promise<ListingSna
     return listing;
 }
 
-function extractPageText(html: string): string {
-    return new DOMParser().parseFromString(html, "text/html").body.textContent ?? "";
+function parseListingPage(html: string): Pick<ListingSnapshot, "text" | "thumbnailUrl"> {
+    const document = new DOMParser().parseFromString(html, "text/html");
+    const thumbnailUrl =
+        document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content ||
+        document.querySelector<HTMLMetaElement>('meta[name="twitter:image"]')?.content ||
+        undefined;
+
+    return {
+        text: document.body.textContent ?? "",
+        thumbnailUrl,
+    };
 }
 
 export async function resolveListingSnapshot(
@@ -69,9 +78,12 @@ export async function resolveListingSnapshot(
         .then(async response => {
             if (!response.ok) return base;
 
+            const page = parseListingPage(await response.text());
+
             return {
                 ...base,
-                text: `${base.text}\n${extractPageText(await response.text())}`,
+                text: `${base.text}\n${page.text}`,
+                thumbnailUrl: page.thumbnailUrl ?? base.thumbnailUrl,
             };
         })
         .then(cacheListing)
