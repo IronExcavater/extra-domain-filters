@@ -51,23 +51,31 @@ export async function createDraftProperty<K extends PropertyKind>(
         },
     });
 
-    bindScope(scope, drafts, submit);
+    bindScope(scope, drafts);
 
     return property;
 }
 
-function bindScope(scope: Element, drafts: Set<DraftEntry>, submit: HTMLButtonElement): void {
+function bindScope(scope: Element, drafts: Set<DraftEntry>): void {
     if (!claimScope(scope)) return;
 
-    scope.querySelectorAll<HTMLButtonElement>(clearSelector)
-        .forEach(button => {
-            button.addEventListener('click', () => {
-                for (const draft of drafts) void draft.reset();
-            });
-        });
+    // Delegated on the (stable) scope element rather than bound directly to the current
+    // submit/clear button nodes: Domain keeps the dialog wrapper mounted across opens but
+    // re-renders its buttons as fresh elements each time, which left a directly-bound listener
+    // attached to a stale, detached node after the first open — real clicks on the new visible
+    // button never reached it again, so nothing committed after the first "Apply".
+    scope.addEventListener('click', event => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
 
-    submit.addEventListener('click', () => {
-        for (const draft of drafts) void draft.commit();
+        if (target.closest(submitSelector)) {
+            for (const draft of drafts) void draft.commit();
+            return;
+        }
+
+        if (target.closest(clearSelector)) {
+            for (const draft of drafts) void draft.reset();
+        }
     });
 
     if (scope instanceof HTMLElement && scope.getAttribute('role') === 'dialog') {
