@@ -14,6 +14,12 @@ const CARD_SELECTOR = [
     'li[data-testid^="listing-"]',
 ].join(',');
 
+export const TOP_LEVEL_CARD_SELECTOR = [
+    LISTING_CARD_CONTAINER_SELECTOR,
+    'li[data-testid="topspot"]',
+    'li[data-testid^="listing-"]',
+].join(',');
+
 export type BlacklistCardKind =
     | "standard"
     | "carousel-child"
