@@ -74,9 +74,18 @@
 
 /* The blacklist button never sits over a photo except on project cards (styled above) — a flat
    color reads better there than a dynamic contrast sync that will only ever land on this same
-   shade anyway, since the background behind it is always the plain card body. */
+   shade anyway, since the background behind it is always the plain card body. Background/border/
+   shadow are reset too: this button is cloned from its sibling shortlist button and mirrors its
+   class for base sizing (button.ts's captureNeutralShortlistClass), but on pages where every card
+   is always shortlisted (e.g. /user/shortlist), that mirroring can never observe a not-shortlisted
+   state to capture, so it's stuck with whatever "filled/active" look Domain gives an
+   already-shortlisted button. This keeps it reading as neutral regardless of which class got
+   mirrored — color above is the only intended visual language. */
 [data-testid="listing-card-blacklist"]:not(.edf-project-blacklist-button) {
     color: rgb(30 41 61 / 30%) !important;
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
 }
 
 .edf-blacklist-shortlist-placeholder {
