@@ -5,7 +5,10 @@ import unusedImports from 'eslint-plugin-unused-imports';
 import ts from 'typescript-eslint';
 
 export default defineConfig([
-    globalIgnores(['dist/**/*', '.worktrees/**/*', 'domain.js'], 'Ignore build output, worktrees, and the pre-rework legacy script'),
+    globalIgnores(
+        ['dist/**/*', '.playwright-mcp/**/*', '.remember/**/*', '.worktrees/**/*', 'domain.js'],
+        'Ignore build output, local tool state, worktrees, and the pre-rework legacy script',
+    ),
     js.configs.recommended,
     ...ts.configs.recommended,
     {
