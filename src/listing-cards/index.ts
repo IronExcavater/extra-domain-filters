@@ -2,31 +2,56 @@ import { createClaimTracker } from "../core/claim";
 import { PageContext } from "../core/router";
 import { getSettings, type Settings } from "../core/settings";
 import { getFromStorage, onStorageChange } from "../core/storage";
-import { matchListing, type BlacklistEntry } from "../matching";
+import { matchListing, type BlacklistEntry, type ExclusionReason } from "../matching";
 import { bindAdRemoval } from "./ads";
+import { isBundleActive } from "./bundle";
 import { cloneBlacklistButton, insertBlacklistButton, updateButton, watchShortlistButtonClass } from "./button";
 import {
     BLACKLIST_BUTTON_SELECTOR,
-    getBlacklistCardKind,
     getCard,
+    getChildListingUrl,
     getListingSnapshot,
     getListingUrl,
     PROJECT_CARD_SELECTOR,
     PROJECT_MARKER_SELECTOR,
     SHORTLIST_BUTTON_SELECTOR,
 } from "./card";
+import { bindCarouselCard, updateCarouselCard } from "./carousel";
+import { updateExclusionGroups } from "./exclusion-group";
+import {
+    applyExclusionState,
+    ensureHideAgainAffordance,
+    isRevealed,
+    removeHideAgainAffordance,
+    updateExclusionRow,
+} from "./exclusion-row";
 import { bindProjectCard, updateProjectBlacklistSummary } from "./project";
-import { applyBlacklistCardState, getSummary, updateBlacklistSummaryText } from "./summary";
 import { toggleBlacklist } from "./toggle";
+
+const TOPSPOT_CAROUSEL_SELECTOR = 'li[data-testid="topspot"]';
+const CAROUSEL_CHILD_SELECTOR = '[data-testid="listing-card-child-listing"]';
 
 const claimShortlistButton = createClaimTracker<HTMLButtonElement>();
 
-function hasActiveExclusion(settings: Settings, blacklist: BlacklistEntry[]): boolean {
-    return (
-        blacklist.some(entry => !entry.removedAt) ||
-        settings.filters.excludeKeywords.length > 0 ||
-        settings.filters.strataMaxDollars < 2000
-    );
+// A "filtered" reason is suppressed back to "none" if the user has revealed it this session —
+// applied here (not inside matching/index.ts) so matching stays a pure, DOM/session-free
+// computation; only listing-cards' UI layer knows about the session-only reveal set.
+function resolveExclusionReason(rawReason: ExclusionReason, url: string): ExclusionReason {
+    return rawReason === "filtered" && isRevealed(url) ? "none" : rawReason;
+}
+
+// The carousel's own bulk-blacklist button's active/pressed look isn't driven by matching a
+// single URL (it has none of its own — see bundle.ts) but by whether every current child is
+// already blacklisted, via isBundleActive from Task 6.
+function syncCarouselButton(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
+    const button = carouselCard.querySelector<HTMLButtonElement>('.edf-carousel-blacklist-button');
+    if (!button) return;
+
+    const members = [...carouselCard.querySelectorAll<HTMLElement>(CAROUSEL_CHILD_SELECTOR)]
+        .map(child => ({ url: getChildListingUrl(child) }))
+        .filter((member): member is { url: string } => member.url !== undefined);
+
+    updateButton(button, isBundleActive(members, blacklist));
 }
 
 function updateExistingCards(
@@ -34,39 +59,76 @@ function updateExistingCards(
     blacklist: BlacklistEntry[],
     showBlacklistedView: boolean,
 ): void {
+    // Keyed by project card so the per-project loop below can gate updateProjectBlacklistSummary
+    // on whether the project itself (not any individual child) is excluded — see project.ts's
+    // own comment on why that matters (it owns the shared exclusion row in that case, and must
+    // not also delete or overwrite it out from under the generic handling below).
+    const projectReasons = new Map<Element, ExclusionReason>();
+
     document.querySelectorAll<HTMLButtonElement>(BLACKLIST_BUTTON_SELECTOR)
         .forEach(button => {
+            // A carousel's whole-card bulk button has no canonical URL of its own (it bundles
+            // several unrelated child listings) — resolving one via getListingUrl's fallback
+            // query would attribute a single arbitrary child's exclusion status to the entire
+            // card, incorrectly collapsing/hiding every other unrelated child too. The carousel
+            // loop below (updateCarouselCard + syncCarouselButton) owns this button entirely.
+            if (button.dataset.blacklistScope === "carousel") return;
+
             const card = getCard(button);
             if (!card) return;
 
             const url = getListingUrl(button, card);
             if (!url) return;
 
-            const match = matchListing(getListingSnapshot(card, url), settings, blacklist);
-            const kind = getBlacklistCardKind(card, button);
+            const rawMatch = matchListing(getListingSnapshot(card, url), settings, blacklist);
+            const reason = resolveExclusionReason(rawMatch.exclusionReason, url);
 
-            updateButton(button, match.blacklisted);
+            updateButton(button, reason === "blacklisted");
+
+            if (button.dataset.blacklistScope === "project") {
+                projectReasons.set(card, reason);
+            }
 
             // Project children are hidden/restored in bulk via updateProjectBlacklistSummary
             // instead — leave this card's own visibility alone here.
-            if (kind === "project-child") return;
-
-            if (showBlacklistedView) {
-                updateBlacklistSummaryText(card);
-                applyBlacklistCardState(card, button, match.blacklisted);
+            if (card.matches('[data-testid="listing-card-child-listing"]') &&
+                card.closest(PROJECT_CARD_SELECTOR)?.querySelector(PROJECT_MARKER_SELECTOR)) {
+                return;
             }
 
-            (card as HTMLElement).hidden =
-                hasActiveExclusion(settings, blacklist) && match.excluded && !match.blacklisted;
-            (card as HTMLElement).style.outline = !match.blacklisted && match.matchedPreferences.length > 0
+            if (showBlacklistedView) {
+                applyExclusionState(card, button, reason);
+
+                if (reason === "none" && rawMatch.exclusionReason === "filtered") {
+                    ensureHideAgainAffordance(card, url);
+                } else {
+                    removeHideAgainAffordance(card);
+                }
+
+                if (reason !== "none") {
+                    updateExclusionRow(card, url, reason);
+                }
+            }
+
+            (card as HTMLElement).style.outline = reason === "none" && rawMatch.matchedPreferences.length > 0
                 ? "3px solid #fc0"
                 : "";
         });
 
     for (const projectCard of document.querySelectorAll<HTMLElement>(PROJECT_CARD_SELECTOR)) {
         const projectHeader = projectCard.querySelector<HTMLElement>(PROJECT_MARKER_SELECTOR);
-        if (projectHeader) updateProjectBlacklistSummary(projectCard, projectHeader, blacklist);
+        if (projectHeader) {
+            const projectExcluded = (projectReasons.get(projectCard) ?? "none") !== "none";
+            updateProjectBlacklistSummary(projectCard, projectHeader, blacklist, projectExcluded);
+        }
     }
+
+    for (const carouselCard of document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)) {
+        updateCarouselCard(carouselCard, blacklist);
+        syncCarouselButton(carouselCard, blacklist);
+    }
+
+    if (showBlacklistedView) updateExclusionGroups();
 }
 
 function bindBlacklistButton(
@@ -82,14 +144,6 @@ function bindBlacklistButton(
     const button = cloneBlacklistButton(shortlistButton);
     insertBlacklistButton(shortlistButton, button);
     watchShortlistButtonClass(shortlistButton, button, context);
-
-    getSummary(card)
-        .querySelector<HTMLButtonElement>('[data-testid="listing-card-blacklist-restore"]')
-        ?.addEventListener("click", event => {
-            event.preventDefault();
-            event.stopPropagation();
-            void toggleBlacklist(card, url, context, shortlistButton, button);
-        });
 
     button.addEventListener("click", async event => {
         event.preventDefault();
@@ -108,6 +162,10 @@ export async function injectListingCards(
         bindProjectCard(projectCard, context);
     }
 
+    for (const carouselCard of document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)) {
+        bindCarouselCard(carouselCard, context);
+    }
+
     for (const shortlistButton of document.querySelectorAll<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR)) {
         if (!claimShortlistButton(shortlistButton)) continue;
         bindBlacklistButton(shortlistButton, context);
@@ -123,8 +181,8 @@ export async function injectListingCards(
 
 export interface BindListingCardsOptions {
     // The real /user/shortlist page has its own dedicated blacklist overlay (?blacklist=1) for
-    // managing blacklisted entries, so the inline collapsed "Blacklisted: ..." treatment there
-    // is redundant and confusing — set to false to suppress it while still keeping the button
+    // managing blacklisted entries, so the inline collapsed exclusion-row treatment there is
+    // redundant and confusing — set to false to suppress it while still keeping the button
     // itself functional.
     showBlacklistedView?: boolean;
 }
@@ -137,12 +195,8 @@ export function bindListingCards(
 
     bindAdRemoval(context.signal);
 
-    // Scoped to this mount, not module-level: a previous version shared one scanFrame variable
-    // across every page mount, and its abort handler cancelled the pending frame without ever
-    // resetting the variable back to undefined. The next mount's schedule() would then see a
-    // stale non-undefined value and silently never queue another scan for the rest of the
-    // content script's lifetime — exactly what broke card injection after a mode switch or
-    // pagination change remounted the page (both change the pathname, which aborts this mount).
+    // Scoped to this mount, not module-level — see git history for why (a shared module-level
+    // scanFrame previously broke card injection after mode/pagination changes).
     let scanFrame: number | undefined;
 
     const schedule = (): void => {
