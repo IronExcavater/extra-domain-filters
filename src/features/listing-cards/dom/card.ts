@@ -5,7 +5,8 @@ export const BLACKLIST_BUTTON_SELECTOR = '[data-testid="listing-card-blacklist"]
 export const PROJECT_CARD_SELECTOR = 'li[data-testid^="listing-"]';
 export const PROJECT_MARKER_SELECTOR = '[data-testid="listing-card-project"]';
 export const PROJECT_DETAILS_SELECTOR = '[data-testid="listing-card-project-details"]';
-export const TOPSPOT_CAROUSEL_SELECTOR = 'li[data-testid="topspot"]';
+export const TOPSPOT_CAROUSEL_SELECTOR =
+    'li[data-testid="topspot"], li:has([data-testid="listing-card-child-listing"]):not(:has([data-testid="listing-card-project"]))';
 export const CAROUSEL_CHILD_SELECTOR = '[data-testid="listing-card-child-listing"]';
 const LISTING_CARD_CONTAINER_SELECTOR = '[data-testid="listing-card-container"]';
 

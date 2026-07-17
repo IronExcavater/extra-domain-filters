@@ -82,17 +82,19 @@
 
 .edf-exclusion-row {
     align-items: center;
-    background: #f2f4f7;
-    border: 1px solid #d0d5dd;
-    border-radius: 4px;
-    color: #475467;
+    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    border: 1px solid rgb(30 41 61 / 12%);
+    border-left: 4px solid #c90;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgb(30 41 61 / 8%);
+    color: rgb(30 41 61 / 78%);
     display: none;
     gap: 12px;
     font-weight: 500;
     justify-content: space-between;
     line-height: 1.3;
-    min-height: 34px;
-    padding: 6px 10px;
+    min-height: 58px;
+    padding: 10px 14px;
 }
 
 .edf-exclusion-row-text {
@@ -103,22 +105,28 @@
 
 .edf-exclusion-row-button {
     align-items: center;
-    background: transparent;
-    border: 0;
-    color: #344054;
+    background: rgb(30 41 61 / 6%);
+    border: 1px solid rgb(30 41 61 / 10%);
+    border-radius: 999px;
+    color: rgb(30 41 61 / 82%);
     cursor: pointer;
     display: inline-flex;
     flex: 0 0 auto;
     gap: 6px;
     font: inherit;
     font-weight: 600;
-    padding: 0;
+    padding: 6px 10px;
+}
+
+.edf-exclusion-row-button:hover {
+    background: rgb(30 41 61 / 10%);
+    color: rgb(30 41 61 / 100%);
 }
 
 .edf-listing-card-excluded {
-    background: #f7f8fa !important;
-    max-height: 48px !important;
-    min-height: 38px !important;
+    background: transparent !important;
+    max-height: 86px !important;
+    min-height: 70px !important;
     overflow: hidden !important;
     transition:
         background-color 180ms ease,
@@ -135,8 +143,8 @@
 }
 
 .edf-listing-card-excluded.edf-exclusion-kind-carousel-child {
-    max-height: 38px !important;
-    min-height: 34px !important;
+    max-height: 76px !important;
+    min-height: 64px !important;
 }
 
 .edf-project-blacklist-summary {

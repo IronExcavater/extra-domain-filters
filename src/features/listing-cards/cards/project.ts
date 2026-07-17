@@ -1,4 +1,4 @@
-import { addBlacklistEntry, isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../../../domain/matching";
+import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../../../domain/matching";
 import { createClaimTracker } from "../../../shared/dom/claim";
 import { queueForegroundContrastSync } from "../../../shared/dom/contrast";
 import { PageContext } from "../../../shared/platform/router";
@@ -41,25 +41,6 @@ function getProjectMembers(projectCard: HTMLElement): BundleMember[] {
     return members;
 }
 
-async function ensureProjectEntryWhenAllChildrenBlacklisted(
-    projectCard: HTMLElement,
-    blacklist: BlacklistEntry[],
-): Promise<void> {
-    const projectUrl = getProjectUrl(projectCard);
-    if (!projectUrl || isBlacklisted(blacklist, projectUrl)) return;
-
-    const childUrls = [...projectCard.querySelectorAll<HTMLElement>('[data-testid="listing-card-child-listing"]')]
-        .map(getChildListingUrl)
-        .filter((url): url is string => url !== undefined);
-
-    if (childUrls.length === 0 || !childUrls.every(url => isBlacklisted(blacklist, url))) return;
-
-    await setInStorage(
-        "blacklist",
-        addBlacklistEntry(blacklist, getListingSnapshot(projectCard, projectUrl)),
-    );
-}
-
 function getProjectAggregateRow(projectCard: HTMLElement, projectHeader: HTMLElement): HTMLElement {
     const row = getExclusionRow(projectCard);
     if (row.previousElementSibling !== projectHeader) {
@@ -74,8 +55,6 @@ export function updateProjectBlacklistSummary(
     blacklist: BlacklistEntry[],
     projectExcluded: boolean,
 ): void {
-    void ensureProjectEntryWhenAllChildrenBlacklisted(projectCard, blacklist);
-
     const children = [...projectCard.querySelectorAll<HTMLElement>('[data-testid="listing-card-child-listing"]')];
     const blacklistedUrls = children
         .map(child => ({ child, url: getChildListingUrl(child) }))
