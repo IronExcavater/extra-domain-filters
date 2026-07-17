@@ -4,11 +4,7 @@ import {
     type ExclusionReason,
 } from "../../../domain/matching";
 import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
-import {
-    replaceWithBinIcon,
-    replaceWithEyeIcon,
-    replaceWithEyeOffIcon,
-} from "../../../shared/ui/icons";
+import { replaceWithEyeIcon, replaceWithEyeOffIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 import { getBlacklistCardKind, getPropertyCount, getTitle, type BlacklistCardKind } from "../dom/card";
 import { isRevealed, reveal, unreveal } from "./reveal";
 
@@ -81,7 +77,7 @@ export function updateExclusionRow(card: Element, url: string, reason: ActiveRea
 
     if (text) text.textContent = getExclusionSummaryText(card, reason);
 
-    if (icon) (reason === "blacklisted" ? replaceWithBinIcon : replaceWithEyeIcon)(icon);
+    if (icon) (reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
 
     if (button) {
         const label = reason === "blacklisted" ? "Unblacklist" : "Show anyway";

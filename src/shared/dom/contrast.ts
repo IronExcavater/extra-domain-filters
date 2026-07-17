@@ -9,8 +9,10 @@ interface ContrastSyncOptions {
     scope?: Element;
 }
 
-const DARK_FOREGROUND = "#f4f4f2";
-const LIGHT_FOREGROUND = "#646463";
+const DARK_FOREGROUND: Rgb = { a: 1, b: 31, g: 41, r: 47 };
+const LIGHT_FOREGROUND: Rgb = { a: 1, b: 255, g: 255, r: 255 };
+const DARK_FOREGROUND_VALUE = "rgb(47 41 31)";
+const LIGHT_FOREGROUND_VALUE = "#fff";
 
 function parseRgb(value: string): Rgb | undefined {
     const match = value.match(
@@ -40,6 +42,15 @@ function luminance(color: Rgb): number {
     });
 
     return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first: Rgb, second: Rgb): number {
+    const firstLuminance = luminance(first);
+    const secondLuminance = luminance(second);
+    const lighter = Math.max(firstLuminance, secondLuminance);
+    const darker = Math.min(firstLuminance, secondLuminance);
+
+    return (lighter + 0.05) / (darker + 0.05);
 }
 
 function sampleImage(image: HTMLImageElement, x: number, y: number): Rgb | undefined {
@@ -149,10 +160,10 @@ function sampleScopedImages(scope: Element, targetRect: DOMRect): Rgb[] {
         .map(image => sampleImage(image, x, y) ?? { a: 1, b: 24, g: 24, r: 24 });
 }
 
-function shouldUseLightForeground(color: Rgb): boolean {
-    const brightness = (color.r * 299 + color.g * 587 + color.b * 114) / 1000;
-
-    return luminance(color) < 0.58 || brightness < 152;
+function readableForegroundFor(color: Rgb): string {
+    return contrastRatio(color, LIGHT_FOREGROUND) >= contrastRatio(color, DARK_FOREGROUND)
+        ? LIGHT_FOREGROUND_VALUE
+        : DARK_FOREGROUND_VALUE;
 }
 
 function applyColor(element: HTMLElement | SVGElement, color: string): void {
@@ -188,12 +199,7 @@ export function syncForegroundWithBackgroundAt(
 
     if (!color) return;
 
-    applyColor(
-        element,
-        shouldUseLightForeground(color)
-            ? DARK_FOREGROUND
-            : LIGHT_FOREGROUND,
-    );
+    applyColor(element, readableForegroundFor(color));
 }
 
 export function queueForegroundContrastSync(

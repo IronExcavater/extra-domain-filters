@@ -1,6 +1,6 @@
 import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
 import { type Settings } from "../../shared/state/settings";
-import { isBundleActive } from "./blacklist/bundle";
+import { isBundleSelected } from "./blacklist/bundle";
 import { updateButton } from "./blacklist/button";
 import { updateCarouselCard } from "./cards/carousel";
 import { updateProjectBlacklistSummary } from "./cards/project";
@@ -36,7 +36,7 @@ function syncCarouselBulkButtonState(carouselCard: HTMLElement, blacklist: Black
         .map(child => ({ url: getChildListingUrl(child) }))
         .filter((member): member is { url: string } => member.url !== undefined);
 
-    updateButton(button, isBundleActive(members, blacklist));
+    updateButton(button, isBundleSelected(members, blacklist), "Blacklist featured properties");
 }
 
 function isProjectChild(card: Element): boolean {

@@ -9,6 +9,7 @@ import { bindCarouselCard } from "./cards/carousel";
 import { bindProjectCard } from "./cards/project";
 import {
     getCard,
+    getBlacklistCardKind,
     getListingUrl,
     PROJECT_CARD_SELECTOR,
     SHORTLIST_BUTTON_SELECTOR,
@@ -24,6 +25,7 @@ function bindBlacklistButton(
 ): void {
     const card = getCard(shortlistButton);
     if (!card) return;
+    if (getBlacklistCardKind(card, shortlistButton) === "project-child") return;
 
     const url = getListingUrl(shortlistButton, card);
     if (!url) return;

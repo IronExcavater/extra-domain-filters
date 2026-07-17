@@ -58,7 +58,8 @@
     color: #c90 !important;
 }
 
-[data-testid="listing-card-blacklist"]:not(.edf-project-blacklist-button) {
+[data-testid="listing-card-blacklist"]:not(.edf-project-blacklist-button, .edf-carousel-blacklist-button),
+.edf-blacklist-button:not(.edf-project-blacklist-button, .edf-carousel-blacklist-button) {
     color: rgb(30 41 61 / 30%) !important;
     background: none !important;
     border: 0 !important;
@@ -351,16 +352,10 @@
     flex: 1 0 100%;
 }
 
-li[data-testid="topspot"] {
-    position: relative !important;
-}
-
 .edf-carousel-blacklist-button {
-    color: #fff !important;
-    position: absolute !important;
-    right: 12px !important;
-    top: 12px !important;
-    z-index: 2 !important;
+    color: #646463 !important;
+    flex: 0 0 auto !important;
+    position: static !important;
 }
 
 .edf-carousel-blacklist-button:hover {

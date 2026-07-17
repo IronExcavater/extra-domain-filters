@@ -16,6 +16,15 @@ export function captureNeutralShortlistClass(button: HTMLButtonElement, shortlis
     }
 }
 
+function findNeutralSiblingClass(shortlistButton: HTMLButtonElement): string | undefined {
+    const container = shortlistButton.parentElement;
+    if (!container) return undefined;
+
+    return [...container.querySelectorAll<HTMLButtonElement>("button")]
+        .find(button => button !== shortlistButton && !isShortlisted(button))
+        ?.className;
+}
+
 export function updateButton(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {
     const extensionClasses = [...button.classList].filter(className => className.startsWith("edf-"));
     const baseClass = button.dataset.edfBaseClass;
@@ -24,10 +33,8 @@ export function updateButton(button: HTMLButtonElement, active: boolean, text = 
         button.className = [baseClass, ...extensionClasses].join(" ");
     }
 
-    if (button.dataset.blacklistScope === "project") {
-        const icon = button.querySelector("svg");
-        if (icon) (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
-    }
+    const icon = button.querySelector("svg");
+    if (icon) (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
 
     button.dataset.active = String(active);
     button.ariaLabel = active ? "Remove from blacklist" : text;
@@ -60,7 +67,14 @@ export function cloneBlacklistButton(shortlistButton: HTMLButtonElement): HTMLBu
 
     button.type = "button";
     button.setAttribute("data-testid", "listing-card-blacklist");
-    captureNeutralShortlistClass(button, shortlistButton);
+    button.dataset.edfBaseClass = isShortlisted(shortlistButton)
+        ? findNeutralSiblingClass(shortlistButton)
+        : shortlistButton.className;
+    if (button.dataset.edfBaseClass) {
+        button.className = button.dataset.edfBaseClass;
+    }
+    button.classList.add("edf-blacklist-button");
+    button.classList.remove("active", "is-active", "isActive", "shortlisted");
 
     if (icon) replaceWithBinIcon(icon);
 

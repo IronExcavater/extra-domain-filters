@@ -1,13 +1,14 @@
-import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../../../domain/matching";
+import { addBlacklistEntry, isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../../../domain/matching";
 import { createClaimTracker } from "../../../shared/dom/claim";
 import { queueForegroundContrastSync } from "../../../shared/dom/contrast";
 import { PageContext } from "../../../shared/platform/router";
 import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
-import { replaceWithBinIcon } from "../../../shared/ui/icons";
-import { cloneBlacklistButton, watchShortlistButtonClass } from "../blacklist/button";
-import { toggleBlacklist } from "../blacklist/toggle";
+import { replaceWithUnbinIcon } from "../../../shared/ui/icons";
+import { toggleBundleBlacklist, type BundleMember } from "../blacklist/bundle";
+import { cloneBlacklistButton, updateButton, watchShortlistButtonClass } from "../blacklist/button";
 import {
     getChildListingUrl,
+    getListingSnapshot,
     PROJECT_DETAILS_SELECTOR,
     PROJECT_MARKER_SELECTOR,
     SHORTLIST_BUTTON_SELECTOR,
@@ -15,6 +16,49 @@ import {
 import { getExclusionRow } from "../exclusion/row";
 
 const claimProjectCard = createClaimTracker<HTMLElement>();
+
+function getProjectUrl(projectCard: HTMLElement): string | undefined {
+    const anchor = projectCard.querySelector<HTMLAnchorElement>('a[href*="/project/"]');
+    return anchor ? new URL(anchor.href, window.location.origin).href : undefined;
+}
+
+function getProjectMembers(projectCard: HTMLElement): BundleMember[] {
+    const projectUrl = getProjectUrl(projectCard);
+    const members = [...projectCard.querySelectorAll<HTMLElement>('[data-testid="listing-card-child-listing"]')]
+        .map(child => {
+            const url = getChildListingUrl(child);
+            return url ? { url, snapshot: getListingSnapshot(child, url) } : undefined;
+        })
+        .filter((member): member is BundleMember => member !== undefined);
+
+    if (projectUrl) {
+        members.unshift({
+            url: projectUrl,
+            snapshot: getListingSnapshot(projectCard, projectUrl),
+        });
+    }
+
+    return members;
+}
+
+async function ensureProjectEntryWhenAllChildrenBlacklisted(
+    projectCard: HTMLElement,
+    blacklist: BlacklistEntry[],
+): Promise<void> {
+    const projectUrl = getProjectUrl(projectCard);
+    if (!projectUrl || isBlacklisted(blacklist, projectUrl)) return;
+
+    const childUrls = [...projectCard.querySelectorAll<HTMLElement>('[data-testid="listing-card-child-listing"]')]
+        .map(getChildListingUrl)
+        .filter((url): url is string => url !== undefined);
+
+    if (childUrls.length === 0 || !childUrls.every(url => isBlacklisted(blacklist, url))) return;
+
+    await setInStorage(
+        "blacklist",
+        addBlacklistEntry(blacklist, getListingSnapshot(projectCard, projectUrl)),
+    );
+}
 
 function getProjectAggregateRow(projectCard: HTMLElement, projectHeader: HTMLElement): HTMLElement {
     const row = getExclusionRow(projectCard);
@@ -30,6 +74,8 @@ export function updateProjectBlacklistSummary(
     blacklist: BlacklistEntry[],
     projectExcluded: boolean,
 ): void {
+    void ensureProjectEntryWhenAllChildrenBlacklisted(projectCard, blacklist);
+
     const children = [...projectCard.querySelectorAll<HTMLElement>('[data-testid="listing-card-child-listing"]')];
     const blacklistedUrls = children
         .map(child => ({ child, url: getChildListingUrl(child) }))
@@ -40,6 +86,15 @@ export function updateProjectBlacklistSummary(
     const blacklistedChildren = new Set(blacklistedUrls.map(entry => entry.child));
     for (const child of children) {
         child.hidden = blacklistedChildren.has(child);
+    }
+
+    const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
+    if (bulkButton) {
+        updateButton(
+            bulkButton,
+            getProjectMembers(projectCard).some(member => isBlacklisted(blacklist, member.url)),
+            "Blacklist project",
+        );
     }
 
     if (projectExcluded) return;
@@ -61,7 +116,7 @@ export function updateProjectBlacklistSummary(
     const button = row.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');
     if (button) {
         const icon = button.querySelector("svg");
-        if (icon) replaceWithBinIcon(icon);
+        if (icon) replaceWithUnbinIcon(icon);
         button.lastChild!.textContent = "Unblacklist all";
         button.ariaLabel = "Unblacklist all";
         button.onclick = async event => {
@@ -102,8 +157,7 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
 
     const sourceButton = projectCard.querySelector<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR);
     const details = projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR);
-    const url = projectCard.querySelector<HTMLAnchorElement>('a[href*="/project/"]')?.href;
-    if (!sourceButton || !details || !url) return;
+    if (!sourceButton || !details || !getProjectUrl(projectCard)) return;
     if (!claimProjectCard(projectCard)) return;
 
     const button = cloneBlacklistButton(sourceButton);
@@ -116,6 +170,6 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
     button.addEventListener("click", async event => {
         event.preventDefault();
         event.stopPropagation();
-        await toggleBlacklist(projectCard, url, context, sourceButton, button);
+        await toggleBundleBlacklist(getProjectMembers(projectCard));
     });
 }

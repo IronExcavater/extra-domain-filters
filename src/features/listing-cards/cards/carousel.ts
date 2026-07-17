@@ -32,6 +32,20 @@ function setSlideExcluded(slide: HTMLElement, excluded: boolean): void {
     window.dispatchEvent(new Event("resize"));
 }
 
+function findCarouselControls(carouselCard: HTMLElement): HTMLElement | undefined {
+    const scopedControls =
+        carouselCard.querySelector<HTMLButtonElement>('button[aria-label="Previous property"]')?.parentElement ??
+        carouselCard.querySelector<HTMLButtonElement>('button[aria-label="Previous"]')?.parentElement;
+    if (scopedControls instanceof HTMLElement) return scopedControls;
+
+    const section = carouselCard.closest("section, div") ?? document.body;
+    const propertyControls = [...section.querySelectorAll<HTMLButtonElement>("button")]
+        .find(button => button.ariaLabel === "Previous property" || button.ariaLabel === "Next property")
+        ?.parentElement;
+
+    return propertyControls instanceof HTMLElement ? propertyControls : undefined;
+}
+
 function isSlideExcluded(slide: HTMLElement, url: string, blacklist: BlacklistEntry[]): boolean {
     return (
         isBlacklisted(blacklist, url) ||
@@ -49,9 +63,7 @@ export function updateCarouselCard(carouselCard: HTMLElement, blacklist: Blackli
         setSlideExcluded(slide, isSlideExcluded(slide, url, blacklist));
     }
 
-    const allExcluded = members.length > 0 &&
-        members.every(({ slide, url }) => isSlideExcluded(slide, url, blacklist));
-    carouselCard.hidden = allExcluded;
+    carouselCard.hidden = false;
 }
 
 export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext): void {
@@ -64,7 +76,11 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
     const button = cloneBlacklistButton(sourceButton);
     button.dataset.blacklistScope = "carousel";
     button.classList.add("edf-carousel-blacklist-button");
-    carouselCard.prepend(button);
+    button.ariaLabel = "Blacklist featured properties";
+    button.title = "Blacklist featured properties";
+    const controls = findCarouselControls(carouselCard);
+    if (controls) controls.append(button);
+    else carouselCard.prepend(button);
     watchShortlistButtonClass(sourceButton, button, context);
 
     button.addEventListener("click", async event => {

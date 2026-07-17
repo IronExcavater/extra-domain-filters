@@ -6,7 +6,13 @@ import {
 } from "../domain/matching";
 import { PageMount } from "../shared/platform/router";
 import { getFromStorage, onStorageChange, setInStorage } from "../shared/platform/storage";
-import { replaceWithBathIcon, replaceWithBedIcon, replaceWithBinIcon, replaceWithParkingIcon } from "../shared/ui/icons";
+import {
+    replaceWithBathIcon,
+    replaceWithBedIcon,
+    replaceWithBinIcon,
+    replaceWithParkingIcon,
+    replaceWithUnbinIcon,
+} from "../shared/ui/icons";
 
 function findShortlistContainer(): HTMLElement | undefined {
     const shortlistRoot = document.querySelector("#shortlist");
@@ -140,8 +146,80 @@ function createFeatureBadge(
     return badge;
 }
 
-function createBlacklistRow(entry: BlacklistEntry, active: boolean): HTMLElement {
+function wireBlacklistToggle(button: HTMLButtonElement, listing: ReturnType<typeof getBlacklistListing>, active: boolean): void {
+    button.dataset.active = String(active);
+    button.setAttribute("aria-pressed", String(active));
+    button.addEventListener("click", async () => {
+        const current = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
+        await setInStorage(
+            "blacklist",
+            active
+                ? removeBlacklistEntry(current, listing.url)
+                : addBlacklistEntry(current, listing),
+        );
+    });
+}
+
+function updateText(element: Element | null, value: string | undefined): void {
+    if (element && value) element.textContent = value;
+}
+
+function createShortlistStyledBlacklistRow(
+    template: HTMLElement,
+    entry: BlacklistEntry,
+    active: boolean,
+): HTMLElement {
     const listing = getBlacklistListing(entry);
+    const card = template.cloneNode(true) as HTMLElement;
+    card.dataset.active = String(active);
+    card.dataset.edfBlacklistRow = "true";
+
+    for (const anchor of card.querySelectorAll<HTMLAnchorElement>("a[href]")) {
+        anchor.href = listing.url;
+    }
+
+    const image = card.querySelector<HTMLImageElement>("img");
+    if (image && listing.thumbnailUrl) {
+        image.src = listing.thumbnailUrl;
+        image.alt = listing.displayAddress ?? listing.title;
+    } else if (image) {
+        image.remove();
+    }
+
+    updateText(card.querySelector('[data-testid="address-wrapper"]'), listing.displayAddress ?? listing.title);
+    updateText(card.querySelector('[data-testid="listing-card-price"]'), listing.price);
+    updateText(card.querySelector('[data-testid="listing-card-tag"]'), listing.status);
+
+    const featureValues = [
+        listing.features?.bedrooms,
+        listing.features?.bathrooms,
+        listing.features?.parking,
+    ];
+    card.querySelectorAll('[data-testid="property-features-text-container"]').forEach((feature, index) => {
+        if (featureValues[index]) feature.firstChild!.textContent = featureValues[index];
+    });
+
+    const button = card.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]') ??
+        document.createElement("button");
+    button.type = "button";
+    button.setAttribute("data-testid", "extra-domain-filters-blacklist-toggle");
+    button.ariaLabel = active ? "Unblacklist" : "Re-blacklist";
+    button.title = button.ariaLabel;
+
+    const icon = button.querySelector("svg") ?? document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
+    if (!icon.parentElement) button.append(icon);
+
+    wireBlacklistToggle(button, listing, active);
+
+    if (!button.parentElement) card.append(button);
+
+    return card;
+}
+
+function createBlacklistRow(entry: BlacklistEntry, active: boolean, template?: HTMLElement): HTMLElement {
+    const listing = getBlacklistListing(entry);
+    if (template) return createShortlistStyledBlacklistRow(template, entry, active);
 
     const card = document.createElement("div");
     card.className = "edf-blacklist-card";
@@ -218,18 +296,8 @@ function createBlacklistRow(entry: BlacklistEntry, active: boolean): HTMLElement
     const button = document.createElement("button");
     button.type = "button";
     button.className = "edf-blacklist-row-button edf-blacklist-card-button";
-    button.dataset.active = String(active);
     button.textContent = active ? "Unblacklist" : "Re-blacklist";
-    button.setAttribute("aria-pressed", String(active));
-    button.addEventListener("click", async () => {
-        const current = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
-        await setInStorage(
-            "blacklist",
-            active
-                ? removeBlacklistEntry(current, listing.url)
-                : addBlacklistEntry(current, listing),
-        );
-    });
+    wireBlacklistToggle(button, listing, active);
     body.append(button);
 
     card.append(body);
@@ -264,8 +332,12 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
         }
     }
 
+    const template = container.querySelector<HTMLElement>(
+        '[data-testid="listing-card-container"]:not([data-edf-blacklist-row="true"])',
+    );
+
     list.replaceChildren(
-        ...entries.map(entry => createBlacklistRow(entry, !entry.removedAt)),
+        ...entries.map(entry => createBlacklistRow(entry, !entry.removedAt, template ?? undefined)),
     );
 }
 

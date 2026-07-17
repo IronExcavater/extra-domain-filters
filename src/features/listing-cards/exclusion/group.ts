@@ -1,4 +1,4 @@
-import { replaceWithBinIcon, replaceWithChevronIcon, replaceWithEyeIcon } from "../../../shared/ui/icons";
+import { replaceWithChevronIcon, replaceWithEyeIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 import { getListingUrl, getTitle, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 import { resolveExclusionAction } from "./row";
 
@@ -39,7 +39,7 @@ function createMemberRow(member: GroupMember): HTMLElement {
     icon.setAttribute("aria-hidden", "true");
     icon.setAttribute("width", "16");
     icon.setAttribute("height", "16");
-    (member.reason === "blacklisted" ? replaceWithBinIcon : replaceWithEyeIcon)(icon);
+    (member.reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
 
     const address = document.createElement("span");
     address.className = "edf-exclusion-group-member-address";
