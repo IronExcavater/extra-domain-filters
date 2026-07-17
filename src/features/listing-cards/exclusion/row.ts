@@ -29,14 +29,18 @@ export function getExclusionSummaryText(card: Element, reason: ActiveReason): st
     return count > 1 ? `${count} properties filtered out` : `Filtered out: ${title}`;
 }
 
-export async function resolveExclusionAction(url: string, reason: ActiveReason): Promise<void> {
+export async function resolveExclusionAction(url: string | readonly string[], reason: ActiveReason): Promise<void> {
     if (reason === "filtered") {
-        reveal(url);
+        for (const currentUrl of [url].flat()) reveal(currentUrl);
         return;
     }
 
     const current = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
-    await setInStorage("blacklist", removeBlacklistEntry(current, url));
+    const urls = [url].flat();
+    await setInStorage(
+        "blacklist",
+        urls.reduce((entries, currentUrl) => removeBlacklistEntry(entries, currentUrl), current),
+    );
 }
 
 export function getExclusionRow(card: Element): HTMLElement {
@@ -69,7 +73,11 @@ export function getExclusionRow(card: Element): HTMLElement {
     return row;
 }
 
-export function updateExclusionRow(card: Element, url: string, reason: ActiveReason): void {
+export function updateExclusionRow(
+    card: Element,
+    url: string | readonly string[],
+    reason: ActiveReason,
+): void {
     const row = getExclusionRow(card);
     const text = row.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-row-text"]');
     const button = row.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');

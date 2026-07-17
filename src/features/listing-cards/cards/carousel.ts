@@ -95,12 +95,19 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
     const sourceButton = carouselCard.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]');
     if (!sourceButton) return;
 
-    const button = cloneBlacklistButton(sourceButton);
+    const controls = findCarouselControls(carouselCard);
+    const button = controls?.sourceButton
+        ? controls.sourceButton.cloneNode(true) as HTMLButtonElement
+        : cloneBlacklistButton(sourceButton);
+
+    button.type = "button";
+    button.disabled = false;
+    button.removeAttribute("aria-disabled");
+    button.setAttribute("data-testid", "listing-card-blacklist");
     button.dataset.blacklistScope = "carousel";
     button.classList.add("edf-carousel-blacklist-button");
     button.ariaLabel = "Blacklist featured properties";
     button.title = "Blacklist featured properties";
-    const controls = findCarouselControls(carouselCard);
     if (controls) {
         if (controls.sourceButton) {
             button.dataset.edfBaseClass = controls.sourceButton.className;
@@ -111,7 +118,9 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
         controls.controls.append(button);
     }
     else carouselCard.prepend(button);
-    watchShortlistButtonClass(sourceButton, button, context);
+    if (!controls?.sourceButton) {
+        watchShortlistButtonClass(sourceButton, button, context);
+    }
 
     button.addEventListener("click", async event => {
         event.preventDefault();

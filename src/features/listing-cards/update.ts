@@ -15,7 +15,6 @@ import {
     PROJECT_MARKER_SELECTOR,
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "./dom/card";
-import { updateExclusionGroups } from "./exclusion/group";
 import {
     applyExclusionState,
     ensureHideAgainAffordance,
@@ -46,6 +45,15 @@ function isProjectChild(card: Element): boolean {
 
 function markPreferenceMatch(card: Element, active: boolean): void {
     (card as HTMLElement).style.outline = active ? "3px solid #fc0" : "";
+}
+
+function getProjectActionUrls(card: Element, projectUrl: string): string[] {
+    return [
+        projectUrl,
+        ...[...card.querySelectorAll<HTMLElement>(CAROUSEL_CHILD_SELECTOR)]
+            .map(getChildListingUrl)
+            .filter((url): url is string => url !== undefined),
+    ];
 }
 
 export function updateListingCards(
@@ -90,7 +98,13 @@ export function updateListingCards(
                 }
 
                 if (reason !== "none") {
-                    updateExclusionRow(card, url, reason);
+                    updateExclusionRow(
+                        card,
+                        button.dataset.blacklistScope === "project"
+                            ? getProjectActionUrls(card, url)
+                            : url,
+                        reason,
+                    );
                 }
             }
 
@@ -110,5 +124,4 @@ export function updateListingCards(
         syncCarouselBulkButtonState(carouselCard, blacklist);
     }
 
-    if (showBlacklistedView) updateExclusionGroups();
 }
