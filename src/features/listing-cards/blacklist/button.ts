@@ -2,6 +2,7 @@ import { PageContext } from "../../../shared/platform/router";
 import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 
 const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
+const INACTIVE_SHORTLIST_CLASS_KEY = "edfInactiveShortlistClass";
 
 export function isShortlisted(shortlistButton: HTMLButtonElement): boolean {
     return (
@@ -10,9 +11,19 @@ export function isShortlisted(shortlistButton: HTMLButtonElement): boolean {
     );
 }
 
+function getDocumentInactiveShortlistClass(): string | undefined {
+    return document.documentElement.dataset[INACTIVE_SHORTLIST_CLASS_KEY] ??
+        document.querySelector<HTMLButtonElement>('[data-testid="listing-card-shortlist"]')?.className;
+}
+
+function setDocumentInactiveShortlistClass(className: string): void {
+    document.documentElement.dataset[INACTIVE_SHORTLIST_CLASS_KEY] = className;
+}
+
 export function captureNeutralShortlistClass(button: HTMLButtonElement, shortlistButton: HTMLButtonElement): void {
     if (!isShortlisted(shortlistButton)) {
         button.dataset.edfBaseClass = shortlistButton.className;
+        setDocumentInactiveShortlistClass(shortlistButton.className);
     }
 }
 
@@ -61,7 +72,13 @@ export function cloneBlacklistButton(shortlistButton: HTMLButtonElement): HTMLBu
     button.tabIndex = 0;
     button.removeAttribute("aria-disabled");
     button.setAttribute("data-testid", "listing-card-blacklist");
-    button.dataset.edfBaseClass = shortlistButton.className;
+    button.dataset.edfBaseClass = isShortlisted(shortlistButton)
+        ? getDocumentInactiveShortlistClass() ?? shortlistButton.className
+        : shortlistButton.className;
+    if (!isShortlisted(shortlistButton)) {
+        setDocumentInactiveShortlistClass(shortlistButton.className);
+    }
+    button.className = button.dataset.edfBaseClass;
     button.classList.add("edf-blacklist-button");
     button.classList.remove("active", "is-active", "isActive", "shortlisted");
 

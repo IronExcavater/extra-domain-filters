@@ -66,7 +66,9 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
         ?.parentElement;
 
     const list = document.createElement("div");
-    list.className = "edf-blacklist-row-list";
+    list.className = realList instanceof HTMLElement
+        ? `${realList.className} edf-blacklist-row-list`
+        : "edf-blacklist-row-list edf-blacklist-row-list-fallback";
     list.setAttribute("data-testid", "extra-domain-filters-blacklist-list");
 
     if (realList instanceof HTMLElement) {
@@ -124,6 +126,33 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
     return controls;
 }
 
+function normalizeStatus(value: string | undefined): string | undefined {
+    return value?.trim().toLowerCase();
+}
+
+function getStatusClassMap(container: HTMLElement): Map<string, string> {
+    const entries = [...container.querySelectorAll<HTMLElement>('[data-testid="listing-card-tag"] span')]
+        .map(span => {
+            const status = normalizeStatus(span.textContent ?? undefined);
+            return status ? [status, span.className] as const : undefined;
+        })
+        .filter((entry): entry is readonly [string, string] => entry !== undefined);
+
+    return new Map(entries);
+}
+
+function getDomainButtonClass(container: HTMLElement): string | undefined {
+    return container.querySelector<HTMLButtonElement>(
+        '[data-testid="listing-card-buttons-wrapper"] button',
+    )?.className;
+}
+
+function getInactiveShortlistButtonClass(container: HTMLElement): string | undefined {
+    return container.querySelector<HTMLButtonElement>(
+        '[data-testid="listing-card-shortlist"]:not([data-testid$="shortlisted"])',
+    )?.className;
+}
+
 function createFeatureBadge(
     replace: (svg: SVGSVGElement) => void,
     value: string | undefined,
@@ -168,6 +197,8 @@ function createShortlistStyledBlacklistRow(
     template: HTMLElement,
     entry: BlacklistEntry,
     active: boolean,
+    statusClasses: ReadonlyMap<string, string>,
+    inactiveButtonClass: string | undefined,
 ): HTMLElement {
     const listing = getBlacklistListing(entry);
     const card = template.cloneNode(true) as HTMLElement;
@@ -188,7 +219,11 @@ function createShortlistStyledBlacklistRow(
 
     updateText(card.querySelector('[data-testid="address-wrapper"]'), listing.displayAddress ?? listing.title);
     updateText(card.querySelector('[data-testid="listing-card-price"]'), listing.price);
-    updateText(card.querySelector('[data-testid="listing-card-tag"]'), listing.status);
+    const statusTag = card.querySelector<HTMLElement>('[data-testid="listing-card-tag"]');
+    updateText(statusTag, listing.status);
+    const statusClass = statusClasses.get(normalizeStatus(listing.status) ?? "");
+    const statusLabel = statusTag?.querySelector<HTMLElement>("span");
+    if (statusClass && statusLabel) statusLabel.className = statusClass;
 
     const featureValues = [
         listing.features?.bedrooms,
@@ -202,6 +237,7 @@ function createShortlistStyledBlacklistRow(
     const button = card.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]') ??
         document.createElement("button");
     button.type = "button";
+    if (inactiveButtonClass) button.className = inactiveButtonClass;
     button.setAttribute("data-testid", "extra-domain-filters-blacklist-toggle");
     button.ariaLabel = active ? "Unblacklist" : "Re-blacklist";
     button.title = button.ariaLabel;
@@ -217,9 +253,17 @@ function createShortlistStyledBlacklistRow(
     return card;
 }
 
-function createBlacklistRow(entry: BlacklistEntry, active: boolean, template?: HTMLElement): HTMLElement {
+function createBlacklistRow(
+    entry: BlacklistEntry,
+    active: boolean,
+    template: HTMLElement | undefined,
+    statusClasses: ReadonlyMap<string, string>,
+    inactiveButtonClass: string | undefined,
+): HTMLElement {
     const listing = getBlacklistListing(entry);
-    if (template) return createShortlistStyledBlacklistRow(template, entry, active);
+    if (template) {
+        return createShortlistStyledBlacklistRow(template, entry, active, statusClasses, inactiveButtonClass);
+    }
 
     const card = document.createElement("div");
     card.className = "edf-blacklist-card";
@@ -316,7 +360,9 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
 
     const clearButton = document.createElement("button");
     clearButton.type = "button";
-    clearButton.className = "edf-blacklist-clear-button";
+    clearButton.className = [getDomainButtonClass(container), "edf-blacklist-clear-button"]
+        .filter(Boolean)
+        .join(" ");
     clearButton.textContent = "Clear all";
     clearButton.disabled = all.length === 0;
     clearButton.addEventListener("click", () => {
@@ -335,9 +381,17 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
     const template = container.querySelector<HTMLElement>(
         '[data-testid="listing-card-container"]:not([data-edf-blacklist-row="true"])',
     );
+    const statusClasses = getStatusClassMap(container);
+    const inactiveButtonClass = getInactiveShortlistButtonClass(container);
 
     list.replaceChildren(
-        ...entries.map(entry => createBlacklistRow(entry, !entry.removedAt, template ?? undefined)),
+        ...entries.map(entry => createBlacklistRow(
+            entry,
+            !entry.removedAt,
+            template ?? undefined,
+            statusClasses,
+            inactiveButtonClass,
+        )),
     );
 }
 
