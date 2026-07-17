@@ -385,3 +385,25 @@
 .edf-exclusion-group-detail {
     flex: 1 0 100%;
 }
+
+li[data-testid="topspot"] {
+    position: relative !important;
+}
+
+.edf-carousel-blacklist-button {
+    color: #fff !important;
+    position: absolute !important;
+    right: 12px !important;
+    top: 12px !important;
+    z-index: 2 !important;
+}
+
+.edf-carousel-blacklist-button:hover {
+    color: #fc0 !important;
+}
+
+.edf-carousel-blacklist-button:active,
+.edf-carousel-blacklist-button[data-active="true"],
+.edf-carousel-blacklist-button[aria-pressed="true"] {
+    color: #c90 !important;
+}
