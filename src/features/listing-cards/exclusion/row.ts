@@ -82,8 +82,11 @@ export function updateExclusionRow(
     const text = row.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-row-text"]');
     const button = row.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');
     const icon = button?.querySelector("svg");
+    const urls = [url].flat();
 
     if (text) text.textContent = getExclusionSummaryText(card, reason);
+    row.dataset.exclusionReason = reason;
+    row.dataset.exclusionUrls = JSON.stringify(urls);
 
     if (icon) (reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
 

@@ -1,4 +1,3 @@
-import { PageContext } from "../../../shared/platform/router";
 import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 
 const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
@@ -28,13 +27,6 @@ export function captureNeutralShortlistClass(button: HTMLButtonElement, shortlis
 }
 
 export function updateButton(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {
-    const extensionClasses = [...button.classList].filter(className => className.startsWith("edf-"));
-    const baseClass = button.dataset.edfBaseClass;
-
-    if (baseClass) {
-        button.className = [baseClass, ...extensionClasses].join(" ");
-    }
-
     const icon = button.querySelector("svg");
     if (icon) (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
 
@@ -42,19 +34,6 @@ export function updateButton(button: HTMLButtonElement, active: boolean, text = 
     button.ariaLabel = active ? "Remove from blacklist" : text;
     button.title = active ? "Remove from blacklist" : text;
     button.setAttribute("aria-pressed", String(active));
-}
-
-export function watchShortlistButtonClass(
-    shortlistButton: HTMLButtonElement,
-    button: HTMLButtonElement,
-    context: PageContext,
-): void {
-    const observer = new MutationObserver(() => {
-        captureNeutralShortlistClass(button, shortlistButton);
-        updateButton(button, button.dataset.active === "true");
-    });
-    observer.observe(shortlistButton, { attributeFilter: ["class"] });
-    context.signal.addEventListener("abort", () => observer.disconnect(), { once: true });
 }
 
 export function removeFromShortlist(shortlistButton: HTMLButtonElement): void {

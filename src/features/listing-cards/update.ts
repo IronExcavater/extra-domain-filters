@@ -15,6 +15,7 @@ import {
     PROJECT_MARKER_SELECTOR,
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "./dom/card";
+import { compactExcludedListingCards } from "./exclusion/compact";
 import {
     applyExclusionState,
     ensureHideAgainAffordance,
@@ -124,4 +125,5 @@ export function updateListingCards(
         syncCarouselBulkButtonState(carouselCard, blacklist);
     }
 
+    compactExcludedListingCards();
 }

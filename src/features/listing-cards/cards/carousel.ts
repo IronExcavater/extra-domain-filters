@@ -1,17 +1,14 @@
 import { isBlacklisted, type BlacklistEntry } from "../../../domain/matching";
-import { createClaimTracker } from "../../../shared/dom/claim";
 import { PageContext } from "../../../shared/platform/router";
 import { replaceWithBinIcon } from "../../../shared/ui/icons";
 import { toggleBundleBlacklist } from "../blacklist/bundle";
-import { cloneBlacklistButton, updateButton, watchShortlistButtonClass } from "../blacklist/button";
+import { cloneBlacklistButton, updateButton } from "../blacklist/button";
 import {
     CAROUSEL_CHILD_SELECTOR,
     getChildListingUrl,
     getListingSnapshot,
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "../dom/card";
-
-const claimTopspotCard = createClaimTracker<HTMLElement>();
 
 function findChildSlides(carouselCard: HTMLElement): HTMLElement[] {
     return [...carouselCard.querySelectorAll<HTMLElement>(CAROUSEL_CHILD_SELECTOR)];
@@ -40,7 +37,9 @@ function setSlideExcluded(slide: HTMLElement, excluded: boolean): void {
 }
 
 function getFeaturedControlsButton(): HTMLButtonElement | undefined {
-    return document.querySelector<HTMLButtonElement>('button[aria-label="Previous property"]') ?? undefined;
+    return document.querySelector<HTMLButtonElement>(
+        'button[aria-label="Previous property"], button[aria-label="Previous"]',
+    ) ?? undefined;
 }
 
 function findCarouselControls(carouselCard: HTMLElement): { controls: HTMLElement; sourceButton?: HTMLButtonElement } | undefined {
@@ -90,12 +89,15 @@ export function updateCarouselCard(carouselCard: HTMLElement, blacklist: Blackli
 
 export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext): void {
     if (!carouselCard.matches(TOPSPOT_CAROUSEL_SELECTOR)) return;
-    if (!claimTopspotCard(carouselCard)) return;
 
     const sourceButton = carouselCard.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]');
     if (!sourceButton) return;
 
     const controls = findCarouselControls(carouselCard);
+    const existingButton = controls?.controls.querySelector('.edf-carousel-blacklist-button') ??
+        carouselCard.querySelector('.edf-carousel-blacklist-button');
+    if (existingButton) return;
+
     const button = controls?.sourceButton
         ? controls.sourceButton.cloneNode(true) as HTMLButtonElement
         : cloneBlacklistButton(sourceButton);
@@ -105,7 +107,6 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
     button.removeAttribute("aria-disabled");
     button.setAttribute("data-testid", "listing-card-blacklist");
     button.dataset.blacklistScope = "carousel";
-    button.classList.add("edf-carousel-blacklist-button");
     button.ariaLabel = "Blacklist featured properties";
     button.title = "Blacklist featured properties";
     if (controls) {
@@ -115,11 +116,13 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
             const icon = button.querySelector("svg");
             if (icon) replaceWithBinIcon(icon);
         }
+        else {
+            button.classList.add("edf-carousel-blacklist-button");
+        }
         controls.controls.append(button);
-    }
-    else carouselCard.prepend(button);
-    if (!controls?.sourceButton) {
-        watchShortlistButtonClass(sourceButton, button, context);
+    } else {
+        button.classList.add("edf-carousel-blacklist-button");
+        carouselCard.prepend(button);
     }
 
     button.addEventListener("click", async event => {

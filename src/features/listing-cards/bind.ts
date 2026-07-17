@@ -1,9 +1,9 @@
 import { type BlacklistEntry } from "../../domain/matching";
-import { createClaimTracker } from "../../shared/dom/claim";
+import { queueForegroundContrastSync } from "../../shared/dom/contrast";
 import { PageContext } from "../../shared/platform/router";
 import { getFromStorage } from "../../shared/platform/storage";
 import { getSettings } from "../../shared/state/settings";
-import { cloneBlacklistButton, insertBlacklistButton, watchShortlistButtonClass } from "./blacklist/button";
+import { cloneBlacklistButton, insertBlacklistButton } from "./blacklist/button";
 import { toggleBlacklist } from "./blacklist/toggle";
 import { bindCarouselCard } from "./cards/carousel";
 import { bindProjectCard } from "./cards/project";
@@ -17,8 +17,6 @@ import {
 } from "./dom/card";
 import { updateListingCards } from "./update";
 
-const claimShortlistButton = createClaimTracker<HTMLButtonElement>();
-
 function bindBlacklistButton(
     shortlistButton: HTMLButtonElement,
     context: PageContext,
@@ -29,10 +27,11 @@ function bindBlacklistButton(
 
     const url = getListingUrl(shortlistButton, card);
     if (!url) return;
+    if (shortlistButton.parentElement?.querySelector(".edf-blacklist-button")) return;
 
     const button = cloneBlacklistButton(shortlistButton);
     insertBlacklistButton(shortlistButton, button);
-    watchShortlistButtonClass(shortlistButton, button, context);
+    queueForegroundContrastSync(button, { scope: card });
 
     button.addEventListener("click", async event => {
         event.preventDefault();
@@ -54,7 +53,6 @@ export async function injectListingCards(
     }
 
     for (const shortlistButton of document.querySelectorAll<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR)) {
-        if (!claimShortlistButton(shortlistButton)) continue;
         bindBlacklistButton(shortlistButton, context);
     }
 

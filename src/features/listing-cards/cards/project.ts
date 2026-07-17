@@ -1,11 +1,10 @@
 import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../../../domain/matching";
-import { createClaimTracker } from "../../../shared/dom/claim";
 import { queueForegroundContrastSync } from "../../../shared/dom/contrast";
 import { PageContext } from "../../../shared/platform/router";
 import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
 import { replaceWithUnbinIcon } from "../../../shared/ui/icons";
 import { toggleBundleBlacklist, type BundleMember } from "../blacklist/bundle";
-import { cloneBlacklistButton, updateButton, watchShortlistButtonClass } from "../blacklist/button";
+import { cloneBlacklistButton, updateButton } from "../blacklist/button";
 import {
     getChildListingUrl,
     getListingSnapshot,
@@ -14,8 +13,6 @@ import {
     SHORTLIST_BUTTON_SELECTOR,
 } from "../dom/card";
 import { getExclusionRow } from "../exclusion/row";
-
-const claimProjectCard = createClaimTracker<HTMLElement>();
 
 function getProjectUrl(projectCard: HTMLElement): string | undefined {
     const anchor = projectCard.querySelector<HTMLAnchorElement>('a[href*="/project/"]');
@@ -133,18 +130,18 @@ function insertProjectBlacklistButton(details: HTMLElement, button: HTMLButtonEl
 
 export function bindProjectCard(projectCard: HTMLElement, context: PageContext): void {
     if (!projectCard.querySelector(PROJECT_MARKER_SELECTOR)) return;
+    void context;
 
     const sourceButton = projectCard.querySelector<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR);
     const details = projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR);
     if (!sourceButton || !details || !getProjectUrl(projectCard)) return;
-    if (!claimProjectCard(projectCard)) return;
+    if (projectCard.querySelector(".edf-project-blacklist-button")) return;
 
     const button = cloneBlacklistButton(sourceButton);
     button.dataset.blacklistScope = "project";
     button.classList.add("edf-project-blacklist-button");
     insertProjectBlacklistButton(details, button);
     queueForegroundContrastSync(button, { scope: projectCard });
-    watchShortlistButtonClass(sourceButton, button, context);
 
     button.addEventListener("click", async event => {
         event.preventDefault();
