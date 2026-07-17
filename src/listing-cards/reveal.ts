@@ -2,9 +2,14 @@
 // revisiting the search later loses every override and filtered listings go back to being
 // filtered — this is intentional (see design spec's "Session-only reveal tracking" section).
 const revealedUrls = new Set<string>();
+export const REVEAL_CHANGE_EVENT = "edf:listing-reveal-change";
 
 function normalize(url: string): string {
 	return url.replace(/\/+$/, "");
+}
+
+function notifyRevealChanged(): void {
+	window.dispatchEvent(new Event(REVEAL_CHANGE_EVENT));
 }
 
 export function isRevealed(url: string): boolean {
@@ -13,8 +18,10 @@ export function isRevealed(url: string): boolean {
 
 export function reveal(url: string): void {
 	revealedUrls.add(normalize(url));
+	notifyRevealChanged();
 }
 
 export function unreveal(url: string): void {
 	revealedUrls.delete(normalize(url));
+	notifyRevealChanged();
 }

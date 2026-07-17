@@ -1,5 +1,6 @@
 import { createClaimTracker } from "../core/claim";
 import { queueForegroundContrastSync } from "../core/contrast";
+import { replaceWithBinIcon } from "../core/icons";
 import { PageContext } from "../core/router";
 import { getFromStorage, setInStorage } from "../core/storage";
 import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../matching";
@@ -73,7 +74,10 @@ export function updateProjectBlacklistSummary(
 
     const button = row.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');
     if (button) {
+        const icon = button.querySelector("svg");
+        if (icon) replaceWithBinIcon(icon);
         button.lastChild!.textContent = "Unblacklist all";
+        button.ariaLabel = "Unblacklist all";
         button.onclick = async event => {
             event.preventDefault();
             event.stopPropagation();

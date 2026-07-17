@@ -34,16 +34,25 @@ function setSlideExcluded(slide: HTMLElement, excluded: boolean): void {
     window.dispatchEvent(new Event("resize"));
 }
 
+function isSlideExcluded(slide: HTMLElement, url: string, blacklist: BlacklistEntry[]): boolean {
+    return (
+        isBlacklisted(blacklist, url) ||
+        slide.dataset.exclusionReason === "blacklisted" ||
+        slide.dataset.exclusionReason === "filtered"
+    );
+}
+
 export function updateCarouselCard(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
     const members = findChildSlides(carouselCard)
         .map(slide => ({ slide, url: getChildListingUrl(slide) }))
         .filter((entry): entry is { slide: HTMLElement; url: string } => entry.url !== undefined);
 
     for (const { slide, url } of members) {
-        setSlideExcluded(slide, isBlacklisted(blacklist, url));
+        setSlideExcluded(slide, isSlideExcluded(slide, url, blacklist));
     }
 
-    const allExcluded = members.length > 0 && members.every(({ url }) => isBlacklisted(blacklist, url));
+    const allExcluded = members.length > 0 &&
+        members.every(({ slide, url }) => isSlideExcluded(slide, url, blacklist));
     carouselCard.hidden = allExcluded;
 }
 

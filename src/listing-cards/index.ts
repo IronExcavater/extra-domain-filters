@@ -26,6 +26,7 @@ import {
     updateExclusionRow,
 } from "./exclusion-row";
 import { bindProjectCard, updateProjectBlacklistSummary } from "./project";
+import { REVEAL_CHANGE_EVENT } from "./reveal";
 import { toggleBlacklist } from "./toggle";
 
 const TOPSPOT_CAROUSEL_SELECTOR = 'li[data-testid="topspot"]';
@@ -229,6 +230,7 @@ export function bindListingCards(
     };
     const unwatchBlacklist = onStorageChange<BlacklistEntry[]>("blacklist", refresh);
     const unwatchSettings = onStorageChange("settings", refresh);
+    window.addEventListener(REVEAL_CHANGE_EVENT, refresh, { signal: context.signal });
 
     context.signal.addEventListener("abort", () => {
         unwatchBlacklist();
