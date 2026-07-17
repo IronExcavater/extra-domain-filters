@@ -1,6 +1,5 @@
 import { createClaimTracker } from "../core/claim";
 import { queueForegroundContrastSync } from "../core/contrast";
-import { replaceWithBinIcon } from "../core/icons";
 import { PageContext } from "../core/router";
 import { getFromStorage, setInStorage } from "../core/storage";
 import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../matching";
@@ -11,40 +10,23 @@ import {
     PROJECT_MARKER_SELECTOR,
     SHORTLIST_BUTTON_SELECTOR,
 } from "./card";
-import { getSummary } from "./summary";
+import { getExclusionRow } from "./exclusion-row";
 import { toggleBlacklist } from "./toggle";
 
 const claimProjectCard = createClaimTracker<HTMLElement>();
-const PROJECT_SUMMARY_SELECTOR = '[data-testid="listing-card-project-blacklist-summary"]';
 
-function getProjectSummary(projectCard: HTMLElement, projectHeader: HTMLElement): HTMLElement {
-    const existing = projectCard.querySelector<HTMLElement>(PROJECT_SUMMARY_SELECTOR);
-    if (existing) return existing;
-
-    const summary = document.createElement("div");
-    const text = document.createElement("span");
-    const button = document.createElement("button");
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-    summary.className = "edf-blacklist-summary edf-project-blacklist-summary";
-    summary.setAttribute("data-testid", "listing-card-project-blacklist-summary");
-
-    text.className = "edf-blacklist-summary-text";
-    text.setAttribute("data-testid", "listing-card-project-blacklist-summary-text");
-
-    icon.setAttribute("aria-hidden", "true");
-    icon.setAttribute("width", "18");
-    icon.setAttribute("height", "18");
-    replaceWithBinIcon(icon);
-
-    button.type = "button";
-    button.className = "edf-blacklist-summary-button";
-    button.append(icon, "Unblacklist");
-
-    summary.append(text, button);
-    projectHeader.after(summary);
-
-    return summary;
+// Reuses exclusion-row.ts's markup for the aggregate bar instead of building bespoke DOM, per
+// the design spec — this sits on the project card itself (not per-child), right after the
+// project header, since project children are hidden individually with one combined restore
+// action rather than each getting their own row. getExclusionRow() itself prepends a freshly
+// created row to the very start of the card, so this moves it into position right after
+// (idempotent — a no-op once it's already there).
+function getProjectAggregateRow(projectCard: HTMLElement, projectHeader: HTMLElement): HTMLElement {
+    const row = getExclusionRow(projectCard);
+    if (row.previousElementSibling !== projectHeader) {
+        projectHeader.after(row);
+    }
+    return row;
 }
 
 // Child listings within a project are hidden outright when blacklisted (no per-row collapsed
@@ -67,21 +49,23 @@ export function updateProjectBlacklistSummary(
         child.hidden = blacklistedChildren.has(child);
     }
 
+    const existingRow = projectCard.querySelector('[data-testid="listing-card-exclusion-row"]');
     if (blacklistedUrls.length === 0) {
-        projectCard.querySelector(PROJECT_SUMMARY_SELECTOR)?.remove();
+        existingRow?.remove();
         return;
     }
 
-    const summary = getProjectSummary(projectCard, projectHeader);
-    const text = summary.querySelector<HTMLElement>('[data-testid="listing-card-project-blacklist-summary-text"]');
+    const row = getProjectAggregateRow(projectCard, projectHeader);
+    const text = row.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-row-text"]');
     if (text) {
         text.textContent = blacklistedUrls.length === 1
             ? "1 property blacklisted"
             : `${blacklistedUrls.length} properties blacklisted`;
     }
 
-    const button = summary.querySelector<HTMLButtonElement>('.edf-blacklist-summary-button');
+    const button = row.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');
     if (button) {
+        button.lastChild!.textContent = "Unblacklist all";
         button.onclick = async event => {
             event.preventDefault();
             event.stopPropagation();
@@ -134,8 +118,8 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
     queueForegroundContrastSync(button, { scope: projectCard });
     watchShortlistButtonClass(sourceButton, button, context);
 
-    getSummary(projectCard)
-        .querySelector<HTMLButtonElement>('[data-testid="listing-card-blacklist-restore"]')
+    getExclusionRow(projectCard)
+        .querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]')
         ?.addEventListener("click", event => {
             event.preventDefault();
             event.stopPropagation();
