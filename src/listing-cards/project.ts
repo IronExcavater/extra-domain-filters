@@ -10,7 +10,7 @@ import {
     PROJECT_MARKER_SELECTOR,
     SHORTLIST_BUTTON_SELECTOR,
 } from "./card";
-import { getExclusionRow, resolveExclusionAction } from "./exclusion-row";
+import { getExclusionRow } from "./exclusion-row";
 import { toggleBlacklist } from "./toggle";
 
 const claimProjectCard = createClaimTracker<HTMLElement>();
@@ -126,21 +126,17 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
     queueForegroundContrastSync(button, { scope: projectCard });
     watchShortlistButtonClass(sourceButton, button, context);
 
-    // resolveExclusionAction (not toggleBlacklist) deliberately: this listener is registered once
-    // here but the row it's on is shared with updateProjectBlacklistSummary's own per-pass
-    // handler for the unrelated "N children individually blacklisted" case (same physical
-    // button — getExclusionRow returns the same node every call). Both listeners fire on every
-    // click regardless of which case currently owns the row's visible text. toggleBlacklist would
-    // ADD the project to the blacklist if it wasn't already (i.e. whenever the children-aggregate
-    // case owns the row) — resolveExclusionAction only ever removes, so firing in the wrong case
-    // is a harmless no-op instead of an incorrect side effect.
-    getExclusionRow(projectCard)
-        .querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]')
-        ?.addEventListener("click", event => {
-            event.preventDefault();
-            event.stopPropagation();
-            void resolveExclusionAction(url, "blacklisted");
-        });
+    // No listener wired here for the exclusion row's restore button, unlike the project's own
+    // blacklist button just below: getExclusionRow returns the same physical button that
+    // updateProjectBlacklistSummary also re-wires every pass for the unrelated "N children
+    // individually blacklisted" case, and index.ts's generic per-card handling separately
+    // re-wires it every pass too for the "project itself is blacklisted" case (via
+    // updateExclusionRow, same pattern regular listing cards use). A one-time addEventListener
+    // registered here would fire on EVERY click alongside whichever of those two owns the row
+    // that pass — for the whole-project case specifically, that previously meant a stray
+    // toggleBlacklist call could re-add the project while the click was really meant to restore
+    // individual children. Leaving this button's wiring entirely to the per-pass reassignment
+    // (which always replaces, never stacks) keeps exactly one handler live at a time.
 
     button.addEventListener("click", async event => {
         event.preventDefault();
