@@ -10,7 +10,7 @@ import {
     PROJECT_MARKER_SELECTOR,
     SHORTLIST_BUTTON_SELECTOR,
 } from "./card";
-import { getExclusionRow } from "./exclusion-row";
+import { getExclusionRow, resolveExclusionAction } from "./exclusion-row";
 import { toggleBlacklist } from "./toggle";
 
 const claimProjectCard = createClaimTracker<HTMLElement>();
@@ -36,6 +36,7 @@ export function updateProjectBlacklistSummary(
     projectCard: HTMLElement,
     projectHeader: HTMLElement,
     blacklist: BlacklistEntry[],
+    projectExcluded: boolean,
 ): void {
     const children = [...projectCard.querySelectorAll<HTMLElement>('[data-testid="listing-card-child-listing"]')];
     const blacklistedUrls = children
@@ -48,6 +49,13 @@ export function updateProjectBlacklistSummary(
     for (const child of children) {
         child.hidden = blacklistedChildren.has(child);
     }
+
+    // When the project itself is excluded, index.ts's generic per-card handling already owns
+    // this row (showing "restore the whole project") and has collapsed the card around it —
+    // individual children's state is moot while the whole card is hidden, and touching the row
+    // here — even just to remove it — would blank out a row that pass already populated,
+    // since both run synchronously within the same update.
+    if (projectExcluded) return;
 
     const existingRow = projectCard.querySelector('[data-testid="listing-card-exclusion-row"]');
     if (blacklistedUrls.length === 0) {
@@ -118,12 +126,20 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
     queueForegroundContrastSync(button, { scope: projectCard });
     watchShortlistButtonClass(sourceButton, button, context);
 
+    // resolveExclusionAction (not toggleBlacklist) deliberately: this listener is registered once
+    // here but the row it's on is shared with updateProjectBlacklistSummary's own per-pass
+    // handler for the unrelated "N children individually blacklisted" case (same physical
+    // button — getExclusionRow returns the same node every call). Both listeners fire on every
+    // click regardless of which case currently owns the row's visible text. toggleBlacklist would
+    // ADD the project to the blacklist if it wasn't already (i.e. whenever the children-aggregate
+    // case owns the row) — resolveExclusionAction only ever removes, so firing in the wrong case
+    // is a harmless no-op instead of an incorrect side effect.
     getExclusionRow(projectCard)
         .querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]')
         ?.addEventListener("click", event => {
             event.preventDefault();
             event.stopPropagation();
-            void toggleBlacklist(projectCard, url, context, sourceButton, button);
+            void resolveExclusionAction(url, "blacklisted");
         });
 
     button.addEventListener("click", async event => {
