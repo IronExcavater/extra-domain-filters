@@ -121,8 +121,17 @@ function getFeature(card: Element, pattern: RegExp): string | undefined {
     return undefined;
 }
 
-export function getListingSnapshot(card: Element, url: string): ListingSnapshot {
+interface ListingSnapshotOptions {
+    includeThumbnail?: boolean;
+}
+
+export function getListingSnapshot(
+    card: Element,
+    url: string,
+    options: ListingSnapshotOptions = {},
+): ListingSnapshot {
     const title = getTitle(card);
+    const includeThumbnail = options.includeThumbnail ?? true;
 
     return {
         url,
@@ -138,7 +147,7 @@ export function getListingSnapshot(card: Element, url: string): ListingSnapshot 
             ?.textContent?.trim(),
         status: card.querySelector('[data-testid="listing-card-tag"]')
             ?.textContent?.trim(),
-        thumbnailUrl: getThumbnailUrl(card),
+        thumbnailUrl: includeThumbnail ? getThumbnailUrl(card) : undefined,
     };
 }
 

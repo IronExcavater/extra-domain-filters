@@ -81,7 +81,11 @@ function updateExistingCards(
             const url = getListingUrl(button, card);
             if (!url) return;
 
-            const rawMatch = matchListing(getListingSnapshot(card, url), settings, blacklist);
+            const rawMatch = matchListing(
+                getListingSnapshot(card, url, { includeThumbnail: false }),
+                settings,
+                blacklist,
+            );
             const reason = resolveExclusionReason(rawMatch.exclusionReason, url);
 
             updateButton(button, reason === "blacklisted");
@@ -211,26 +215,25 @@ export function bindListingCards(
         });
     };
 
+    const cancelScheduledScan = (): void => {
+        if (scanFrame === undefined) return;
+
+        cancelAnimationFrame(scanFrame);
+        scanFrame = undefined;
+    };
+
     schedule();
 
     const observer = new MutationObserver(schedule);
     observer.observe(document.body, { childList: true, subtree: true });
     context.signal.addEventListener("abort", () => {
         observer.disconnect();
-        if (scanFrame !== undefined) {
-            cancelAnimationFrame(scanFrame);
-            scanFrame = undefined;
-        }
+        cancelScheduledScan();
     }, { once: true });
 
-    const refresh = (): void => {
-        void injectListingCards(context, showBlacklistedView).catch(error =>
-            context.logger.warn("Failed to refresh listing cards", error)
-        );
-    };
-    const unwatchBlacklist = onStorageChange<BlacklistEntry[]>("blacklist", refresh);
-    const unwatchSettings = onStorageChange("settings", refresh);
-    window.addEventListener(REVEAL_CHANGE_EVENT, refresh, { signal: context.signal });
+    const unwatchBlacklist = onStorageChange<BlacklistEntry[]>("blacklist", schedule);
+    const unwatchSettings = onStorageChange("settings", schedule);
+    window.addEventListener(REVEAL_CHANGE_EVENT, schedule, { signal: context.signal });
 
     context.signal.addEventListener("abort", () => {
         unwatchBlacklist();
