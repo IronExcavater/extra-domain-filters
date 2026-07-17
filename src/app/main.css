@@ -60,10 +60,20 @@
 
 [data-testid="listing-card-blacklist"]:not(.edf-project-blacklist-button, .edf-carousel-blacklist-button),
 .edf-blacklist-button:not(.edf-project-blacklist-button, .edf-carousel-blacklist-button) {
-    color: rgb(30 41 61 / 30%) !important;
+    align-items: center !important;
     background: none !important;
     border: 0 !important;
     box-shadow: none !important;
+    color: rgb(30 41 61 / 30%) !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.edf-blacklist-button[data-active="true"]:not(.edf-project-blacklist-button, .edf-carousel-blacklist-button) {
+    color: rgb(30 41 61 / 65%) !important;
 }
 
 .edf-blacklist-shortlist-placeholder {
