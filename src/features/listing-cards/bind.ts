@@ -1,8 +1,8 @@
-import { createClaimTracker } from "../../core/claim";
-import { PageContext } from "../../core/router";
-import { getSettings } from "../../core/settings";
-import { getFromStorage } from "../../core/storage";
-import { type BlacklistEntry } from "../../matching";
+import { type BlacklistEntry } from "../../domain/matching";
+import { createClaimTracker } from "../../shared/dom/claim";
+import { PageContext } from "../../shared/platform/router";
+import { getFromStorage } from "../../shared/platform/storage";
+import { getSettings } from "../../shared/state/settings";
 import { cloneBlacklistButton, insertBlacklistButton, watchShortlistButtonClass } from "./blacklist/button";
 import { toggleBlacklist } from "./blacklist/toggle";
 import { bindCarouselCard } from "./cards/carousel";

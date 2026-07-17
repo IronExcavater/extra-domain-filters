@@ -1,14 +1,14 @@
 import {
-    replaceWithBinIcon,
-    replaceWithEyeIcon,
-    replaceWithEyeOffIcon,
-} from "../../../core/icons";
-import { getFromStorage, setInStorage } from "../../../core/storage";
-import {
     removeBlacklistEntry,
     type BlacklistEntry,
     type ExclusionReason,
-} from "../../../matching";
+} from "../../../domain/matching";
+import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
+import {
+    replaceWithBinIcon,
+    replaceWithEyeIcon,
+    replaceWithEyeOffIcon,
+} from "../../../shared/ui/icons";
 import { getBlacklistCardKind, getPropertyCount, getTitle, type BlacklistCardKind } from "../dom/card";
 import { isRevealed, reveal, unreveal } from "./reveal";
 

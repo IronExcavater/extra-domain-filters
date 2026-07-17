@@ -1,5 +1,5 @@
-import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../core/icons";
-import { PageContext } from "../../../core/router";
+import { PageContext } from "../../../shared/platform/router";
+import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 
 const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
 

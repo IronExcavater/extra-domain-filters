@@ -1,4 +1,4 @@
-import type { MaybePromise } from "./types";
+import type { MaybePromise } from "../utils/types";
 
 export type Disposer = () => void;
 export type Unbind = Disposer;

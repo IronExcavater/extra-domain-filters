@@ -1,4 +1,4 @@
-import { Property } from "../core/property";
+import { Property } from "../../../shared/state/property";
 
 export function createTextProperty(
     input: HTMLInputElement,

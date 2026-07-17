@@ -1,6 +1,6 @@
-import { PageContext } from "../../core/router";
-import { onStorageChange } from "../../core/storage";
-import { type BlacklistEntry } from "../../matching";
+import { type BlacklistEntry } from "../../domain/matching";
+import { PageContext } from "../../shared/platform/router";
+import { onStorageChange } from "../../shared/platform/storage";
 import { injectListingCards } from "./bind";
 import { bindAdRemoval } from "./cards/ads";
 import { REVEAL_CHANGE_EVENT } from "./exclusion/reveal";

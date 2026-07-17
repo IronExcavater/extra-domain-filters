@@ -1,4 +1,4 @@
-import { replaceWithBinIcon, replaceWithChevronIcon, replaceWithEyeIcon } from "../../../core/icons";
+import { replaceWithBinIcon, replaceWithChevronIcon, replaceWithEyeIcon } from "../../../shared/ui/icons";
 import { getListingUrl, getTitle, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 import { resolveExclusionAction } from "./row";
 

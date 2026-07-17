@@ -1,13 +1,13 @@
-import { PageContext } from "../../../core/router";
-import { getFromStorage, setInStorage } from "../../../core/storage";
-import { resolveListingSnapshot } from "../../../listings/cache";
+import { resolveListingSnapshot } from "../../../domain/listings/cache";
 import {
     addBlacklistEntry,
     isBlacklisted,
     removeBlacklistEntry,
     type BlacklistEntry,
     type ListingSnapshot,
-} from "../../../matching";
+} from "../../../domain/matching";
+import { PageContext } from "../../../shared/platform/router";
+import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
 import { getListingSnapshot } from "../dom/card";
 import { removeFromShortlist, updateButton } from "./button";
 

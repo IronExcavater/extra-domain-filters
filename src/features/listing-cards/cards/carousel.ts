@@ -1,6 +1,6 @@
-import { createClaimTracker } from "../../../core/claim";
-import { PageContext } from "../../../core/router";
-import { isBlacklisted, type BlacklistEntry } from "../../../matching";
+import { isBlacklisted, type BlacklistEntry } from "../../../domain/matching";
+import { createClaimTracker } from "../../../shared/dom/claim";
+import { PageContext } from "../../../shared/platform/router";
 import { toggleBundleBlacklist } from "../blacklist/bundle";
 import { cloneBlacklistButton, watchShortlistButtonClass } from "../blacklist/button";
 import {

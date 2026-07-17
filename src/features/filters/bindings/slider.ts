@@ -1,5 +1,5 @@
-import { format } from "../core/number";
-import { Property, PropertyValue } from "../core/property";
+import { Property, PropertyValue } from "../../../shared/state/property";
+import { format } from "../../../shared/utils/number";
 
 export type SliderKind = 'number' | 'range';
 

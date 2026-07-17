@@ -1,5 +1,5 @@
+import { MaybePromise } from "../utils/types";
 import { Logger } from "./logging";
-import { MaybePromise } from "./types";
 
 export interface PageContext {
     url: URL;

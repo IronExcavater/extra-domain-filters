@@ -1,6 +1,6 @@
-import { PageMount } from "../core/router";
+import { bindFilterTriggers, injectFilters } from "../features/filters";
 import { bindListingCards } from "../features/listing-cards";
-import { bindFilterTriggers, injectFilters } from "../filters";
+import { PageMount } from "../shared/platform/router";
 
 const mountSearchPage: PageMount = async (context) => {
     bindFilterTriggers(

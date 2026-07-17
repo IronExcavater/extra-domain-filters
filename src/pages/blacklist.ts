@@ -1,12 +1,12 @@
-import { replaceWithBathIcon, replaceWithBedIcon, replaceWithBinIcon, replaceWithParkingIcon } from "../core/icons";
-import { PageMount } from "../core/router";
-import { getFromStorage, onStorageChange, setInStorage } from "../core/storage";
 import {
     addBlacklistEntry,
     getBlacklistListing,
     removeBlacklistEntry,
     type BlacklistEntry,
-} from "../matching";
+} from "../domain/matching";
+import { PageMount } from "../shared/platform/router";
+import { getFromStorage, onStorageChange, setInStorage } from "../shared/platform/storage";
+import { replaceWithBathIcon, replaceWithBedIcon, replaceWithBinIcon, replaceWithParkingIcon } from "../shared/ui/icons";
 
 function findShortlistContainer(): HTMLElement | undefined {
     const shortlistRoot = document.querySelector("#shortlist");

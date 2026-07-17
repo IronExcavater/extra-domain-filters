@@ -1,4 +1,4 @@
-import { getFromStorage, setInStorage } from "../core/storage";
+import { getFromStorage, setInStorage } from "../../shared/platform/storage";
 import type { ListingSnapshot } from "../matching";
 
 interface ListingCacheEntry {

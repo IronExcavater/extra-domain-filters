@@ -1,5 +1,5 @@
-import { Logger } from "../core/logging";
-import { PageContext } from "../core/router";
+import { Logger } from "../../shared/platform/logging";
+import { PageContext } from "../../shared/platform/router";
 import { cloneMenuItem } from "./clone/menuItem";
 
 export function bindAccountMenuTrigger(context: PageContext): void {

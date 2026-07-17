@@ -1,9 +1,9 @@
-import '../core/string.extensions';
-import '../core/math.extensions';
+import '../shared/utils/string.extensions';
+import '../shared/utils/math.extensions';
 
-import { bindAccountMenuTrigger } from "../account";
-import { createLogger } from "../core/logging";
-import { createRouter } from "../core/router";
+import { bindAccountMenuTrigger } from "../features/account";
+import { createLogger } from "../shared/platform/logging";
+import { createRouter } from "../shared/platform/router";
 import { routes } from "./routes";
 
 const logger = createLogger('Extra Domain Filters');

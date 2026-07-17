@@ -1,4 +1,4 @@
-import type { ListingSnapshot } from "../../../matching";
+import type { ListingSnapshot } from "../../../domain/matching";
 
 export const SHORTLIST_BUTTON_SELECTOR = '[data-testid^="listing-card-shortlist"]';
 export const BLACKLIST_BUTTON_SELECTOR = '[data-testid="listing-card-blacklist"]';

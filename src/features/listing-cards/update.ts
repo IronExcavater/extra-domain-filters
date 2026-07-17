@@ -1,5 +1,5 @@
-import { type Settings } from "../../core/settings";
-import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../matching";
+import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
+import { type Settings } from "../../shared/state/settings";
 import { isBundleActive } from "./blacklist/bundle";
 import { updateButton } from "./blacklist/button";
 import { updateCarouselCard } from "./cards/carousel";

@@ -1,5 +1,5 @@
-import { createCheckboxProperty } from "../../bindings/checkbox";
-import { Property } from "../../core/property";
+import { Property } from "../../../shared/state/property";
+import { createCheckboxProperty } from "../bindings/checkbox";
 
 export async function cloneCheckboxInput(
     source: HTMLDivElement,

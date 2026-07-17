@@ -1,9 +1,9 @@
 import type {
     BlacklistEntry,
     Settings,
-} from "../core/settings";
+} from "../../shared/state/settings";
 
-export type { BlacklistEntry } from "../core/settings";
+export type { BlacklistEntry } from "../../shared/state/settings";
 
 export interface PreferenceRule {
     id: string;

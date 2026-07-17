@@ -1,9 +1,9 @@
-import { createClaimTracker } from "../../../core/claim";
-import { queueForegroundContrastSync } from "../../../core/contrast";
-import { replaceWithBinIcon } from "../../../core/icons";
-import { PageContext } from "../../../core/router";
-import { getFromStorage, setInStorage } from "../../../core/storage";
-import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../../../matching";
+import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../../../domain/matching";
+import { createClaimTracker } from "../../../shared/dom/claim";
+import { queueForegroundContrastSync } from "../../../shared/dom/contrast";
+import { PageContext } from "../../../shared/platform/router";
+import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
+import { replaceWithBinIcon } from "../../../shared/ui/icons";
 import { cloneBlacklistButton, watchShortlistButtonClass } from "../blacklist/button";
 import { toggleBlacklist } from "../blacklist/toggle";
 import {

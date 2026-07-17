@@ -1,6 +1,6 @@
-import { STRATA_MAX, type ListingSnapshot } from "../matching";
-import { getFromStorage, setInStorage } from "./storage";
-import { applyPatch, type DeepPartial } from "./types";
+import { STRATA_MAX, type ListingSnapshot } from "../../domain/matching";
+import { getFromStorage, setInStorage } from "../platform/storage";
+import { applyPatch, type DeepPartial } from "../utils/types";
 
 export interface Settings {
     flags: FlagSettings;

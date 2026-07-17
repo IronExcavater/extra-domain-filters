@@ -1,13 +1,13 @@
-import { PageMount } from "../core/router";
-import { getSettings } from "../core/settings";
-import { getFromStorage, onStorageChange, setInStorage } from "../core/storage";
-import { resolveListingSnapshot } from "../listings/cache";
+import { resolveListingSnapshot } from "../domain/listings/cache";
 import {
     addBlacklistEntry,
     matchListing,
     removeBlacklistEntry,
     type BlacklistEntry,
-} from "../matching";
+} from "../domain/matching";
+import { PageMount } from "../shared/platform/router";
+import { getFromStorage, onStorageChange, setInStorage } from "../shared/platform/storage";
+import { getSettings } from "../shared/state/settings";
 
 function getAddress(): string {
     return document.querySelector("h1")?.textContent?.trim() || document.title;

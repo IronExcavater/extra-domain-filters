@@ -1,4 +1,4 @@
-import { PageContext } from "./router";
+import { PageContext } from "../platform/router";
 
 export function bindLazyTrigger(
     selectors: string[],

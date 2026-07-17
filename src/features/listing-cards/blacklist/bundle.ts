@@ -1,11 +1,11 @@
-import { getFromStorage, setInStorage } from "../../../core/storage";
 import {
     addBlacklistEntry,
     isBlacklisted,
     removeBlacklistEntry,
     type BlacklistEntry,
     type ListingSnapshot,
-} from "../../../matching";
+} from "../../../domain/matching";
+import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
 
 export interface BundleMember {
     url: string;

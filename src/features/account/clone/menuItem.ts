@@ -1,6 +1,6 @@
-import { replaceWithBinIcon } from "../../core/icons";
-import { match } from "../../core/regex";
-import { getFromStorage, onStorageChange } from "../../core/storage";
+import { getFromStorage, onStorageChange } from "../../../shared/platform/storage";
+import { replaceWithBinIcon } from "../../../shared/ui/icons";
+import { match } from "../../../shared/utils/regex";
 
 const isBlacklistRoute = match({ path: '/user/shortlist', search: { blacklist: '1' } });
 

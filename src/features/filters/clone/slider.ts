@@ -1,5 +1,5 @@
-import { createSliderProperty, SliderKind } from "../../bindings/slider";
-import { Property } from "../../core/property";
+import { Property } from "../../../shared/state/property";
+import { createSliderProperty, SliderKind } from "../bindings/slider";
 
 export async function cloneSliderInput<K extends SliderKind>(
     source: HTMLDivElement,

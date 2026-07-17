@@ -1,5 +1,5 @@
-import { match } from '../core/regex';
-import { Route } from '../core/router';
+import { Route } from '../shared/platform/router';
+import { match } from '../shared/utils/regex';
 
 const LISTING_PATH_PATTERN = /^\/[^/]+-\d{6,}\/?$/;
 
