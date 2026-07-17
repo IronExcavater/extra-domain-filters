@@ -1,6 +1,3 @@
-.idea
-.playwright-mcp
-.remember
 node_modules
 dist
 release
