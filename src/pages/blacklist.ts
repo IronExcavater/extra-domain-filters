@@ -1,4 +1,4 @@
-import { replaceWithBinIcon } from "../core/icons";
+import { replaceWithBathIcon, replaceWithBedIcon, replaceWithBinIcon, replaceWithParkingIcon } from "../core/icons";
 import { PageMount } from "../core/router";
 import { getFromStorage, onStorageChange, setInStorage } from "../core/storage";
 import {
@@ -129,42 +129,110 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
     return controls;
 }
 
-// Deliberately doesn't surface the address/price/features — the row is just a title, keeping
-// the full listing snapshot in storage (via getBlacklistListing) so re-blacklisting after an
-// accidental undo restores it, without displaying what was blacklisted.
+function createFeatureBadge(
+    replace: (svg: SVGSVGElement) => void,
+    value: string | undefined,
+): HTMLElement | undefined {
+    if (!value) return undefined;
+
+    const badge = document.createElement("span");
+    badge.className = "edf-blacklist-card-feature";
+
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("width", "14");
+    icon.setAttribute("height", "14");
+    icon.setAttribute("aria-hidden", "true");
+    replace(icon);
+
+    const label = document.createElement("span");
+    label.textContent = value;
+
+    badge.append(icon, label);
+    return badge;
+}
+
+// Renders as a real card (thumbnail, address, price, features) from the listing snapshot kept
+// in storage (via getBlacklistListing) — there's no live Domain card to clone here, since a
+// blacklisted listing was never necessarily shortlisted, so this page has no corresponding React
+// DOM to read from the way the real shortlist page does.
 function createBlacklistRow(entry: BlacklistEntry, active: boolean): HTMLElement {
     const listing = getBlacklistListing(entry);
 
-    const row = document.createElement("div");
-    row.className = "edf-blacklist-row";
-    row.dataset.active = String(active);
-    row.setAttribute("data-testid", "extra-domain-filters-blacklist-row");
+    const card = document.createElement("div");
+    card.className = "edf-blacklist-card";
+    card.dataset.active = String(active);
+    card.setAttribute("data-testid", "extra-domain-filters-blacklist-row");
 
-    const title = document.createElement("div");
-    title.className = "edf-blacklist-row-title";
+    if (listing.thumbnailUrl) {
+        const thumbnail = document.createElement("img");
+        thumbnail.className = "edf-blacklist-card-thumbnail";
+        thumbnail.src = listing.thumbnailUrl;
+        thumbnail.alt = "";
+        thumbnail.loading = "lazy";
+        card.append(thumbnail);
+    }
+
+    const body = document.createElement("div");
+    body.className = "edf-blacklist-card-body";
+
+    const address = document.createElement("div");
+    address.className = "edf-blacklist-card-address";
 
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.classList.add("edf-blacklist-row-icon");
-    icon.setAttribute("width", "18");
-    icon.setAttribute("height", "18");
+    icon.classList.add("edf-blacklist-card-icon");
+    icon.setAttribute("width", "16");
+    icon.setAttribute("height", "16");
     icon.setAttribute("aria-hidden", "true");
     replaceWithBinIcon(icon);
 
-    const label = document.createElement("span");
-    label.textContent = "Blacklisted property";
+    const addressLabel = document.createElement("span");
+    addressLabel.textContent = listing.displayAddress ?? listing.title;
 
-    title.append(icon, label);
+    address.append(icon, addressLabel);
+    body.append(address);
+
+    const meta = document.createElement("div");
+    meta.className = "edf-blacklist-card-meta";
+
+    if (listing.price) {
+        const price = document.createElement("span");
+        price.className = "edf-blacklist-card-price";
+        price.textContent = listing.price;
+        meta.append(price);
+    }
+
+    if (listing.status) {
+        const status = document.createElement("span");
+        status.className = "edf-blacklist-card-status";
+        status.textContent = listing.status;
+        meta.append(status);
+    }
+
+    if (meta.childElementCount > 0) body.append(meta);
+
+    const features = [
+        createFeatureBadge(replaceWithBedIcon, listing.features?.bedrooms),
+        createFeatureBadge(replaceWithBathIcon, listing.features?.bathrooms),
+        createFeatureBadge(replaceWithParkingIcon, listing.features?.parking),
+    ].filter((feature): feature is HTMLElement => feature !== undefined);
+
+    if (features.length > 0) {
+        const featureRow = document.createElement("div");
+        featureRow.className = "edf-blacklist-card-features";
+        featureRow.append(...features);
+        body.append(featureRow);
+    }
 
     if (entry.addedAt > 0) {
         const date = document.createElement("small");
-        date.className = "edf-blacklist-row-date";
-        date.textContent = new Date(entry.addedAt).toLocaleDateString();
-        title.append(date);
+        date.className = "edf-blacklist-card-date";
+        date.textContent = `Blacklisted ${new Date(entry.addedAt).toLocaleDateString()}`;
+        body.append(date);
     }
 
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "edf-blacklist-row-button";
+    button.className = "edf-blacklist-row-button edf-blacklist-card-button";
     button.dataset.active = String(active);
     button.textContent = active ? "Unblacklist" : "Re-blacklist";
     button.setAttribute("aria-pressed", String(active));
@@ -177,10 +245,11 @@ function createBlacklistRow(entry: BlacklistEntry, active: boolean): HTMLElement
                 : addBlacklistEntry(current, listing),
         );
     });
+    body.append(button);
 
-    row.append(title, button);
+    card.append(body);
 
-    return row;
+    return card;
 }
 
 async function render(container: HTMLElement, list: HTMLElement): Promise<void> {

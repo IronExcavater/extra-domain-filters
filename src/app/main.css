@@ -168,16 +168,19 @@
     margin-right: 8px;
 }
 
+/* Matches Domain's own "Reset filters" button (white fill, thin light-gray border, 8px
+   radius, bold near-black text) rather than the extension's earlier pill-shaped style, so this
+   reads as a native Domain control rather than a third-party overlay. */
 .edf-blacklist-clear-button {
-    background: transparent;
-    border: 1px solid rgb(30 41 61 / 25%);
-    border-radius: 999px;
-    color: rgb(30 41 61 / 85%);
+    background: #fff;
+    border: 0.8px solid rgb(225 225 223);
+    border-radius: 8px;
+    color: rgb(19 18 18);
     cursor: pointer;
     font: inherit;
-    font-weight: 600;
+    font-weight: 700;
     min-height: 40px;
-    padding: 8px 18px !important;
+    padding: 8px 26px !important;
     transition: background-color 120ms ease, opacity 120ms ease;
 }
 
@@ -187,7 +190,7 @@
 }
 
 .edf-blacklist-clear-button:hover:not(:disabled) {
-    background: rgb(30 41 61 / 8%);
+    background: rgb(19 18 18 / 5%);
 }
 
 .edf-blacklist-row-list {
@@ -196,59 +199,106 @@
     gap: 10px;
 }
 
-/* A plain title row rather than a full card: the entry's address/price/features stay in
-   storage (for restoring on re-blacklist) but are deliberately not shown here. */
-.edf-blacklist-row {
-    align-items: center;
+/* A real card (thumbnail, address, price, features) rather than a plain row — the full
+   listing snapshot already lives in storage (for restoring on re-blacklist), so there's no
+   reason not to display it here too. */
+.edf-blacklist-card {
     background: #fff;
     border: 1px solid rgb(30 41 61 / 12%);
     border-radius: 12px;
     display: flex;
-    gap: 12px;
-    justify-content: space-between;
-    padding: 14px 18px;
+    gap: 14px;
+    padding: 12px;
     transition: opacity 120ms ease;
 }
 
-.edf-blacklist-row[data-active="false"] {
+.edf-blacklist-card[data-active="false"] {
     opacity: 0.6;
 }
 
-.edf-blacklist-row-title {
+.edf-blacklist-card-thumbnail {
+    border-radius: 8px;
+    flex: 0 0 auto;
+    height: 90px;
+    object-fit: cover;
+    width: 120px;
+}
+
+.edf-blacklist-card-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.edf-blacklist-card-address {
     align-items: center;
     color: rgb(30 41 61 / 85%);
     display: flex;
     font-weight: 600;
-    gap: 10px;
+    gap: 8px;
     overflow: hidden;
-}
-
-.edf-blacklist-row-icon {
-    color: rgb(30 41 61 / 45%);
-    flex: 0 0 auto;
-}
-
-.edf-blacklist-row-date {
-    color: rgb(30 41 61 / 45%);
-    font-weight: 400;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.edf-blacklist-row-button {
-    background: transparent;
-    border: 1px solid rgb(30 41 61 / 25%);
+.edf-blacklist-card-icon {
+    color: rgb(30 41 61 / 45%);
+    flex: 0 0 auto;
+}
+
+.edf-blacklist-card-meta {
+    align-items: center;
+    color: rgb(30 41 61 / 70%);
+    display: flex;
+    flex-wrap: wrap;
+    font-weight: 600;
+    gap: 10px;
+}
+
+.edf-blacklist-card-status {
+    background: rgb(30 41 61 / 8%);
     border-radius: 999px;
-    color: rgb(30 41 61 / 85%);
+    font-size: 0.8em;
+    font-weight: 600;
+    padding: 2px 10px;
+}
+
+.edf-blacklist-card-features {
+    align-items: center;
+    color: rgb(30 41 61 / 60%);
+    display: flex;
+    gap: 12px;
+}
+
+.edf-blacklist-card-feature {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+}
+
+.edf-blacklist-card-date {
+    color: rgb(30 41 61 / 45%);
+}
+
+/* Same Domain-matched button treatment as .edf-blacklist-clear-button above. */
+.edf-blacklist-row-button {
+    background: #fff;
+    border: 0.8px solid rgb(225 225 223);
+    border-radius: 8px;
+    color: rgb(19 18 18);
     cursor: pointer;
     flex: 0 0 auto;
     font: inherit;
-    font-weight: 600;
+    font-weight: 700;
+    margin-top: auto;
     padding: 8px 16px;
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .edf-blacklist-row-button:hover {
-    background: rgb(30 41 61 / 8%);
+    background: rgb(19 18 18 / 5%);
 }
 
 /* Active = currently blacklisted ("Unblacklist"), filled to read as the selected/pressed
