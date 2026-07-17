@@ -1,6 +1,3 @@
-// Session-only: a plain in-memory set, never written to chrome.storage. Reloading the page or
-// revisiting the search later loses every override and filtered listings go back to being
-// filtered — this is intentional (see design spec's "Session-only reveal tracking" section).
 const revealedUrls = new Set<string>();
 export const REVEAL_CHANGE_EVENT = "edf:listing-reveal-change";
 

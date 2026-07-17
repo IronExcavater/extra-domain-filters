@@ -110,8 +110,6 @@ export function addBlacklistEntry(
     ];
 }
 
-// Soft-removes: the entry stays in storage (with removedAt set) so re-blacklisting it later
-// (e.g. after an accidental unblacklist) restores the same listing data instead of starting fresh.
 export function removeBlacklistEntry(
     entries: readonly BlacklistEntry[],
     url: string,

@@ -1,23 +1,21 @@
-import { createClaimTracker } from "../core/claim";
-import { PageContext } from "../core/router";
-import { isBlacklisted, type BlacklistEntry } from "../matching";
-import { toggleBundleBlacklist } from "./bundle";
-import { cloneBlacklistButton, watchShortlistButtonClass } from "./button";
-import { getChildListingUrl, getListingSnapshot } from "./card";
-
-const TOPSPOT_CAROUSEL_SELECTOR = 'li[data-testid="topspot"]';
-const CHILD_SLIDE_SELECTOR = '[data-testid="listing-card-child-listing"]';
+import { createClaimTracker } from "../../../core/claim";
+import { PageContext } from "../../../core/router";
+import { isBlacklisted, type BlacklistEntry } from "../../../matching";
+import { toggleBundleBlacklist } from "../blacklist/bundle";
+import { cloneBlacklistButton, watchShortlistButtonClass } from "../blacklist/button";
+import {
+    CAROUSEL_CHILD_SELECTOR,
+    getChildListingUrl,
+    getListingSnapshot,
+    TOPSPOT_CAROUSEL_SELECTOR,
+} from "../dom/card";
 
 const claimTopspotCard = createClaimTracker<HTMLElement>();
 
 function findChildSlides(carouselCard: HTMLElement): HTMLElement[] {
-    return [...carouselCard.querySelectorAll<HTMLElement>(CHILD_SLIDE_SELECTOR)];
+    return [...carouselCard.querySelectorAll<HTMLElement>(CAROUSEL_CHILD_SELECTOR)];
 }
 
-// See Task 7's live-spike note: shrinking a slide with plain CSS may or may not cause slick to
-// reflow the rest of the track. Dispatching a resize event is a low-cost attempt at triggering
-// slick's own recompute; if it doesn't reflow in practice, the remaining visual gap is an
-// accepted limitation rather than a blocker.
 function setSlideExcluded(slide: HTMLElement, excluded: boolean): void {
     if (excluded) {
         slide.style.setProperty("max-width", "0px", "important");

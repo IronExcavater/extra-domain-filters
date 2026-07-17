@@ -15,25 +15,16 @@
     position: static !important;
 }
 
-/* No price to grow into (e.g. "Contact Agent" listings) — hug the two buttons instead of
-   stretching to whatever width Domain's own container class assigns. */
 .edf-listing-card-button-container:not(:has([data-testid="listing-card-price"])) {
     width: fit-content !important;
 }
 
-/* Child listing cards (project units, carousel children) are narrow horizontal rows — the two
-   buttons side by side didn't fit that column, so stack them instead. Kept tight (small gap,
-   no extra padding) so the column's height still grows less than the price/features column
-   next to it, rather than forcing the whole row (and the fixed-height carousel slide) taller. */
 [data-testid="listing-card-child-listing"] .edf-listing-card-button-container {
     flex-direction: column !important;
     gap: 4px !important;
     overflow: visible !important;
 }
 
-/* Sits inline with the project's address line (see insertProjectBlacklistButton), not overlaid
-   on the hero photo any more, so the address row is a small flex row with the button pinned to
-   the opposite end. */
 .edf-project-blacklist-row {
     align-items: center;
     display: flex;
@@ -45,11 +36,6 @@
     flex: 0 0 auto;
 }
 
-/* Layering, weakest to strongest: a static default (in case the JS below hasn't run yet or
-   never finds a sample), then the dynamic contrast-sync result, then hover/active — each rule
-   only matches while the others' states don't, so nothing needs to "win" via specificity
-   trickery. A previous version applied the static default unconditionally (no :not() guard),
-   which meant it always beat hover/active too, since nothing else covered those states. */
 .edf-project-blacklist-button:not(:hover, :active, [data-active="true"], [aria-pressed="true"]) {
     color: #fff !important;
 }
@@ -72,15 +58,6 @@
     color: #c90 !important;
 }
 
-/* The blacklist button never sits over a photo except on project cards (styled above) — a flat
-   color reads better there than a dynamic contrast sync that will only ever land on this same
-   shade anyway, since the background behind it is always the plain card body. Background/border/
-   shadow are reset too: this button is cloned from its sibling shortlist button and mirrors its
-   class for base sizing (button.ts's captureNeutralShortlistClass), but on pages where every card
-   is always shortlisted (e.g. /user/shortlist), that mirroring can never observe a not-shortlisted
-   state to capture, so it's stuck with whatever "filled/active" look Domain gives an
-   already-shortlisted button. This keeps it reading as neutral regardless of which class got
-   mirrored — color above is the only intended visual language. */
 [data-testid="listing-card-blacklist"]:not(.edf-project-blacklist-button) {
     color: rgb(30 41 61 / 30%) !important;
     background: none !important;
@@ -127,9 +104,6 @@
     padding: 0;
 }
 
-/* Animated collapse: a small max-height + overflow:hidden when excluded, transitioning smoothly
-   to/from the large max-height applied when the reason clears back to "none" (see the
-   :not([data-exclusion-reason]) escape hatch below) — no JS-measured heights needed. */
 .edf-listing-card-excluded {
     background: #f7f8fa !important;
     max-height: 48px !important;
@@ -154,8 +128,6 @@
     min-height: 34px !important;
 }
 
-/* Blacklisted children within a project are hidden outright (see updateProjectBlacklistSummary)
-   rather than collapsed in place, so this sits on the project card itself, not per-child. */
 .edf-project-blacklist-summary {
     display: flex !important;
     margin: 8px 12px;
@@ -168,9 +140,6 @@
     margin-right: 8px;
 }
 
-/* Matches Domain's own "Reset filters" button (white fill, thin light-gray border, 8px
-   radius, bold near-black text) rather than the extension's earlier pill-shaped style, so this
-   reads as a native Domain control rather than a third-party overlay. */
 .edf-blacklist-clear-button {
     background: #fff;
     border: 0.8px solid rgb(225 225 223);
@@ -199,9 +168,6 @@
     gap: 10px;
 }
 
-/* A real card (thumbnail, address, price, features) rather than a plain row — the full
-   listing snapshot already lives in storage (for restoring on re-blacklist), so there's no
-   reason not to display it here too. */
 .edf-blacklist-card {
     background: #fff;
     border: 1px solid rgb(30 41 61 / 12%);
@@ -282,7 +248,6 @@
     color: rgb(30 41 61 / 45%);
 }
 
-/* Same Domain-matched button treatment as .edf-blacklist-clear-button above. */
 .edf-blacklist-row-button {
     background: #fff;
     border: 0.8px solid rgb(225 225 223);
@@ -301,8 +266,6 @@
     background: rgb(19 18 18 / 5%);
 }
 
-/* Active = currently blacklisted ("Unblacklist"), filled to read as the selected/pressed
-   state — the same active/inactive language as the listing-card blacklist button. */
 .edf-blacklist-row-button[data-active="true"] {
     background: rgb(30 41 61 / 100%);
     border-color: rgb(30 41 61 / 100%);

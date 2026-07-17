@@ -1,27 +1,21 @@
-import { createClaimTracker } from "../core/claim";
-import { queueForegroundContrastSync } from "../core/contrast";
-import { replaceWithBinIcon } from "../core/icons";
-import { PageContext } from "../core/router";
-import { getFromStorage, setInStorage } from "../core/storage";
-import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../matching";
-import { cloneBlacklistButton, watchShortlistButtonClass } from "./button";
+import { createClaimTracker } from "../../../core/claim";
+import { queueForegroundContrastSync } from "../../../core/contrast";
+import { replaceWithBinIcon } from "../../../core/icons";
+import { PageContext } from "../../../core/router";
+import { getFromStorage, setInStorage } from "../../../core/storage";
+import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../../../matching";
+import { cloneBlacklistButton, watchShortlistButtonClass } from "../blacklist/button";
+import { toggleBlacklist } from "../blacklist/toggle";
 import {
     getChildListingUrl,
     PROJECT_DETAILS_SELECTOR,
     PROJECT_MARKER_SELECTOR,
     SHORTLIST_BUTTON_SELECTOR,
-} from "./card";
-import { getExclusionRow } from "./exclusion-row";
-import { toggleBlacklist } from "./toggle";
+} from "../dom/card";
+import { getExclusionRow } from "../exclusion/row";
 
 const claimProjectCard = createClaimTracker<HTMLElement>();
 
-// Reuses exclusion-row.ts's markup for the aggregate bar instead of building bespoke DOM, per
-// the design spec — this sits on the project card itself (not per-child), right after the
-// project header, since project children are hidden individually with one combined restore
-// action rather than each getting their own row. getExclusionRow() itself prepends a freshly
-// created row to the very start of the card, so this moves it into position right after
-// (idempotent — a no-op once it's already there).
 function getProjectAggregateRow(projectCard: HTMLElement, projectHeader: HTMLElement): HTMLElement {
     const row = getExclusionRow(projectCard);
     if (row.previousElementSibling !== projectHeader) {
@@ -30,9 +24,6 @@ function getProjectAggregateRow(projectCard: HTMLElement, projectHeader: HTMLEle
     return row;
 }
 
-// Child listings within a project are hidden outright when blacklisted (no per-row collapsed
-// bar) — instead a single aggregate summary on the project card itself surfaces how many are
-// hidden and lets the user restore them all at once.
 export function updateProjectBlacklistSummary(
     projectCard: HTMLElement,
     projectHeader: HTMLElement,
@@ -51,11 +42,6 @@ export function updateProjectBlacklistSummary(
         child.hidden = blacklistedChildren.has(child);
     }
 
-    // When the project itself is excluded, index.ts's generic per-card handling already owns
-    // this row (showing "restore the whole project") and has collapsed the card around it —
-    // individual children's state is moot while the whole card is hidden, and touching the row
-    // here — even just to remove it — would blank out a row that pass already populated,
-    // since both run synchronously within the same update.
     if (projectExcluded) return;
 
     const existingRow = projectCard.querySelector('[data-testid="listing-card-exclusion-row"]');
@@ -92,9 +78,6 @@ export function updateProjectBlacklistSummary(
     }
 }
 
-// The details block is [title-div, address-span] — wrap the address in a flex row alongside
-// the button so it reads as "address ... unblacklist icon" justified to opposite ends, instead
-// of the old absolute-positioned overlay button sitting on top of the hero photo.
 function insertProjectBlacklistButton(details: HTMLElement, button: HTMLButtonElement): void {
     const existingRow = details.querySelector(':scope > .edf-project-blacklist-row');
     if (existingRow) {
@@ -129,18 +112,6 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
     insertProjectBlacklistButton(details, button);
     queueForegroundContrastSync(button, { scope: projectCard });
     watchShortlistButtonClass(sourceButton, button, context);
-
-    // No listener wired here for the exclusion row's restore button, unlike the project's own
-    // blacklist button just below: getExclusionRow returns the same physical button that
-    // updateProjectBlacklistSummary also re-wires every pass for the unrelated "N children
-    // individually blacklisted" case, and index.ts's generic per-card handling separately
-    // re-wires it every pass too for the "project itself is blacklisted" case (via
-    // updateExclusionRow, same pattern regular listing cards use). A one-time addEventListener
-    // registered here would fire on EVERY click alongside whichever of those two owns the row
-    // that pass — for the whole-project case specifically, that previously meant a stray
-    // toggleBlacklist call could re-add the project while the click was really meant to restore
-    // individual children. Leaving this button's wiring entirely to the per-pass reassignment
-    // (which always replaces, never stacks) keeps exactly one handler live at a time.
 
     button.addEventListener("click", async event => {
         event.preventDefault();

@@ -1,0 +1,55 @@
+import { PageContext } from "../../core/router";
+import { onStorageChange } from "../../core/storage";
+import { type BlacklistEntry } from "../../matching";
+import { injectListingCards } from "./bind";
+import { bindAdRemoval } from "./cards/ads";
+import { REVEAL_CHANGE_EVENT } from "./exclusion/reveal";
+
+export interface BindListingCardsOptions {
+    showBlacklistedView?: boolean;
+}
+
+export function bindListingCards(
+    context: PageContext,
+    options: BindListingCardsOptions = {},
+): void {
+    const showBlacklistedView = options.showBlacklistedView ?? true;
+
+    bindAdRemoval(context.signal);
+
+    let scanFrame: number | undefined;
+
+    const schedule = (): void => {
+        if (scanFrame !== undefined) return;
+
+        scanFrame = requestAnimationFrame(() => {
+            scanFrame = undefined;
+            void injectListingCards(context, showBlacklistedView).catch(error =>
+                context.logger.warn("Failed to refresh listing cards", error)
+            );
+        });
+    };
+
+    const cancelScheduledScan = (): void => {
+        if (scanFrame === undefined) return;
+
+        cancelAnimationFrame(scanFrame);
+        scanFrame = undefined;
+    };
+
+    schedule();
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    const unwatchBlacklist = onStorageChange<BlacklistEntry[]>("blacklist", schedule);
+    const unwatchSettings = onStorageChange("settings", schedule);
+    window.addEventListener(REVEAL_CHANGE_EVENT, schedule, { signal: context.signal });
+
+    context.signal.addEventListener("abort", () => {
+        observer.disconnect();
+        cancelScheduledScan();
+        unwatchBlacklist();
+        unwatchSettings();
+    }, { once: true });
+}

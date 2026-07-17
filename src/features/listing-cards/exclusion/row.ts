@@ -2,14 +2,14 @@ import {
     replaceWithBinIcon,
     replaceWithEyeIcon,
     replaceWithEyeOffIcon,
-} from "../core/icons";
-import { getFromStorage, setInStorage } from "../core/storage";
+} from "../../../core/icons";
+import { getFromStorage, setInStorage } from "../../../core/storage";
 import {
     removeBlacklistEntry,
     type BlacklistEntry,
     type ExclusionReason,
-} from "../matching";
-import { getBlacklistCardKind, getPropertyCount, getTitle, type BlacklistCardKind } from "./card";
+} from "../../../matching";
+import { getBlacklistCardKind, getPropertyCount, getTitle, type BlacklistCardKind } from "../dom/card";
 import { isRevealed, reveal, unreveal } from "./reveal";
 
 const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
@@ -20,8 +20,6 @@ const KIND_CLASSES = [
     "edf-exclusion-kind-project-child",
 ];
 
-// Only ever called with "blacklisted" or "filtered" — "none" never reaches a row (the card is
-// shown normally instead).
 type ActiveReason = Exclude<ExclusionReason, "none">;
 
 export function getExclusionSummaryText(card: Element, reason: ActiveReason): string {
@@ -35,8 +33,6 @@ export function getExclusionSummaryText(card: Element, reason: ActiveReason): st
     return count > 1 ? `${count} properties filtered out` : `Filtered out: ${title}`;
 }
 
-// Only ever called to undo an existing exclusion (the row/group action button only appears on
-// already-excluded listings) — never to add a new one, so it needs no ListingSnapshot.
 export async function resolveExclusionAction(url: string, reason: ActiveReason): Promise<void> {
     if (reason === "filtered") {
         reveal(url);
@@ -112,9 +108,6 @@ export function applyExclusionState(
     (card as HTMLElement).dataset.exclusionReason = reason;
 }
 
-// Placed on the real, expanded card content for a "filtered" listing that's currently revealed,
-// so the user can re-hide it without waiting for filters to change. Idempotent — safe to call on
-// every refresh.
 const EYE_OFF_SELECTOR = '[data-testid="listing-card-hide-again"]';
 
 export function ensureHideAgainAffordance(card: Element, url: string): void {

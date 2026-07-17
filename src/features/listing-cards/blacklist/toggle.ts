@@ -1,15 +1,15 @@
-import { PageContext } from "../core/router";
-import { getFromStorage, setInStorage } from "../core/storage";
-import { resolveListingSnapshot } from "../listings/cache";
+import { PageContext } from "../../../core/router";
+import { getFromStorage, setInStorage } from "../../../core/storage";
+import { resolveListingSnapshot } from "../../../listings/cache";
 import {
     addBlacklistEntry,
     isBlacklisted,
     removeBlacklistEntry,
-    type ListingSnapshot,
     type BlacklistEntry,
-} from "../matching";
+    type ListingSnapshot,
+} from "../../../matching";
+import { getListingSnapshot } from "../dom/card";
 import { removeFromShortlist, updateButton } from "./button";
-import { getListingSnapshot } from "./card";
 
 async function refreshBlacklistSnapshot(
     listing: ListingSnapshot,

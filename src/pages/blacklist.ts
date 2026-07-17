@@ -37,10 +37,6 @@ function waitForShortlistContainer(signal: AbortSignal): Promise<HTMLElement> {
     });
 }
 
-// The blacklist view shares Domain's own /user/shortlist route and DOM (there's no separate
-// page for it), so mounting/unmounting must only ever hide or restore that shared DOM — never
-// replace or rename its nodes. Doing so previously left React's real shortlist list corrupted
-// (its children swapped out from under it) once the user navigated back to the normal view.
 function setTitle(container: HTMLElement): () => void {
     const title = container.querySelector<HTMLElement>(
         '[data-testid="shortlist__title"], h1, h2',
@@ -59,8 +55,6 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
     );
     if (existing) return { list: existing, restore: () => undefined };
 
-    // Our rows are plain text, not photo cards, so this deliberately does NOT inherit Domain's
-    // own list layout class (that's a photo-card grid, wrong shape for a row list).
     const realList = container
         .querySelector('[data-testid="listing-card-container"]')
         ?.parentElement;
@@ -70,11 +64,6 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
     list.setAttribute("data-testid", "extra-domain-filters-blacklist-list");
 
     if (realList instanceof HTMLElement) {
-        // Hide (not remove) the real list so it's untouched when we unmount. The `hidden`
-        // attribute alone isn't enough — Domain's own class sets `display` directly, and author
-        // styles always win over the `[hidden] { display: none }` user-agent rule regardless of
-        // specificity, so the real cards stayed visible underneath. An inline !important style
-        // outranks that author rule too.
         realList.style.setProperty("display", "none", "important");
         realList.after(list);
 
@@ -151,10 +140,6 @@ function createFeatureBadge(
     return badge;
 }
 
-// Renders as a real card (thumbnail, address, price, features) from the listing snapshot kept
-// in storage (via getBlacklistListing) — there's no live Domain card to clone here, since a
-// blacklisted listing was never necessarily shortlisted, so this page has no corresponding React
-// DOM to read from the way the real shortlist page does.
 function createBlacklistRow(entry: BlacklistEntry, active: boolean): HTMLElement {
     const listing = getBlacklistListing(entry);
 

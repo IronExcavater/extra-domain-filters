@@ -107,10 +107,6 @@ export class Property<K extends PropertyKind> {
         return once(() => this.observers.delete(observer));
     }
 
-    /**
-     * Creates a one-way binding: this property -> target.
-     * The target is immediately initialised from this property.
-     */
     async bind(target: Property<K>): Promise<Unbind> {
         this.assertActive();
         target.assertActive();
@@ -123,9 +119,6 @@ export class Property<K extends PropertyKind> {
         return this.link('one-way', target, stop);
     }
 
-    /**
-     * Creates a two-way binding. This property supplies the initial value.
-     */
     async bindTwoWay(other: Property<K>): Promise<Unbind> {
         this.assertActive();
         other.assertActive();
@@ -161,7 +154,6 @@ export class Property<K extends PropertyKind> {
         return this.link('two-way', other, stopForward, stopBackward);
     }
 
-    /** Removes one-way bindings created from this property to target. */
     unbind(target: Property<K>): void {
         for (const link of [...this.links]) {
             if (
@@ -174,7 +166,6 @@ export class Property<K extends PropertyKind> {
         }
     }
 
-    /** Removes two-way bindings between this property and other. */
     unbindTwoWay(other: Property<K>): void {
         for (const link of [...this.links]) {
             if (
@@ -213,7 +204,6 @@ export class Property<K extends PropertyKind> {
 
         if (Object.is(oldValue, newValue)) return;
 
-        // Cache first so synchronous adapter notifications do not emit twice.
         this.current = Promise.resolve(newValue);
 
         try {

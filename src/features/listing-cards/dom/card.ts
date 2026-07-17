@@ -1,22 +1,24 @@
-import type { ListingSnapshot } from "../matching";
+import type { ListingSnapshot } from "../../../matching";
 
 export const SHORTLIST_BUTTON_SELECTOR = '[data-testid^="listing-card-shortlist"]';
 export const BLACKLIST_BUTTON_SELECTOR = '[data-testid="listing-card-blacklist"]';
 export const PROJECT_CARD_SELECTOR = 'li[data-testid^="listing-"]';
 export const PROJECT_MARKER_SELECTOR = '[data-testid="listing-card-project"]';
 export const PROJECT_DETAILS_SELECTOR = '[data-testid="listing-card-project-details"]';
+export const TOPSPOT_CAROUSEL_SELECTOR = 'li[data-testid="topspot"]';
+export const CAROUSEL_CHILD_SELECTOR = '[data-testid="listing-card-child-listing"]';
 const LISTING_CARD_CONTAINER_SELECTOR = '[data-testid="listing-card-container"]';
 
 const CARD_SELECTOR = [
     LISTING_CARD_CONTAINER_SELECTOR,
-    '[data-testid="listing-card-child-listing"]',
-    'li[data-testid="topspot"]',
+    CAROUSEL_CHILD_SELECTOR,
+    TOPSPOT_CAROUSEL_SELECTOR,
     'li[data-testid^="listing-"]',
 ].join(',');
 
 export const TOP_LEVEL_CARD_SELECTOR = [
     LISTING_CARD_CONTAINER_SELECTOR,
-    'li[data-testid="topspot"]',
+    TOPSPOT_CAROUSEL_SELECTOR,
     'li[data-testid^="listing-"]',
 ].join(',');
 
@@ -71,10 +73,6 @@ export function getTitle(card: Element): string {
     );
 }
 
-// Domain scopes the agent/agency photos inside their own "branding" container and the actual
-// listing photo inside a dedicated lazy-image container, so prefer those explicit signals over
-// guessing from alt text/filenames — that heuristic previously misfired on branding images that
-// didn't happen to match the "logo"/"agency" keyword patterns.
 const BRANDING_IMAGE_SELECTOR = '[data-testid="listing-card-branding"] img';
 const LISTING_PHOTO_SELECTOR =
     '[data-testid="listing-card-lazy-image"] img, [data-testid="listing-card-single-image"] img';

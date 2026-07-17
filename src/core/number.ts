@@ -1,5 +1,3 @@
-// Same scale table drives both display and snapping, so a value always formats to
-// exactly what it snapped to (e.g. never "$734" once it's already snapped to $700).
 const SCALES = [
     { threshold: 1_000_000, divisor: 1_000_000, suffix: 'm' },
     { threshold: 1_000, divisor: 1_000, suffix: 'k' },

@@ -1,6 +1,6 @@
-import { replaceWithBinIcon, replaceWithChevronIcon, replaceWithEyeIcon } from "../core/icons";
-import { getListingUrl, getTitle, TOP_LEVEL_CARD_SELECTOR } from "./card";
-import { resolveExclusionAction } from "./exclusion-row";
+import { replaceWithBinIcon, replaceWithChevronIcon, replaceWithEyeIcon } from "../../../core/icons";
+import { getListingUrl, getTitle, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
+import { resolveExclusionAction } from "./row";
 
 const GROUP_SELECTOR = '[data-testid="extra-domain-filters-exclusion-group"]';
 const GROUP_MEMBER_HIDDEN_STYLE_PROP = "display";
@@ -25,8 +25,6 @@ function getActiveReason(card: HTMLElement): ActiveReason | undefined {
 }
 
 function getMemberUrl(card: HTMLElement): string | undefined {
-    // The group only ever reads cards that already went through updateExistingCards, so a
-    // blacklist button (whose data-testid this selector matches) is always present.
     const button = card.querySelector<HTMLButtonElement>('[data-testid="listing-card-blacklist"]');
     if (!button) return undefined;
 
@@ -164,10 +162,6 @@ function createGroupElement(run: GroupMember[]): HTMLElement {
     return group;
 }
 
-// Fully idempotent: removes every group element and un-hides every previously-grouped card
-// before recomputing from scratch. Search-result pages are small (~20 cards), so a full
-// recompute on every call is cheap and far simpler to reason about than diffing groups across
-// calls.
 export function updateExclusionGroups(): void {
     document.querySelectorAll(GROUP_SELECTOR).forEach(element => element.remove());
 

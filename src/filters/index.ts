@@ -21,13 +21,6 @@ function refreshPriceTitles(url: URL): void {
 
 const claim = createClaimTracker<Element>();
 
-// Each custom filter is cloned from its own anchor's full filter-wrapper (see clone/*.ts), so
-// inserting it as a direct sibling right after that anchor drops it into Domain's own dialog
-// layout naturally — same grid flow, same background, same position as the section it extends.
-// A previous version collected every custom filter into one shared panel appended once at the
-// dialog root; that put strata fees/could-haves/exclude-keywords all in one lump at the bottom
-// of the dialog (in whichever position the panel happened to be created), in their own unstyled
-// column, instead of next to price/must-haves/include-keywords where they belong.
 function appendCustomFilter(anchor: HTMLElement, filter: HTMLElement): void {
     const testId = filter.getAttribute("data-testid");
     if (testId) {
@@ -179,19 +172,11 @@ export async function injectFilters(logger: Logger, url: URL) {
         logger.info('Appended strata fees filter');
     }
 
-    // The mode-buttons widget (read by isRentMode) is a separate component from the filter
-    // dialog, so on first open it can still be mid-render when the block above already ran —
-    // recheck once more after React has had a frame to settle both.
     requestAnimationFrame(() => refreshPriceTitles(url));
 
     for (const propertyTypesDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__property-types"]')) {
         if (!claim(propertyTypesDiv)) continue;
 
-        // Generalizes domain.js's handleTypeInput/isStudioType (which only ever tracked "studio")
-        // into the full set of excluded property labels: an empty selection means any type is
-        // wanted (nothing excluded); otherwise every unchecked checkbox is excluded, UNLESS its
-        // own parent category (house/apartment/town-house/land) is checked — checking a parent
-        // means "any sub-type of this is fine", so its children never count as excluded.
         const updatePropertyExclusions = async (): Promise<void> => {
             const checkboxes = [...propertyTypesDiv.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
             const anyChecked = checkboxes.some(checkbox => checkbox.checked);
@@ -205,8 +190,6 @@ export async function injectFilters(logger: Logger, url: URL) {
             const excludePropertyKeywords = anyChecked
                 ? checkboxes
                     .filter(checkbox => !checkbox.checked && !checkedParentNames.has(checkbox.name))
-                    // A checkbox's label often carries a result-count span (e.g. "House:(25726)")
-                    // right after the name — cut it off at the colon instead of the name.
                     .map(checkbox =>
                         checkbox.closest('label')
                             ?.querySelector('div[class*="domain-checkbox__label"]')

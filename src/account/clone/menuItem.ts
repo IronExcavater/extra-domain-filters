@@ -15,17 +15,12 @@ export interface MenuItemConfig {
     label: string;
     href: string;
     active?: boolean;
-    // Storage key holding an array whose length becomes the badge count, live-updated as it
-    // changes. Omit (or pass false) for a menu item that shouldn't show a badge at all.
     badge?: false | { storageKey: string };
     existingItem?: HTMLLIElement;
     inactivePeer?: HTMLLIElement;
     sourceActive?: boolean;
 }
 
-// Only one subscription is ever active per storage key — reinserting a clone for the same key
-// (e.g. the menu reopening) replaces the old one instead of piling up listeners bound to a badge
-// element that's already been detached from the DOM.
 const activeBadgeSubscriptions = new Map<string, () => void>();
 
 async function bindBadge(storageKey: string, badge: HTMLElement): Promise<void> {

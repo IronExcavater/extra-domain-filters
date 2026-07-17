@@ -27,10 +27,8 @@ export async function createDraftProperty<K extends PropertyKind>(
 
     const submit = scope.querySelector<HTMLButtonElement>(submitSelector);
 
-    // No submit step in this scope, persist immediately.
     if (!submit) return target;
 
-    // The last value persisted on commit
     let confirmed = await target.get();
 
     const property = Property.value(target.kind, confirmed);
@@ -43,12 +41,6 @@ export async function createDraftProperty<K extends PropertyKind>(
     }
 
     drafts.add({
-        // "Clear all" is Domain's own immediate action (it resets its native filters and often
-        // closes/navigates right away, unlike a per-field change which waits for "Apply") — so
-        // this must persist the default now, not just update the draft's in-memory/UI value.
-        // Persisting anything less left the underlying setting untouched, and if the dialog
-        // closed immediately after, restore() would even revert the visible reset back to the
-        // pre-clear value.
         reset: async () => {
             await property.set(defaultValue);
             await target.set(defaultValue);
@@ -69,11 +61,6 @@ export async function createDraftProperty<K extends PropertyKind>(
 function bindScope(scope: Element, drafts: Set<DraftEntry>): void {
     if (!claimScope(scope)) return;
 
-    // Delegated on the (stable) scope element rather than bound directly to the current
-    // submit/clear button nodes: Domain keeps the dialog wrapper mounted across opens but
-    // re-renders its buttons as fresh elements each time, which left a directly-bound listener
-    // attached to a stale, detached node after the first open — real clicks on the new visible
-    // button never reached it again, so nothing committed after the first "Apply".
     scope.addEventListener('click', event => {
         const target = event.target;
         if (!(target instanceof Element)) return;

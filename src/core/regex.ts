@@ -38,8 +38,6 @@ function matchOne(options: MatchOptions): (url: URL) => boolean {
     };
 }
 
-// A single options object requires all its own fields to match (AND). Passing an array of
-// options ORs across them: the URL matches if any one config matches.
 export function match(options: OneOrMany<MatchOptions>): (url: URL) => boolean {
     const matchers = toArray(options).map(matchOne);
     return url => matchers.some(matcher => matcher(url));
