@@ -111,7 +111,7 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
     button.title = "Blacklist featured properties";
     if (controls) {
         if (controls.sourceButton) {
-            button.dataset.edfBaseClass = controls.sourceButton.className;
+            button.dataset.edfInactiveClass = controls.sourceButton.className;
             button.className = `${controls.sourceButton.className} edf-carousel-blacklist-button`;
             const icon = button.querySelector("svg");
             if (icon) replaceWithBinIcon(icon);

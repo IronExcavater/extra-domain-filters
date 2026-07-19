@@ -3,7 +3,18 @@ import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../shared/ui/ico
 const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
 const INACTIVE_SHORTLIST_CLASS_KEY = "edfInactiveShortlistClass";
 const KNOWN_INACTIVE_LISTING_CARD_CLASS = "css-bhcn0k";
+const LISTING_DETAILS_ACTIVE_CLASS = "css-11t19a7";
 const ACTIVE_SHORTLIST_CLASS_NAMES = ["active", "is-active", "isActive", "shortlisted"];
+
+interface CloneStateClasses {
+    active?: string;
+    inactive: string;
+}
+
+export interface CloneBlacklistButtonOptions {
+    activeClassName?: string;
+    inactiveClassName?: string;
+}
 
 export function isShortlisted(shortlistButton: HTMLButtonElement): boolean {
     return (
@@ -23,18 +34,36 @@ function setDocumentInactiveShortlistClass(className: string): void {
 
 export function captureNeutralShortlistClass(button: HTMLButtonElement, shortlistButton: HTMLButtonElement): void {
     if (!isShortlisted(shortlistButton)) {
-        button.dataset.edfBaseClass = shortlistButton.className;
+        button.dataset.edfInactiveClass = shortlistButton.className;
         setDocumentInactiveShortlistClass(shortlistButton.className);
     }
 }
 
-export function updateButton(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {
-    const baseClass = button.dataset.edfBaseClass;
-    if (baseClass) {
+function getCloneStateClasses(button: HTMLButtonElement): CloneStateClasses | undefined {
+    const inactive = button.dataset.edfInactiveClass ?? button.dataset.edfBaseClass;
+    if (!inactive) return undefined;
+
+    return {
+        active: button.dataset.edfActiveClass,
+        inactive,
+    };
+}
+
+function setButtonClassState(button: HTMLButtonElement, active: boolean): void {
+    const stateClasses = getCloneStateClasses(button);
+    if (stateClasses) {
         const extensionClasses = [...button.classList].filter(className => className.startsWith("edf-"));
-        button.className = [baseClass, ...extensionClasses].join(" ");
+        const domainClass = active && stateClasses.active
+            ? stateClasses.active
+            : stateClasses.inactive;
+
+        button.className = [domainClass, ...extensionClasses].join(" ");
         button.classList.remove(...ACTIVE_SHORTLIST_CLASS_NAMES);
     }
+}
+
+export function setBlacklistButtonState(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {
+    setButtonClassState(button, active);
 
     const icon = button.querySelector("svg");
     if (icon) (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
@@ -45,29 +74,42 @@ export function updateButton(button: HTMLButtonElement, active: boolean, text = 
     button.setAttribute("aria-pressed", String(active));
 }
 
+export function updateButton(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {
+    setBlacklistButtonState(button, active, text);
+}
+
 export function removeFromShortlist(shortlistButton: HTMLButtonElement): void {
     if (!isShortlisted(shortlistButton)) return;
 
     requestAnimationFrame(() => shortlistButton.click());
 }
 
-export function cloneBlacklistButton(shortlistButton: HTMLButtonElement): HTMLButtonElement {
+export function cloneBlacklistButton(
+    shortlistButton: HTMLButtonElement,
+    options: CloneBlacklistButtonOptions = {},
+): HTMLButtonElement {
     const button = shortlistButton.cloneNode(true) as HTMLButtonElement;
     const icon = button.querySelector("svg");
     const inactiveClass = isShortlisted(shortlistButton)
-        ? getDocumentInactiveShortlistClass() ?? KNOWN_INACTIVE_LISTING_CARD_CLASS
-        : shortlistButton.className;
+        ? options.inactiveClassName ?? getDocumentInactiveShortlistClass() ?? KNOWN_INACTIVE_LISTING_CARD_CLASS
+        : options.inactiveClassName ?? shortlistButton.className;
+    const activeClass = options.activeClassName ??
+        (shortlistButton.dataset.testid === "listing-details__address-cta-button-shortlist"
+            ? LISTING_DETAILS_ACTIVE_CLASS
+            : undefined);
 
     button.type = "button";
     button.disabled = false;
     button.tabIndex = 0;
     button.removeAttribute("aria-disabled");
     button.setAttribute("data-testid", "listing-card-blacklist");
-    button.dataset.edfBaseClass = inactiveClass;
+    button.dataset.edfInactiveClass = inactiveClass;
+    delete button.dataset.edfBaseClass;
+    if (activeClass) button.dataset.edfActiveClass = activeClass;
     if (!isShortlisted(shortlistButton)) {
         setDocumentInactiveShortlistClass(shortlistButton.className);
     }
-    button.className = button.dataset.edfBaseClass;
+    button.className = inactiveClass;
     button.classList.add("edf-blacklist-button");
     button.classList.remove(...ACTIVE_SHORTLIST_CLASS_NAMES);
 

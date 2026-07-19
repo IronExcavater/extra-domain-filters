@@ -5,7 +5,7 @@ import {
     removeBlacklistEntry,
     type BlacklistEntry,
 } from "../domain/matching";
-import { cloneBlacklistButton, isShortlisted, removeFromShortlist, updateButton } from "../features/listing-cards/blacklist/button";
+import { cloneBlacklistButton, removeFromShortlist, setBlacklistButtonState } from "../features/listing-cards/blacklist/button";
 import { PageMount } from "../shared/platform/router";
 import { getFromStorage, onStorageChange, setInStorage } from "../shared/platform/storage";
 import { getSettings } from "../shared/state/settings";
@@ -13,6 +13,7 @@ import { getSettings } from "../shared/state/settings";
 const CTA_SELECTOR = '[data-testid="listing-details__address-cta-buttons"]';
 const SHORTLIST_SELECTOR = '[data-testid="listing-details__address-cta-button-shortlist"]';
 const SHARE_SELECTOR = '[data-testid="listing-details__address-cta-button-share"]';
+const ACTIVE_SHORTLIST_CLASS = "css-11t19a7";
 
 function getAddress(): string {
     return document.querySelector("h1")?.textContent?.trim() || document.title;
@@ -34,7 +35,7 @@ async function isListingBlacklisted(url: string): Promise<boolean> {
 }
 
 async function syncButton(button: HTMLButtonElement, url: string): Promise<void> {
-    updateButton(button, await isListingBlacklisted(url), "Add to blacklist");
+    setBlacklistButtonState(button, await isListingBlacklisted(url), "Add to blacklist");
 }
 
 function findShortlistButton(): HTMLButtonElement | undefined {
@@ -49,18 +50,19 @@ function insertButton(): { button: HTMLButtonElement; shortlistButton?: HTMLButt
     const shortlistButton = findShortlistButton();
     const shareButton = document.querySelector<HTMLButtonElement>(SHARE_SELECTOR);
     const button = shortlistButton
-        ? cloneBlacklistButton(shortlistButton)
+        ? cloneBlacklistButton(shortlistButton, {
+            activeClassName: ACTIVE_SHORTLIST_CLASS,
+            inactiveClassName: shareButton?.className,
+        })
         : document.createElement("button");
 
     button.type = "button";
     button.setAttribute("data-testid", "listing-details__blacklist-button");
     button.dataset.blacklistScope = "listing-details";
 
-    if (shortlistButton && isShortlisted(shortlistButton) && shareButton) {
-        button.dataset.edfBaseClass = shareButton.className;
-        button.className = `${shareButton.className} edf-blacklist-button`;
-    } else if (!shortlistButton && shareButton) {
-        button.dataset.edfBaseClass = shareButton.className;
+    if (!shortlistButton && shareButton) {
+        button.dataset.edfInactiveClass = shareButton.className;
+        button.dataset.edfActiveClass = ACTIVE_SHORTLIST_CLASS;
         button.className = `${shareButton.className} edf-blacklist-button`;
     }
 
