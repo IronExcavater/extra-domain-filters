@@ -1,13 +1,9 @@
+import { getBlacklist, toggleBlacklistListing } from "../domain/blacklist/store";
 import { resolveListingSnapshot } from "../domain/listings/cache";
-import {
-    addBlacklistEntry,
-    matchListing,
-    removeBlacklistEntry,
-    type BlacklistEntry,
-} from "../domain/matching";
+import { matchListing, type BlacklistEntry } from "../domain/matching";
 import { cloneBlacklistButton, removeFromShortlist, setBlacklistButtonState } from "../features/listing-cards/blacklist/button";
 import { PageMount } from "../shared/platform/router";
-import { getFromStorage, onStorageChange, setInStorage } from "../shared/platform/storage";
+import { onStorageChange } from "../shared/platform/storage";
 import { getSettings } from "../shared/state/settings";
 
 const CTA_SELECTOR = '[data-testid="listing-details__address-cta-buttons"]';
@@ -26,11 +22,10 @@ function getThumbnailUrl(): string | undefined {
 }
 
 async function isListingBlacklisted(url: string): Promise<boolean> {
-    const blacklist = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
     return matchListing(
         { url, title: "", text: "" },
         await getSettings(),
-        blacklist,
+        await getBlacklist(),
     ).exclusionReason === "blacklisted";
 }
 
@@ -80,7 +75,6 @@ const mountListingPage: PageMount = async (context) => {
         event.preventDefault();
         event.stopPropagation();
 
-        const blacklist = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
         const active = await isListingBlacklisted(url);
         const listing = await resolveListingSnapshot(
             {
@@ -92,11 +86,8 @@ const mountListingPage: PageMount = async (context) => {
             },
             { signal: context.signal, includeDetail: false },
         );
-        const next = active
-            ? removeBlacklistEntry(blacklist, url)
-            : addBlacklistEntry(blacklist, listing);
 
-        await setInStorage("blacklist", next);
+        await toggleBlacklistListing(listing);
         if (!active && shortlistButton) removeFromShortlist(shortlistButton);
         await syncButton(button, url);
     });

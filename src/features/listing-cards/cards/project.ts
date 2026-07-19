@@ -1,7 +1,7 @@
-import { isBlacklisted, removeBlacklistEntry, type BlacklistEntry } from "../../../domain/matching";
+import { removeBlacklistUrls } from "../../../domain/blacklist/store";
+import { isBlacklisted, type BlacklistEntry } from "../../../domain/matching";
 import { queueForegroundContrastSync } from "../../../shared/dom/contrast";
 import { PageContext } from "../../../shared/platform/router";
-import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
 import { replaceWithUnbinIcon } from "../../../shared/ui/icons";
 import { toggleBundleBlacklist, type BundleMember } from "../blacklist/bundle";
 import { cloneBlacklistButton, updateButton } from "../blacklist/button";
@@ -99,12 +99,7 @@ export function updateProjectBlacklistSummary(
             event.preventDefault();
             event.stopPropagation();
 
-            const current = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
-            const next = blacklistedUrls.reduce(
-                (entries, entry) => removeBlacklistEntry(entries, entry.url),
-                current,
-            );
-            await setInStorage("blacklist", next);
+            await removeBlacklistUrls(blacklistedUrls.map(entry => entry.url));
         };
     }
 }

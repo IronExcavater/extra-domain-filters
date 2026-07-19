@@ -1,19 +1,9 @@
-import {
-    addBlacklistEntry,
-    getBlacklistListing,
-    removeBlacklistEntry,
-    type BlacklistEntry,
-    type ListingSnapshot,
-} from "../domain/matching";
+import { clearBlacklist, getBlacklist, toggleBlacklistListing } from "../domain/blacklist/store";
+import { getBlacklistListing, type BlacklistEntry, type ListingSnapshot } from "../domain/matching";
+import { setBlacklistButtonState } from "../features/listing-cards/blacklist/button";
 import { PageMount } from "../shared/platform/router";
 import { getFromStorage, onStorageChange, setInStorage } from "../shared/platform/storage";
-import {
-    replaceWithBathIcon,
-    replaceWithBedIcon,
-    replaceWithBinIcon,
-    replaceWithParkingIcon,
-    replaceWithUnbinIcon,
-} from "../shared/ui/icons";
+import { replaceWithBathIcon, replaceWithBedIcon, replaceWithParkingIcon } from "../shared/ui/icons";
 
 const NOTES_KEY = "blacklistNotes";
 
@@ -151,16 +141,6 @@ function createFeatureBadge(
     return badge;
 }
 
-async function toggleBlacklistEntry(listing: ListingSnapshot, active: boolean): Promise<void> {
-    const current = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
-    await setInStorage(
-        "blacklist",
-        active
-            ? removeBlacklistEntry(current, listing.url)
-            : addBlacklistEntry(current, listing),
-    );
-}
-
 async function saveNote(url: string, note: string): Promise<void> {
     const notes = (await getFromStorage<NotesByUrl>(NOTES_KEY)) ?? {};
     const next = { ...notes };
@@ -272,20 +252,16 @@ function createBlacklistRow(
     const button = document.createElement("button");
     button.type = "button";
     button.className = "edf-blacklist-row-button edf-blacklist-card-button";
-    button.dataset.active = String(active);
-    button.setAttribute("aria-pressed", String(active));
-    button.ariaLabel = active ? "Unblacklist" : "Re-blacklist";
-    button.title = button.ariaLabel;
 
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     icon.setAttribute("width", "16");
     icon.setAttribute("height", "16");
     icon.setAttribute("aria-hidden", "true");
-    (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
     button.append(icon);
+    setBlacklistButtonState(button, active, "Re-blacklist");
 
     button.addEventListener("click", () => {
-        void toggleBlacklistEntry(listing, active);
+        void toggleBlacklistListing(listing);
     });
     actions.append(button);
 
@@ -297,7 +273,7 @@ function createBlacklistRow(
 
 async function render(container: HTMLElement, list: HTMLElement): Promise<void> {
     const [all = [], notes = {}] = await Promise.all([
-        getFromStorage<BlacklistEntry[]>("blacklist"),
+        getBlacklist(),
         getFromStorage<NotesByUrl>(NOTES_KEY),
     ]);
     const entries = [...all].sort((first, second) => second.addedAt - first.addedAt);
@@ -313,7 +289,7 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
     clearButton.textContent = "Clear all";
     clearButton.disabled = all.length === 0;
     clearButton.addEventListener("click", () => {
-        void setInStorage("blacklist", []);
+        void clearBlacklist();
     });
 
     controls.replaceChildren(clearButton);

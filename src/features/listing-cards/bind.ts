@@ -1,7 +1,6 @@
-import { type BlacklistEntry } from "../../domain/matching";
+import { getBlacklist } from "../../domain/blacklist/store";
 import { queueForegroundContrastSync } from "../../shared/dom/contrast";
 import { PageContext } from "../../shared/platform/router";
-import { getFromStorage } from "../../shared/platform/storage";
 import { getSettings } from "../../shared/state/settings";
 import { cloneBlacklistButton, insertBlacklistButton } from "./blacklist/button";
 import { toggleBlacklist } from "./blacklist/toggle";
@@ -58,7 +57,7 @@ export async function injectListingCards(
 
     const [settings, blacklist = []] = await Promise.all([
         getSettings(),
-        getFromStorage<BlacklistEntry[]>("blacklist"),
+        getBlacklist(),
     ]);
 
     updateListingCards(settings, blacklist, showBlacklistedView);

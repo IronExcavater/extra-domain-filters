@@ -1,9 +1,5 @@
-import {
-    removeBlacklistEntry,
-    type BlacklistEntry,
-    type ExclusionReason,
-} from "../../../domain/matching";
-import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
+import { removeBlacklistUrls } from "../../../domain/blacklist/store";
+import { type ExclusionReason } from "../../../domain/matching";
 import { replaceWithEyeIcon, replaceWithEyeOffIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 import { getBlacklistCardKind, getPropertyCount, getTitle, type BlacklistCardKind } from "../dom/card";
 import { isRevealed, reveal, unreveal } from "./reveal";
@@ -35,12 +31,7 @@ export async function resolveExclusionAction(url: string | readonly string[], re
         return;
     }
 
-    const current = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
-    const urls = [url].flat();
-    await setInStorage(
-        "blacklist",
-        urls.reduce((entries, currentUrl) => removeBlacklistEntry(entries, currentUrl), current),
-    );
+    await removeBlacklistUrls(url);
 }
 
 export function getExclusionRow(card: Element): HTMLElement {

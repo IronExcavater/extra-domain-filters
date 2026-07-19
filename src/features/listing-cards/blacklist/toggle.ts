@@ -1,13 +1,7 @@
+import { addOrReplaceBlacklistEntry, getBlacklist, toggleBlacklistListing } from "../../../domain/blacklist/store";
 import { resolveListingSnapshot } from "../../../domain/listings/cache";
-import {
-    addBlacklistEntry,
-    isBlacklisted,
-    removeBlacklistEntry,
-    type BlacklistEntry,
-    type ListingSnapshot,
-} from "../../../domain/matching";
+import { isBlacklisted, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
-import { getFromStorage, setInStorage } from "../../../shared/platform/storage";
 import { getListingSnapshot } from "../dom/card";
 import { removeFromShortlist, updateButton } from "./button";
 
@@ -19,11 +13,11 @@ async function refreshBlacklistSnapshot(
         signal: context.signal,
         includeDetail: true,
     });
-    const blacklist = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
+    const blacklist = await getBlacklist();
 
     if (!isBlacklisted(blacklist, listing.url)) return;
 
-    await setInStorage("blacklist", addBlacklistEntry(blacklist, detailedListing));
+    await addOrReplaceBlacklistEntry(detailedListing);
 }
 
 export async function toggleBlacklist(
@@ -33,15 +27,12 @@ export async function toggleBlacklist(
     shortlistButton?: HTMLButtonElement,
     button?: HTMLButtonElement
 ): Promise<void> {
-    const blacklist = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
+    const blacklist = await getBlacklist();
     const active = isBlacklisted(blacklist, url);
     const adding = !active;
     const listing = getListingSnapshot(card, url);
-    const next = active
-        ? removeBlacklistEntry(blacklist, url)
-        : addBlacklistEntry(blacklist, listing);
 
-    await setInStorage("blacklist", next);
+    await toggleBlacklistListing(listing);
     if (adding && shortlistButton) removeFromShortlist(shortlistButton);
     if (button) updateButton(button, !active);
 
