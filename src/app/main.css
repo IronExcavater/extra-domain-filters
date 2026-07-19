@@ -1,29 +1,26 @@
 .edf-listing-card-button-container {
-    align-items: center !important;
-    display: flex !important;
-    gap: 6px !important;
-    min-height: 0 !important;
-    padding: 0 !important;
+    align-items: center;
+    display: flex;
+    gap: 6px;
 }
 
 .edf-listing-card-button-container > [data-testid="listing-card-price"] {
-    flex: 1 1 auto !important;
+    flex: 1 1 auto;
 }
 
 .edf-listing-card-button-container > button {
-    flex: 0 0 auto !important;
-    position: static !important;
-    vertical-align: middle !important;
+    flex: 0 0 auto;
+    position: static;
 }
 
 .edf-listing-card-button-container:not(:has([data-testid="listing-card-price"])) {
-    width: fit-content !important;
+    width: fit-content;
 }
 
 [data-testid="listing-card-child-listing"] .edf-listing-card-button-container {
-    flex-direction: column !important;
-    gap: 4px !important;
-    overflow: visible !important;
+    flex-direction: column;
+    gap: 4px;
+    overflow: visible;
 }
 
 .edf-project-blacklist-row {
@@ -45,26 +42,8 @@
     color: inherit !important;
 }
 
-[data-testid="listing-card-blacklist"]:not(.edf-project-blacklist-button, .edf-carousel-blacklist-button, .edf-adaptive-foreground),
-.edf-blacklist-button:not(.edf-project-blacklist-button, .edf-carousel-blacklist-button, .edf-adaptive-foreground) {
-    align-items: center !important;
-    background: none !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    color: rgb(30 41 61 / 30%) !important;
-    cursor: pointer !important;
-    display: inline-flex !important;
-    justify-content: center !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-}
-
-.edf-blacklist-button[data-active="true"]:not(.edf-project-blacklist-button, .edf-carousel-blacklist-button, .edf-adaptive-foreground) {
-    color: rgb(30 41 61 / 65%) !important;
-}
-
 .edf-blacklist-shortlist-placeholder {
-    opacity: 0.4 !important;
+    opacity: 0.4;
 }
 
 .edf-exclusion-row {
@@ -147,7 +126,7 @@
 }
 
 .edf-project-blacklist-summary {
-    display: flex !important;
+    display: flex;
     margin: 8px 12px;
 }
 
@@ -159,7 +138,7 @@
 }
 
 .edf-blacklist-clear-button {
-    cursor: pointer !important;
+    cursor: pointer;
 }
 
 .edf-blacklist-clear-button:disabled {
@@ -168,9 +147,9 @@
 }
 
 .edf-blacklist-row-list {
-    display: grid !important;
-    gap: 12px !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .edf-blacklist-card {
@@ -296,13 +275,13 @@
 
 @media (width <= 980px) {
     .edf-blacklist-row-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (width <= 640px) {
     .edf-blacklist-row-list {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr;
     }
 }
 
@@ -323,16 +302,10 @@
 }
 
 .edf-carousel-blacklist-button {
-    align-items: center !important;
-    color: rgb(19 18 18) !important;
-    cursor: pointer !important;
-    display: inline-flex !important;
-    flex: 0 0 auto !important;
-    justify-content: center !important;
-    position: static !important;
+    color: rgb(19 18 18);
 }
 
 .edf-carousel-blacklist-button[data-active="true"],
 .edf-carousel-blacklist-button[aria-pressed="true"] {
-    color: rgb(19 18 18) !important;
+    color: rgb(19 18 18);
 }
