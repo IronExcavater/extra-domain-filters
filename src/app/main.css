@@ -168,21 +168,19 @@
 }
 
 .edf-blacklist-row-list {
-    gap: 10px;
-}
-
-.edf-blacklist-row-list-fallback {
-    display: flex;
-    flex-direction: column;
+    display: grid !important;
+    gap: 12px !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 }
 
 .edf-blacklist-card {
     background: #fff;
     border: 1px solid rgb(30 41 61 / 12%);
-    border-radius: 12px;
+    border-radius: 8px;
     display: flex;
-    gap: 14px;
-    padding: 12px;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
     transition: opacity 120ms ease;
 }
 
@@ -190,53 +188,43 @@
     opacity: 0.6;
 }
 
+.edf-blacklist-card-media {
+    aspect-ratio: 4 / 3;
+    background: rgb(30 41 61 / 6%);
+    display: block;
+    overflow: hidden;
+}
+
 .edf-blacklist-card-thumbnail {
-    border-radius: 8px;
-    flex: 0 0 auto;
-    height: 90px;
+    display: block;
+    height: 100%;
     object-fit: cover;
-    width: 120px;
+    width: 100%;
 }
 
 .edf-blacklist-card-body {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     min-width: 0;
+    padding: 10px;
 }
 
 .edf-blacklist-card-address {
-    align-items: center;
     color: rgb(30 41 61 / 85%);
-    display: flex;
+    display: -webkit-box;
     font-weight: 600;
-    gap: 8px;
+    line-height: 1.3;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-decoration: none;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
-.edf-blacklist-card-icon {
-    color: rgb(30 41 61 / 45%);
-    flex: 0 0 auto;
-}
-
-.edf-blacklist-card-meta {
-    align-items: center;
-    color: rgb(30 41 61 / 70%);
-    display: flex;
-    flex-wrap: wrap;
-    font-weight: 600;
-    gap: 10px;
-}
-
-.edf-blacklist-card-status {
-    background: rgb(30 41 61 / 8%);
-    border-radius: 999px;
-    font-size: 0.8em;
-    font-weight: 600;
-    padding: 2px 10px;
+.edf-blacklist-card-price {
+    color: rgb(30 41 61 / 78%);
+    font-weight: 700;
 }
 
 .edf-blacklist-card-features {
@@ -252,21 +240,43 @@
     gap: 4px;
 }
 
-.edf-blacklist-card-date {
-    color: rgb(30 41 61 / 45%);
+.edf-blacklist-card-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.edf-blacklist-card-notes {
+    display: contents;
+}
+
+.edf-blacklist-card-note-input {
+    border: 1px solid rgb(225 225 223);
+    border-radius: 8px;
+    flex: 1 0 100%;
+    font: inherit;
+    min-height: 74px;
+    padding: 8px;
+    resize: vertical;
 }
 
 .edf-blacklist-row-button {
+    align-items: center;
     background: #fff;
     border: 0.8px solid rgb(225 225 223);
     border-radius: 8px;
     color: rgb(19 18 18);
     cursor: pointer;
+    display: inline-flex;
     flex: 0 0 auto;
     font: inherit;
     font-weight: 700;
+    gap: 6px;
     margin-top: auto;
-    padding: 8px 16px;
+    padding: 7px 10px;
+    text-decoration: none;
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
@@ -282,6 +292,18 @@
 
 .edf-blacklist-row-button[data-active="true"]:hover {
     background: rgb(30 41 61 / 85%);
+}
+
+@media (width <= 980px) {
+    .edf-blacklist-row-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (width <= 640px) {
+    .edf-blacklist-row-list {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 .edf-hide-again-button {

@@ -144,8 +144,6 @@ export function getListingSnapshot(
         },
         price: card.querySelector('[data-testid="listing-card-price"]')
             ?.textContent?.trim(),
-        status: card.querySelector('[data-testid="listing-card-tag"]')
-            ?.textContent?.trim(),
         thumbnailUrl: includeThumbnail ? getThumbnailUrl(card) : undefined,
     };
 }

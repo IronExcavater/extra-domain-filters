@@ -3,6 +3,7 @@ import {
     getBlacklistListing,
     removeBlacklistEntry,
     type BlacklistEntry,
+    type ListingSnapshot,
 } from "../domain/matching";
 import { PageMount } from "../shared/platform/router";
 import { getFromStorage, onStorageChange, setInStorage } from "../shared/platform/storage";
@@ -13,6 +14,10 @@ import {
     replaceWithParkingIcon,
     replaceWithUnbinIcon,
 } from "../shared/ui/icons";
+
+const NOTES_KEY = "blacklistNotes";
+
+type NotesByUrl = Record<string, string>;
 
 function findShortlistContainer(): HTMLElement | undefined {
     const shortlistRoot = document.querySelector("#shortlist");
@@ -44,31 +49,26 @@ function waitForShortlistContainer(signal: AbortSignal): Promise<HTMLElement> {
 }
 
 function setTitle(container: HTMLElement): () => void {
-    const title = container.querySelector<HTMLElement>(
-        '[data-testid="shortlist__title"], h1, h2',
-    );
+    const title = container.querySelector<HTMLElement>('[data-testid="shortlist__title"], h1, h2');
     if (!title) return () => undefined;
 
     const original = title.textContent;
     title.textContent = "Your blacklist";
 
-    return () => { title.textContent = original; };
+    return () => {
+        title.textContent = original;
+    };
 }
 
 function findListContainer(container: HTMLElement): { list: HTMLElement; restore: () => void } {
-    const existing = container.querySelector<HTMLElement>(
-        '[data-testid="extra-domain-filters-blacklist-list"]',
-    );
+    const existing = container.querySelector<HTMLElement>('[data-testid="extra-domain-filters-blacklist-list"]');
     if (existing) return { list: existing, restore: () => undefined };
 
     const realList = container
         .querySelector('[data-testid="listing-card-container"]')
         ?.parentElement;
-
     const list = document.createElement("div");
-    list.className = realList instanceof HTMLElement
-        ? `${realList.className} edf-blacklist-row-list`
-        : "edf-blacklist-row-list edf-blacklist-row-list-fallback";
+    list.className = "edf-blacklist-row-list";
     list.setAttribute("data-testid", "extra-domain-filters-blacklist-list");
 
     if (realList instanceof HTMLElement) {
@@ -92,9 +92,7 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
 }
 
 function findMessage(container: HTMLElement): () => void {
-    const element = container.querySelector<HTMLElement>(
-        '[data-testid="shortlist__message_wrapper"]',
-    );
+    const element = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
     if (!element) return () => undefined;
 
     const originalHidden = element.hidden;
@@ -126,31 +124,9 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
     return controls;
 }
 
-function normalizeStatus(value: string | undefined): string | undefined {
-    return value?.trim().toLowerCase();
-}
-
-function getStatusClassMap(container: HTMLElement): Map<string, string> {
-    const entries = [...container.querySelectorAll<HTMLElement>('[data-testid="listing-card-tag"] span')]
-        .map(span => {
-            const status = normalizeStatus(span.textContent ?? undefined);
-            return status ? [status, span.className] as const : undefined;
-        })
-        .filter((entry): entry is readonly [string, string] => entry !== undefined);
-
-    return new Map(entries);
-}
-
 function getDomainButtonClass(container: HTMLElement): string | undefined {
-    return container.querySelector<HTMLButtonElement>(
-        '[data-testid="listing-card-buttons-wrapper"] button',
-    )?.className;
-}
-
-function getInactiveShortlistButtonClass(container: HTMLElement): string | undefined {
-    return container.querySelector<HTMLButtonElement>(
-        '[data-testid="listing-card-shortlist"]:not([data-testid$="shortlisted"])',
-    )?.className;
+    return container.querySelector<HTMLButtonElement>('[data-testid="listing-card-buttons-wrapper"] button')
+        ?.className;
 }
 
 function createFeatureBadge(
@@ -175,147 +151,98 @@ function createFeatureBadge(
     return badge;
 }
 
-function wireBlacklistToggle(button: HTMLButtonElement, listing: ReturnType<typeof getBlacklistListing>, active: boolean): void {
-    button.dataset.active = String(active);
-    button.setAttribute("aria-pressed", String(active));
-    button.addEventListener("click", async () => {
-        const current = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
-        await setInStorage(
-            "blacklist",
-            active
-                ? removeBlacklistEntry(current, listing.url)
-                : addBlacklistEntry(current, listing),
-        );
-    });
+async function toggleBlacklistEntry(listing: ListingSnapshot, active: boolean): Promise<void> {
+    const current = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
+    await setInStorage(
+        "blacklist",
+        active
+            ? removeBlacklistEntry(current, listing.url)
+            : addBlacklistEntry(current, listing),
+    );
 }
 
-function updateText(element: Element | null, value: string | undefined): void {
-    if (element && value) element.textContent = value;
+async function saveNote(url: string, note: string): Promise<void> {
+    const notes = (await getFromStorage<NotesByUrl>(NOTES_KEY)) ?? {};
+    const next = { ...notes };
+
+    if (note.trim()) next[url] = note.trim();
+    else delete next[url];
+
+    await setInStorage(NOTES_KEY, next);
 }
 
-function createShortlistStyledBlacklistRow(
-    template: HTMLElement,
-    entry: BlacklistEntry,
-    active: boolean,
-    statusClasses: ReadonlyMap<string, string>,
-    inactiveButtonClass: string | undefined,
-): HTMLElement {
-    const listing = getBlacklistListing(entry);
-    const card = template.cloneNode(true) as HTMLElement;
-    card.dataset.active = String(active);
-    card.dataset.edfBlacklistRow = "true";
+function createNotesControl(listing: ListingSnapshot, note: string | undefined): HTMLElement {
+    const wrapper = document.createElement("div");
+    wrapper.className = "edf-blacklist-card-notes";
 
-    for (const anchor of card.querySelectorAll<HTMLAnchorElement>("a[href]")) {
-        anchor.href = listing.url;
-    }
+    const text = document.createElement("textarea");
+    text.className = "edf-blacklist-card-note-input";
+    text.placeholder = "Add notes";
+    text.value = note ?? "";
+    text.hidden = true;
 
-    const image = card.querySelector<HTMLImageElement>("img");
-    if (image && listing.thumbnailUrl) {
-        image.src = listing.thumbnailUrl;
-        image.alt = listing.displayAddress ?? listing.title;
-    } else if (image) {
-        image.remove();
-    }
-
-    updateText(card.querySelector('[data-testid="address-wrapper"]'), listing.displayAddress ?? listing.title);
-    updateText(card.querySelector('[data-testid="listing-card-price"]'), listing.price);
-    const statusTag = card.querySelector<HTMLElement>('[data-testid="listing-card-tag"]');
-    updateText(statusTag, listing.status);
-    const statusClass = statusClasses.get(normalizeStatus(listing.status) ?? "");
-    const statusLabel = statusTag?.querySelector<HTMLElement>("span");
-    if (statusClass && statusLabel) statusLabel.className = statusClass;
-
-    const featureValues = [
-        listing.features?.bedrooms,
-        listing.features?.bathrooms,
-        listing.features?.parking,
-    ];
-    card.querySelectorAll('[data-testid="property-features-text-container"]').forEach((feature, index) => {
-        if (featureValues[index]) feature.firstChild!.textContent = featureValues[index];
-    });
-
-    const button = card.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]') ??
-        document.createElement("button");
+    const button = document.createElement("button");
     button.type = "button";
-    if (inactiveButtonClass) button.className = inactiveButtonClass;
-    button.setAttribute("data-testid", "extra-domain-filters-blacklist-toggle");
-    button.ariaLabel = active ? "Unblacklist" : "Re-blacklist";
-    button.title = button.ariaLabel;
+    button.className = "edf-blacklist-row-button";
+    button.textContent = note ? "Edit notes" : "Add notes";
 
-    const icon = button.querySelector("svg") ?? document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
-    if (!icon.parentElement) button.append(icon);
+    button.addEventListener("click", () => {
+        if (text.hidden) {
+            text.hidden = false;
+            button.textContent = "Save Notes";
+            text.focus();
+            return;
+        }
 
-    wireBlacklistToggle(button, listing, active);
+        void saveNote(listing.url, text.value).then(() => {
+            text.hidden = true;
+            button.textContent = text.value.trim() ? "Edit notes" : "Add notes";
+        });
+    });
 
-    if (!button.parentElement) card.append(button);
-
-    return card;
+    wrapper.append(text, button);
+    return wrapper;
 }
 
 function createBlacklistRow(
     entry: BlacklistEntry,
-    active: boolean,
-    template: HTMLElement | undefined,
-    statusClasses: ReadonlyMap<string, string>,
-    inactiveButtonClass: string | undefined,
+    note: string | undefined,
 ): HTMLElement {
     const listing = getBlacklistListing(entry);
-    if (template) {
-        return createShortlistStyledBlacklistRow(template, entry, active, statusClasses, inactiveButtonClass);
-    }
-
-    const card = document.createElement("div");
+    const active = !entry.removedAt;
+    const card = document.createElement("article");
     card.className = "edf-blacklist-card";
     card.dataset.active = String(active);
     card.setAttribute("data-testid", "extra-domain-filters-blacklist-row");
+
+    const link = document.createElement("a");
+    link.className = "edf-blacklist-card-media";
+    link.href = listing.url;
 
     if (listing.thumbnailUrl) {
         const thumbnail = document.createElement("img");
         thumbnail.className = "edf-blacklist-card-thumbnail";
         thumbnail.src = listing.thumbnailUrl;
-        thumbnail.alt = "";
+        thumbnail.alt = listing.displayAddress ?? listing.title;
         thumbnail.loading = "lazy";
-        card.append(thumbnail);
+        link.append(thumbnail);
     }
 
     const body = document.createElement("div");
     body.className = "edf-blacklist-card-body";
 
-    const address = document.createElement("div");
+    const address = document.createElement("a");
     address.className = "edf-blacklist-card-address";
-
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.classList.add("edf-blacklist-card-icon");
-    icon.setAttribute("width", "16");
-    icon.setAttribute("height", "16");
-    icon.setAttribute("aria-hidden", "true");
-    replaceWithBinIcon(icon);
-
-    const addressLabel = document.createElement("span");
-    addressLabel.textContent = listing.displayAddress ?? listing.title;
-
-    address.append(icon, addressLabel);
+    address.href = listing.url;
+    address.textContent = listing.displayAddress ?? listing.title;
     body.append(address);
 
-    const meta = document.createElement("div");
-    meta.className = "edf-blacklist-card-meta";
-
     if (listing.price) {
-        const price = document.createElement("span");
+        const price = document.createElement("div");
         price.className = "edf-blacklist-card-price";
         price.textContent = listing.price;
-        meta.append(price);
+        body.append(price);
     }
-
-    if (listing.status) {
-        const status = document.createElement("span");
-        status.className = "edf-blacklist-card-status";
-        status.textContent = listing.status;
-        meta.append(status);
-    }
-
-    if (meta.childElementCount > 0) body.append(meta);
 
     const features = [
         createFeatureBadge(replaceWithBedIcon, listing.features?.bedrooms),
@@ -330,33 +257,53 @@ function createBlacklistRow(
         body.append(featureRow);
     }
 
-    if (entry.addedAt > 0) {
-        const date = document.createElement("small");
-        date.className = "edf-blacklist-card-date";
-        date.textContent = `Blacklisted ${new Date(entry.addedAt).toLocaleDateString()}`;
-        body.append(date);
-    }
+    const actions = document.createElement("div");
+    actions.className = "edf-blacklist-card-actions";
+
+    const enquire = document.createElement("a");
+    enquire.className = "edf-blacklist-row-button";
+    enquire.href = listing.url;
+    enquire.textContent = "Enquire";
+    actions.append(enquire);
+
+    const notes = createNotesControl(listing, note);
+    actions.append(notes);
 
     const button = document.createElement("button");
     button.type = "button";
     button.className = "edf-blacklist-row-button edf-blacklist-card-button";
-    button.textContent = active ? "Unblacklist" : "Re-blacklist";
-    wireBlacklistToggle(button, listing, active);
-    body.append(button);
+    button.dataset.active = String(active);
+    button.setAttribute("aria-pressed", String(active));
+    button.ariaLabel = active ? "Unblacklist" : "Re-blacklist";
+    button.title = button.ariaLabel;
 
-    card.append(body);
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("width", "16");
+    icon.setAttribute("height", "16");
+    icon.setAttribute("aria-hidden", "true");
+    (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
+    button.append(icon);
+
+    button.addEventListener("click", () => {
+        void toggleBlacklistEntry(listing, active);
+    });
+    actions.append(button);
+
+    body.append(actions);
+    card.append(link, body);
 
     return card;
 }
 
 async function render(container: HTMLElement, list: HTMLElement): Promise<void> {
-    const all = (await getFromStorage<BlacklistEntry[]>("blacklist")) ?? [];
+    const [all = [], notes = {}] = await Promise.all([
+        getFromStorage<BlacklistEntry[]>("blacklist"),
+        getFromStorage<NotesByUrl>(NOTES_KEY),
+    ]);
     const entries = [...all].sort((first, second) => second.addedAt - first.addedAt);
 
     const controls = getControls(container, list);
-    const message = container.querySelector<HTMLElement>(
-        '[data-testid="shortlist__message_wrapper"]',
-    );
+    const message = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
 
     const clearButton = document.createElement("button");
     clearButton.type = "button";
@@ -378,21 +325,7 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
         }
     }
 
-    const template = container.querySelector<HTMLElement>(
-        '[data-testid="listing-card-container"]:not([data-edf-blacklist-row="true"])',
-    );
-    const statusClasses = getStatusClassMap(container);
-    const inactiveButtonClass = getInactiveShortlistButtonClass(container);
-
-    list.replaceChildren(
-        ...entries.map(entry => createBlacklistRow(
-            entry,
-            !entry.removedAt,
-            template ?? undefined,
-            statusClasses,
-            inactiveButtonClass,
-        )),
-    );
+    list.replaceChildren(...entries.map(entry => createBlacklistRow(entry, notes[entry.url])));
 }
 
 const mountBlacklistPage: PageMount = async (context) => {
@@ -403,13 +336,18 @@ const mountBlacklistPage: PageMount = async (context) => {
 
     await render(container, list);
 
-    const unwatch = onStorageChange<BlacklistEntry[]>(
+    const unwatchBlacklist = onStorageChange<BlacklistEntry[]>(
         "blacklist",
+        () => void render(container, list),
+    );
+    const unwatchNotes = onStorageChange<NotesByUrl>(
+        NOTES_KEY,
         () => void render(container, list),
     );
 
     context.signal.addEventListener("abort", () => {
-        unwatch();
+        unwatchBlacklist();
+        unwatchNotes();
         container.querySelector('[data-testid="extra-domain-filters-blacklist-controls"]')?.remove();
         restoreMessage();
         restoreTitle();

@@ -62,7 +62,6 @@ export interface ListingSnapshot {
         parking?: string;
     };
     price?: string;
-    status?: string;
     thumbnailUrl?: string;
     propertyType?: string;
 }
