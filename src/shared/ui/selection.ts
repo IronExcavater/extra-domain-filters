@@ -1,10 +1,17 @@
 export interface SelectionControlOptions {
+    actions?: readonly SelectionAction[];
     buttonClassName: string;
+    clearLabel?: string;
     controls: HTMLElement;
     onClear(ids: readonly string[]): void;
     onSelectionChange(ids: readonly string[]): void;
     selectedIds: readonly string[];
     visibleIds: readonly string[];
+}
+
+export interface SelectionAction {
+    label: string;
+    onAction(ids: readonly string[]): void;
 }
 
 function createButton(className: string): HTMLButtonElement {
@@ -58,12 +65,20 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
         );
     });
 
-    clearButton.ariaLabel = "Clear selected listings";
-    clearButton.textContent = "Clear selection";
+    clearButton.ariaLabel = options.clearLabel ?? "Clear selected listings";
+    clearButton.textContent = options.clearLabel ?? "Clear selection";
     clearButton.hidden = selectedVisibleCount === 0;
     clearButton.addEventListener("click", () => {
         options.onClear(visible.filter(id => selected.has(id)));
     });
 
-    options.controls.replaceChildren(clearButton, selectAllButton);
+    const actionButtons = (options.actions ?? []).map(action => {
+        const button = createButton(options.buttonClassName);
+        button.textContent = action.label;
+        button.hidden = selectedVisibleCount === 0;
+        button.addEventListener("click", () => action.onAction(visible.filter(id => selected.has(id))));
+        return button;
+    });
+
+    options.controls.replaceChildren(...actionButtons, clearButton, selectAllButton);
 }

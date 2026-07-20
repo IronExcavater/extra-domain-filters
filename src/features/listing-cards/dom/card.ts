@@ -127,6 +127,17 @@ function getFeature(card: Element, pattern: RegExp): string | undefined {
     return undefined;
 }
 
+export function getListingImageUrls(card: Element): string[] {
+    const urls = new Set<string>();
+
+    for (const image of card.querySelectorAll<HTMLImageElement>(LISTING_PHOTO_SELECTOR)) {
+        const url = image.currentSrc || image.src;
+        if (url) urls.add(url);
+    }
+
+    return [...urls];
+}
+
 interface ListingSnapshotOptions {
     includeThumbnail?: boolean;
 }
@@ -152,6 +163,7 @@ export function getListingSnapshot(
         price: card.querySelector('[data-testid="listing-card-price"]')
             ?.textContent?.trim(),
         thumbnailUrl: includeThumbnail ? getThumbnailUrl(card) : undefined,
+        imageUrls: includeThumbnail ? getListingImageUrls(card) : undefined,
     };
 }
 

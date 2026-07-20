@@ -46,16 +46,34 @@ export async function cacheListing(listing: ListingSnapshot): Promise<ListingSna
     return listing;
 }
 
-function parseListingPage(html: string): Pick<ListingSnapshot, "text" | "thumbnailUrl"> {
+function getImageUrls(document: Document): string[] {
+    const urls = new Set<string>();
+    const add = (value: string | null | undefined): void => {
+        if (!value || !/domainstatic\.com\.au|domain\.com\.au\/image/i.test(value)) return;
+        urls.add(value);
+    };
+
+    add(document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content);
+    add(document.querySelector<HTMLMetaElement>('meta[name="twitter:image"]')?.content);
+
+    for (const image of document.querySelectorAll<HTMLImageElement>("img")) {
+        const source = image.currentSrc || image.src;
+        const description = `${source} ${image.alt}`.toLowerCase();
+        if (/agency|logo/.test(description)) continue;
+        add(source);
+    }
+
+    return [...urls].slice(0, 24);
+}
+
+function parseListingPage(html: string): Pick<ListingSnapshot, "text" | "thumbnailUrl" | "imageUrls"> {
     const document = new DOMParser().parseFromString(html, "text/html");
-    const thumbnailUrl =
-        document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content ||
-        document.querySelector<HTMLMetaElement>('meta[name="twitter:image"]')?.content ||
-        undefined;
+    const imageUrls = getImageUrls(document);
 
     return {
         text: document.body.textContent ?? "",
-        thumbnailUrl,
+        thumbnailUrl: imageUrls[0],
+        imageUrls,
     };
 }
 
@@ -84,6 +102,7 @@ export async function resolveListingSnapshot(
                 ...base,
                 text: `${base.text}\n${page.text}`,
                 thumbnailUrl: page.thumbnailUrl ?? base.thumbnailUrl,
+                imageUrls: [...new Set([...(base.imageUrls ?? []), ...(page.imageUrls ?? [])])],
             };
         })
         .then(cacheListing)

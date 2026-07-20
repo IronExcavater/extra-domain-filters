@@ -238,13 +238,16 @@ async function render(
     template?: HTMLElement,
 ): Promise<void> {
     const all = await getBlacklist();
-    const entries = [...all].sort((first, second) => second.addedAt - first.addedAt);
+    const entries = all
+        .filter(entry => !entry.removedAt)
+        .sort((first, second) => second.addedAt - first.addedAt);
 
     const controls = getControls(container, list);
     const message = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
 
     renderSelectionControls({
         buttonClassName: ACTION_BUTTON_CLASS,
+        clearLabel: "Unblacklist",
         controls,
         onClear: ids => {
             void removeBlacklistUrls(ids).then(() => selectedUrls.clear());

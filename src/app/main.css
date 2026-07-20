@@ -399,6 +399,14 @@
     height: auto !important;
 }
 
+#shortlist [data-testid="listing-card-buttons-wrapper"] {
+    display: none !important;
+}
+
+.edf-inline-note {
+    resize: vertical;
+}
+
 .slick-arrow:has([data-testid^="carousel-button-"]) {
     align-items: center;
     display: inline-flex !important;

@@ -153,8 +153,7 @@ function setButtonLabel(button: HTMLButtonElement, label: string | undefined): v
 
 function usesUnbinIcon(button: HTMLButtonElement): boolean {
     return button.dataset.blacklistScope === "project" ||
-        button.dataset.blacklistScope === "carousel" ||
-        button.dataset.testid === "extra-domain-filters-blacklist-toggle";
+        button.dataset.blacklistScope === "carousel";
 }
 
 function setBlacklistIcon(

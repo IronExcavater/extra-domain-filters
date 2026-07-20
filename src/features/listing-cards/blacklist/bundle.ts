@@ -1,5 +1,7 @@
 import { toggleBlacklistListings } from "../../../domain/blacklist/store";
 import { isBlacklisted, type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
+import { isShortlisted, removeFromShortlist } from "../clone/blacklistButton";
+import { getCard, getListingUrl, SHORTLIST_BUTTON_SELECTOR } from "../dom/card";
 
 export interface BundleMember {
     url: string;
@@ -7,10 +9,19 @@ export interface BundleMember {
 }
 
 export async function toggleBundleBlacklist(members: readonly BundleMember[]): Promise<void> {
-    await toggleBlacklistListings(members.map(member => ({
+    const adding = await toggleBlacklistListings(members.map(member => ({
         ...member.snapshot,
         url: member.url,
     })));
+    if (!adding) return;
+
+    const urls = new Set(members.map(member => member.url.replace(/\/$/, "")));
+    for (const button of document.querySelectorAll<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR)) {
+        const card = getCard(button);
+        const url = card ? getListingUrl(button, card) : undefined;
+        if (!url || !urls.has(url.replace(/\/$/, "")) || !isShortlisted(button)) continue;
+        removeFromShortlist(button);
+    }
 }
 
 export function isBundleSelected(

@@ -1,10 +1,15 @@
-import { getBlacklist } from "../../domain/blacklist/store";
+import { getBlacklist, removeBlacklistUrls } from "../../domain/blacklist/store";
 import { PageContext } from "../../shared/platform/router";
 import { getSettings } from "../../shared/state/settings";
 import { toggleBlacklist } from "./blacklist/toggle";
 import { bindCarouselCard, disposeDetachedCarouselControls } from "./cards/carousel";
 import { bindProjectCard } from "./cards/project";
-import { cloneBlacklistButton, insertBlacklistButton, SHORTLIST_CARD_BUTTON_SKIN } from "./clone/blacklistButton";
+import {
+    cloneBlacklistButton,
+    insertBlacklistButton,
+    isShortlisted,
+    SHORTLIST_CARD_BUTTON_SKIN,
+} from "./clone/blacklistButton";
 import {
     getCard,
     getBlacklistCardKind,
@@ -43,6 +48,17 @@ function bindBlacklistButton(
         event.stopImmediatePropagation();
         await toggleBlacklist(card, url, context, shortlistButton, button);
     }, { capture: true });
+
+    shortlistButton.addEventListener("click", () => {
+        requestAnimationFrame(async () => {
+            if (!isShortlisted(shortlistButton)) return;
+
+            const blacklist = await getBlacklist();
+            if (blacklist.some(entry => entry.url.replace(/\/$/, "") === url.replace(/\/$/, "") && !entry.removedAt)) {
+                await removeBlacklistUrls(url);
+            }
+        });
+    });
 }
 
 export async function injectListingCards(

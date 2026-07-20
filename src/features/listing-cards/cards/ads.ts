@@ -2,18 +2,12 @@ const AD_CARD_SELECTOR = '[data-testid^="adSpot-"]';
 
 const AD_BANNER_SELECTOR = '[data-testid="adb-srp-top"]';
 
-function hide(element: Element): void {
-    if (element instanceof HTMLElement) {
-        element.style.setProperty('display', 'none', 'important');
-    }
-}
-
 function hideAds(): void {
-    document.querySelectorAll(AD_CARD_SELECTOR).forEach(hide);
+    document.querySelectorAll(AD_CARD_SELECTOR).forEach(ad => ad.remove());
 
     document.querySelectorAll(AD_BANNER_SELECTOR).forEach(ad => {
         const banner = ad.parentElement?.parentElement;
-        if (banner) hide(banner);
+        banner?.remove();
     });
 }
 

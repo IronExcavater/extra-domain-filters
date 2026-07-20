@@ -5,6 +5,7 @@ import { getBlacklistCardKind, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 const GROUP_SELECTOR = '[data-testid="listing-card-exclusion-group"]';
 const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
 const expandedUrls = new Set<string>();
+let previousSignature = "";
 
 type ActiveReason = Exclude<ExclusionReason, "none">;
 
@@ -116,7 +117,21 @@ function groupRun(run: ExcludedCard[]): void {
     }
 }
 
+function getCompactionSignature(): string {
+    return [...document.querySelectorAll<HTMLElement>(TOP_LEVEL_CARD_SELECTOR)]
+        .map(card => {
+            const excluded = getExcludedCard(card);
+            if (!excluded) return `visible:${card.dataset.listingId ?? ""}`;
+            return `${excluded.reason}:${excluded.urls.join(",")}`;
+        })
+        .join("|");
+}
+
 export function compactExcludedListingCards(): void {
+    const signature = getCompactionSignature();
+    if (signature === previousSignature) return;
+    previousSignature = signature;
+
     unwrapGroups();
 
     const parents = new Set(

@@ -21,7 +21,7 @@ export function getExclusionSummaryText(card: Element, reason: ActiveReason): st
     const title = getTitle(card);
 
     if (reason === "blacklisted") {
-        return `Blacklisted: ${title}`;
+        return title;
     }
 
     return count > 1 ? `${count} properties filtered out` : `Filtered out: ${title}`;

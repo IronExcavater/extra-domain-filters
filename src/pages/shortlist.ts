@@ -1,10 +1,14 @@
+import { getBlacklist, toggleBlacklistListing } from "../domain/blacklist/store";
+import { isBlacklisted } from "../domain/matching";
 import { bindListingCards } from "../features/listing-cards";
+import { getListingSnapshot } from "../features/listing-cards/dom/card";
 import { PageMount } from "../shared/platform/router";
 import { createSelectionCheckbox, renderSelectionControls } from "../shared/ui/selection";
 
 const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
 
 const selectedCardIds = new Set<string>();
+const noteValues = new WeakMap<HTMLTextAreaElement, string>();
 
 function getContainer(): HTMLElement | undefined {
     const root = document.querySelector("#shortlist");
@@ -82,8 +86,54 @@ function syncSelectionControls(container: HTMLElement): void {
     }
 }
 
+function findCardButton(card: HTMLElement, label: string): HTMLButtonElement | undefined {
+    return [...card.querySelectorAll<HTMLButtonElement>("button")]
+        .find(button => button.textContent?.trim() === label);
+}
+
+function setNativeTextareaValue(textarea: HTMLTextAreaElement, value: string): void {
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")
+        ?.set?.call(textarea, value);
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    textarea.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+async function saveInlineNote(card: HTMLElement, editor: HTMLTextAreaElement): Promise<void> {
+    const value = editor.value.trim();
+    if (noteValues.get(editor) === value) return;
+
+    findCardButton(card, "Edit Notes")?.click();
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+    const nativeEditor = [...card.querySelectorAll<HTMLTextAreaElement>("textarea")]
+        .find(textarea => textarea !== editor);
+    if (!nativeEditor) return;
+
+    setNativeTextareaValue(nativeEditor, value);
+    findCardButton(card, "Save Notes")?.click();
+    noteValues.set(editor, value);
+}
+
+function configureInlineNote(card: HTMLElement): void {
+    const textarea = card.querySelector<HTMLTextAreaElement>("textarea:not(.edf-inline-note)");
+    if (!textarea?.disabled) return;
+
+    const editor = textarea.cloneNode(true) as HTMLTextAreaElement;
+    editor.classList.add("edf-inline-note");
+    editor.disabled = false;
+    editor.readOnly = false;
+    editor.value = textarea.value;
+    noteValues.set(editor, editor.value.trim());
+    editor.addEventListener("blur", () => void saveInlineNote(card, editor));
+    editor.addEventListener("keydown", event => {
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") editor.blur();
+    });
+    textarea.replaceWith(editor);
+}
+
 function configureCards(container: HTMLElement): void {
     syncSelectionControls(container);
+    getCards(container).forEach(configureInlineNote);
 }
 
 function clearCards(container: HTMLElement, ids: readonly string[]): void {
@@ -97,13 +147,33 @@ function clearCards(container: HTMLElement, ids: readonly string[]): void {
     }
 }
 
+async function blacklistCards(container: HTMLElement, ids: readonly string[]): Promise<void> {
+    const selected = new Set(ids);
+    const blacklist = await getBlacklist();
+
+    for (const card of getCards(container)) {
+        const id = getCardId(card);
+        if (!id || !selected.has(id) || isBlacklisted(blacklist, id)) continue;
+
+        await toggleBlacklistListing(getListingSnapshot(card, id));
+        card.querySelector<HTMLButtonElement>('[data-testid="listing-card-shortlist-shortlisted"]')?.click();
+    }
+}
+
 function renderControls(container: HTMLElement): void {
     const controls = getControls(container);
     const cards = getCards(container);
     const visibleIds = getCardIds(cards);
 
     renderSelectionControls({
+        actions: [{
+            label: "Blacklist",
+            onAction: ids => {
+                void blacklistCards(container, ids).then(() => selectedCardIds.clear());
+            },
+        }],
         buttonClassName: ACTION_BUTTON_CLASS,
+        clearLabel: "Remove from shortlist",
         controls,
         onClear: ids => {
             clearCards(container, ids);

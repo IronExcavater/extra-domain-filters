@@ -63,6 +63,7 @@ export interface ListingSnapshot {
     };
     price?: string;
     thumbnailUrl?: string;
+    imageUrls?: string[];
     propertyType?: string;
 }
 
@@ -95,6 +96,21 @@ export function addBlacklistEntry(
     entries: readonly BlacklistEntry[],
     listing: ListingSnapshot,
 ): BlacklistEntry[] {
+    const existing = entries.find(entry => hasUrl(entry, listing.url));
+    if (existing) {
+        return entries.map(entry =>
+            hasUrl(entry, listing.url)
+                ? {
+                    ...entry,
+                    removedAt: undefined,
+                    displayAddress: listing.displayAddress ?? entry.displayAddress,
+                    thumbnailUrl: listing.thumbnailUrl ?? entry.thumbnailUrl,
+                    listing: { ...entry.listing, ...listing },
+                }
+                : entry,
+        );
+    }
+
     const entry: BlacklistEntry = {
         url: listing.url,
         addedAt: Date.now(),
@@ -103,10 +119,7 @@ export function addBlacklistEntry(
         listing,
     };
 
-    return [
-        ...entries.filter(current => !hasUrl(current, listing.url)),
-        entry,
-    ];
+    return [...entries, entry];
 }
 
 export function removeBlacklistEntry(

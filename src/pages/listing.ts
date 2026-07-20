@@ -1,7 +1,12 @@
-import { getBlacklist, toggleBlacklistListing } from "../domain/blacklist/store";
+import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
 import { resolveListingSnapshot } from "../domain/listings/cache";
 import { matchListing, type BlacklistEntry } from "../domain/matching";
-import { cloneBlacklistButton, removeFromShortlist, setBlacklistButtonState } from "../features/listing-cards/clone/blacklistButton";
+import {
+    cloneBlacklistButton,
+    isShortlisted,
+    removeFromShortlist,
+    setBlacklistButtonState,
+} from "../features/listing-cards/clone/blacklistButton";
 import { PageMount } from "../shared/platform/router";
 import { onStorageChange } from "../shared/platform/storage";
 import { getSettings } from "../shared/state/settings";
@@ -93,6 +98,13 @@ const mountListingPage: PageMount = async (context) => {
         await toggleBlacklistListing(listing);
         if (!active && shortlistButton) removeFromShortlist(shortlistButton);
         await syncButton(button, url);
+    });
+
+    shortlistButton?.addEventListener("click", () => {
+        requestAnimationFrame(async () => {
+            if (!isShortlisted(shortlistButton)) return;
+            await removeBlacklistUrls(url);
+        });
     });
 
     await syncButton(button, url);
