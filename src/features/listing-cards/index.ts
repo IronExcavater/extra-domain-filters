@@ -39,7 +39,19 @@ export function bindListingCards(
 
     schedule();
 
-    const observer = new MutationObserver(schedule);
+    const isExtensionNode = (node: Node): boolean =>
+        node instanceof Element && (
+            [...node.classList].some(className => className.startsWith("edf-")) ||
+            Boolean(node.closest('[data-testid^="extra-domain-filters-"]'))
+        );
+
+    const observer = new MutationObserver(mutations => {
+        const hasExternalAddition = mutations.some(mutation =>
+            [...mutation.addedNodes].some(node => !isExtensionNode(node)),
+        );
+
+        if (hasExternalAddition) schedule();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
 
     const unwatchBlacklist = onStorageChange<BlacklistEntry[]>("blacklist", schedule);

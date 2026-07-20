@@ -49,15 +49,8 @@
 }
 
 .edf-project-blacklist-button {
-    flex: 0 0 auto;
-}
-
-.edf-project-blacklist-button,
-.edf-project-blacklist-button:hover,
-.edf-project-blacklist-button:focus,
-.edf-project-blacklist-button:active,
-.edf-project-blacklist-button[aria-pressed="true"] {
     color: #fff !important;
+    flex: 0 0 auto;
 }
 
 .edf-blacklist-shortlist-placeholder {
@@ -205,21 +198,13 @@
     font: inherit;
     font-weight: 600;
     justify-content: center;
-    min-height: 46px;
-    padding: 0 28px;
+    min-height: 40px;
+    padding: 0 18px;
 }
 
 .edf-action-button:hover {
     border-color: rgb(0 135 0);
     color: rgb(0 135 0);
-}
-
-.edf-sort-control {
-    align-items: center;
-    border: 1px solid rgb(197 203 213);
-    border-radius: 8px;
-    display: inline-flex;
-    min-height: 46px;
 }
 
 .edf-sort-label {
@@ -230,14 +215,16 @@
 .edf-selection-checkbox {
     align-items: center;
     display: inline-flex;
-    left: 8px;
-    position: absolute;
-    top: 8px;
-    z-index: 1;
+    flex: 0 0 auto;
+    margin-right: 8px;
 }
 
-[data-testid="extra-domain-filters-blacklist-row"] {
-    position: relative;
+.edf-selection-checkbox input {
+    accent-color: rgb(0 135 0);
+    cursor: pointer;
+    height: 18px;
+    margin: 0;
+    width: 18px;
 }
 
 .edf-hide-again-button {
@@ -265,10 +252,31 @@
     color: rgb(19 18 18);
 }
 
+.edf-carousel-child-blacklisted {
+    display: none !important;
+}
+
+.edf-blacklist-button[data-active="false"] > svg {
+    color: rgb(30 41 61 / 30%);
+    fill: transparent;
+    transition: color 0.2s ease-in-out, fill 0.2s ease-in-out;
+}
+
+.edf-blacklist-button[data-active="false"]:hover > svg,
+.edf-blacklist-button[data-active="false"]:focus-visible > svg {
+    color: rgb(255 204 0);
+}
+
 .slick-arrow:has([data-testid^="carousel-button-"]) {
     align-items: center;
     display: inline-flex !important;
     justify-content: center;
     line-height: 0;
     padding: 0 !important;
+}
+
+.edf-project-blacklist-button:hover,
+.edf-project-blacklist-button:focus-visible,
+.edf-project-blacklist-button:active {
+    color: rgb(255 204 0) !important;
 }

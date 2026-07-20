@@ -67,13 +67,6 @@ export function updateProjectBlacklistSummary(
 
     const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
     if (bulkButton) {
-        if (bulkButton.classList.contains("edf-adaptive-foreground")) {
-            bulkButton.classList.remove("edf-adaptive-foreground");
-        }
-        if (bulkButton.style.getPropertyValue("--edf-adaptive-foreground")) {
-            bulkButton.style.removeProperty("--edf-adaptive-foreground");
-        }
-        if (bulkButton.style.color !== "rgb(255, 255, 255)") bulkButton.style.color = "#fff";
         updateButton(
             bulkButton,
             blacklistedUrls.length > 0,

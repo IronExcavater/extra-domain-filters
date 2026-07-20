@@ -6,13 +6,13 @@ import { PageMount } from "../shared/platform/router";
 import { onStorageChange } from "../shared/platform/storage";
 import { getSettings } from "../shared/state/settings";
 
-const CTA_SELECTOR = '[data-testid="listing-details__address-cta-buttons"]';
-const SHORTLIST_SELECTOR = '[data-testid="listing-details__address-cta-button-shortlist"]';
+const CTA_SELECTOR = '[data-testid="listing-details__address-cta-buttons"], [data-testid*="cta-buttons"]';
+const SHORTLIST_SELECTOR = '[data-testid^="listing-details__address-cta-button-shortlist"], button[aria-label*="shortlist" i]';
 const SHARE_SELECTOR = '[data-testid="listing-details__address-cta-button-share"]';
 const ACTIVE_SHORTLIST_CLASS = "css-11t19a7";
 
 function getAddress(): string {
-    return document.querySelector("h1")?.textContent?.trim() || document.title;
+    return document.querySelector("h1, [data-testid*='title-name']")?.textContent?.trim() || document.title;
 }
 
 function getThumbnailUrl(): string | undefined {
@@ -64,7 +64,7 @@ function insertButton(): { button: HTMLButtonElement; shortlistButton?: HTMLButt
     }
 
     if (cta) cta.append(button);
-    else document.body.prepend(button);
+    else shortlistButton?.parentElement?.append(button);
 
     return { button, shortlistButton };
 }
@@ -72,6 +72,7 @@ function insertButton(): { button: HTMLButtonElement; shortlistButton?: HTMLButt
 const mountListingPage: PageMount = async (context) => {
     const url = context.url.href;
     const { button, shortlistButton } = insertButton();
+    if (!button.isConnected) return;
 
     button.addEventListener("click", async event => {
         event.preventDefault();

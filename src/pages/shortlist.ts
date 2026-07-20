@@ -5,7 +5,6 @@ import { createSelectionCheckbox, renderSelectionControls } from "../shared/ui/s
 const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
 
 const selectedCardIds = new Set<string>();
-let selectionMode = false;
 
 function getContainer(): HTMLElement | undefined {
     const root = document.querySelector("#shortlist");
@@ -39,8 +38,13 @@ function getControls(container: HTMLElement): HTMLElement {
 
     controls.className = "edf-page-actions";
     controls.setAttribute("data-testid", "extra-domain-filters-shortlist-controls");
-    if (sort?.parentElement) sort.parentElement.insertBefore(controls, sort);
-    else container.prepend(controls);
+    if (sort?.parentElement) {
+        const label = document.createElement("span");
+        label.className = "edf-sort-label";
+        label.textContent = "Sort by";
+        sort.parentElement.insertBefore(controls, sort);
+        sort.parentElement.insertBefore(label, sort);
+    } else container.prepend(controls);
 
     return controls;
 }
@@ -51,13 +55,13 @@ function removeSelectionControls(container: HTMLElement): void {
 
 function syncSelectionControls(container: HTMLElement): void {
     removeSelectionControls(container);
-    if (!selectionMode) return;
 
     for (const card of getCards(container)) {
         const id = getCardId(card);
         if (!id) continue;
 
-        card.prepend(createSelectionCheckbox(
+        const titleRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]');
+        (titleRow ?? card).prepend(createSelectionCheckbox(
             selectedCardIds.has(id),
             "Select shortlisted listing",
             checked => {
@@ -86,19 +90,11 @@ function renderControls(container: HTMLElement): void {
     const visibleIds = getCardIds(cards);
 
     renderSelectionControls({
-        allCount: cards.length,
         buttonClassName: ACTION_BUTTON_CLASS,
         controls,
-        mode: selectionMode,
         onClear: ids => {
-            clearCards(container, selectionMode ? ids : visibleIds);
+            clearCards(container, ids);
             selectedCardIds.clear();
-            renderControls(container);
-            syncSelectionControls(container);
-        },
-        onModeChange: active => {
-            selectionMode = active;
-            if (!selectionMode) selectedCardIds.clear();
             renderControls(container);
             syncSelectionControls(container);
         },

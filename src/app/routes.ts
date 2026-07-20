@@ -26,6 +26,13 @@ export const routes: Route[] = [
         load: () => import('../pages/listing.ts'),
     },
     {
+        id: 'project',
+        test: match({
+            prefix: ['/project/']
+        }),
+        load: () => import('../pages/listing.ts'),
+    },
+    {
         id: 'blacklist',
         test: match({
             path: '/user/shortlist',

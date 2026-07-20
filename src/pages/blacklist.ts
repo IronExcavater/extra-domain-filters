@@ -1,4 +1,4 @@
-import { clearBlacklist, getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
+import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
 import { getBlacklistListing, type BlacklistEntry } from "../domain/matching";
 import { SHORTLIST_CARD_BUTTON_SKIN, setBlacklistButtonState } from "../features/listing-cards/clone/blacklistButton";
 import { createShortlistSnapshotCard } from "../features/listing-cards/render/shortlistSnapshot";
@@ -9,7 +9,6 @@ import { createSelectionCheckbox, renderSelectionControls } from "../shared/ui/s
 const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
 
 const selectedUrls = new Set<string>();
-let selectionMode = false;
 
 function getRowKey(entry: BlacklistEntry): string {
     return getBlacklistListing(entry).url;
@@ -56,10 +55,13 @@ function setTitle(container: HTMLElement): () => void {
     if (!title) return () => undefined;
 
     const original = title.textContent;
+    const originalDocumentTitle = document.title;
     title.textContent = "Blacklisted properties";
+    document.title = "Blacklisted properties | Domain";
 
     return () => {
         title.textContent = original;
+        document.title = originalDocumentTitle;
     };
 }
 
@@ -96,6 +98,12 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
     return { list, restore: () => list.remove() };
 }
 
+function findCardTemplate(container: HTMLElement): HTMLElement | undefined {
+    return container.querySelector<HTMLElement>(
+        '[data-testid="listing-card-container"]:not([data-edf-blacklist-row])',
+    ) ?? undefined;
+}
+
 function findMessage(container: HTMLElement): () => void {
     const element = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
     if (!element) return () => undefined;
@@ -124,7 +132,6 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
         const label = document.createElement("span");
         label.className = "edf-sort-label";
         label.textContent = "Sort by";
-        sort.classList.add("edf-sort-control");
         sort.parentElement.insertBefore(controls, sort);
         sort.parentElement.insertBefore(label, sort);
     } else {
@@ -134,29 +141,34 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
     return controls;
 }
 
-function createSelectionInput(url: string): HTMLLabelElement {
+function createSelectionInput(url: string, onChange: () => void): HTMLLabelElement {
     return createSelectionCheckbox(
         selectedUrls.has(url),
         "Select blacklisted listing",
         checked => {
             if (checked) selectedUrls.add(url);
             else selectedUrls.delete(url);
+            onChange();
         },
     );
 }
 
-function createBlacklistRow(entry: BlacklistEntry): HTMLElement {
+function createBlacklistRow(
+    entry: BlacklistEntry,
+    onSelectionChange: () => void,
+    template?: HTMLElement,
+): HTMLElement {
     const listing = getBlacklistListing(entry);
     const active = !entry.removedAt;
     const button = document.createElement("button");
-    const card = createShortlistSnapshotCard(listing, { blacklistButton: button });
+    const card = createShortlistSnapshotCard(listing, { blacklistButton: button }, template);
 
     card.dataset.active = String(active);
     card.dataset.edfBlacklistRow = "true";
     card.dataset.edfBlacklistUrl = listing.url;
     card.dataset.edfBlacklistVersion = getRowVersion(entry);
-    card.setAttribute("data-testid", "extra-domain-filters-blacklist-row");
-    if (selectionMode) card.prepend(createSelectionInput(listing.url));
+    const titleRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]');
+    (titleRow ?? card).prepend(createSelectionInput(listing.url, onSelectionChange));
 
     button.type = "button";
     button.className = `${SHORTLIST_CARD_BUTTON_SKIN.active} edf-blacklist-button`;
@@ -177,9 +189,10 @@ function reconcileRows(
     container: HTMLElement,
     list: HTMLElement,
     entries: BlacklistEntry[],
+    template?: HTMLElement,
 ): void {
     const existingRows = new Map(
-        [...list.querySelectorAll<HTMLElement>('[data-testid="extra-domain-filters-blacklist-row"]')]
+        [...list.querySelectorAll<HTMLElement>('[data-edf-blacklist-row="true"]')]
             .map(row => [row.dataset.edfBlacklistUrl, row] as const)
             .filter((entry): entry is [string, HTMLElement] => entry[0] !== undefined),
     );
@@ -190,16 +203,22 @@ function reconcileRows(
         const existing = existingRows.get(url);
 
         if (existing?.dataset.edfBlacklistVersion === version) {
+            const input = existing.querySelector<HTMLInputElement>('.edf-selection-checkbox input');
+            if (input) input.checked = selectedUrls.has(url);
             return existing;
         }
 
-        return createBlacklistRow(entry);
+        return createBlacklistRow(entry, () => void render(container, list, template), template);
     });
 
     list.replaceChildren(...rows);
 }
 
-async function render(container: HTMLElement, list: HTMLElement): Promise<void> {
+async function render(
+    container: HTMLElement,
+    list: HTMLElement,
+    template?: HTMLElement,
+): Promise<void> {
     const all = await getBlacklist();
     const entries = [...all].sort((first, second) => second.addedAt - first.addedAt);
 
@@ -207,18 +226,10 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
     const message = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
 
     renderSelectionControls({
-        allCount: all.length,
         buttonClassName: ACTION_BUTTON_CLASS,
         controls,
-        mode: selectionMode,
         onClear: ids => {
-            if (selectionMode) void removeBlacklistUrls(ids).then(() => selectedUrls.clear());
-            else void clearBlacklist();
-        },
-        onModeChange: active => {
-            selectionMode = active;
-            if (!selectionMode) selectedUrls.clear();
-            void render(container, list);
+            void removeBlacklistUrls(ids).then(() => selectedUrls.clear());
         },
         onSelectionChange: ids => {
             selectedUrls.clear();
@@ -236,20 +247,21 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
         }
     }
 
-    reconcileRows(container, list, entries);
+    reconcileRows(container, list, entries, template);
 }
 
 const mountBlacklistPage: PageMount = async (context) => {
     const container = await waitForShortlistContainer(context.signal);
     const restoreTitle = setTitle(container);
     const restoreMessage = findMessage(container);
+    const template = findCardTemplate(container);
     const { list, restore: restoreList } = findListContainer(container);
 
-    await render(container, list);
+    await render(container, list, template);
 
     const unwatchBlacklist = onStorageChange<BlacklistEntry[]>(
         "blacklist",
-        () => void render(container, list),
+        () => void render(container, list, template),
     );
 
     context.signal.addEventListener("abort", () => {

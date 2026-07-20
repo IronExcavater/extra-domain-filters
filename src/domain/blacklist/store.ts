@@ -17,10 +17,6 @@ export async function setBlacklist(entries: readonly BlacklistEntry[]): Promise<
     await setInStorage(BLACKLIST_KEY, [...entries]);
 }
 
-export async function clearBlacklist(): Promise<void> {
-    await setBlacklist([]);
-}
-
 export async function addOrReplaceBlacklistEntry(listing: ListingSnapshot): Promise<void> {
     await setBlacklist(addBlacklistEntry(await getBlacklist(), listing));
 }

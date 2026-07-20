@@ -1,14 +1,84 @@
 import { type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
 import { getBlacklistedBundleUrls, toggleBundleBlacklist } from "../blacklist/bundle";
-import { cloneBlacklistButton, cloneFeaturedControlButton, updateButton } from "../clone/blacklistButton";
+import {
+    cloneFeaturedActionButton,
+    cloneBlacklistButton,
+    cloneFeaturedControlButton,
+    updateButton,
+} from "../clone/blacklistButton";
 import {
     CAROUSEL_CHILD_SELECTOR,
     getChildListingUrl,
     getListingSnapshot,
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "../dom/card";
-import { applyExclusionState, updateExclusionRow } from "../exclusion/row";
+
+const pausedCarousels = new WeakMap<HTMLElement, {
+    observer: MutationObserver;
+    paused: boolean;
+    transform: string;
+}>();
+
+function setPauseIcon(button: HTMLButtonElement, paused: boolean): void {
+    const icon = button.querySelector<SVGSVGElement>("svg");
+    if (!icon || button.dataset.paused === String(paused)) return;
+
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.replaceChildren();
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("fill", "currentColor");
+    path.setAttribute("d", paused
+        ? "M8 5v14l11-7z"
+        : "M7 5h4v14H7zm6 0h4v14h-4z");
+    icon.append(path);
+    button.dataset.paused = String(paused);
+}
+
+function bindCarouselPauseControl(
+    carouselCard: HTMLElement,
+    controls: HTMLElement,
+    sourceButton: HTMLButtonElement,
+    memberCount: number,
+): void {
+    const existing = controls.querySelector<HTMLButtonElement>('[data-testid="listing-card-carousel-pause"]');
+    const button = existing ?? cloneFeaturedActionButton(
+        sourceButton,
+        "listing-card-carousel-pause",
+        "Pause featured carousel",
+    );
+    const track = carouselCard.querySelector<HTMLElement>(".slick-track");
+
+    button.hidden = memberCount <= 1 || !track;
+    if (!existing) controls.append(button);
+    if (!track || pausedCarousels.has(carouselCard)) return;
+
+    const state = {
+        observer: new MutationObserver(() => {
+            if (!state.paused) {
+                state.transform = track.style.transform;
+                return;
+            }
+            if (track.style.transform !== state.transform) track.style.transform = state.transform;
+        }),
+        paused: false,
+        transform: track.style.transform,
+    };
+    pausedCarousels.set(carouselCard, state);
+    setPauseIcon(button, false);
+
+    button.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        state.paused = !state.paused;
+        if (!state.paused) state.transform = track.style.transform;
+        setPauseIcon(button, state.paused);
+        const label = state.paused ? "Play featured carousel" : "Pause featured carousel";
+        button.ariaLabel = label;
+        button.title = label;
+    });
+    state.observer.observe(track, { attributes: true, attributeFilter: ["style"] });
+}
 
 function findChildSlides(carouselCard: HTMLElement): HTMLElement[] {
     return [...carouselCard.querySelectorAll<HTMLElement>(CAROUSEL_CHILD_SELECTOR)];
@@ -88,10 +158,11 @@ export function updateCarouselCard(carouselCard: HTMLElement, blacklist: Blackli
     if (button) {
         button.hidden = members.length <= 1;
         updateButton(button, blacklistedUrls.length > 0, "Blacklist featured properties");
-        applyExclusionState(carouselCard, button, blacklistedUrls.length > 0 ? "blacklisted" : "none");
-        if (blacklistedUrls.length > 0) {
-            updateExclusionRow(carouselCard, blacklistedUrls, "blacklisted");
-        }
+    }
+
+    for (const child of findChildSlides(carouselCard)) {
+        const url = getChildListingUrl(child);
+        child.classList.toggle("edf-carousel-child-blacklisted", Boolean(url && blacklistedUrls.includes(url)));
     }
 
     carouselCard.hidden = false;
@@ -107,7 +178,17 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
 
     const existingButton = controls?.controls.querySelector<HTMLButtonElement>('.edf-featured-blacklist-button') ??
         carouselCard.querySelector('.edf-featured-blacklist-button');
-    if (existingButton) return;
+    if (existingButton) {
+        if (controls?.sourceButton) {
+            bindCarouselPauseControl(
+                carouselCard,
+                controls.controls,
+                controls.sourceButton,
+                getCarouselMembers(carouselCard).length,
+            );
+        }
+        return;
+    }
 
     const button = controls?.sourceButton
         ? cloneFeaturedControlButton(controls.sourceButton)
@@ -125,6 +206,12 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
             button.classList.add("edf-featured-blacklist-button");
         }
         controls.controls.append(button);
+        bindCarouselPauseControl(
+            carouselCard,
+            controls.controls,
+            controls.sourceButton ?? button,
+            getCarouselMembers(carouselCard).length,
+        );
     } else {
         button.classList.add("edf-featured-blacklist-button");
         carouselCard.prepend(button);

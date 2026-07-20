@@ -22,7 +22,7 @@ function bindBlacklistButton(
     const card = getCard(shortlistButton);
     if (!card) return;
     const kind = getBlacklistCardKind(card, shortlistButton);
-    if (kind === "project-child" || kind === "carousel-child") return;
+    if (kind === "project-child") return;
 
     const url = getListingUrl(shortlistButton, card);
     if (!url) return;
@@ -33,6 +33,7 @@ function bindBlacklistButton(
             ? SHORTLIST_CARD_BUTTON_SKIN
             : { inactive: shortlistButton.className },
     });
+    if (kind === "carousel-child") button.dataset.blacklistScope = "carousel-child";
     insertBlacklistButton(shortlistButton, button);
 
     button.addEventListener("click", async event => {

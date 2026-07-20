@@ -66,19 +66,25 @@ export async function createDraftProperty<K extends PropertyKind>(
 function bindScope(scope: Element, drafts: Set<DraftEntry>): void {
     if (!claimScope(scope)) return;
 
+    const commit = (): void => {
+        for (const draft of drafts) void draft.commit();
+    };
+
     scope.addEventListener('click', event => {
         const target = event.target;
         if (!(target instanceof Element)) return;
 
         if (target.closest(submitSelector)) {
-            for (const draft of drafts) void draft.commit();
+            commit();
             return;
         }
 
         if (target.closest(clearSelector)) {
             for (const draft of drafts) void draft.reset();
         }
-    });
+    }, { capture: true });
+
+    scope.addEventListener('submit', commit, { capture: true });
 
     if (scope instanceof HTMLElement && scope.getAttribute('role') === 'dialog') {
         const observer = new MutationObserver(() => {

@@ -162,7 +162,7 @@ export function cloneBlacklistButton(
             KNOWN_INACTIVE_LISTING_CARD_CLASS
         : shortlistButton.className;
     const fallbackActiveClass =
-        (shortlistButton.dataset.testid === "listing-details__address-cta-button-shortlist"
+        (shortlistButton.dataset.testid?.startsWith("listing-details__address-cta-button-shortlist")
             ? LISTING_DETAILS_ACTIVE_CLASS
             : undefined);
     const skin = options.skin ?? {
@@ -199,6 +199,23 @@ export function cloneFeaturedControlButton(stepperButton: HTMLButtonElement): HT
     button.className = stepperButton.className;
     button.classList.add("edf-featured-blacklist-button");
     setBlacklistButtonState(button, false, "Blacklist featured properties");
+
+    return button;
+}
+
+export function cloneFeaturedActionButton(
+    stepperButton: HTMLButtonElement,
+    testId: string,
+    label: string,
+): HTMLButtonElement {
+    const button = stepperButton.cloneNode(true) as HTMLButtonElement;
+
+    button.type = "button";
+    button.disabled = false;
+    button.removeAttribute("aria-disabled");
+    button.setAttribute("data-testid", testId);
+    button.ariaLabel = label;
+    button.title = label;
 
     return button;
 }

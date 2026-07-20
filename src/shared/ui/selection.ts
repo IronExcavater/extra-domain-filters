@@ -1,12 +1,7 @@
 export interface SelectionControlOptions {
-    allCount: number;
     buttonClassName: string;
-    clearAllLabel?: string;
-    clearSelectedLabel?: string;
     controls: HTMLElement;
-    mode: boolean;
     onClear(ids: readonly string[]): void;
-    onModeChange(active: boolean): void;
     onSelectionChange(ids: readonly string[]): void;
     selectedIds: readonly string[];
     visibleIds: readonly string[];
@@ -43,14 +38,9 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     const selected = new Set(options.selectedIds);
     const visible = options.visibleIds;
     const selectedVisibleCount = visible.filter(id => selected.has(id)).length;
-    const selectionButton = createButton(options.buttonClassName);
     const selectAllButton = createButton(options.buttonClassName);
     const clearButton = createButton(options.buttonClassName);
 
-    selectionButton.textContent = options.mode ? "Cancel selection" : "Select";
-    selectionButton.addEventListener("click", () => options.onModeChange(!options.mode));
-
-    selectAllButton.hidden = !options.mode;
     selectAllButton.textContent = selectedVisibleCount === visible.length ? "Deselect all" : "Select all";
     selectAllButton.addEventListener("click", () => {
         options.onSelectionChange(
@@ -60,16 +50,12 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
         );
     });
 
-    clearButton.ariaLabel = "Clear selected items";
-    clearButton.textContent = options.mode
-        ? options.clearSelectedLabel ?? "Clear selected"
-        : options.clearAllLabel ?? "Clear all";
-    clearButton.disabled = options.mode
-        ? selectedVisibleCount === 0
-        : options.allCount === 0;
+    clearButton.ariaLabel = "Clear selected listings";
+    clearButton.textContent = "Clear selection";
+    clearButton.disabled = selectedVisibleCount === 0;
     clearButton.addEventListener("click", () => {
-        options.onClear(options.mode ? visible.filter(id => selected.has(id)) : visible);
+        options.onClear(visible.filter(id => selected.has(id)));
     });
 
-    options.controls.replaceChildren(selectionButton, selectAllButton, clearButton);
+    options.controls.replaceChildren(selectAllButton, clearButton);
 }

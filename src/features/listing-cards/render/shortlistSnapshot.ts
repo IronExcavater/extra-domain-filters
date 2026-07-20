@@ -42,7 +42,10 @@ function createFeature(value: string | undefined, label: string): HTMLElement {
 export function createShortlistSnapshotCard(
     listing: ListingSnapshot,
     actions: ShortlistSnapshotActions,
+    template?: HTMLElement,
 ): HTMLElement {
+    if (template) return createTemplatedShortlistSnapshotCard(listing, actions, template);
+
     const card = document.createElement("div");
     const wrapper = document.createElement("div");
     const media = document.createElement("div");
@@ -85,6 +88,37 @@ export function createShortlistSnapshotCard(
     content.append(priceRow, address, features);
     wrapper.append(media, content);
     card.append(wrapper);
+
+    return card;
+}
+
+function createTemplatedShortlistSnapshotCard(
+    listing: ListingSnapshot,
+    actions: ShortlistSnapshotActions,
+    template: HTMLElement,
+): HTMLElement {
+    const card = template.cloneNode(true) as HTMLElement;
+    const media = card.querySelector<HTMLElement>('[data-testid="listing-card-carousel"]')?.closest<HTMLElement>(".css-1t7a3eq");
+    const price = card.querySelector<HTMLElement>('[data-testid="listing-card-price"]');
+    const priceRow = price?.parentElement;
+    const address = card.querySelector<HTMLElement>('[data-testid="address-wrapper"]');
+    const addressLink = address?.closest<HTMLAnchorElement>("a");
+
+    card.removeAttribute("data-listing-id");
+    card.querySelector('[data-testid="listing-card-tag"]')?.remove();
+    card.querySelector('[data-testid="listing-card-buttons-wrapper"]')?.remove();
+    card.querySelector("textarea")?.closest('[role="button"]')?.remove();
+
+    if (media) media.replaceChildren(createImage(listing));
+    setText(price, listing.price);
+    if (priceRow) {
+        priceRow.querySelectorAll('[data-testid^="listing-card-shortlist"], .edf-blacklist-button')
+            .forEach(button => button.remove());
+        priceRow.append(actions.blacklistButton);
+    }
+
+    if (address) address.textContent = listing.displayAddress ?? listing.title;
+    if (addressLink) addressLink.href = listing.url;
 
     return card;
 }

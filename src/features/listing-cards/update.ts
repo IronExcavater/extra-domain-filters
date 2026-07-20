@@ -1,7 +1,6 @@
 import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
 import { type Settings } from "../../shared/state/settings";
-import { isBundleSelected } from "./blacklist/bundle";
-import { getCarouselMembers, updateCarouselCard } from "./cards/carousel";
+import { updateCarouselCard } from "./cards/carousel";
 import { updateProjectBlacklistSummary } from "./cards/project";
 import { updateButton } from "./clone/blacklistButton";
 import {
@@ -13,6 +12,7 @@ import {
     getListingUrl,
     PROJECT_CARD_SELECTOR,
     PROJECT_MARKER_SELECTOR,
+    TOP_LEVEL_CARD_SELECTOR,
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "./dom/card";
 import { compactExcludedListingCards } from "./exclusion/compact";
@@ -26,16 +26,6 @@ import {
 
 function resolveVisibleReason(rawReason: ExclusionReason, url: string): ExclusionReason {
     return rawReason === "filtered" && isRevealed(url) ? "none" : rawReason;
-}
-
-function syncCarouselBulkButtonState(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
-    const button = carouselCard.querySelector<HTMLButtonElement>('.edf-featured-blacklist-button');
-    if (!button) return;
-
-    const members = getCarouselMembers(carouselCard);
-
-    button.hidden = members.length <= 1;
-    updateButton(button, isBundleSelected(members, blacklist), "Blacklist featured properties");
 }
 
 function isProjectChild(card: Element): boolean {
@@ -61,6 +51,10 @@ export function updateListingCards(
     blacklist: BlacklistEntry[],
     showBlacklistedView: boolean,
 ): void {
+    const layoutBefore = new Map(
+        [...document.querySelectorAll<HTMLElement>(TOP_LEVEL_CARD_SELECTOR)]
+            .map(card => [card, card.getBoundingClientRect()] as const),
+    );
     const wholeProjectReasons = new Map<Element, ExclusionReason>();
 
     document.querySelectorAll<HTMLButtonElement>(BLACKLIST_BUTTON_SELECTOR)
@@ -80,18 +74,13 @@ export function updateListingCards(
             );
             const reason = resolveVisibleReason(rawMatch.exclusionReason, url);
 
-            if (button.dataset.blacklistScope !== "project") {
-                button.classList.remove("edf-adaptive-foreground");
-                button.style.removeProperty("--edf-adaptive-foreground");
-            }
-
             updateButton(button, reason === "blacklisted");
 
             if (button.dataset.blacklistScope === "project") {
                 wholeProjectReasons.set(card, reason);
             }
 
-            if (isProjectChild(card)) return;
+            if (isProjectChild(card) || button.dataset.blacklistScope === "carousel-child") return;
 
             if (showBlacklistedView) {
                 applyExclusionState(card, button, reason);
@@ -126,8 +115,22 @@ export function updateListingCards(
 
     for (const carouselCard of document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)) {
         updateCarouselCard(carouselCard, blacklist);
-        syncCarouselBulkButtonState(carouselCard, blacklist);
     }
 
     compactExcludedListingCards();
+
+    for (const [card, before] of layoutBefore) {
+        const after = card.getBoundingClientRect();
+        const x = before.left - after.left;
+        const y = before.top - after.top;
+        if (x === 0 && y === 0) continue;
+
+        card.animate(
+            [
+                { transform: `translate(${x}px, ${y}px)` },
+                { transform: "translate(0, 0)" },
+            ],
+            { duration: 220, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+        );
+    }
 }
