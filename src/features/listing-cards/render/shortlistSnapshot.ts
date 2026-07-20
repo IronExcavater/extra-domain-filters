@@ -60,6 +60,20 @@ function createFeature(value: string | undefined, label: string): HTMLElement {
     return feature;
 }
 
+function updateMedia(media: HTMLElement | undefined, listing: ListingSnapshot): void {
+    if (!media) return;
+
+    for (const anchor of media.querySelectorAll<HTMLAnchorElement>("a[href]")) {
+        anchor.href = listing.url;
+    }
+    if (!listing.thumbnailUrl) return;
+
+    for (const image of media.querySelectorAll<HTMLImageElement>("img")) {
+        image.src = listing.thumbnailUrl;
+        image.alt = `Picture of ${listing.displayAddress ?? listing.title}`;
+    }
+}
+
 export function createShortlistSnapshotCard(
     listing: ListingSnapshot,
     actions: ShortlistSnapshotActions,
@@ -122,9 +136,6 @@ function createTemplatedShortlistSnapshotCard(
     const media = card.querySelector<HTMLElement>(
         '[data-testid="listing-card-carousel"], [data-testid="listing-card-single-image"]',
     )?.closest<HTMLElement>(".css-1t7a3eq");
-    const mediaContent = media?.querySelector<HTMLElement>(
-        '[data-testid="listing-card-carousel"], [data-testid="listing-card-single-image"]',
-    );
     const price = card.querySelector<HTMLElement>('[data-testid="listing-card-price"]');
     const priceRow = price?.parentElement;
     const address = card.querySelector<HTMLElement>('[data-testid="address-wrapper"]');
@@ -135,8 +146,7 @@ function createTemplatedShortlistSnapshotCard(
     card.querySelector('[data-testid="listing-card-buttons-wrapper"]')?.remove();
     card.querySelector("textarea")?.closest("div")?.remove();
 
-    if (mediaContent) mediaContent.replaceChildren(createImage(listing));
-    else if (media) media.replaceChildren(createImage(listing));
+    updateMedia(media, listing);
     setText(price, listing.price);
     if (priceRow) {
         priceRow.classList.add("edf-listing-card-button-container");
