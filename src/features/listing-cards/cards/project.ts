@@ -45,9 +45,9 @@ function getProjectAggregateRow(projectCard: HTMLElement, projectHeader: HTMLEle
 }
 
 function getProjectTextColor(projectHeader: HTMLElement, details: HTMLElement | null): string {
-    const textElement = [...projectHeader.querySelectorAll<HTMLElement>("a, h1, h2, h3, p, span")]
+    const textElement = [...projectHeader.querySelectorAll<HTMLElement>("h1, h2, h3, a")]
         .find(element => element.textContent?.trim() && element.getClientRects().length > 0) ??
-        [...(details?.querySelectorAll<HTMLElement>("a, h1, h2, h3, p, span") ?? [])]
+        [...(details?.querySelectorAll<HTMLElement>("h1, h2, h3, a") ?? [])]
             .find(element => element.textContent?.trim() && !element.classList.contains("edf-project-blacklist-button")) ??
         projectHeader;
 

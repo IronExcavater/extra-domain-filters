@@ -3,6 +3,7 @@ import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../shared/ui/ico
 const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
 const BUTTON_GROUP_CLASS = "edf-listing-card-action-buttons";
 const INACTIVE_SHORTLIST_CLASS_KEY = "edfInactiveShortlistClass";
+const ACTIVE_SHORTLIST_CLASS_KEY = "edfActiveShortlistClass";
 const KNOWN_INACTIVE_LISTING_CARD_CLASS = "css-bhcn0k";
 const KNOWN_ACTIVE_LISTING_CARD_CLASS = "css-9xfbzc";
 const LISTING_DETAILS_ACTIVE_CLASS = "css-11t19a7";
@@ -35,6 +36,11 @@ function getDocumentInactiveShortlistClass(): string | undefined {
         document.querySelector<HTMLButtonElement>('[data-testid="listing-card-shortlist"]')?.className;
 }
 
+function getDocumentActiveShortlistClass(): string | undefined {
+    return document.documentElement.dataset[ACTIVE_SHORTLIST_CLASS_KEY] ??
+        document.querySelector<HTMLButtonElement>('[data-testid="listing-card-shortlist-shortlisted"]')?.className;
+}
+
 function getLocalInactiveShortlistClass(shortlistButton: HTMLButtonElement): string | undefined {
     const container = shortlistButton.closest<HTMLElement>(
         '[data-testid="listing-card-container"], #shortlist, main, body',
@@ -46,14 +52,34 @@ function getLocalInactiveShortlistClass(shortlistButton: HTMLButtonElement): str
         : undefined;
 }
 
+function getLocalActiveShortlistClass(shortlistButton: HTMLButtonElement): string | undefined {
+    const container = shortlistButton.closest<HTMLElement>(
+        '[data-testid="listing-card-container"], #shortlist, main, body',
+    );
+    const localButton = container?.querySelector<HTMLButtonElement>(
+        '[data-testid="listing-card-shortlist-shortlisted"]',
+    );
+
+    return localButton && isShortlisted(localButton)
+        ? localButton.className
+        : undefined;
+}
+
 function setDocumentInactiveShortlistClass(className: string): void {
     document.documentElement.dataset[INACTIVE_SHORTLIST_CLASS_KEY] = className;
+}
+
+function setDocumentActiveShortlistClass(className: string): void {
+    document.documentElement.dataset[ACTIVE_SHORTLIST_CLASS_KEY] = className;
 }
 
 export function captureNeutralShortlistClass(button: HTMLButtonElement, shortlistButton: HTMLButtonElement): void {
     if (!isShortlisted(shortlistButton)) {
         button.dataset.edfInactiveClass = shortlistButton.className;
         setDocumentInactiveShortlistClass(shortlistButton.className);
+    } else {
+        button.dataset.edfActiveClass = shortlistButton.className;
+        setDocumentActiveShortlistClass(shortlistButton.className);
     }
 }
 
@@ -163,6 +189,10 @@ export function cloneBlacklistButton(
             KNOWN_INACTIVE_LISTING_CARD_CLASS
         : shortlistButton.className;
     const fallbackActiveClass =
+        (isShortlisted(shortlistButton)
+            ? shortlistButton.className
+            : getLocalActiveShortlistClass(shortlistButton) ??
+                getDocumentActiveShortlistClass()) ??
         (shortlistButton.dataset.testid?.startsWith("listing-details__address-cta-button-shortlist")
             ? LISTING_DETAILS_ACTIVE_CLASS
             : undefined);
@@ -180,6 +210,8 @@ export function cloneBlacklistButton(
     applyButtonSkin(button, skin);
     if (!isShortlisted(shortlistButton)) {
         setDocumentInactiveShortlistClass(shortlistButton.className);
+    } else {
+        setDocumentActiveShortlistClass(shortlistButton.className);
     }
     button.className = skin.inactive;
     button.classList.add("edf-blacklist-button");

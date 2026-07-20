@@ -119,7 +119,12 @@ function createTemplatedShortlistSnapshotCard(
     template: HTMLElement,
 ): HTMLElement {
     const card = template.cloneNode(true) as HTMLElement;
-    const media = card.querySelector<HTMLElement>('[data-testid="listing-card-carousel"]')?.closest<HTMLElement>(".css-1t7a3eq");
+    const media = card.querySelector<HTMLElement>(
+        '[data-testid="listing-card-carousel"], [data-testid="listing-card-single-image"]',
+    )?.closest<HTMLElement>(".css-1t7a3eq");
+    const mediaContent = media?.querySelector<HTMLElement>(
+        '[data-testid="listing-card-carousel"], [data-testid="listing-card-single-image"]',
+    );
     const price = card.querySelector<HTMLElement>('[data-testid="listing-card-price"]');
     const priceRow = price?.parentElement;
     const address = card.querySelector<HTMLElement>('[data-testid="address-wrapper"]');
@@ -130,7 +135,8 @@ function createTemplatedShortlistSnapshotCard(
     card.querySelector('[data-testid="listing-card-buttons-wrapper"]')?.remove();
     card.querySelector("textarea")?.closest("div")?.remove();
 
-    if (media) media.replaceChildren(createImage(listing));
+    if (mediaContent) mediaContent.replaceChildren(createImage(listing));
+    else if (media) media.replaceChildren(createImage(listing));
     setText(price, listing.price);
     if (priceRow) {
         priceRow.classList.add("edf-listing-card-button-container");
