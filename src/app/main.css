@@ -375,6 +375,16 @@
     padding-bottom: 0 !important;
 }
 
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] .css-dx7vs9,
+#shortlist [data-testid="listing-card-container"] .css-dx7vs9 {
+    padding-top: 0 !important;
+}
+
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] .css-1yiglqa,
+#shortlist [data-testid="listing-card-container"] .css-1yiglqa {
+    height: auto !important;
+}
+
 #shortlist [data-testid="listing-card-container"] .css-ki8muu {
     height: auto !important;
 }
