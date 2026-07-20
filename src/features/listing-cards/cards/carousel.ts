@@ -162,7 +162,14 @@ export function updateCarouselCard(carouselCard: HTMLElement, blacklist: Blackli
 
     for (const child of findChildSlides(carouselCard)) {
         const url = getChildListingUrl(child);
-        child.classList.toggle("edf-carousel-child-blacklisted", Boolean(url && blacklistedUrls.includes(url)));
+        const blacklisted = Boolean(url && blacklistedUrls.includes(url));
+        const slide = child.closest<HTMLElement>(".slick-slide");
+
+        child.classList.toggle("edf-carousel-child-blacklisted", blacklisted);
+        slide?.classList.toggle("edf-carousel-child-blacklisted", blacklisted);
+        if (blacklisted && slide?.classList.contains("slick-current")) {
+            carouselCard.querySelector<HTMLButtonElement>('button[aria-label="Next"]')?.click();
+        }
     }
 
     carouselCard.hidden = false;

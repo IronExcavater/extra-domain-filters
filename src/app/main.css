@@ -74,18 +74,15 @@
 
 .edf-blacklist-icon-swap {
     animation: edf-blacklist-icon-swap 160ms ease-out;
-    transform-origin: center;
 }
 
 @keyframes edf-blacklist-icon-swap {
     0% {
-        opacity: 0.45;
-        transform: scale(0.82);
+        opacity: 0;
     }
 
     100% {
         opacity: 1;
-        transform: scale(1);
     }
 }
 
@@ -288,32 +285,6 @@
     margin-left: auto;
 }
 
-.edf-sort-actions [data-testid="listing-tabs__filters-sort-by"] {
-    max-width: 300px;
-    position: relative;
-}
-
-.edf-sort-actions [data-testid="listing-tabs__filters-sort-by"] button {
-    background-color: #fff;
-    border: 1px solid rgb(208 211 217);
-    border-radius: 3px;
-    color: rgb(60 71 91);
-    cursor: pointer;
-    font: inherit;
-    line-height: 24px;
-    min-height: 42px;
-    padding: 8px 35px 8px 18px;
-    text-align: left;
-    transition: border-color 200ms ease-in, box-shadow 200ms ease-in;
-    width: 100%;
-}
-
-.edf-sort-actions [data-testid="listing-tabs__filters-sort-by"] button:focus-visible {
-    border-color: rgb(74 181 53);
-    box-shadow: 0 0 0 1px rgb(74 181 53);
-    outline: none;
-}
-
 .edf-selection-checkbox {
     align-items: center;
     display: inline-block;
@@ -349,12 +320,13 @@
 .edf-selection-checkbox input:checked::after {
     color: #fff;
     content: "✓";
+    display: grid;
     font-size: 15px;
     font-weight: 700;
-    left: 2px;
-    line-height: 15px;
+    inset: 0;
+    line-height: 1;
+    place-items: center;
     position: absolute;
-    top: 0;
 }
 
 .edf-hide-again-button {
@@ -382,7 +354,11 @@
     color: rgb(19 18 18);
 }
 
-.edf-carousel-child-blacklisted {
+.slick-slide.edf-carousel-child-blacklisted {
+    display: none !important;
+}
+
+.edf-carousel-child-blacklisted:not(.slick-slide) {
     display: none !important;
 }
 
@@ -413,6 +389,11 @@
 
 #shortlist .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] > svg {
     color: var(--edf-color-shortlist-inactive);
+}
+
+#shortlist .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:hover > svg,
+#shortlist .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:focus-visible > svg {
+    color: var(--edf-color-shortlist-hover);
 }
 
 #shortlist [data-testid="listing-card-wrapper-tall"] {
