@@ -3,7 +3,6 @@ import { getBlacklistListing, type BlacklistEntry, type ListingSnapshot } from "
 import { setBlacklistButtonState } from "../features/listing-cards/blacklist/button";
 import { PageMount } from "../shared/platform/router";
 import { getFromStorage, onStorageChange, setInStorage } from "../shared/platform/storage";
-import { replaceWithBathIcon, replaceWithBedIcon, replaceWithParkingIcon } from "../shared/ui/icons";
 
 const NOTES_KEY = "blacklistNotes";
 const RESET_FILTER_BUTTON_CLASS = "css-8vgasn";
@@ -59,7 +58,9 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
         .querySelector('[data-testid="listing-card-container"]')
         ?.parentElement;
     const list = document.createElement("div");
-    list.className = "edf-blacklist-row-list";
+    list.className = realList instanceof HTMLElement
+        ? `${realList.className} edf-blacklist-row-list`
+        : "edf-blacklist-row-list";
     list.setAttribute("data-testid", "extra-domain-filters-blacklist-list");
 
     if (realList instanceof HTMLElement) {
@@ -116,31 +117,14 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
 }
 
 function getDomainButtonClass(container: HTMLElement): string | undefined {
-    return container.querySelector<HTMLButtonElement>('[aria-label="Clear all filter selections"]')?.className ??
-        container.querySelector<HTMLButtonElement>('[data-testid="listing-card-buttons-wrapper"] button')?.className ??
-        RESET_FILTER_BUTTON_CLASS;
+    void container;
+    return RESET_FILTER_BUTTON_CLASS;
 }
 
-function createFeatureBadge(
-    replace: (svg: SVGSVGElement) => void,
-    value: string | undefined,
-): HTMLElement | undefined {
-    if (!value) return undefined;
-
-    const badge = document.createElement("span");
-    badge.className = "edf-blacklist-card-feature";
-
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.setAttribute("width", "14");
-    icon.setAttribute("height", "14");
-    icon.setAttribute("aria-hidden", "true");
-    replace(icon);
-
-    const label = document.createElement("span");
-    label.textContent = value;
-
-    badge.append(icon, label);
-    return badge;
+function getTemplateCard(container: HTMLElement): HTMLElement | undefined {
+    return container.querySelector<HTMLElement>(
+        '[data-testid="listing-card-container"]:not([data-edf-blacklist-row="true"])',
+    ) ?? undefined;
 }
 
 async function saveNote(url: string, note: string): Promise<void> {
@@ -153,19 +137,22 @@ async function saveNote(url: string, note: string): Promise<void> {
     await setInStorage(NOTES_KEY, next);
 }
 
-function createNotesControl(listing: ListingSnapshot, note: string | undefined): HTMLElement {
+function createOwnedNotesControl(listing: ListingSnapshot, note: string | undefined, buttonClass: string): HTMLElement {
     const wrapper = document.createElement("div");
-    wrapper.className = "edf-blacklist-card-notes";
-
+    const fieldWrapper = document.createElement("div");
     const text = document.createElement("textarea");
-    text.className = "edf-blacklist-card-note-input";
+    const button = document.createElement("button");
+
+    wrapper.className = "edf-blacklist-owned-notes";
+    fieldWrapper.className = "edf-blacklist-owned-note-field";
+
+    text.className = "text-input__input is-small";
     text.placeholder = "Add notes";
     text.value = note ?? "";
     text.hidden = true;
 
-    const button = document.createElement("button");
     button.type = "button";
-    button.className = "edf-blacklist-row-button";
+    button.className = buttonClass;
     button.textContent = note ? "Edit notes" : "Add notes";
 
     button.addEventListener("click", () => {
@@ -182,93 +169,103 @@ function createNotesControl(listing: ListingSnapshot, note: string | undefined):
         });
     });
 
-    wrapper.append(text, button);
+    fieldWrapper.append(text);
+    wrapper.append(fieldWrapper, button);
     return wrapper;
 }
 
-function createBlacklistRow(
+function setLinkUrls(card: HTMLElement, url: string): void {
+    for (const anchor of card.querySelectorAll<HTMLAnchorElement>("a[href]")) {
+        anchor.href = url;
+    }
+}
+
+function setListingImage(card: HTMLElement, listing: ListingSnapshot): void {
+    const images = [...card.querySelectorAll<HTMLImageElement>("img")];
+    if (!listing.thumbnailUrl) {
+        for (const image of images) image.remove();
+        return;
+    }
+
+    for (const image of images) {
+        image.src = listing.thumbnailUrl;
+        image.srcset = "";
+        image.alt = listing.displayAddress ?? listing.title;
+        image.loading = "lazy";
+    }
+}
+
+function setTextIfPresent(card: HTMLElement, selector: string, value: string | undefined): void {
+    const element = card.querySelector<HTMLElement>(selector);
+    if (element && value) element.textContent = value;
+}
+
+function setFeatureText(card: HTMLElement, selector: string, value: string | undefined): void {
+    if (!value) return;
+
+    const element = card.querySelector<HTMLElement>(selector);
+    if (element) element.textContent = value;
+}
+
+function removeTimeSensitiveListingState(card: HTMLElement): void {
+    card.querySelector('[data-testid="listing-card-tag"]')?.remove();
+}
+
+function replaceNotesControls(
+    card: HTMLElement,
+    listing: ListingSnapshot,
+    note: string | undefined,
+): void {
+    const buttonClass = card.querySelector<HTMLButtonElement>('[data-testid="listing-card-buttons-wrapper"] button')
+        ?.className ?? RESET_FILTER_BUTTON_CLASS;
+    const existingNotes =
+        card.querySelector('[data-testid="listing-card-buttons-wrapper"]') ??
+        card.querySelector("textarea")?.closest("div") ??
+        card.lastElementChild;
+    const notes = createOwnedNotesControl(listing, note, buttonClass);
+
+    if (existingNotes) existingNotes.replaceWith(notes);
+    else card.append(notes);
+}
+
+function replaceBlacklistToggle(card: HTMLElement, listing: ListingSnapshot, active: boolean): void {
+    const sourceButton = card.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]') ??
+        card.querySelector<HTMLButtonElement>("button");
+    if (!sourceButton) return;
+
+    sourceButton.type = "button";
+    sourceButton.setAttribute("data-testid", "extra-domain-filters-blacklist-toggle");
+    setBlacklistButtonState(sourceButton, active, "Re-blacklist");
+    sourceButton.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        void toggleBlacklistListing(listing);
+    });
+}
+
+function createShortlistStyledBlacklistRow(
+    template: HTMLElement,
     entry: BlacklistEntry,
     note: string | undefined,
 ): HTMLElement {
     const listing = getBlacklistListing(entry);
     const active = !entry.removedAt;
-    const card = document.createElement("article");
-    card.className = "edf-blacklist-card";
+    const card = template.cloneNode(true) as HTMLElement;
+
     card.dataset.active = String(active);
+    card.dataset.edfBlacklistRow = "true";
     card.setAttribute("data-testid", "extra-domain-filters-blacklist-row");
 
-    const link = document.createElement("a");
-    link.className = "edf-blacklist-card-media";
-    link.href = listing.url;
-
-    if (listing.thumbnailUrl) {
-        const thumbnail = document.createElement("img");
-        thumbnail.className = "edf-blacklist-card-thumbnail";
-        thumbnail.src = listing.thumbnailUrl;
-        thumbnail.alt = listing.displayAddress ?? listing.title;
-        thumbnail.loading = "lazy";
-        link.append(thumbnail);
-    }
-
-    const body = document.createElement("div");
-    body.className = "edf-blacklist-card-body";
-
-    const address = document.createElement("a");
-    address.className = "edf-blacklist-card-address";
-    address.href = listing.url;
-    address.textContent = listing.displayAddress ?? listing.title;
-    body.append(address);
-
-    if (listing.price) {
-        const price = document.createElement("div");
-        price.className = "edf-blacklist-card-price";
-        price.textContent = listing.price;
-        body.append(price);
-    }
-
-    const features = [
-        createFeatureBadge(replaceWithBedIcon, listing.features?.bedrooms),
-        createFeatureBadge(replaceWithBathIcon, listing.features?.bathrooms),
-        createFeatureBadge(replaceWithParkingIcon, listing.features?.parking),
-    ].filter((feature): feature is HTMLElement => feature !== undefined);
-
-    if (features.length > 0) {
-        const featureRow = document.createElement("div");
-        featureRow.className = "edf-blacklist-card-features";
-        featureRow.append(...features);
-        body.append(featureRow);
-    }
-
-    const actions = document.createElement("div");
-    actions.className = "edf-blacklist-card-actions";
-
-    const enquire = document.createElement("a");
-    enquire.className = "edf-blacklist-row-button";
-    enquire.href = listing.url;
-    enquire.textContent = "Enquire";
-    actions.append(enquire);
-
-    const notes = createNotesControl(listing, note);
-    actions.append(notes);
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "edf-blacklist-row-button edf-blacklist-card-button";
-
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.setAttribute("width", "16");
-    icon.setAttribute("height", "16");
-    icon.setAttribute("aria-hidden", "true");
-    button.append(icon);
-    setBlacklistButtonState(button, active, "Re-blacklist");
-
-    button.addEventListener("click", () => {
-        void toggleBlacklistListing(listing);
-    });
-    actions.append(button);
-
-    body.append(actions);
-    card.append(link, body);
+    setLinkUrls(card, listing.url);
+    setListingImage(card, listing);
+    setTextIfPresent(card, '[data-testid="address-wrapper"], [data-testid*="address"]', listing.displayAddress ?? listing.title);
+    setTextIfPresent(card, '[data-testid="listing-card-price"]', listing.price);
+    setFeatureText(card, '[data-testid="property-features-feature"]:nth-of-type(1) [data-testid="property-features-text-container"]', listing.features?.bedrooms);
+    setFeatureText(card, '[data-testid="property-features-feature"]:nth-of-type(2) [data-testid="property-features-text-container"]', listing.features?.bathrooms);
+    setFeatureText(card, '[data-testid="property-features-feature"]:nth-of-type(3) [data-testid="property-features-text-container"]', listing.features?.parking);
+    removeTimeSensitiveListingState(card);
+    replaceNotesControls(card, listing, note);
+    replaceBlacklistToggle(card, listing, active);
 
     return card;
 }
@@ -285,9 +282,7 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
 
     const clearButton = document.createElement("button");
     clearButton.type = "button";
-    clearButton.className = [getDomainButtonClass(container), "edf-blacklist-clear-button"]
-        .filter(Boolean)
-        .join(" ");
+    clearButton.className = getDomainButtonClass(container) ?? RESET_FILTER_BUTTON_CLASS;
     clearButton.textContent = "Clear all";
     clearButton.disabled = all.length === 0;
     clearButton.addEventListener("click", () => {
@@ -303,7 +298,13 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
         }
     }
 
-    list.replaceChildren(...entries.map(entry => createBlacklistRow(entry, notes[entry.url])));
+    const template = getTemplateCard(container);
+    if (!template) {
+        list.replaceChildren();
+        return;
+    }
+
+    list.replaceChildren(...entries.map(entry => createShortlistStyledBlacklistRow(template, entry, notes[entry.url])));
 }
 
 const mountBlacklistPage: PageMount = async (context) => {

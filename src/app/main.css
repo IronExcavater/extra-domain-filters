@@ -158,156 +158,18 @@
     margin-right: 8px;
 }
 
-.edf-blacklist-clear-button {
-    cursor: pointer;
-}
-
-.edf-blacklist-clear-button:disabled {
-    cursor: default;
-    opacity: 0.4;
-}
-
 .edf-blacklist-row-list {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.edf-blacklist-card {
-    background: #fff;
-    border: 0.8px solid rgb(225 225 223);
-    border-radius: 8px;
-    box-shadow: 0 1px 2px rgb(30 41 61 / 6%);
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    overflow: hidden;
-    transition: opacity 120ms ease;
-}
-
-.edf-blacklist-card[data-active="false"] {
-    opacity: 0.72;
-}
-
-.edf-blacklist-card-media {
-    aspect-ratio: 4 / 3;
-    background: rgb(246 245 242);
-    display: block;
-    overflow: hidden;
-}
-
-.edf-blacklist-card-thumbnail {
-    display: block;
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
-}
-
-.edf-blacklist-card-body {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-    padding: 12px;
-}
-
-.edf-blacklist-card-address {
-    color: rgb(19 18 18);
-    display: -webkit-box;
-    font-weight: 700;
-    line-height: 1.3;
-    overflow: hidden;
-    text-decoration: none;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-}
-
-.edf-blacklist-card-price {
-    color: rgb(19 18 18);
-    font-weight: 700;
-}
-
-.edf-blacklist-card-features {
-    align-items: center;
-    color: rgb(85 84 82);
-    display: flex;
     gap: 12px;
 }
 
-.edf-blacklist-card-feature {
-    align-items: center;
+.edf-blacklist-owned-notes {
     display: flex;
-    gap: 4px;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.edf-blacklist-card-actions {
-    align-items: center;
+.edf-blacklist-owned-note-field {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: auto;
-}
-
-.edf-blacklist-card-notes {
-    display: contents;
-}
-
-.edf-blacklist-card-note-input {
-    border: 1px solid rgb(225 225 223);
-    border-radius: 8px;
-    flex: 1 0 100%;
-    font: inherit;
-    min-height: 74px;
-    padding: 8px;
-    resize: vertical;
-}
-
-.edf-blacklist-row-button {
-    align-items: center;
-    background: #fff;
-    border: 0.8px solid rgb(225 225 223);
-    border-radius: 8px;
-    color: rgb(19 18 18);
-    cursor: pointer;
-    display: inline-flex;
-    flex: 0 0 auto;
-    font: inherit;
-    font-weight: 700;
-    gap: 6px;
-    margin-top: auto;
-    min-height: 36px;
-    padding: 7px 12px;
-    text-decoration: none;
-    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
-}
-
-.edf-blacklist-row-button:hover {
-    background: rgb(246 245 242);
-    border-color: rgb(191 190 187);
-}
-
-.edf-blacklist-row-button[data-active="true"] {
-    background: #fff;
-    border-color: rgb(225 225 223);
-    color: rgb(19 18 18);
-}
-
-.edf-blacklist-row-button[data-active="true"]:hover {
-    background: rgb(246 245 242);
-    border-color: rgb(191 190 187);
-}
-
-@media (width <= 980px) {
-    .edf-blacklist-row-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (width <= 640px) {
-    .edf-blacklist-row-list {
-        grid-template-columns: 1fr;
-    }
 }
 
 .edf-hide-again-button {
