@@ -14,13 +14,13 @@ function findChildSlides(carouselCard: HTMLElement): HTMLElement[] {
     return [...carouselCard.querySelectorAll<HTMLElement>(CAROUSEL_CHILD_SELECTOR)];
 }
 
-function findCarouselListingAnchors(carouselCard: HTMLElement): HTMLAnchorElement[] {
+function findCarouselListingAnchors(carouselCard: HTMLElement, unique = true): HTMLAnchorElement[] {
     const seen = new Set<string>();
 
     return [...carouselCard.querySelectorAll<HTMLAnchorElement>('a[href*="domain.com.au"]')]
         .filter(anchor => {
             const url = new URL(anchor.href, window.location.origin).href;
-            if (seen.has(url)) return false;
+            if (unique && seen.has(url)) return false;
 
             seen.add(url);
             return true;
@@ -36,6 +36,10 @@ function getAnchorListingElement(anchor: HTMLAnchorElement): HTMLElement {
     return anchor.closest<HTMLElement>(
         `${CAROUSEL_CHILD_SELECTOR}, [data-testid="listing-card-container"], .slick-slide`,
     ) ?? anchor;
+}
+
+function getCarouselSlideElement(anchor: HTMLAnchorElement): HTMLElement {
+    return anchor.closest<HTMLElement>(".slick-slide") ?? getAnchorListingElement(anchor);
 }
 
 function setSlideExcluded(slide: HTMLElement, excluded: boolean): void {
@@ -60,35 +64,27 @@ function setSlideExcluded(slide: HTMLElement, excluded: boolean): void {
     window.dispatchEvent(new Event("resize"));
 }
 
-function getFeaturedControlsButton(): HTMLButtonElement | undefined {
-    return document.querySelector<HTMLButtonElement>(
-        'button[aria-label="Previous property"], button[aria-label="Previous"]',
-    ) ?? undefined;
-}
-
 function findCarouselControls(carouselCard: HTMLElement): { controls: HTMLElement; sourceButton?: HTMLButtonElement } | undefined {
-    const featuredButton = getFeaturedControlsButton();
-    if (featuredButton?.parentElement instanceof HTMLElement) {
-        return { controls: featuredButton.parentElement, sourceButton: featuredButton };
+    for (
+        let current: HTMLElement | null = carouselCard;
+        current && current !== document.body;
+        current = current.parentElement
+    ) {
+        const propertyButton = current.querySelector<HTMLButtonElement>('button[aria-label="Previous property"]');
+        if (propertyButton?.parentElement instanceof HTMLElement) {
+            return { controls: propertyButton.parentElement, sourceButton: propertyButton };
+        }
     }
 
-    const scopedControls =
-        carouselCard.querySelector<HTMLButtonElement>('button[aria-label="Previous property"]')?.parentElement ??
-        carouselCard.querySelector<HTMLButtonElement>('button[aria-label="Previous"]')?.parentElement;
-    if (scopedControls instanceof HTMLElement) {
+    const slideButton = carouselCard.querySelector<HTMLButtonElement>('button[aria-label="Previous"]');
+    if (slideButton?.parentElement instanceof HTMLElement) {
         return {
-            controls: scopedControls,
-            sourceButton: scopedControls.querySelector<HTMLButtonElement>("button") ?? undefined,
+            controls: slideButton.parentElement,
+            sourceButton: slideButton,
         };
     }
 
-    const section = carouselCard.closest("section, div") ?? document.body;
-    const propertyButton = [...section.querySelectorAll<HTMLButtonElement>("button")]
-        .find(button => button.ariaLabel === "Previous property" || button.ariaLabel === "Next property");
-
-    return propertyButton?.parentElement instanceof HTMLElement
-        ? { controls: propertyButton.parentElement, sourceButton: propertyButton }
-        : undefined;
+    return undefined;
 }
 
 function isSlideExcluded(slide: HTMLElement, url: string, blacklist: BlacklistEntry[]): boolean {
@@ -105,8 +101,8 @@ export function updateCarouselCard(carouselCard: HTMLElement, blacklist: Blackli
         .filter((entry): entry is { slide: HTMLElement; url: string } => entry.url !== undefined);
     const members = childMembers.length > 0
         ? childMembers
-        : findCarouselListingAnchors(carouselCard).map(anchor => ({
-            slide: getAnchorListingElement(anchor),
+        : findCarouselListingAnchors(carouselCard, false).map(anchor => ({
+            slide: getCarouselSlideElement(anchor),
             url: new URL(anchor.href, window.location.origin).href,
         }));
 
@@ -123,7 +119,7 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
     const controls = findCarouselControls(carouselCard);
     const sourceButton = carouselCard.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]') ??
         controls?.sourceButton;
-    if (!sourceButton && !controls?.sourceButton) return;
+    if (!sourceButton) return;
 
     const existingButton = controls?.controls.querySelector('.edf-carousel-blacklist-button') ??
         carouselCard.querySelector('.edf-carousel-blacklist-button');
@@ -131,7 +127,7 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
 
     const button = controls?.sourceButton
         ? controls.sourceButton.cloneNode(true) as HTMLButtonElement
-        : cloneBlacklistButton(sourceButton!);
+        : cloneBlacklistButton(sourceButton);
 
     button.type = "button";
     button.disabled = false;

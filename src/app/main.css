@@ -18,6 +18,7 @@
     display: inline-flex;
     flex: 0 0 auto;
     gap: 6px;
+    margin-left: auto;
 }
 
 .edf-listing-card-action-buttons > button {
@@ -45,16 +46,25 @@
     flex: 0 0 auto;
 }
 
-.edf-adaptive-foreground {
-    color: var(--edf-adaptive-foreground, #646463) !important;
-}
-
-.edf-adaptive-foreground svg {
-    color: inherit !important;
-}
-
 .edf-blacklist-shortlist-placeholder {
     opacity: 0.4;
+}
+
+.edf-blacklist-icon-swap {
+    animation: edf-blacklist-icon-swap 160ms ease-out;
+    transform-origin: center;
+}
+
+@keyframes edf-blacklist-icon-swap {
+    0% {
+        opacity: 0.45;
+        transform: scale(0.82);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .edf-exclusion-row {
@@ -159,14 +169,15 @@
 
 .edf-blacklist-row-list {
     display: grid;
-    gap: 12px;
+    gap: 16px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .edf-blacklist-card {
     background: #fff;
-    border: 1px solid rgb(30 41 61 / 12%);
+    border: 0.8px solid rgb(225 225 223);
     border-radius: 8px;
+    box-shadow: 0 1px 2px rgb(30 41 61 / 6%);
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -175,12 +186,12 @@
 }
 
 .edf-blacklist-card[data-active="false"] {
-    opacity: 0.6;
+    opacity: 0.72;
 }
 
 .edf-blacklist-card-media {
     aspect-ratio: 4 / 3;
-    background: rgb(30 41 61 / 6%);
+    background: rgb(246 245 242);
     display: block;
     overflow: hidden;
 }
@@ -196,15 +207,15 @@
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     min-width: 0;
-    padding: 10px;
+    padding: 12px;
 }
 
 .edf-blacklist-card-address {
-    color: rgb(30 41 61 / 85%);
+    color: rgb(19 18 18);
     display: -webkit-box;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.3;
     overflow: hidden;
     text-decoration: none;
@@ -213,13 +224,13 @@
 }
 
 .edf-blacklist-card-price {
-    color: rgb(30 41 61 / 78%);
+    color: rgb(19 18 18);
     font-weight: 700;
 }
 
 .edf-blacklist-card-features {
     align-items: center;
-    color: rgb(30 41 61 / 60%);
+    color: rgb(85 84 82);
     display: flex;
     gap: 12px;
 }
@@ -234,7 +245,7 @@
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     margin-top: auto;
 }
 
@@ -265,23 +276,26 @@
     font-weight: 700;
     gap: 6px;
     margin-top: auto;
-    padding: 7px 10px;
+    min-height: 36px;
+    padding: 7px 12px;
     text-decoration: none;
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .edf-blacklist-row-button:hover {
-    background: rgb(19 18 18 / 5%);
+    background: rgb(246 245 242);
+    border-color: rgb(191 190 187);
 }
 
 .edf-blacklist-row-button[data-active="true"] {
-    background: rgb(30 41 61 / 100%);
-    border-color: rgb(30 41 61 / 100%);
-    color: #fff;
+    background: #fff;
+    border-color: rgb(225 225 223);
+    color: rgb(19 18 18);
 }
 
 .edf-blacklist-row-button[data-active="true"]:hover {
-    background: rgb(30 41 61 / 85%);
+    background: rgb(246 245 242);
+    border-color: rgb(191 190 187);
 }
 
 @media (width <= 980px) {

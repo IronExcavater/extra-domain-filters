@@ -1,5 +1,4 @@
 import { getBlacklist } from "../../domain/blacklist/store";
-import { queueForegroundContrastSync } from "../../shared/dom/contrast";
 import { PageContext } from "../../shared/platform/router";
 import { getSettings } from "../../shared/state/settings";
 import { cloneBlacklistButton, insertBlacklistButton } from "./blacklist/button";
@@ -22,7 +21,8 @@ function bindBlacklistButton(
 ): void {
     const card = getCard(shortlistButton);
     if (!card) return;
-    if (getBlacklistCardKind(card, shortlistButton) === "project-child") return;
+    const kind = getBlacklistCardKind(card, shortlistButton);
+    if (kind === "project-child" || kind === "carousel-child") return;
 
     const url = getListingUrl(shortlistButton, card);
     if (!url) return;
@@ -30,7 +30,6 @@ function bindBlacklistButton(
 
     const button = cloneBlacklistButton(shortlistButton);
     insertBlacklistButton(shortlistButton, button);
-    queueForegroundContrastSync(button, { scope: card });
 
     button.addEventListener("click", async event => {
         event.preventDefault();

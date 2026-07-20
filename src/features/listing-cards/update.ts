@@ -84,6 +84,11 @@ export function updateListingCards(
             );
             const reason = resolveVisibleReason(rawMatch.exclusionReason, url);
 
+            if (button.dataset.blacklistScope !== "project") {
+                button.classList.remove("edf-adaptive-foreground");
+                button.style.removeProperty("--edf-adaptive-foreground");
+            }
+
             updateButton(button, reason === "blacklisted");
 
             if (button.dataset.blacklistScope === "project") {

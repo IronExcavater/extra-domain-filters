@@ -75,11 +75,23 @@ function getOrCreateButtonIcon(button: HTMLButtonElement): SVGSVGElement {
     return icon;
 }
 
+function setBlacklistIcon(icon: SVGSVGElement, active: boolean): void {
+    const iconState = active ? "unbin" : "bin";
+    if (icon.getAttribute("data-edf-icon-state") === iconState) return;
+
+    icon.classList.remove("edf-blacklist-icon-swap");
+    (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
+    icon.setAttribute("data-edf-icon-state", iconState);
+    requestAnimationFrame(() => {
+        icon.classList.add("edf-blacklist-icon-swap");
+    });
+}
+
 export function setBlacklistButtonState(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {
     setButtonClassState(button, active);
 
     const icon = getOrCreateButtonIcon(button);
-    (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
+    setBlacklistIcon(icon, active);
 
     button.dataset.active = String(active);
     button.ariaLabel = active ? "Remove from blacklist" : text;
@@ -126,7 +138,7 @@ export function cloneBlacklistButton(
     button.classList.add("edf-blacklist-button");
     button.classList.remove(...ACTIVE_SHORTLIST_CLASS_NAMES);
 
-    if (icon) replaceWithBinIcon(icon);
+    if (icon) setBlacklistIcon(icon, false);
 
     return button;
 }
