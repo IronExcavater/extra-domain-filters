@@ -98,20 +98,6 @@
     color: var(--color-neutral-surface-default, #fff);
 }
 
-.edf-blacklist-icon-swap {
-    animation: edf-blacklist-icon-swap 160ms ease-out;
-}
-
-@keyframes edf-blacklist-icon-swap {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
 .edf-exclusion-row {
     align-items: center;
     background: transparent;

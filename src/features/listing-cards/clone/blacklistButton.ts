@@ -151,23 +151,29 @@ function setButtonLabel(button: HTMLButtonElement, label: string | undefined): v
     if (text && text.textContent !== label) text.textContent = label;
 }
 
-function setBlacklistIcon(icon: SVGSVGElement, active: boolean): void {
-    const iconState = active ? "unbin" : "bin";
+function usesUnbinIcon(button: HTMLButtonElement): boolean {
+    return button.dataset.blacklistScope === "project" ||
+        button.dataset.blacklistScope === "carousel" ||
+        button.dataset.testid === "extra-domain-filters-blacklist-toggle";
+}
+
+function setBlacklistIcon(
+    button: HTMLButtonElement,
+    icon: SVGSVGElement,
+    active: boolean,
+): void {
+    const iconState = active && usesUnbinIcon(button) ? "unbin" : "bin";
     if (icon.getAttribute("data-edf-icon-state") === iconState) return;
 
-    icon.classList.remove("edf-blacklist-icon-swap");
-    (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
+    (iconState === "unbin" ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
     icon.setAttribute("data-edf-icon-state", iconState);
-    requestAnimationFrame(() => {
-        icon.classList.add("edf-blacklist-icon-swap");
-    });
 }
 
 export function setBlacklistButtonState(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {
     setButtonClassState(button, active);
 
     const icon = getOrCreateButtonIcon(button);
-    setBlacklistIcon(icon, active);
+    setBlacklistIcon(button, icon, active);
 
     const nextActive = String(active);
     const nextLabel = active ? "Remove from blacklist" : text;
@@ -235,7 +241,7 @@ export function cloneBlacklistButton(
     button.classList.add("edf-blacklist-button");
     button.classList.remove(...ACTIVE_SHORTLIST_CLASS_NAMES);
 
-    if (icon) setBlacklistIcon(icon, false);
+    if (icon) setBlacklistIcon(button, icon, false);
 
     return button;
 }
