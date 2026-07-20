@@ -64,7 +64,7 @@
     flex: 0 0 auto;
 }
 
-.edf-project-blacklist-button > svg {
+.edf-project-blacklist-button :is(svg, svg *) {
     color: inherit;
 }
 

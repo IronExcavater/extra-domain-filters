@@ -77,8 +77,8 @@ export function updateProjectBlacklistSummary(
 
     const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
     if (bulkButton) {
-        const sibling = bulkButton.parentElement?.firstElementChild;
-        const color = sibling instanceof HTMLElement
+        const sibling = bulkButton.previousElementSibling;
+        const color = sibling instanceof HTMLElement && sibling.textContent?.trim()
             ? getComputedStyle(sibling).color
             : getProjectTextColor(
                 projectHeader,
