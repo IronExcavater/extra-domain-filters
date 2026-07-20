@@ -60,7 +60,7 @@ function createFeature(value: string | undefined, label: string): HTMLElement {
     return feature;
 }
 
-function updateMedia(media: HTMLElement | undefined, listing: ListingSnapshot): void {
+function updateMedia(media: HTMLElement | null | undefined, listing: ListingSnapshot): void {
     if (!media) return;
 
     for (const anchor of media.querySelectorAll<HTMLAnchorElement>("a[href]")) {
