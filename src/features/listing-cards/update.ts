@@ -2,7 +2,7 @@ import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../d
 import { type Settings } from "../../shared/state/settings";
 import { isBundleSelected } from "./blacklist/bundle";
 import { updateButton } from "./blacklist/button";
-import { getCarouselListingUrls, updateCarouselCard } from "./cards/carousel";
+import { getCarouselMembers, updateCarouselCard } from "./cards/carousel";
 import { updateProjectBlacklistSummary } from "./cards/project";
 import {
     BLACKLIST_BUTTON_SELECTOR,
@@ -32,13 +32,9 @@ function syncCarouselBulkButtonState(carouselCard: HTMLElement, blacklist: Black
     const button = carouselCard.querySelector<HTMLButtonElement>('.edf-carousel-blacklist-button');
     if (!button) return;
 
-    const childMembers = [...carouselCard.querySelectorAll<HTMLElement>(CAROUSEL_CHILD_SELECTOR)]
-        .map(child => ({ url: getChildListingUrl(child) }))
-        .filter((member): member is { url: string } => member.url !== undefined);
-    const members = childMembers.length > 0
-        ? childMembers
-        : getCarouselListingUrls(carouselCard).map(url => ({ url }));
+    const members = getCarouselMembers(carouselCard);
 
+    button.hidden = members.length <= 1;
     updateButton(button, isBundleSelected(members, blacklist), "Blacklist featured properties");
 }
 

@@ -29,6 +29,17 @@ function getDocumentInactiveShortlistClass(): string | undefined {
         document.querySelector<HTMLButtonElement>('[data-testid="listing-card-shortlist"]')?.className;
 }
 
+function getLocalInactiveShortlistClass(shortlistButton: HTMLButtonElement): string | undefined {
+    const container = shortlistButton.closest<HTMLElement>(
+        '[data-testid="listing-card-container"], #shortlist, main, body',
+    );
+    const localButton = container?.querySelector<HTMLButtonElement>('[data-testid="listing-card-shortlist"]');
+
+    return localButton && !isShortlisted(localButton)
+        ? localButton.className
+        : undefined;
+}
+
 function setDocumentInactiveShortlistClass(className: string): void {
     document.documentElement.dataset[INACTIVE_SHORTLIST_CLASS_KEY] = className;
 }
@@ -116,7 +127,10 @@ export function cloneBlacklistButton(
     const button = shortlistButton.cloneNode(true) as HTMLButtonElement;
     const icon = button.querySelector("svg");
     const inactiveClass = isShortlisted(shortlistButton)
-        ? options.inactiveClassName ?? getDocumentInactiveShortlistClass() ?? KNOWN_INACTIVE_LISTING_CARD_CLASS
+        ? options.inactiveClassName ??
+            getLocalInactiveShortlistClass(shortlistButton) ??
+            getDocumentInactiveShortlistClass() ??
+            KNOWN_INACTIVE_LISTING_CARD_CLASS
         : options.inactiveClassName ?? shortlistButton.className;
     const activeClass = options.activeClassName ??
         (shortlistButton.dataset.testid === "listing-details__address-cta-button-shortlist"

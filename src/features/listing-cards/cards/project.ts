@@ -7,6 +7,7 @@ import { cloneBlacklistButton, updateButton } from "../blacklist/button";
 import {
     getChildListingUrl,
     getListingSnapshot,
+    getTitle,
     PROJECT_DETAILS_SELECTOR,
     PROJECT_MARKER_SELECTOR,
     SHORTLIST_BUTTON_SELECTOR,
@@ -67,6 +68,7 @@ export function updateProjectBlacklistSummary(
     if (bulkButton) {
         bulkButton.classList.remove("edf-adaptive-foreground");
         bulkButton.style.removeProperty("--edf-adaptive-foreground");
+        bulkButton.style.color = "#fff";
         updateButton(
             bulkButton,
             getProjectMembers(projectCard).some(member => isBlacklisted(blacklist, member.url)),
@@ -86,16 +88,16 @@ export function updateProjectBlacklistSummary(
     const text = row.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-row-text"]');
     if (text) {
         text.textContent = blacklistedUrls.length === 1
-            ? "1 property blacklisted"
-            : `${blacklistedUrls.length} properties blacklisted`;
+            ? `Blacklisted: ${getTitle(blacklistedUrls[0].child)}`
+            : `Blacklisted in ${getTitle(projectCard)}`;
     }
 
     const button = row.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');
     if (button) {
         const icon = button.querySelector("svg");
         if (icon) replaceWithUnbinIcon(icon);
-        button.lastChild!.textContent = "Unblacklist all";
-        button.ariaLabel = "Unblacklist all";
+        button.lastChild!.textContent = "Unblacklist";
+        button.ariaLabel = "Unblacklist";
         button.onclick = async event => {
             event.preventDefault();
             event.stopPropagation();

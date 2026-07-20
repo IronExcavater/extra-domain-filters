@@ -1,6 +1,5 @@
-import { isBlacklisted, type BlacklistEntry } from "../../../domain/matching";
+import { isBlacklisted, type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
-import { replaceWithBinIcon } from "../../../shared/ui/icons";
 import { toggleBundleBlacklist } from "../blacklist/bundle";
 import { cloneBlacklistButton, updateButton } from "../blacklist/button";
 import {
@@ -27,41 +26,10 @@ function findCarouselListingAnchors(carouselCard: HTMLElement, unique = true): H
         });
 }
 
-export function getCarouselListingUrls(carouselCard: HTMLElement): string[] {
-    return findCarouselListingAnchors(carouselCard)
-        .map(anchor => new URL(anchor.href, window.location.origin).href);
-}
-
 function getAnchorListingElement(anchor: HTMLAnchorElement): HTMLElement {
     return anchor.closest<HTMLElement>(
         `${CAROUSEL_CHILD_SELECTOR}, [data-testid="listing-card-container"], .slick-slide`,
     ) ?? anchor;
-}
-
-function getCarouselSlideElement(anchor: HTMLAnchorElement): HTMLElement {
-    return anchor.closest<HTMLElement>(".slick-slide") ?? getAnchorListingElement(anchor);
-}
-
-function setSlideExcluded(slide: HTMLElement, excluded: boolean): void {
-    const slideShell = slide.closest<HTMLElement>(".slick-slide") ?? slide;
-
-    if (excluded) {
-        slideShell.style.setProperty("max-width", "0px", "important");
-        slideShell.style.setProperty("min-width", "0px", "important");
-        slideShell.style.setProperty("width", "0px", "important");
-        slideShell.style.setProperty("overflow", "hidden", "important");
-        slideShell.style.setProperty("opacity", "0", "important");
-        slide.setAttribute("aria-hidden", "true");
-    } else {
-        slideShell.style.removeProperty("max-width");
-        slideShell.style.removeProperty("min-width");
-        slideShell.style.removeProperty("width");
-        slideShell.style.removeProperty("overflow");
-        slideShell.style.removeProperty("opacity");
-        slide.removeAttribute("aria-hidden");
-    }
-
-    window.dispatchEvent(new Event("resize"));
 }
 
 function findCarouselControls(carouselCard: HTMLElement): { controls: HTMLElement; sourceButton?: HTMLButtonElement } | undefined {
@@ -87,27 +55,35 @@ function findCarouselControls(carouselCard: HTMLElement): { controls: HTMLElemen
     return undefined;
 }
 
-function isSlideExcluded(slide: HTMLElement, url: string, blacklist: BlacklistEntry[]): boolean {
-    return (
-        isBlacklisted(blacklist, url) ||
-        slide.dataset.exclusionReason === "blacklisted" ||
-        slide.dataset.exclusionReason === "filtered"
-    );
+export function getCarouselMembers(carouselCard: HTMLElement): { url: string; snapshot: ListingSnapshot }[] {
+    const childMembers = findChildSlides(carouselCard)
+        .map(slide => {
+            const url = getChildListingUrl(slide);
+            return url
+                ? { url, snapshot: getListingSnapshot(slide, url) }
+                : undefined;
+        })
+        .filter((entry): entry is { url: string; snapshot: ListingSnapshot } => entry !== undefined);
+
+    return childMembers.length > 0
+        ? childMembers
+        : findCarouselListingAnchors(carouselCard).map(anchor => {
+            const url = new URL(anchor.href, window.location.origin).href;
+
+            return {
+                url,
+                snapshot: getListingSnapshot(getAnchorListingElement(anchor), url),
+            };
+        });
 }
 
 export function updateCarouselCard(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
-    const childMembers = findChildSlides(carouselCard)
-        .map(slide => ({ slide, url: getChildListingUrl(slide) }))
-        .filter((entry): entry is { slide: HTMLElement; url: string } => entry.url !== undefined);
-    const members = childMembers.length > 0
-        ? childMembers
-        : findCarouselListingAnchors(carouselCard, false).map(anchor => ({
-            slide: getCarouselSlideElement(anchor),
-            url: new URL(anchor.href, window.location.origin).href,
-        }));
+    const urls = getCarouselMembers(carouselCard).map(member => member.url);
+    const button = carouselCard.querySelector<HTMLButtonElement>('.edf-carousel-blacklist-button');
 
-    for (const { slide, url } of members) {
-        setSlideExcluded(slide, isSlideExcluded(slide, url, blacklist));
+    if (button) {
+        button.hidden = urls.length <= 1;
+        updateButton(button, urls.some(url => isBlacklisted(blacklist, url)), "Blacklist featured properties");
     }
 
     carouselCard.hidden = false;
@@ -121,7 +97,7 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
         controls?.sourceButton;
     if (!sourceButton) return;
 
-    const existingButton = controls?.controls.querySelector('.edf-carousel-blacklist-button') ??
+    const existingButton = controls?.controls.querySelector<HTMLButtonElement>('.edf-carousel-blacklist-button') ??
         carouselCard.querySelector('.edf-carousel-blacklist-button');
     if (existingButton) return;
 
@@ -140,8 +116,7 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
         if (controls.sourceButton) {
             button.dataset.edfInactiveClass = controls.sourceButton.className;
             button.className = `${controls.sourceButton.className} edf-carousel-blacklist-button`;
-            const icon = button.querySelector("svg");
-            if (icon) replaceWithBinIcon(icon);
+            updateButton(button, false, "Blacklist featured properties");
         }
         else {
             button.classList.add("edf-carousel-blacklist-button");
@@ -156,17 +131,9 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
         event.preventDefault();
         event.stopPropagation();
 
-        const members = findCarouselListingAnchors(carouselCard)
-            .map(anchor => {
-                const url = new URL(anchor.href, window.location.origin).href;
-                return {
-                    url,
-                    snapshot: getListingSnapshot(getAnchorListingElement(anchor), url),
-                };
-            });
+        const members = getCarouselMembers(carouselCard);
 
         await toggleBundleBlacklist(members);
-        updateButton(button, button.dataset.active !== "true", "Blacklist featured properties");
     });
 
     void context;

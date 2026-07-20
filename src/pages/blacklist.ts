@@ -108,6 +108,7 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
 
     const sort = container.querySelector('[data-testid="listing-tabs__filters-sort-by"]');
     if (sort?.parentElement) {
+        sort.classList.add("edf-blacklist-sort-control");
         sort.parentElement.insertBefore(controls, sort);
     } else {
         list.before(controls);
