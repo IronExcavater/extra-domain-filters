@@ -1,6 +1,6 @@
 import { clearBlacklist, getBlacklist, toggleBlacklistListing } from "../domain/blacklist/store";
 import { getBlacklistListing, type BlacklistEntry, type ListingSnapshot } from "../domain/matching";
-import { setBlacklistButtonState } from "../features/listing-cards/blacklist/button";
+import { cloneBlacklistButton, setBlacklistButtonState } from "../features/listing-cards/blacklist/button";
 import { PageMount } from "../shared/platform/router";
 import { getFromStorage, onStorageChange, setInStorage } from "../shared/platform/storage";
 
@@ -116,7 +116,7 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
     return controls;
 }
 
-function getDomainButtonClass(container: HTMLElement): string | undefined {
+function getDomainButtonClass(container: HTMLElement): string {
     void container;
     return RESET_FILTER_BUTTON_CLASS;
 }
@@ -174,6 +174,20 @@ function createOwnedNotesControl(listing: ListingSnapshot, note: string | undefi
     return wrapper;
 }
 
+function createEnquireLink(listing: ListingSnapshot, buttonClass: string): HTMLAnchorElement {
+    const link = document.createElement("a");
+
+    link.className = buttonClass;
+    link.href = listing.url;
+    link.textContent = "Enquire";
+
+    return link;
+}
+
+function getVisibleText(value: string | undefined, fallback = ""): string {
+    return value?.trim() || fallback;
+}
+
 function setLinkUrls(card: HTMLElement, url: string): void {
     for (const anchor of card.querySelectorAll<HTMLAnchorElement>("a[href]")) {
         anchor.href = url;
@@ -181,6 +195,36 @@ function setLinkUrls(card: HTMLElement, url: string): void {
 }
 
 function setListingImage(card: HTMLElement, listing: ListingSnapshot): void {
+    const carousel = card.querySelector<HTMLElement>('[data-testid="listing-card-carousel"]');
+    const sourceAnchor = carousel?.querySelector<HTMLAnchorElement>("a") ??
+        card.querySelector<HTMLAnchorElement>("a:has(img)");
+    const sourceImageWrapper = card.querySelector<HTMLElement>('[data-testid="listing-card-lazy-image"]');
+
+    if (carousel) {
+        const anchor = document.createElement("a");
+        const imageWrapper = document.createElement("div");
+
+        anchor.href = listing.url;
+        anchor.className = sourceAnchor?.className ?? "";
+        anchor.style.width = "100%";
+        anchor.style.display = "inline-block";
+        imageWrapper.className = sourceImageWrapper?.className ?? "";
+        imageWrapper.setAttribute("data-testid", "listing-card-lazy-image");
+
+        if (listing.thumbnailUrl) {
+            const image = document.createElement("img");
+
+            image.src = listing.thumbnailUrl;
+            image.alt = listing.displayAddress ?? listing.title;
+            image.loading = "lazy";
+            imageWrapper.append(image);
+        }
+
+        anchor.append(imageWrapper);
+        carousel.replaceChildren(anchor);
+        return;
+    }
+
     const images = [...card.querySelectorAll<HTMLImageElement>("img")];
     if (!listing.thumbnailUrl) {
         for (const image of images) image.remove();
@@ -209,23 +253,34 @@ function setFeatureText(card: HTMLElement, selector: string, value: string | und
 
 function removeTimeSensitiveListingState(card: HTMLElement): void {
     card.querySelector('[data-testid="listing-card-tag"]')?.remove();
+    for (const arrow of card.querySelectorAll(".slick-arrow")) {
+        arrow.remove();
+    }
 }
 
 function replaceNotesControls(
+    container: HTMLElement,
     card: HTMLElement,
     listing: ListingSnapshot,
     note: string | undefined,
 ): void {
-    const buttonClass = card.querySelector<HTMLButtonElement>('[data-testid="listing-card-buttons-wrapper"] button')
-        ?.className ?? RESET_FILTER_BUTTON_CLASS;
-    const existingNotes =
-        card.querySelector('[data-testid="listing-card-buttons-wrapper"]') ??
-        card.querySelector("textarea")?.closest("div") ??
-        card.lastElementChild;
+    const buttonClass = getDomainButtonClass(container);
+    const existingActions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
+    const actions = existingActions ?? document.createElement("div");
+    const blacklistButton = card.querySelector<HTMLButtonElement>(
+        '[data-testid="extra-domain-filters-blacklist-toggle"]',
+    );
     const notes = createOwnedNotesControl(listing, note, buttonClass);
+    const enquire = createEnquireLink(listing, buttonClass);
 
-    if (existingNotes) existingNotes.replaceWith(notes);
-    else card.append(notes);
+    if (!existingActions) {
+        actions.setAttribute("data-testid", "listing-card-buttons-wrapper");
+    }
+
+    actions.replaceChildren(enquire, notes);
+    if (blacklistButton) actions.append(blacklistButton);
+
+    if (!existingActions) card.append(actions);
 }
 
 function replaceBlacklistToggle(card: HTMLElement, listing: ListingSnapshot, active: boolean): void {
@@ -233,17 +288,20 @@ function replaceBlacklistToggle(card: HTMLElement, listing: ListingSnapshot, act
         card.querySelector<HTMLButtonElement>("button");
     if (!sourceButton) return;
 
-    sourceButton.type = "button";
-    sourceButton.setAttribute("data-testid", "extra-domain-filters-blacklist-toggle");
-    setBlacklistButtonState(sourceButton, active, "Re-blacklist");
-    sourceButton.addEventListener("click", event => {
+    const button = cloneBlacklistButton(sourceButton);
+
+    button.setAttribute("data-testid", "extra-domain-filters-blacklist-toggle");
+    setBlacklistButtonState(button, active, "Re-blacklist");
+    button.addEventListener("click", event => {
         event.preventDefault();
         event.stopPropagation();
         void toggleBlacklistListing(listing);
     });
+    sourceButton.replaceWith(button);
 }
 
 function createShortlistStyledBlacklistRow(
+    container: HTMLElement,
     template: HTMLElement,
     entry: BlacklistEntry,
     note: string | undefined,
@@ -264,8 +322,66 @@ function createShortlistStyledBlacklistRow(
     setFeatureText(card, '[data-testid="property-features-feature"]:nth-of-type(2) [data-testid="property-features-text-container"]', listing.features?.bathrooms);
     setFeatureText(card, '[data-testid="property-features-feature"]:nth-of-type(3) [data-testid="property-features-text-container"]', listing.features?.parking);
     removeTimeSensitiveListingState(card);
-    replaceNotesControls(card, listing, note);
     replaceBlacklistToggle(card, listing, active);
+    replaceNotesControls(container, card, listing, note);
+
+    return card;
+}
+
+function createFallbackBlacklistRow(
+    container: HTMLElement,
+    entry: BlacklistEntry,
+    note: string | undefined,
+): HTMLElement {
+    const listing = getBlacklistListing(entry);
+    const active = !entry.removedAt;
+    const buttonClass = getDomainButtonClass(container);
+    const card = document.createElement("article");
+    const media = document.createElement("a");
+    const body = document.createElement("div");
+    const address = document.createElement("a");
+    const price = document.createElement("p");
+    const actions = document.createElement("div");
+    const toggle = document.createElement("button");
+
+    card.className = "edf-blacklist-fallback-card";
+    card.dataset.active = String(active);
+    card.dataset.edfBlacklistRow = "true";
+    card.setAttribute("data-testid", "extra-domain-filters-blacklist-row");
+
+    media.className = "edf-blacklist-fallback-media";
+    media.href = listing.url;
+    if (listing.thumbnailUrl) {
+        const image = document.createElement("img");
+
+        image.src = listing.thumbnailUrl;
+        image.alt = listing.displayAddress ?? listing.title;
+        image.loading = "lazy";
+        media.append(image);
+    }
+
+    body.className = "edf-blacklist-fallback-body";
+    address.className = "edf-blacklist-fallback-address";
+    address.href = listing.url;
+    address.textContent = getVisibleText(listing.displayAddress, listing.title);
+    price.className = "edf-blacklist-fallback-price";
+    price.textContent = getVisibleText(listing.price);
+
+    actions.className = "edf-blacklist-fallback-actions";
+    toggle.type = "button";
+    toggle.className = `${buttonClass} edf-blacklist-button`;
+    toggle.dataset.edfInactiveClass = buttonClass;
+    toggle.setAttribute("data-testid", "extra-domain-filters-blacklist-toggle");
+    setBlacklistButtonState(toggle, active, "Re-blacklist");
+    toggle.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        void toggleBlacklistListing(listing);
+    });
+
+    actions.append(createEnquireLink(listing, buttonClass), createOwnedNotesControl(listing, note, buttonClass), toggle);
+    body.append(address, price, actions);
+    card.append(media, body);
 
     return card;
 }
@@ -282,7 +398,8 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
 
     const clearButton = document.createElement("button");
     clearButton.type = "button";
-    clearButton.className = getDomainButtonClass(container) ?? RESET_FILTER_BUTTON_CLASS;
+    clearButton.className = RESET_FILTER_BUTTON_CLASS;
+    clearButton.ariaLabel = "Clear all blacklist selections";
     clearButton.textContent = "Clear all";
     clearButton.disabled = all.length === 0;
     clearButton.addEventListener("click", () => {
@@ -300,11 +417,11 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
 
     const template = getTemplateCard(container);
     if (!template) {
-        list.replaceChildren();
+        list.replaceChildren(...entries.map(entry => createFallbackBlacklistRow(container, entry, notes[entry.url])));
         return;
     }
 
-    list.replaceChildren(...entries.map(entry => createShortlistStyledBlacklistRow(template, entry, notes[entry.url])));
+    list.replaceChildren(...entries.map(entry => createShortlistStyledBlacklistRow(container, template, entry, notes[entry.url])));
 }
 
 const mountBlacklistPage: PageMount = async (context) => {

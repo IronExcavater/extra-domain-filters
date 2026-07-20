@@ -159,7 +159,10 @@
 }
 
 .edf-blacklist-row-list {
+    align-items: start;
+    display: grid !important;
     gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .edf-blacklist-owned-notes {
@@ -170,6 +173,62 @@
 
 .edf-blacklist-owned-note-field {
     display: flex;
+}
+
+.edf-blacklist-fallback-card {
+    background: #fff;
+    border: 1px solid rgb(30 41 61 / 12%);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.edf-blacklist-fallback-media {
+    aspect-ratio: 3 / 2;
+    background: rgb(30 41 61 / 6%);
+    display: block;
+}
+
+.edf-blacklist-fallback-media img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.edf-blacklist-fallback-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+}
+
+.edf-blacklist-fallback-address {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.edf-blacklist-fallback-price {
+    margin: 0;
+}
+
+.edf-blacklist-fallback-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+@media (width <= 960px) {
+    .edf-blacklist-row-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (width <= 640px) {
+    .edf-blacklist-row-list {
+        grid-template-columns: 1fr;
+    }
 }
 
 .edf-hide-again-button {
