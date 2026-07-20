@@ -407,10 +407,6 @@
     height: auto !important;
 }
 
-#shortlist [data-testid="listing-card-buttons-wrapper"] {
-    display: none !important;
-}
-
 .slick-arrow:has([data-testid^="carousel-button-"]) {
     align-items: center;
     display: inline-flex !important;

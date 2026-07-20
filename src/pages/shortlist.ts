@@ -5,7 +5,6 @@ import { createSelectionCheckbox, renderSelectionControls } from "../shared/ui/s
 const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
 
 const selectedCardIds = new Set<string>();
-const noteSaveTimers = new WeakMap<HTMLTextAreaElement, number>();
 
 function getContainer(): HTMLElement | undefined {
     const root = document.querySelector("#shortlist");
@@ -83,47 +82,8 @@ function syncSelectionControls(container: HTMLElement): void {
     }
 }
 
-function configureInlineNotes(card: HTMLElement): void {
-    const textarea = card.querySelector<HTMLTextAreaElement>("textarea");
-    if (!textarea) return;
-
-    if (textarea.disabled) {
-        const trigger = textarea.closest<HTMLElement>('[role="button"]') ?? textarea.parentElement;
-        if (!trigger || trigger.dataset.edfInlineNotesTrigger === "true") return;
-
-        trigger.dataset.edfInlineNotesTrigger = "true";
-        trigger.addEventListener("pointerdown", event => {
-            event.preventDefault();
-            event.stopPropagation();
-            const editButton = [...card.querySelectorAll<HTMLButtonElement>("button")]
-                .find(button => button.textContent?.trim() === "Edit Notes");
-            editButton?.click();
-            requestAnimationFrame(() => {
-                const activeTextarea = card.querySelector<HTMLTextAreaElement>("textarea");
-                activeTextarea?.focus();
-                configureInlineNotes(card);
-            });
-        }, { capture: true });
-        return;
-    }
-
-    if (textarea.dataset.edfInlineNotes === "true") return;
-    textarea.dataset.edfInlineNotes = "true";
-    textarea.addEventListener("input", () => {
-        const timer = noteSaveTimers.get(textarea);
-        if (timer !== undefined) window.clearTimeout(timer);
-
-        noteSaveTimers.set(textarea, window.setTimeout(() => {
-            const saveButton = [...card.querySelectorAll<HTMLButtonElement>("button")]
-                .find(button => button.textContent?.trim() === "Save Notes");
-            saveButton?.click();
-        }, 600));
-    });
-}
-
 function configureCards(container: HTMLElement): void {
     syncSelectionControls(container);
-    getCards(container).forEach(configureInlineNotes);
 }
 
 function clearCards(container: HTMLElement, ids: readonly string[]): void {
