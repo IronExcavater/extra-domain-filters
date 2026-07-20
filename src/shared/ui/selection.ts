@@ -49,6 +49,7 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     const clearButton = createButton(options.buttonClassName);
 
     selectAllButton.textContent = selectedVisibleCount === visible.length ? "Deselect all" : "Select all";
+    selectAllButton.hidden = visible.length === 0;
     selectAllButton.addEventListener("click", () => {
         options.onSelectionChange(
             selectedVisibleCount === visible.length
