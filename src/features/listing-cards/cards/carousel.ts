@@ -14,11 +14,27 @@ import {
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "../dom/card";
 
-const pausedCarousels = new WeakMap<HTMLElement, {
+interface PausedCarousel {
     observer: MutationObserver;
     paused: boolean;
     transform: string;
-}>();
+}
+
+const pausedCarousels = new Map<HTMLElement, PausedCarousel>();
+
+export function disposeDetachedCarouselControls(): void {
+    for (const [carouselCard, state] of pausedCarousels) {
+        if (carouselCard.isConnected) continue;
+
+        state.observer.disconnect();
+        pausedCarousels.delete(carouselCard);
+    }
+}
+
+export function disposeCarouselControls(): void {
+    for (const state of pausedCarousels.values()) state.observer.disconnect();
+    pausedCarousels.clear();
+}
 
 function setPauseIcon(button: HTMLButtonElement, paused: boolean): void {
     const icon = button.querySelector<SVGSVGElement>("svg");

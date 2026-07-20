@@ -9,15 +9,35 @@ export interface PageContext {
 
 export type PageMount = (context: PageContext) => MaybePromise<void>;
 
+const URL_CHANGE_EVENT = "extra-domain-filters:url-change";
+let historyPatched = false;
+
 export interface Route {
     id: string;
     test: (url: URL) => boolean;
     load(): Promise<{default: PageMount}>;
 }
 
+function installHistoryObserver(): void {
+    if (historyPatched) return;
+
+    historyPatched = true;
+
+    for (const method of ["pushState", "replaceState"] as const) {
+        const original = history[method];
+
+        history[method] = function (...args: Parameters<History[typeof method]>): void {
+            original.apply(history, args);
+            window.dispatchEvent(new Event(URL_CHANGE_EVENT));
+        };
+    }
+}
+
 export function observeUrlChanges(callback: (url: URL) => void, signal: AbortSignal): void {
     let previousHref = window.location.href;
     let scheduled = false;
+
+    installHistoryObserver();
 
     const check = (): void => {
         scheduled = false;
@@ -37,14 +57,7 @@ export function observeUrlChanges(callback: (url: URL) => void, signal: AbortSig
 
     window.addEventListener('popstate', schedule, { signal });
     window.addEventListener('hashchange', schedule, { signal });
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-    });
-
-    signal.addEventListener('abort', () => observer.disconnect(), { once: true });
+    window.addEventListener(URL_CHANGE_EVENT, schedule, { signal });
 }
 
 export interface Router {

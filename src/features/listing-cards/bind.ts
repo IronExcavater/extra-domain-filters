@@ -2,7 +2,7 @@ import { getBlacklist } from "../../domain/blacklist/store";
 import { PageContext } from "../../shared/platform/router";
 import { getSettings } from "../../shared/state/settings";
 import { toggleBlacklist } from "./blacklist/toggle";
-import { bindCarouselCard } from "./cards/carousel";
+import { bindCarouselCard, disposeDetachedCarouselControls } from "./cards/carousel";
 import { bindProjectCard } from "./cards/project";
 import { cloneBlacklistButton, insertBlacklistButton, SHORTLIST_CARD_BUTTON_SKIN } from "./clone/blacklistButton";
 import {
@@ -49,6 +49,8 @@ export async function injectListingCards(
     context: PageContext,
     showBlacklistedView = true,
 ): Promise<void> {
+    disposeDetachedCarouselControls();
+
     for (const projectCard of document.querySelectorAll<HTMLElement>(PROJECT_CARD_SELECTOR)) {
         bindProjectCard(projectCard, context);
     }

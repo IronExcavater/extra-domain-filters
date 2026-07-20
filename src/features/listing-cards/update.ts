@@ -23,6 +23,7 @@ import {
     removeHideAgainAffordance,
     updateExclusionRow,
 } from "./exclusion/row";
+import { updatePreferenceTags } from "./render/preferenceTags";
 
 function resolveVisibleReason(rawReason: ExclusionReason, url: string): ExclusionReason {
     return rawReason === "filtered" && isRevealed(url) ? "none" : rawReason;
@@ -31,10 +32,6 @@ function resolveVisibleReason(rawReason: ExclusionReason, url: string): Exclusio
 function isProjectChild(card: Element): boolean {
     return card.matches(CAROUSEL_CHILD_SELECTOR) &&
         card.closest(PROJECT_CARD_SELECTOR)?.querySelector(PROJECT_MARKER_SELECTOR) !== null;
-}
-
-function markPreferenceMatch(card: Element, active: boolean): void {
-    (card as HTMLElement).style.outline = active ? "3px solid #fc0" : "";
 }
 
 function getProjectActionUrls(card: Element, projectUrl: string): string[] {
@@ -106,7 +103,10 @@ export function updateListingCards(
                 }
             }
 
-            markPreferenceMatch(card, reason === "none" && rawMatch.matchedPreferences.length > 0);
+            updatePreferenceTags(
+                card,
+                reason === "none" ? rawMatch.matchedPreferences : [],
+            );
         });
 
     for (const projectCard of document.querySelectorAll<HTMLElement>(PROJECT_CARD_SELECTOR)) {
