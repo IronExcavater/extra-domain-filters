@@ -28,8 +28,10 @@ export function createSelectionCheckbox(
     input.type = "checkbox";
     input.checked = checked;
     input.ariaLabel = labelText;
-    input.addEventListener("pointerdown", event => event.stopPropagation());
-    input.addEventListener("click", event => event.stopPropagation());
+    for (const eventName of ["pointerdown", "pointerup", "click"] as const) {
+        label.addEventListener(eventName, event => event.stopPropagation(), { capture: true });
+        input.addEventListener(eventName, event => event.stopPropagation(), { capture: true });
+    }
     input.addEventListener("change", event => {
         event.stopPropagation();
         onChange(input.checked);

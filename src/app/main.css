@@ -1,3 +1,9 @@
+:root {
+    --edf-color-blacklist-inactive: rgb(100 100 99);
+    --edf-color-shortlist-inactive: rgb(30 41 61 / 30%);
+    --edf-color-shortlist-hover: rgb(255 204 0);
+}
+
 .edf-listing-card-button-container {
     align-items: center;
     display: flex;
@@ -312,7 +318,10 @@
     display: inline-block;
     flex: 0 0 auto;
     margin: 0 8px 0 0;
+    pointer-events: auto;
+    position: relative;
     vertical-align: middle;
+    z-index: 4;
 }
 
 .edf-selection-checkbox input {
@@ -377,7 +386,7 @@
 }
 
 .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] > svg {
-    color: rgb(100 100 99);
+    color: var(--edf-color-blacklist-inactive);
     fill: transparent;
     transition: color 0.2s ease-in-out, fill 0.2s ease-in-out;
 }
@@ -398,7 +407,11 @@
 
 .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:hover > svg,
 .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:focus-visible > svg {
-    color: rgb(255 204 0);
+    color: var(--edf-color-shortlist-hover);
+}
+
+#shortlist .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] > svg {
+    color: var(--edf-color-shortlist-inactive);
 }
 
 #shortlist [data-testid="listing-card-wrapper-tall"] {
