@@ -40,9 +40,9 @@ export function bindListingCards(
     schedule();
 
     const isExtensionNode = (node: Node): boolean =>
-        node instanceof Element && (
-            [...node.classList].some(className => className.startsWith("edf-")) ||
-            Boolean(node.closest('[data-testid^="extra-domain-filters-"]'))
+        node instanceof Element && Boolean(
+            node.closest('[class*="edf-"]') ??
+            node.closest('[data-testid^="extra-domain-filters-"]'),
         );
 
     const observer = new MutationObserver(mutations => {

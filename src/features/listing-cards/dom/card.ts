@@ -9,9 +9,11 @@ export const TOPSPOT_CAROUSEL_SELECTOR =
     'li[data-testid="topspot"], li:has([data-testid="listing-card-child-listing"]):not(:has([data-testid="listing-card-project"]))';
 export const CAROUSEL_CHILD_SELECTOR = '[data-testid="listing-card-child-listing"]';
 const LISTING_CARD_CONTAINER_SELECTOR = '[data-testid="listing-card-container"]';
+const AGENCY_CARD_SELECTOR = '[data-testid="listings-tabs__card"]';
 
 const CARD_SELECTOR = [
     LISTING_CARD_CONTAINER_SELECTOR,
+    AGENCY_CARD_SELECTOR,
     CAROUSEL_CHILD_SELECTOR,
     TOPSPOT_CAROUSEL_SELECTOR,
     'li[data-testid^="listing-"]',
@@ -19,6 +21,7 @@ const CARD_SELECTOR = [
 
 export const TOP_LEVEL_CARD_SELECTOR = [
     LISTING_CARD_CONTAINER_SELECTOR,
+    AGENCY_CARD_SELECTOR,
     TOPSPOT_CAROUSEL_SELECTOR,
     'li[data-testid^="listing-"]',
 ].join(',');
@@ -61,7 +64,7 @@ export function getListingUrl(button: Element, card: Element): string | undefine
         (button as HTMLElement).dataset.blacklistScope === "project"
             ? card.querySelector<HTMLAnchorElement>('a[href*="/project/"]')
             : button.closest<HTMLAnchorElement>("a[href]") ??
-                card.querySelector<HTMLAnchorElement>('a[href*="domain.com.au"]');
+                card.querySelector<HTMLAnchorElement>('a[href]');
 
     if (!anchor) return undefined;
 
@@ -158,7 +161,7 @@ export function getPropertyCount(card: Element): number {
 }
 
 export function getChildListingUrl(child: Element): string | undefined {
-    const anchor = child.querySelector<HTMLAnchorElement>('a[href*="domain.com.au"]');
+    const anchor = child.querySelector<HTMLAnchorElement>('a[href]');
     if (!anchor) return undefined;
 
     return new URL(anchor.href, window.location.origin).href;

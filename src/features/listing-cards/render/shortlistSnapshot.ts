@@ -107,7 +107,7 @@ function createTemplatedShortlistSnapshotCard(
     card.removeAttribute("data-listing-id");
     card.querySelector('[data-testid="listing-card-tag"]')?.remove();
     card.querySelector('[data-testid="listing-card-buttons-wrapper"]')?.remove();
-    card.querySelector("textarea")?.closest('[role="button"]')?.remove();
+    card.querySelector("textarea")?.closest("div")?.remove();
 
     if (media) media.replaceChildren(createImage(listing));
     setText(price, listing.price);

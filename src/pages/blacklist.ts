@@ -77,9 +77,7 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
         .querySelector('[data-testid="listing-card-container"]')
         ?.parentElement;
     const list = document.createElement("div");
-    list.className = realList instanceof HTMLElement
-        ? `${realList.className} edf-blacklist-row-list`
-        : "edf-blacklist-row-list";
+    list.className = "edf-blacklist-row-list";
     list.setAttribute("data-testid", "extra-domain-filters-blacklist-list");
 
     if (realList instanceof HTMLElement) {
@@ -182,7 +180,8 @@ function createBlacklistRow(
     card.dataset.edfBlacklistUrl = listing.url;
     card.dataset.edfBlacklistVersion = getRowVersion(entry);
     const title = card.querySelector<HTMLElement>('[data-testid="address-wrapper"]');
-    (title ?? card).prepend(createSelectionInput(listing.url, onSelectionChange));
+    const heading = title?.querySelector<HTMLElement>("h2, h3") ?? title ?? card;
+    heading.prepend(createSelectionInput(listing.url, onSelectionChange));
 
     button.type = "button";
     button.className = `${SHORTLIST_CARD_BUTTON_SKIN.active} edf-blacklist-button`;

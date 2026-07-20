@@ -211,12 +211,14 @@
     display: grid !important;
     gap: 12px;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100%;
 }
 
 .edf-blacklist-row-list [data-edf-blacklist-row="true"] {
     align-self: start;
     height: max-content !important;
     min-height: 0 !important;
+    min-width: 0;
 }
 
 .edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-wrapper-tall"] {
@@ -228,19 +230,24 @@
     flex: 0 0 auto !important;
 }
 
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] textarea,
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-buttons-wrapper"] {
+    display: none !important;
+}
+
 .edf-action-button {
     align-items: center;
     background-color: #fff;
     border: 1px solid rgb(197 203 213);
-    border-radius: 8px;
+    border-radius: 3px;
     color: rgb(50 64 89);
     cursor: pointer;
     display: inline-flex;
     font: inherit;
     font-weight: 600;
     justify-content: center;
-    min-height: 46px;
-    padding: 0 24px;
+    min-height: 42px;
+    padding: 0 18px;
 }
 
 .edf-action-button:hover {
@@ -295,10 +302,9 @@
 }
 
 .edf-selection-checkbox {
-    align-items: center;
-    display: inline-flex;
-    flex: 0 0 auto;
+    display: inline-block;
     margin-right: 8px;
+    vertical-align: middle;
 }
 
 .edf-selection-checkbox input {

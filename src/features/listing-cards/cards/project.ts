@@ -44,6 +44,16 @@ function getProjectAggregateRow(projectCard: HTMLElement, projectHeader: HTMLEle
     return row;
 }
 
+function getProjectTextColor(projectHeader: HTMLElement, details: HTMLElement | null): string {
+    const textElement = [...projectHeader.querySelectorAll<HTMLElement>("a, h1, h2, h3, p, span")]
+        .find(element => element.textContent?.trim() && element.getClientRects().length > 0) ??
+        [...(details?.querySelectorAll<HTMLElement>("a, h1, h2, h3, p, span") ?? [])]
+            .find(element => element.textContent?.trim() && !element.classList.contains("edf-project-blacklist-button")) ??
+        projectHeader;
+
+    return getComputedStyle(textElement).color;
+}
+
 export function updateProjectBlacklistSummary(
     projectCard: HTMLElement,
     projectHeader: HTMLElement,
@@ -67,7 +77,10 @@ export function updateProjectBlacklistSummary(
 
     const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
     if (bulkButton) {
-        const color = getComputedStyle(projectHeader).color;
+        const color = getProjectTextColor(
+            projectHeader,
+            projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR),
+        );
         if (bulkButton.style.getPropertyValue("--edf-project-foreground") !== color) {
             bulkButton.style.setProperty("--edf-project-foreground", color);
         }

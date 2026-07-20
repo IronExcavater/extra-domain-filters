@@ -117,7 +117,7 @@ export function updateListingCards(
         updateCarouselCard(carouselCard, blacklist);
     }
 
-    compactExcludedListingCards();
+    if (showBlacklistedView) compactExcludedListingCards();
 
     for (const [card, before] of layoutBefore) {
         const after = card.getBoundingClientRect();

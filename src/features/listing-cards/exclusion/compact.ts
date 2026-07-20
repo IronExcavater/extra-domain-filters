@@ -1,6 +1,6 @@
 import type { ExclusionReason } from "../../../domain/matching";
 import { replaceWithChevronIcon } from "../../../shared/ui/icons";
-import { TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
+import { getBlacklistCardKind, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 
 const GROUP_SELECTOR = '[data-testid="listing-card-exclusion-group"]';
 const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
@@ -16,6 +16,9 @@ interface ExcludedCard {
 
 function getExcludedCard(element: Element): ExcludedCard | undefined {
     if (!(element instanceof HTMLElement) || !element.matches(TOP_LEVEL_CARD_SELECTOR)) return undefined;
+    if (getBlacklistCardKind(element) === "project-child" || getBlacklistCardKind(element) === "carousel-child") {
+        return undefined;
+    }
     if (!element.classList.contains("edf-listing-card-excluded")) return undefined;
 
     const row = element.querySelector<HTMLElement>(ROW_SELECTOR);
