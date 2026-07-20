@@ -1,7 +1,7 @@
 import { type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
 import { getBlacklistedBundleUrls, toggleBundleBlacklist } from "../blacklist/bundle";
-import { cloneBlacklistButton, updateButton } from "../blacklist/button";
+import { cloneBlacklistButton, cloneFeaturedControlButton, updateButton } from "../blacklist/button";
 import {
     CAROUSEL_CHILD_SELECTOR,
     getChildListingUrl,
@@ -110,7 +110,7 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
     if (existingButton) return;
 
     const button = controls?.sourceButton
-        ? controls.sourceButton.cloneNode(true) as HTMLButtonElement
+        ? cloneFeaturedControlButton(controls.sourceButton)
         : cloneBlacklistButton(sourceButton);
 
     button.type = "button";
@@ -121,12 +121,7 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
     button.ariaLabel = "Blacklist featured properties";
     button.title = "Blacklist featured properties";
     if (controls) {
-        if (controls.sourceButton) {
-            button.dataset.edfInactiveClass = controls.sourceButton.className;
-            button.className = `${controls.sourceButton.className} edf-carousel-blacklist-button`;
-            updateButton(button, false, "Blacklist featured properties");
-        }
-        else {
+        if (!controls.sourceButton) {
             button.classList.add("edf-carousel-blacklist-button");
         }
         controls.controls.append(button);

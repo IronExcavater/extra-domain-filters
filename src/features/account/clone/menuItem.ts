@@ -19,6 +19,7 @@ export interface MenuItemConfig {
     existingItem?: HTMLLIElement;
     inactivePeer?: HTMLLIElement;
     sourceActive?: boolean;
+    onStateChange?: (item: HTMLLIElement, active: boolean, classes?: MenuItemActiveClasses) => void;
 }
 
 const activeBadgeSubscriptions = new Map<string, () => void>();
@@ -127,12 +128,14 @@ export async function cloneMenuItem(
     item.style.display = '';
 
     const activeClasses = getActiveClasses(source, item, config);
-    setMenuItemActiveState(
+    const applyState = config.onStateChange ?? setMenuItemActiveState;
+
+    applyState(
         source,
         config.sourceActive ?? !(config.active ?? isBlacklistRoute(new URL(window.location.href))),
         activeClasses,
     );
-    setMenuItemActiveState(
+    applyState(
         item,
         config.active ?? isBlacklistRoute(new URL(window.location.href)),
         activeClasses,

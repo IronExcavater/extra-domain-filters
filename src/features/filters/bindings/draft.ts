@@ -15,8 +15,12 @@ const clearSelector = [
     'button[class*="pill-clear-button"]',
 ].join(', ');
 
-const submitSelector =
-    'button[data-testid="submit-button"]';
+const submitSelector = [
+    'button[data-testid="submit-button"]',
+    'button[type="submit"]',
+    'button[aria-label*="Search" i]',
+    'button[aria-label*="Apply" i]',
+].join(', ');
 
 export async function createDraftProperty<K extends PropertyKind>(
     element: Element,
@@ -48,8 +52,9 @@ export async function createDraftProperty<K extends PropertyKind>(
         },
         restore: () => property.set(confirmed),
         commit: async () => {
-            await target.set(await property.get());
-            confirmed = await property.get();
+            const next = await property.get();
+            confirmed = next;
+            await target.set(next);
         },
     });
 

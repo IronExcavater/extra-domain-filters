@@ -58,7 +58,7 @@ export function getExclusionRow(card: Element): HTMLElement {
     button.type = "button";
     button.className = "edf-exclusion-row-button";
     button.setAttribute("data-testid", "listing-card-exclusion-restore");
-    button.append(icon, "");
+    button.append(icon);
 
     row.append(text, button);
     card.prepend(row);
@@ -91,8 +91,8 @@ export function updateExclusionRow(
 
     if (button) {
         const label = reason === "blacklisted" ? "Unblacklist" : "Show anyway";
-        if (button.lastChild?.textContent !== label) button.lastChild!.textContent = label;
         if (button.ariaLabel !== label) button.ariaLabel = label;
+        if (button.title !== label) button.title = label;
         button.onclick = async event => {
             event.preventDefault();
             event.stopPropagation();

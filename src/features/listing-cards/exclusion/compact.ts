@@ -1,5 +1,5 @@
 import type { ExclusionReason } from "../../../domain/matching";
-import { replaceWithEyeIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
+import { replaceWithChevronIcon } from "../../../shared/ui/icons";
 import { TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 
 const HIDDEN_CLASS = "edf-exclusion-merged-hidden";
@@ -52,8 +52,8 @@ function setMergedRow(group: ExcludedCard[]): void {
     const button = row?.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');
     const icon = button?.querySelector("svg");
     const reasons = new Set(group.map(item => item.reason));
-    const reason = reasons.size === 1 ? lead.reason : "filtered";
     const key = getGroupKey(group);
+    const expanded = expandedGroups.has(key);
 
     if (text) {
         const label = reasons.size === 1 && lead.reason === "blacklisted"
@@ -63,19 +63,21 @@ function setMergedRow(group: ExcludedCard[]): void {
         if (text.textContent !== label) text.textContent = label;
     }
 
-    if (icon && icon.getAttribute(ICON_STATE_ATTRIBUTE) !== reason) {
-        (reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
-        icon.setAttribute(ICON_STATE_ATTRIBUTE, reason);
-    }
-
     if (button) {
-        if (button.lastChild?.textContent !== "Expand") button.lastChild!.textContent = "Expand";
-        if (button.ariaLabel !== "Expand hidden listings") button.ariaLabel = "Expand hidden listings";
+        if (icon && icon.getAttribute(ICON_STATE_ATTRIBUTE) !== "expand") {
+            replaceWithChevronIcon(icon);
+            icon.setAttribute(ICON_STATE_ATTRIBUTE, "expand");
+        }
+        const ariaLabel = expanded ? "Collapse hidden listings" : "Expand hidden listings";
+        button.dataset.expanded = String(expanded);
+        if (button.ariaLabel !== ariaLabel) button.ariaLabel = ariaLabel;
+        if (button.title !== ariaLabel) button.title = ariaLabel;
         button.onclick = event => {
             event.preventDefault();
             event.stopPropagation();
 
-            expandedGroups.add(key);
+            if (expandedGroups.has(key)) expandedGroups.delete(key);
+            else expandedGroups.add(key);
             compactExcludedListingCards();
         };
     }
@@ -86,11 +88,13 @@ function collectCompactRun(
     leadCards: Set<HTMLElement>,
     hiddenCards: Set<HTMLElement>,
 ): void {
-    if (run.length < 2 || expandedGroups.has(getGroupKey(run))) return;
+    if (run.length < 2) return;
 
     leadCards.add(run[0].card);
-    for (const item of run.slice(1)) {
-        hiddenCards.add(item.card);
+    if (!expandedGroups.has(getGroupKey(run))) {
+        for (const item of run.slice(1)) {
+            hiddenCards.add(item.card);
+        }
     }
     setMergedRow(run);
 }

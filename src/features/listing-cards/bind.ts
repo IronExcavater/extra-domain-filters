@@ -1,7 +1,7 @@
 import { getBlacklist } from "../../domain/blacklist/store";
 import { PageContext } from "../../shared/platform/router";
 import { getSettings } from "../../shared/state/settings";
-import { cloneBlacklistButton, insertBlacklistButton } from "./blacklist/button";
+import { cloneBlacklistButton, insertBlacklistButton, SHORTLIST_CARD_BUTTON_SKIN } from "./blacklist/button";
 import { toggleBlacklist } from "./blacklist/toggle";
 import { bindCarouselCard } from "./cards/carousel";
 import { bindProjectCard } from "./cards/project";
@@ -29,7 +29,9 @@ function bindBlacklistButton(
     if (shortlistButton.parentElement?.querySelector(".edf-blacklist-button")) return;
 
     const button = cloneBlacklistButton(shortlistButton, {
-        skin: { inactive: shortlistButton.className },
+        skin: shortlistButton.closest("#shortlist")
+            ? SHORTLIST_CARD_BUTTON_SKIN
+            : { inactive: shortlistButton.className },
     });
     insertBlacklistButton(shortlistButton, button);
 

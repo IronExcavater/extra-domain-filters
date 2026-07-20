@@ -4,6 +4,7 @@ const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
 const BUTTON_GROUP_CLASS = "edf-listing-card-action-buttons";
 const INACTIVE_SHORTLIST_CLASS_KEY = "edfInactiveShortlistClass";
 const KNOWN_INACTIVE_LISTING_CARD_CLASS = "css-bhcn0k";
+const KNOWN_ACTIVE_LISTING_CARD_CLASS = "css-9xfbzc";
 const LISTING_DETAILS_ACTIVE_CLASS = "css-11t19a7";
 const ACTIVE_SHORTLIST_CLASS_NAMES = ["active", "is-active", "isActive", "shortlisted"];
 
@@ -11,6 +12,11 @@ export interface ButtonSkin {
     active?: string;
     inactive: string;
 }
+
+export const SHORTLIST_CARD_BUTTON_SKIN: ButtonSkin = {
+    active: KNOWN_ACTIVE_LISTING_CARD_CLASS,
+    inactive: KNOWN_INACTIVE_LISTING_CARD_CLASS,
+};
 
 export interface CloneBlacklistButtonOptions {
     skin?: ButtonSkin;
@@ -178,6 +184,21 @@ export function cloneBlacklistButton(
     button.classList.remove(...ACTIVE_SHORTLIST_CLASS_NAMES);
 
     if (icon) setBlacklistIcon(icon, false);
+
+    return button;
+}
+
+export function cloneFeaturedControlButton(stepperButton: HTMLButtonElement): HTMLButtonElement {
+    const button = stepperButton.cloneNode(true) as HTMLButtonElement;
+
+    button.type = "button";
+    button.disabled = false;
+    button.removeAttribute("aria-disabled");
+    button.setAttribute("data-testid", "listing-card-blacklist");
+    button.dataset.edfInactiveClass = stepperButton.className;
+    button.className = stepperButton.className;
+    button.classList.add("edf-carousel-blacklist-button");
+    setBlacklistButtonState(button, false, "Blacklist featured properties");
 
     return button;
 }
