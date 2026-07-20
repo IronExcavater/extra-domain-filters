@@ -181,6 +181,7 @@ function createBlacklistRow(
     card.dataset.edfBlacklistVersion = getRowVersion(entry);
     const priceRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]') ??
         card;
+    priceRow.classList.add("edf-listing-card-button-container");
     priceRow.prepend(createSelectionInput(listing.url, onSelectionChange));
 
     button.type = "button";

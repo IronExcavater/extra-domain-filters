@@ -303,7 +303,9 @@
 }
 
 .edf-selection-checkbox {
+    align-items: center;
     display: inline-block;
+    flex: 0 0 auto;
     margin: 0 8px 0 0;
     vertical-align: middle;
 }
@@ -318,6 +320,10 @@
     margin: 0;
     position: relative;
     width: 18px;
+}
+
+.edf-listing-card-button-container > .edf-selection-checkbox {
+    display: inline-flex;
 }
 
 .edf-selection-checkbox input:checked {

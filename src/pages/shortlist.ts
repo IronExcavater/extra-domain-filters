@@ -70,6 +70,7 @@ function syncSelectionControls(container: HTMLElement): void {
 
         const priceRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]') ??
             card;
+        priceRow.classList.add("edf-listing-card-button-container");
         priceRow.prepend(createSelectionCheckbox(
             selectedCardIds.has(id),
             "Select shortlisted listing",
