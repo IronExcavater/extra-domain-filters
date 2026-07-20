@@ -208,15 +208,24 @@
 }
 
 .edf-blacklist-row-list {
-    display: grid;
+    display: grid !important;
     gap: 12px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 }
 
-.edf-blacklist-row-list [data-edf-blacklist-row="true"],
-.edf-blacklist-row-list [data-testid="listing-card-wrapper-tall"] {
-    height: auto;
-    min-height: 0;
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] {
+    align-self: start;
+    height: max-content !important;
+    min-height: 0 !important;
+}
+
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-wrapper-tall"] {
+    height: auto !important;
+    min-height: 0 !important;
+}
+
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-wrapper-tall"] > :last-child {
+    flex: 0 0 auto !important;
 }
 
 .edf-action-button {
@@ -237,6 +246,10 @@
 .edf-action-button:hover {
     border-color: rgb(0 135 0);
     color: rgb(0 135 0);
+}
+
+.edf-action-button[hidden] {
+    display: none;
 }
 
 [data-edf-sort-label="true"] {

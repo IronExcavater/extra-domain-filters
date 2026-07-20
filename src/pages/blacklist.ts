@@ -1,6 +1,10 @@
 import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
 import { getBlacklistListing, type BlacklistEntry } from "../domain/matching";
-import { SHORTLIST_CARD_BUTTON_SKIN, setBlacklistButtonState } from "../features/listing-cards/clone/blacklistButton";
+import {
+    cloneBlacklistButton,
+    SHORTLIST_CARD_BUTTON_SKIN,
+    setBlacklistButtonState,
+} from "../features/listing-cards/clone/blacklistButton";
 import { createShortlistSnapshotCard } from "../features/listing-cards/render/shortlistSnapshot";
 import { PageMount } from "../shared/platform/router";
 import { onStorageChange } from "../shared/platform/storage";
@@ -164,15 +168,21 @@ function createBlacklistRow(
 ): HTMLElement {
     const listing = getBlacklistListing(entry);
     const active = !entry.removedAt;
-    const button = document.createElement("button");
+    const sourceButton = template?.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]');
+    const button = sourceButton
+        ? cloneBlacklistButton(sourceButton, {
+            appearance: "shortlist",
+            skin: SHORTLIST_CARD_BUTTON_SKIN,
+        })
+        : document.createElement("button");
     const card = createShortlistSnapshotCard(listing, { blacklistButton: button }, template);
 
     card.dataset.active = String(active);
     card.dataset.edfBlacklistRow = "true";
     card.dataset.edfBlacklistUrl = listing.url;
     card.dataset.edfBlacklistVersion = getRowVersion(entry);
-    const titleRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]');
-    (titleRow ?? card).prepend(createSelectionInput(listing.url, onSelectionChange));
+    const title = card.querySelector<HTMLElement>('[data-testid="address-wrapper"]');
+    (title ?? card).prepend(createSelectionInput(listing.url, onSelectionChange));
 
     button.type = "button";
     button.className = `${SHORTLIST_CARD_BUTTON_SKIN.active} edf-blacklist-button`;
