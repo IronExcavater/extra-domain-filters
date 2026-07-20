@@ -14,6 +14,30 @@ function findChildSlides(carouselCard: HTMLElement): HTMLElement[] {
     return [...carouselCard.querySelectorAll<HTMLElement>(CAROUSEL_CHILD_SELECTOR)];
 }
 
+function findCarouselListingAnchors(carouselCard: HTMLElement): HTMLAnchorElement[] {
+    const seen = new Set<string>();
+
+    return [...carouselCard.querySelectorAll<HTMLAnchorElement>('a[href*="domain.com.au"]')]
+        .filter(anchor => {
+            const url = new URL(anchor.href, window.location.origin).href;
+            if (seen.has(url)) return false;
+
+            seen.add(url);
+            return true;
+        });
+}
+
+export function getCarouselListingUrls(carouselCard: HTMLElement): string[] {
+    return findCarouselListingAnchors(carouselCard)
+        .map(anchor => new URL(anchor.href, window.location.origin).href);
+}
+
+function getAnchorListingElement(anchor: HTMLAnchorElement): HTMLElement {
+    return anchor.closest<HTMLElement>(
+        `${CAROUSEL_CHILD_SELECTOR}, [data-testid="listing-card-container"], .slick-slide`,
+    ) ?? anchor;
+}
+
 function setSlideExcluded(slide: HTMLElement, excluded: boolean): void {
     const slideShell = slide.closest<HTMLElement>(".slick-slide") ?? slide;
 
@@ -76,9 +100,15 @@ function isSlideExcluded(slide: HTMLElement, url: string, blacklist: BlacklistEn
 }
 
 export function updateCarouselCard(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
-    const members = findChildSlides(carouselCard)
+    const childMembers = findChildSlides(carouselCard)
         .map(slide => ({ slide, url: getChildListingUrl(slide) }))
         .filter((entry): entry is { slide: HTMLElement; url: string } => entry.url !== undefined);
+    const members = childMembers.length > 0
+        ? childMembers
+        : findCarouselListingAnchors(carouselCard).map(anchor => ({
+            slide: getAnchorListingElement(anchor),
+            url: new URL(anchor.href, window.location.origin).href,
+        }));
 
     for (const { slide, url } of members) {
         setSlideExcluded(slide, isSlideExcluded(slide, url, blacklist));
@@ -90,17 +120,18 @@ export function updateCarouselCard(carouselCard: HTMLElement, blacklist: Blackli
 export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext): void {
     if (!carouselCard.matches(TOPSPOT_CAROUSEL_SELECTOR)) return;
 
-    const sourceButton = carouselCard.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]');
-    if (!sourceButton) return;
-
     const controls = findCarouselControls(carouselCard);
+    const sourceButton = carouselCard.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]') ??
+        controls?.sourceButton;
+    if (!sourceButton && !controls?.sourceButton) return;
+
     const existingButton = controls?.controls.querySelector('.edf-carousel-blacklist-button') ??
         carouselCard.querySelector('.edf-carousel-blacklist-button');
     if (existingButton) return;
 
     const button = controls?.sourceButton
         ? controls.sourceButton.cloneNode(true) as HTMLButtonElement
-        : cloneBlacklistButton(sourceButton);
+        : cloneBlacklistButton(sourceButton!);
 
     button.type = "button";
     button.disabled = false;
@@ -129,15 +160,14 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
         event.preventDefault();
         event.stopPropagation();
 
-        const members = findChildSlides(carouselCard)
-            .map(slide => {
-                const url = getChildListingUrl(slide);
-                if (!url) return undefined;
-                return { url, snapshot: getListingSnapshot(slide, url) };
-            })
-            .filter((member): member is { url: string; snapshot: ReturnType<typeof getListingSnapshot> } =>
-                member !== undefined,
-            );
+        const members = findCarouselListingAnchors(carouselCard)
+            .map(anchor => {
+                const url = new URL(anchor.href, window.location.origin).href;
+                return {
+                    url,
+                    snapshot: getListingSnapshot(getAnchorListingElement(anchor), url),
+                };
+            });
 
         await toggleBundleBlacklist(members);
         updateButton(button, button.dataset.active !== "true", "Blacklist featured properties");

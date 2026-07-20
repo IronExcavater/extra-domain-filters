@@ -13,6 +13,17 @@
     position: static;
 }
 
+.edf-listing-card-action-buttons {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 6px;
+}
+
+.edf-listing-card-action-buttons > button {
+    flex: 0 0 auto;
+}
+
 .edf-listing-card-button-container:not(:has([data-testid="listing-card-price"])) {
     width: fit-content;
 }
@@ -308,4 +319,10 @@
 .edf-carousel-blacklist-button[data-active="true"],
 .edf-carousel-blacklist-button[aria-pressed="true"] {
     color: rgb(19 18 18);
+}
+
+.slick-arrow:has([data-testid^="carousel-button-"]) {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
 }

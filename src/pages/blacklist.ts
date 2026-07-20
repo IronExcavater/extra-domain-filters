@@ -6,6 +6,7 @@ import { getFromStorage, onStorageChange, setInStorage } from "../shared/platfor
 import { replaceWithBathIcon, replaceWithBedIcon, replaceWithParkingIcon } from "../shared/ui/icons";
 
 const NOTES_KEY = "blacklistNotes";
+const RESET_FILTER_BUTTON_CLASS = "css-8vgasn";
 
 type NotesByUrl = Record<string, string>;
 
@@ -115,8 +116,9 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
 }
 
 function getDomainButtonClass(container: HTMLElement): string | undefined {
-    return container.querySelector<HTMLButtonElement>('[data-testid="listing-card-buttons-wrapper"] button')
-        ?.className;
+    return container.querySelector<HTMLButtonElement>('[aria-label="Clear all filter selections"]')?.className ??
+        container.querySelector<HTMLButtonElement>('[data-testid="listing-card-buttons-wrapper"] button')?.className ??
+        RESET_FILTER_BUTTON_CLASS;
 }
 
 function createFeatureBadge(

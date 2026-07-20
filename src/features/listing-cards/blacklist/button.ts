@@ -1,6 +1,7 @@
 import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 
 const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
+const BUTTON_GROUP_CLASS = "edf-listing-card-action-buttons";
 const INACTIVE_SHORTLIST_CLASS_KEY = "edfInactiveShortlistClass";
 const KNOWN_INACTIVE_LISTING_CARD_CLASS = "css-bhcn0k";
 const LISTING_DETAILS_ACTIVE_CLASS = "css-11t19a7";
@@ -62,11 +63,23 @@ function setButtonClassState(button: HTMLButtonElement, active: boolean): void {
     }
 }
 
+function getOrCreateButtonIcon(button: HTMLButtonElement): SVGSVGElement {
+    const existing = button.querySelector<SVGSVGElement>("svg");
+    if (existing) return existing;
+
+    const holder = button.querySelector("span") ?? button;
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+    icon.setAttribute("aria-hidden", "true");
+    holder.append(icon);
+    return icon;
+}
+
 export function setBlacklistButtonState(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {
     setButtonClassState(button, active);
 
-    const icon = button.querySelector("svg");
-    if (icon) (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
+    const icon = getOrCreateButtonIcon(button);
+    (active ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
 
     button.dataset.active = String(active);
     button.ariaLabel = active ? "Remove from blacklist" : text;
@@ -126,5 +139,15 @@ export function insertBlacklistButton(
     if (!parent) return;
 
     parent.classList.add(BUTTON_CONTAINER_CLASS);
-    shortlistButton.after(blacklistButton);
+
+    const existingGroup = parent.querySelector<HTMLElement>(`:scope > .${BUTTON_GROUP_CLASS}`);
+    if (existingGroup) {
+        existingGroup.append(blacklistButton);
+        return;
+    }
+
+    const group = document.createElement("span");
+    group.className = BUTTON_GROUP_CLASS;
+    shortlistButton.replaceWith(group);
+    group.append(shortlistButton, blacklistButton);
 }

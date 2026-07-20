@@ -1,6 +1,5 @@
 import { removeBlacklistUrls } from "../../../domain/blacklist/store";
 import { isBlacklisted, type BlacklistEntry } from "../../../domain/matching";
-import { queueForegroundContrastSync } from "../../../shared/dom/contrast";
 import { PageContext } from "../../../shared/platform/router";
 import { replaceWithUnbinIcon } from "../../../shared/ui/icons";
 import { toggleBundleBlacklist, type BundleMember } from "../blacklist/bundle";
@@ -66,6 +65,8 @@ export function updateProjectBlacklistSummary(
 
     const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
     if (bulkButton) {
+        bulkButton.classList.remove("edf-adaptive-foreground");
+        bulkButton.style.removeProperty("--edf-adaptive-foreground");
         updateButton(
             bulkButton,
             getProjectMembers(projectCard).some(member => isBlacklisted(blacklist, member.url)),
@@ -136,7 +137,6 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
     button.dataset.blacklistScope = "project";
     button.classList.add("edf-project-blacklist-button");
     insertProjectBlacklistButton(details, button);
-    queueForegroundContrastSync(button, { scope: projectCard });
 
     button.addEventListener("click", async event => {
         event.preventDefault();

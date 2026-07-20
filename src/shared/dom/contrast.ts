@@ -128,17 +128,6 @@ function backgroundAtPoint(target: Element, x: number, y: number): Rgb | undefin
     return parseRgb(getComputedStyle(document.body).backgroundColor);
 }
 
-function average(colors: Rgb[]): Rgb | undefined {
-    if (colors.length === 0) return undefined;
-
-    return {
-        a: colors.reduce((sum, color) => sum + color.a, 0) / colors.length,
-        b: colors.reduce((sum, color) => sum + color.b, 0) / colors.length,
-        g: colors.reduce((sum, color) => sum + color.g, 0) / colors.length,
-        r: colors.reduce((sum, color) => sum + color.r, 0) / colors.length,
-    };
-}
-
 function intersects(first: DOMRect, second: DOMRect): boolean {
     return !(
         first.right < second.left ||
@@ -162,6 +151,17 @@ function sampleScopedImages(scope: Element, targetRect: DOMRect): Rgb[] {
 
 function readableForegroundFor(color: Rgb): string {
     return contrastRatio(color, LIGHT_FOREGROUND) >= contrastRatio(color, DARK_FOREGROUND)
+        ? LIGHT_FOREGROUND_VALUE
+        : DARK_FOREGROUND_VALUE;
+}
+
+function readableForegroundForSamples(colors: readonly Rgb[]): string | undefined {
+    if (colors.length === 0) return undefined;
+
+    const lightMinimum = Math.min(...colors.map(color => contrastRatio(color, LIGHT_FOREGROUND)));
+    const darkMinimum = Math.min(...colors.map(color => contrastRatio(color, DARK_FOREGROUND)));
+
+    return lightMinimum >= darkMinimum
         ? LIGHT_FOREGROUND_VALUE
         : DARK_FOREGROUND_VALUE;
 }
@@ -195,11 +195,13 @@ export function syncForegroundWithBackgroundAt(
     const scopedImageColors = options.scope
         ? sampleScopedImages(options.scope, rect)
         : [];
-    const color = average(scopedImageColors.length > 0 ? scopedImageColors : colors);
+    const sampledColors = scopedImageColors.length > 0 ? scopedImageColors : colors;
+    const color = readableForegroundForSamples(sampledColors) ??
+        (sampledColors[0] ? readableForegroundFor(sampledColors[0]) : undefined);
 
     if (!color) return;
 
-    applyColor(element, readableForegroundFor(color));
+    applyColor(element, color);
 }
 
 export function queueForegroundContrastSync(
