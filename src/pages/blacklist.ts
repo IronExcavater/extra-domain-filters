@@ -127,19 +127,22 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
     controls.className = "edf-page-actions";
     controls.setAttribute("data-testid", "extra-domain-filters-blacklist-controls");
 
-    list.before(controls);
+    const sort = container.querySelector<HTMLElement>('[data-testid="listing-tabs__filters-sort-by"]');
+    if (!sort) {
+        list.before(controls);
+        return controls;
+    }
 
-    return controls;
-}
-
-function ensureSortLabel(container: HTMLElement): void {
-    const sort = container.querySelector('[data-testid="listing-tabs__filters-sort-by"]');
-    if (!sort || sort.previousElementSibling?.getAttribute("data-edf-sort-label") === "true") return;
-
+    const actions = document.createElement("div");
     const label = document.createElement("span");
+    actions.className = "edf-sort-actions";
+    actions.setAttribute("data-testid", "extra-domain-filters-sort-actions");
     label.dataset.edfSortLabel = "true";
     label.textContent = "Sort by";
-    sort.before(label);
+    sort.before(actions);
+    actions.append(controls, label, sort);
+
+    return controls;
 }
 
 function createSelectionInput(url: string, onChange: () => void): HTMLLabelElement {
@@ -225,7 +228,6 @@ async function render(
     const entries = [...all].sort((first, second) => second.addedAt - first.addedAt);
 
     const controls = getControls(container, list);
-    ensureSortLabel(container);
     const message = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
 
     renderSelectionControls({
@@ -269,8 +271,10 @@ const mountBlacklistPage: PageMount = async (context) => {
 
     context.signal.addEventListener("abort", () => {
         unwatchBlacklist();
-        container.querySelector('[data-testid="extra-domain-filters-blacklist-controls"]')?.remove();
-        container.querySelector('[data-edf-sort-label="true"]')?.remove();
+        const actions = container.querySelector('[data-testid="extra-domain-filters-sort-actions"]');
+        const sort = actions?.querySelector('[data-testid="listing-tabs__filters-sort-by"]');
+        if (sort) actions?.replaceWith(sort);
+        else actions?.remove();
         restoreMessage();
         restoreTitle();
         restoreList();

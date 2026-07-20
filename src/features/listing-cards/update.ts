@@ -127,10 +127,10 @@ export function updateListingCards(
 
         card.animate(
             [
-                { transform: `translate(${x}px, ${y}px)` },
-                { transform: "translate(0, 0)" },
+                { opacity: 0.72, transform: `translate(${x}px, ${y}px) scale(0.985)` },
+                { opacity: 1, transform: "translate(0, 0) scale(1)" },
             ],
-            { duration: 220, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+            { duration: 300, easing: "cubic-bezier(0.2, 0, 0, 1)" },
         );
     }
 }

@@ -2,11 +2,9 @@ import type { ExclusionReason } from "../../../domain/matching";
 import { replaceWithChevronIcon } from "../../../shared/ui/icons";
 import { TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 
-const HIDDEN_CLASS = "edf-exclusion-merged-hidden";
-const LEAD_CLASS = "edf-exclusion-merged-lead";
+const GROUP_SELECTOR = '[data-testid="listing-card-exclusion-group"]';
 const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
-const ICON_STATE_ATTRIBUTE = "data-edf-icon-state";
-const expandedGroups = new Set<string>();
+const expandedUrls = new Set<string>();
 
 type ActiveReason = Exclude<ExclusionReason, "none">;
 
@@ -17,16 +15,13 @@ interface ExcludedCard {
 }
 
 function getExcludedCard(element: Element): ExcludedCard | undefined {
-    if (!(element instanceof HTMLElement)) return undefined;
-    if (!element.matches(TOP_LEVEL_CARD_SELECTOR)) return undefined;
+    if (!(element instanceof HTMLElement) || !element.matches(TOP_LEVEL_CARD_SELECTOR)) return undefined;
     if (!element.classList.contains("edf-listing-card-excluded")) return undefined;
 
     const row = element.querySelector<HTMLElement>(ROW_SELECTOR);
     const reason = row?.dataset.exclusionReason as ActiveReason | undefined;
-    if (reason !== "blacklisted" && reason !== "filtered") return undefined;
-
     const rawUrls = row?.dataset.exclusionUrls;
-    if (!rawUrls) return undefined;
+    if ((reason !== "blacklisted" && reason !== "filtered") || !rawUrls) return undefined;
 
     try {
         const urls = JSON.parse(rawUrls);
@@ -38,79 +33,97 @@ function getExcludedCard(element: Element): ExcludedCard | undefined {
     }
 }
 
-function getGroupKey(group: ExcludedCard[]): string {
-    return group
-        .flatMap(item => item.urls)
-        .sort()
-        .join("\n");
-}
-
-function setMergedRow(group: ExcludedCard[]): void {
-    const [lead] = group;
-    const row = lead.card.querySelector<HTMLElement>(ROW_SELECTOR);
-    const text = row?.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-row-text"]');
-    const button = row?.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');
-    const icon = button?.querySelector("svg");
-    const reasons = new Set(group.map(item => item.reason));
-    const key = getGroupKey(group);
-    const expanded = expandedGroups.has(key);
-
-    if (text) {
-        const label = reasons.size === 1 && lead.reason === "blacklisted"
-            ? "Multiple blacklisted listings"
-            : "Multiple hidden listings";
-
-        if (text.textContent !== label) text.textContent = label;
-    }
-
-    if (button) {
-        if (icon && icon.getAttribute(ICON_STATE_ATTRIBUTE) !== "expand") {
-            replaceWithChevronIcon(icon);
-            icon.setAttribute(ICON_STATE_ATTRIBUTE, "expand");
+function unwrapGroups(): void {
+    for (const group of document.querySelectorAll<HTMLElement>(GROUP_SELECTOR)) {
+        const body = group.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-group-body"]');
+        if (!body) {
+            group.remove();
+            continue;
         }
-        const ariaLabel = expanded ? "Collapse hidden listings" : "Expand hidden listings";
-        button.dataset.expanded = String(expanded);
-        if (button.ariaLabel !== ariaLabel) button.ariaLabel = ariaLabel;
-        if (button.title !== ariaLabel) button.title = ariaLabel;
-        button.onclick = event => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            if (expandedGroups.has(key)) expandedGroups.delete(key);
-            else expandedGroups.add(key);
-            compactExcludedListingCards();
-        };
+        group.replaceWith(...body.children);
     }
 }
 
-function collectCompactRun(
-    run: ExcludedCard[],
-    leadCards: Set<HTMLElement>,
-    hiddenCards: Set<HTMLElement>,
-): void {
+function setExpanded(group: HTMLElement, expanded: boolean): void {
+    const body = group.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-group-body"]');
+    const button = group.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-group-toggle"]');
+    if (!body || !button) return;
+
+    group.dataset.expanded = String(expanded);
+    body.style.maxHeight = expanded ? `${body.scrollHeight}px` : "0px";
+    const label = expanded ? "Collapse blacklisted listings" : "Expand blacklisted listings";
+    button.ariaLabel = label;
+    button.title = label;
+}
+
+function createGroup(group: ExcludedCard[]): HTMLElement {
+    const section = document.createElement("section");
+    const header = document.createElement("div");
+    const text = document.createElement("span");
+    const button = document.createElement("button");
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const body = document.createElement("div");
+    const urls = group.flatMap(item => item.urls);
+    const expanded = urls.some(url => expandedUrls.has(url));
+
+    section.className = "edf-exclusion-group";
+    section.setAttribute("data-testid", "listing-card-exclusion-group");
+    header.className = "edf-exclusion-group-header";
+    text.className = "edf-exclusion-group-text";
+    text.textContent = `${group.length} listings`;
+
+    button.type = "button";
+    button.className = "edf-exclusion-row-button";
+    button.setAttribute("data-testid", "listing-card-exclusion-group-toggle");
+    icon.setAttribute("aria-hidden", "true");
+    icon.setAttribute("width", "18");
+    icon.setAttribute("height", "18");
+    replaceWithChevronIcon(icon);
+    button.append(icon);
+
+    body.className = "edf-exclusion-group-body";
+    body.setAttribute("data-testid", "listing-card-exclusion-group-body");
+    body.append(...group.map(item => item.card));
+    header.append(text, button);
+    section.append(header, body);
+
+    button.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const nextExpanded = section.dataset.expanded !== "true";
+        for (const url of urls) {
+            if (nextExpanded) expandedUrls.add(url);
+            else expandedUrls.delete(url);
+        }
+        setExpanded(section, nextExpanded);
+    });
+
+    section.dataset.expanded = String(expanded);
+    return section;
+}
+
+function groupRun(run: ExcludedCard[]): void {
     if (run.length < 2) return;
-
-    leadCards.add(run[0].card);
-    if (!expandedGroups.has(getGroupKey(run))) {
-        for (const item of run.slice(1)) {
-            hiddenCards.add(item.card);
-        }
+    const marker = document.createComment("");
+    run[0].card.before(marker);
+    const section = createGroup(run);
+    marker.replaceWith(section);
+    if (section.dataset.expanded === "true") {
+        requestAnimationFrame(() => setExpanded(section, true));
     }
-    setMergedRow(run);
 }
 
 export function compactExcludedListingCards(): void {
+    unwrapGroups();
+
     const parents = new Set(
         [...document.querySelectorAll(TOP_LEVEL_CARD_SELECTOR)]
             .map(card => card.parentElement)
             .filter((parent): parent is HTMLElement => parent !== null),
     );
-    const leadCards = new Set<HTMLElement>();
-    const hiddenCards = new Set<HTMLElement>();
 
     for (const parent of parents) {
         let run: ExcludedCard[] = [];
-
         for (const child of [...parent.children]) {
             const excluded = getExcludedCard(child);
             if (excluded) {
@@ -118,15 +131,9 @@ export function compactExcludedListingCards(): void {
                 continue;
             }
 
-            collectCompactRun(run, leadCards, hiddenCards);
+            groupRun(run);
             run = [];
         }
-
-        collectCompactRun(run, leadCards, hiddenCards);
+        groupRun(run);
     }
-
-    document.querySelectorAll<HTMLElement>(TOP_LEVEL_CARD_SELECTOR).forEach(card => {
-        card.classList.toggle(LEAD_CLASS, leadCards.has(card));
-        card.classList.toggle(HIDDEN_CLASS, hiddenCards.has(card));
-    });
 }
