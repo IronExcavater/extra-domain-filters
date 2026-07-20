@@ -61,7 +61,7 @@ function setTitle(container: HTMLElement): () => void {
     const original = title.textContent;
     const originalDocumentTitle = document.title;
     title.textContent = "Blacklisted properties";
-    document.title = "Blacklisted properties | Domain";
+    document.title = "Blacklisted properties";
 
     return () => {
         title.textContent = original;
@@ -77,7 +77,9 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
         .querySelector('[data-testid="listing-card-container"]')
         ?.parentElement;
     const list = document.createElement("div");
-    list.className = "edf-blacklist-row-list";
+    list.className = realList instanceof HTMLElement
+        ? `${realList.className} edf-blacklist-row-list`
+        : "edf-blacklist-row-list";
     list.setAttribute("data-testid", "extra-domain-filters-blacklist-list");
 
     if (realList instanceof HTMLElement) {

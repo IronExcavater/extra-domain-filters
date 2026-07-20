@@ -74,7 +74,11 @@ export function updateListingCards(
             );
             const reason = resolveVisibleReason(rawMatch.exclusionReason, url);
 
-            updateButton(button, reason === "blacklisted");
+            updateButton(
+                button,
+                reason === "blacklisted",
+                button.dataset.blacklistScope === "project" ? "Blacklist project" : undefined,
+            );
 
             if (button.dataset.blacklistScope === "project") {
                 wholeProjectReasons.set(card, reason);

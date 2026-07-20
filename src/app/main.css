@@ -60,12 +60,12 @@
 }
 
 .edf-project-blacklist-button {
-    color: var(--edf-project-foreground, currentColor) !important;
+    color: var(--edf-project-foreground, currentColor);
     flex: 0 0 auto;
 }
 
 .edf-project-blacklist-button > svg {
-    color: inherit !important;
+    color: inherit;
 }
 
 .edf-blacklist-shortlist-placeholder {
@@ -215,31 +215,6 @@
     margin: 0;
 }
 
-.edf-blacklist-row-list {
-    display: grid !important;
-    gap: 12px;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    width: 100%;
-}
-
-.edf-blacklist-row-list [data-edf-blacklist-row="true"] {
-    align-self: start;
-    height: max-content !important;
-    max-width: none !important;
-    min-height: 0 !important;
-    min-width: 0;
-    width: 100% !important;
-}
-
-.edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-wrapper-tall"] {
-    height: auto !important;
-    min-height: 0 !important;
-}
-
-.edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-wrapper-tall"] > :last-child {
-    flex: 0 0 auto !important;
-}
-
 .edf-blacklist-row-list [data-edf-blacklist-row="true"] textarea,
 .edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-buttons-wrapper"] {
     display: none !important;
@@ -270,7 +245,7 @@
 }
 
 [data-edf-sort-label="true"] {
-    color: rgb(50 64 89);
+    color: rgb(100 100 99);
     font-size: 16px;
     font-weight: 400;
     line-height: 20px;
@@ -414,16 +389,4 @@
     justify-content: center;
     line-height: 0;
     padding: 0 !important;
-}
-
-@media (width <= 1024px) {
-    .edf-blacklist-row-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (width <= 640px) {
-    .edf-blacklist-row-list {
-        grid-template-columns: 1fr;
-    }
 }

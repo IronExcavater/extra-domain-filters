@@ -63,6 +63,12 @@ function createFeature(value: string | undefined, label: string): HTMLElement {
 function updateMedia(media: HTMLElement | null | undefined, listing: ListingSnapshot): void {
     if (!media) return;
 
+    const carousel = media.querySelector<HTMLElement>('[data-testid="listing-card-carousel"]');
+    if (carousel) {
+        carousel.replaceChildren(createImage(listing));
+        return;
+    }
+
     for (const anchor of media.querySelectorAll<HTMLAnchorElement>("a[href]")) {
         anchor.href = listing.url;
     }

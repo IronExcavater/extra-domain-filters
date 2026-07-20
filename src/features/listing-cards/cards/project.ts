@@ -77,10 +77,13 @@ export function updateProjectBlacklistSummary(
 
     const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
     if (bulkButton) {
-        const color = getProjectTextColor(
-            projectHeader,
-            projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR),
-        );
+        const sibling = bulkButton.parentElement?.firstElementChild;
+        const color = sibling instanceof HTMLElement
+            ? getComputedStyle(sibling).color
+            : getProjectTextColor(
+                projectHeader,
+                projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR),
+            );
         if (bulkButton.style.getPropertyValue("--edf-project-foreground") !== color) {
             bulkButton.style.setProperty("--edf-project-foreground", color);
         }
