@@ -4,6 +4,15 @@ export interface ShortlistSnapshotActions {
     blacklistButton: HTMLButtonElement;
 }
 
+function createActionGroup(button: HTMLButtonElement): HTMLElement {
+    const group = document.createElement("span");
+
+    group.className = "edf-listing-card-action-buttons";
+    group.append(button);
+
+    return group;
+}
+
 function setText(element: Element | null, text: string | undefined): void {
     if (element && text) element.textContent = text;
 }
@@ -82,7 +91,7 @@ export function createShortlistSnapshotCard(
     price.setAttribute("data-testid", "listing-card-price");
     price.className = "css-1lo1e4i";
     setText(price, listing.price);
-    priceRow.append(price, actions.blacklistButton);
+    priceRow.append(price, createActionGroup(actions.blacklistButton));
 
     address.href = listing.url;
     address.setAttribute("data-testid", "address-wrapper");
@@ -124,9 +133,11 @@ function createTemplatedShortlistSnapshotCard(
     if (media) media.replaceChildren(createImage(listing));
     setText(price, listing.price);
     if (priceRow) {
+        priceRow.classList.add("edf-listing-card-button-container");
         priceRow.querySelectorAll('[data-testid^="listing-card-shortlist"], .edf-blacklist-button')
             .forEach(button => button.remove());
-        priceRow.append(actions.blacklistButton);
+        priceRow.querySelector(".edf-listing-card-action-buttons")?.remove();
+        priceRow.append(createActionGroup(actions.blacklistButton));
     }
 
     setAddress(address, listing.displayAddress ?? listing.title);

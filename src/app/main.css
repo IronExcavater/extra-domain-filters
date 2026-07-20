@@ -31,6 +31,11 @@
     flex: 0 0 auto;
 }
 
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] .edf-listing-card-action-buttons > .edf-blacklist-button {
+    margin: 0 !important;
+    position: static !important;
+}
+
 .edf-listing-card-button-container:not(:has([data-testid="listing-card-price"])) {
     width: fit-content;
 }
