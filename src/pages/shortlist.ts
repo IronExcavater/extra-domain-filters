@@ -87,12 +87,22 @@ function configureInlineNotes(card: HTMLElement): void {
     if (!textarea) return;
 
     if (textarea.disabled) {
-        const editButton = [...card.querySelectorAll<HTMLButtonElement>("button")]
-            .find(button => button.textContent?.trim() === "Edit Notes");
-        if (editButton) {
-            editButton.click();
-            requestAnimationFrame(() => configureInlineNotes(card));
-        }
+        const trigger = textarea.closest<HTMLElement>('[role="button"]') ?? textarea.parentElement;
+        if (!trigger || trigger.dataset.edfInlineNotesTrigger === "true") return;
+
+        trigger.dataset.edfInlineNotesTrigger = "true";
+        trigger.addEventListener("pointerdown", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const editButton = [...card.querySelectorAll<HTMLButtonElement>("button")]
+                .find(button => button.textContent?.trim() === "Edit Notes");
+            editButton?.click();
+            requestAnimationFrame(() => {
+                const activeTextarea = card.querySelector<HTMLTextAreaElement>("textarea");
+                activeTextarea?.focus();
+                configureInlineNotes(card);
+            });
+        }, { capture: true });
         return;
     }
 
