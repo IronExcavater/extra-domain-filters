@@ -44,11 +44,18 @@ function getProjectAggregateRow(projectCard: HTMLElement, projectHeader: HTMLEle
     return row;
 }
 
+function getVisibleTextElement(container: HTMLElement): HTMLElement | undefined {
+    return [...container.querySelectorAll<HTMLElement>("h1, h2, h3, a, span, p"), container]
+        .find(element =>
+            !element.classList.contains("edf-project-blacklist-button") &&
+            element.textContent?.trim() &&
+            element.getClientRects().length > 0,
+        );
+}
+
 function getProjectTextColor(projectHeader: HTMLElement, details: HTMLElement | null): string {
-    const textElement = [...projectHeader.querySelectorAll<HTMLElement>("h1, h2, h3, a")]
-        .find(element => element.textContent?.trim() && element.getClientRects().length > 0) ??
-        [...(details?.querySelectorAll<HTMLElement>("h1, h2, h3, a") ?? [])]
-            .find(element => element.textContent?.trim() && !element.classList.contains("edf-project-blacklist-button")) ??
+    const textElement = getVisibleTextElement(details ?? projectHeader) ??
+        getVisibleTextElement(projectHeader) ??
         projectHeader;
 
     return getComputedStyle(textElement).color;
@@ -78,8 +85,9 @@ export function updateProjectBlacklistSummary(
     const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
     if (bulkButton) {
         const sibling = bulkButton.previousElementSibling;
-        const color = sibling instanceof HTMLElement && sibling.textContent?.trim()
-            ? getComputedStyle(sibling).color
+        const siblingText = sibling instanceof HTMLElement ? getVisibleTextElement(sibling) : undefined;
+        const color = siblingText
+            ? getComputedStyle(siblingText).color
             : getProjectTextColor(
                 projectHeader,
                 projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR),

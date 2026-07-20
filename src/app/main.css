@@ -60,12 +60,18 @@
 }
 
 .edf-project-blacklist-button {
-    color: var(--edf-project-foreground, currentColor);
+    color: var(--edf-project-foreground, currentColor) !important;
     flex: 0 0 auto;
 }
 
 .edf-project-blacklist-button :is(svg, svg *) {
-    color: inherit;
+    color: inherit !important;
+}
+
+.edf-project-blacklist-button:hover,
+.edf-project-blacklist-button:focus-visible,
+.edf-project-blacklist-button[data-active="true"] {
+    color: var(--edf-project-foreground, currentColor) !important;
 }
 
 .edf-blacklist-shortlist-placeholder {
