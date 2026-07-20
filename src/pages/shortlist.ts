@@ -5,6 +5,7 @@ import { createSelectionCheckbox, renderSelectionControls } from "../shared/ui/s
 const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
 
 const selectedCardIds = new Set<string>();
+const noteSaveTimers = new WeakMap<HTMLTextAreaElement, number>();
 
 function getContainer(): HTMLElement | undefined {
     const root = document.querySelector("#shortlist");
@@ -67,10 +68,9 @@ function syncSelectionControls(container: HTMLElement): void {
         const id = getCardId(card);
         if (!id) continue;
 
-        const title = card.querySelector<HTMLElement>('[data-testid="address-line1"]') ??
-            card.querySelector<HTMLElement>('[data-testid="address-wrapper"]') ??
+        const priceRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]') ??
             card;
-        title.prepend(createSelectionCheckbox(
+        priceRow.prepend(createSelectionCheckbox(
             selectedCardIds.has(id),
             "Select shortlisted listing",
             checked => {
@@ -80,6 +80,39 @@ function syncSelectionControls(container: HTMLElement): void {
             },
         ));
     }
+}
+
+function configureInlineNotes(card: HTMLElement): void {
+    const textarea = card.querySelector<HTMLTextAreaElement>("textarea");
+    if (!textarea) return;
+
+    if (textarea.disabled) {
+        const editButton = [...card.querySelectorAll<HTMLButtonElement>("button")]
+            .find(button => button.textContent?.trim() === "Edit Notes");
+        if (editButton) {
+            editButton.click();
+            requestAnimationFrame(() => configureInlineNotes(card));
+        }
+        return;
+    }
+
+    if (textarea.dataset.edfInlineNotes === "true") return;
+    textarea.dataset.edfInlineNotes = "true";
+    textarea.addEventListener("input", () => {
+        const timer = noteSaveTimers.get(textarea);
+        if (timer !== undefined) window.clearTimeout(timer);
+
+        noteSaveTimers.set(textarea, window.setTimeout(() => {
+            const saveButton = [...card.querySelectorAll<HTMLButtonElement>("button")]
+                .find(button => button.textContent?.trim() === "Save Notes");
+            saveButton?.click();
+        }, 600));
+    });
+}
+
+function configureCards(container: HTMLElement): void {
+    syncSelectionControls(container);
+    getCards(container).forEach(configureInlineNotes);
 }
 
 function clearCards(container: HTMLElement, ids: readonly string[]): void {
@@ -105,13 +138,13 @@ function renderControls(container: HTMLElement): void {
             clearCards(container, ids);
             selectedCardIds.clear();
             renderControls(container);
-            syncSelectionControls(container);
+            configureCards(container);
         },
         onSelectionChange: ids => {
             selectedCardIds.clear();
             for (const id of ids) selectedCardIds.add(id);
             renderControls(container);
-            syncSelectionControls(container);
+            configureCards(container);
         },
         selectedIds: [...selectedCardIds],
         visibleIds,
@@ -123,7 +156,30 @@ const mountShortlistPage: PageMount = async (context) => {
     const container = getContainer();
     if (container) {
         renderControls(container);
-        syncSelectionControls(container);
+        configureCards(container);
+
+        let frame: number | undefined;
+        const schedule = (): void => {
+            if (frame !== undefined) return;
+            frame = requestAnimationFrame(() => {
+                frame = undefined;
+                renderControls(container);
+                configureCards(container);
+            });
+        };
+        const observer = new MutationObserver(mutations => {
+            const hasDomainAddition = mutations.some(mutation =>
+                [...mutation.addedNodes].some(node =>
+                    node instanceof Element && !node.closest('[class*="edf-"]'),
+                ),
+            );
+            if (hasDomainAddition) schedule();
+        });
+        observer.observe(container, { childList: true, subtree: true });
+        context.signal.addEventListener("abort", () => {
+            observer.disconnect();
+            if (frame !== undefined) cancelAnimationFrame(frame);
+        }, { once: true });
     }
 };
 

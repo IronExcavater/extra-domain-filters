@@ -179,10 +179,9 @@ function createBlacklistRow(
     card.dataset.edfBlacklistRow = "true";
     card.dataset.edfBlacklistUrl = listing.url;
     card.dataset.edfBlacklistVersion = getRowVersion(entry);
-    const title = card.querySelector<HTMLElement>('[data-testid="address-line1"]') ??
-        card.querySelector<HTMLElement>('[data-testid="address-wrapper"]') ??
+    const priceRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]') ??
         card;
-    title.prepend(createSelectionInput(listing.url, onSelectionChange));
+    priceRow.prepend(createSelectionInput(listing.url, onSelectionChange));
 
     button.type = "button";
     button.className = `${SHORTLIST_CARD_BUTTON_SKIN.active} edf-blacklist-button`;
@@ -194,8 +193,9 @@ function createBlacklistRow(
     button.addEventListener("click", event => {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
         void toggleBlacklistListing(listing);
-    });
+    }, { capture: true });
 
     return card;
 }

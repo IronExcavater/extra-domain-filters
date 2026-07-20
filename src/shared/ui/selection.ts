@@ -62,5 +62,5 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
         options.onClear(visible.filter(id => selected.has(id)));
     });
 
-    options.controls.replaceChildren(selectAllButton, clearButton);
+    options.controls.replaceChildren(clearButton, selectAllButton);
 }

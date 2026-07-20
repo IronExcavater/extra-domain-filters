@@ -266,7 +266,6 @@
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
-    margin-right: 8px;
 }
 
 .edf-sort-actions {
@@ -305,7 +304,7 @@
 
 .edf-selection-checkbox {
     display: inline-block;
-    margin-right: 8px;
+    margin: 0 8px 0 0;
     vertical-align: middle;
 }
 
@@ -367,14 +366,40 @@
 }
 
 .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] > svg {
-    color: rgb(30 41 61 / 30%);
+    color: rgb(100 100 99);
     fill: transparent;
     transition: color 0.2s ease-in-out, fill 0.2s ease-in-out;
+}
+
+.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] {
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    margin: 3px;
+    padding: 0;
+    position: relative;
+    text-align: inherit;
+    z-index: 3;
 }
 
 .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:hover > svg,
 .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:focus-visible > svg {
     color: rgb(255 204 0);
+}
+
+#shortlist [data-testid="listing-card-wrapper-tall"] {
+    padding-bottom: 0 !important;
+}
+
+#shortlist [data-testid="listing-card-container"] .css-ki8muu {
+    height: auto !important;
+}
+
+#shortlist [data-testid="listing-card-buttons-wrapper"] {
+    display: none !important;
 }
 
 .slick-arrow:has([data-testid^="carousel-button-"]) {

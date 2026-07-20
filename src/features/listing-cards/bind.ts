@@ -40,8 +40,9 @@ function bindBlacklistButton(
     button.addEventListener("click", async event => {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
         await toggleBlacklist(card, url, context, shortlistButton, button);
-    });
+    }, { capture: true });
 }
 
 export async function injectListingCards(

@@ -146,6 +146,7 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
     button.addEventListener("click", async event => {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
         await toggleBundleBlacklist(getProjectMembers(projectCard));
-    });
+    }, { capture: true });
 }

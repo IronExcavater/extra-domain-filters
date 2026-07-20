@@ -220,11 +220,12 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
     button.addEventListener("click", async event => {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
 
         const members = getCarouselMembers(carouselCard);
 
         await toggleBundleBlacklist(members);
-    });
+    }, { capture: true });
 
     void context;
 }
