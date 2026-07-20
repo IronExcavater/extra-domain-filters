@@ -68,9 +68,14 @@ function setButtonClassState(button: HTMLButtonElement, active: boolean): void {
         const domainClass = active && stateClasses.active
             ? stateClasses.active
             : stateClasses.inactive;
+        const nextClassName = [domainClass, ...extensionClasses].join(" ");
 
-        button.className = [domainClass, ...extensionClasses].join(" ");
-        button.classList.remove(...ACTIVE_SHORTLIST_CLASS_NAMES);
+        if (button.className !== nextClassName) {
+            button.className = nextClassName;
+        }
+        if (ACTIVE_SHORTLIST_CLASS_NAMES.some(className => button.classList.contains(className))) {
+            button.classList.remove(...ACTIVE_SHORTLIST_CLASS_NAMES);
+        }
     }
 }
 
@@ -104,10 +109,15 @@ export function setBlacklistButtonState(button: HTMLButtonElement, active: boole
     const icon = getOrCreateButtonIcon(button);
     setBlacklistIcon(icon, active);
 
-    button.dataset.active = String(active);
-    button.ariaLabel = active ? "Remove from blacklist" : text;
-    button.title = active ? "Remove from blacklist" : text;
-    button.setAttribute("aria-pressed", String(active));
+    const nextActive = String(active);
+    const nextLabel = active ? "Remove from blacklist" : text;
+
+    if (button.dataset.active !== nextActive) button.dataset.active = nextActive;
+    if (button.ariaLabel !== nextLabel) button.ariaLabel = nextLabel;
+    if (button.title !== nextLabel) button.title = nextLabel;
+    if (button.getAttribute("aria-pressed") !== nextActive) {
+        button.setAttribute("aria-pressed", nextActive);
+    }
 }
 
 export function updateButton(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {

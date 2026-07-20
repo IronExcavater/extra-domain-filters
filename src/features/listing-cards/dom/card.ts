@@ -25,6 +25,7 @@ export const TOP_LEVEL_CARD_SELECTOR = [
 
 export type BlacklistCardKind =
     | "standard"
+    | "carousel"
     | "carousel-child"
     | "project"
     | "project-child";
@@ -40,6 +41,9 @@ export function getCard(button: Element): Element | undefined {
 export function getBlacklistCardKind(card: Element, button?: Element): BlacklistCardKind {
     if ((button as HTMLElement | undefined)?.dataset.blacklistScope === "project") {
         return "project";
+    }
+    if ((button as HTMLElement | undefined)?.dataset.blacklistScope === "carousel") {
+        return "carousel";
     }
 
     if (card.matches('[data-testid="listing-card-child-listing"]')) {

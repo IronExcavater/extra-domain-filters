@@ -2,12 +2,15 @@
     align-items: center;
     display: flex;
     gap: 6px;
+    justify-content: space-between;
+    min-width: 0;
     padding-right: 0 !important;
     width: 100%;
 }
 
 .edf-listing-card-button-container > [data-testid="listing-card-price"] {
     flex: 1 1 auto;
+    min-width: 0;
 }
 
 .edf-listing-card-button-container > button {
@@ -20,8 +23,8 @@
     display: inline-flex;
     flex: 0 0 auto;
     gap: 6px;
-    margin-left: auto;
     justify-content: flex-end;
+    margin-left: auto !important;
 }
 
 .edf-listing-card-action-buttons > button {
@@ -118,10 +121,13 @@
 
 .edf-listing-card-excluded {
     background: transparent !important;
+    border: 0 !important;
     border-radius: inherit !important;
+    box-shadow: none !important;
     max-height: 44px !important;
     min-height: 38px !important;
     overflow: hidden !important;
+    padding: 0 !important;
     transition:
         background-color 180ms ease,
         max-height 180ms ease,
@@ -275,8 +281,10 @@
 
 .slick-arrow:has([data-testid^="carousel-button-"]) {
     align-items: center;
-    display: inline-flex;
+    display: inline-flex !important;
     justify-content: center;
+    line-height: 0;
+    padding: 0 !important;
 }
 
 [class~="slideControlsIcons"] > span,

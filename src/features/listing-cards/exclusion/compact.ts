@@ -5,6 +5,7 @@ import { TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 const HIDDEN_CLASS = "edf-exclusion-merged-hidden";
 const LEAD_CLASS = "edf-exclusion-merged-lead";
 const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
+const ICON_STATE_ATTRIBUTE = "data-edf-icon-state";
 const expandedGroups = new Set<string>();
 
 type ActiveReason = Exclude<ExclusionReason, "none">;
@@ -55,16 +56,21 @@ function setMergedRow(group: ExcludedCard[]): void {
     const key = getGroupKey(group);
 
     if (text) {
-        text.textContent = reasons.size === 1 && lead.reason === "blacklisted"
-            ? `${group.length} listings blacklisted`
-            : `${group.length} listings hidden`;
+        const label = reasons.size === 1 && lead.reason === "blacklisted"
+            ? "Multiple blacklisted listings"
+            : "Multiple hidden listings";
+
+        if (text.textContent !== label) text.textContent = label;
     }
 
-    if (icon) (reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
+    if (icon && icon.getAttribute(ICON_STATE_ATTRIBUTE) !== reason) {
+        (reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
+        icon.setAttribute(ICON_STATE_ATTRIBUTE, reason);
+    }
 
     if (button) {
-        button.lastChild!.textContent = "Expand";
-        button.ariaLabel = "Expand hidden listings";
+        if (button.lastChild?.textContent !== "Expand") button.lastChild!.textContent = "Expand";
+        if (button.ariaLabel !== "Expand hidden listings") button.ariaLabel = "Expand hidden listings";
         button.onclick = event => {
             event.preventDefault();
             event.stopPropagation();

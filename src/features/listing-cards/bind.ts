@@ -28,7 +28,11 @@ function bindBlacklistButton(
     if (!url) return;
     if (shortlistButton.parentElement?.querySelector(".edf-blacklist-button")) return;
 
-    const button = cloneBlacklistButton(shortlistButton);
+    const button = cloneBlacklistButton(shortlistButton, {
+        inactiveClassName: shortlistButton.closest("#shortlist")
+            ? shortlistButton.className
+            : undefined,
+    });
     insertBlacklistButton(shortlistButton, button);
 
     button.addEventListener("click", async event => {

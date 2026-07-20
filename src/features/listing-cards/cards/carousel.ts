@@ -8,6 +8,7 @@ import {
     getListingSnapshot,
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "../dom/card";
+import { applyExclusionState, updateExclusionRow } from "../exclusion/row";
 
 function findChildSlides(carouselCard: HTMLElement): HTMLElement[] {
     return [...carouselCard.querySelectorAll<HTMLElement>(CAROUSEL_CHILD_SELECTOR)];
@@ -18,6 +19,8 @@ function findCarouselListingAnchors(carouselCard: HTMLElement, unique = true): H
 
     return [...carouselCard.querySelectorAll<HTMLAnchorElement>('a[href*="domain.com.au"]')]
         .filter(anchor => {
+            if (anchor.matches('[data-testid="listing-card-view-more"]')) return false;
+
             const url = new URL(anchor.href, window.location.origin).href;
             if (unique && seen.has(url)) return false;
 
@@ -79,11 +82,16 @@ export function getCarouselMembers(carouselCard: HTMLElement): { url: string; sn
 
 export function updateCarouselCard(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
     const urls = getCarouselMembers(carouselCard).map(member => member.url);
+    const blacklistedUrls = urls.filter(url => isBlacklisted(blacklist, url));
     const button = carouselCard.querySelector<HTMLButtonElement>('.edf-carousel-blacklist-button');
 
     if (button) {
         button.hidden = urls.length <= 1;
-        updateButton(button, urls.some(url => isBlacklisted(blacklist, url)), "Blacklist featured properties");
+        updateButton(button, blacklistedUrls.length > 0, "Blacklist featured properties");
+        applyExclusionState(carouselCard, button, blacklistedUrls.length > 0 ? "blacklisted" : "none");
+        if (blacklistedUrls.length > 0) {
+            updateExclusionRow(carouselCard, blacklistedUrls, "blacklisted");
+        }
     }
 
     carouselCard.hidden = false;

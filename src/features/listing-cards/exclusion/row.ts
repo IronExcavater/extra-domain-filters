@@ -7,12 +7,14 @@ import { isRevealed, reveal, unreveal } from "./reveal";
 const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
 const KIND_CLASSES = [
     "edf-exclusion-kind-standard",
+    "edf-exclusion-kind-carousel",
     "edf-exclusion-kind-carousel-child",
     "edf-exclusion-kind-project",
     "edf-exclusion-kind-project-child",
 ];
 
 type ActiveReason = Exclude<ExclusionReason, "none">;
+const ICON_STATE_ATTRIBUTE = "data-edf-icon-state";
 
 export function getExclusionSummaryText(card: Element, reason: ActiveReason): string {
     const count = getPropertyCount(card);
@@ -75,16 +77,22 @@ export function updateExclusionRow(
     const icon = button?.querySelector("svg");
     const urls = [url].flat();
 
-    if (text) text.textContent = getExclusionSummaryText(card, reason);
-    row.dataset.exclusionReason = reason;
-    row.dataset.exclusionUrls = JSON.stringify(urls);
+    const nextText = getExclusionSummaryText(card, reason);
+    const nextUrls = JSON.stringify(urls);
 
-    if (icon) (reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
+    if (text && text.textContent !== nextText) text.textContent = nextText;
+    if (row.dataset.exclusionReason !== reason) row.dataset.exclusionReason = reason;
+    if (row.dataset.exclusionUrls !== nextUrls) row.dataset.exclusionUrls = nextUrls;
+
+    if (icon && icon.getAttribute(ICON_STATE_ATTRIBUTE) !== reason) {
+        (reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
+        icon.setAttribute(ICON_STATE_ATTRIBUTE, reason);
+    }
 
     if (button) {
         const label = reason === "blacklisted" ? "Unblacklist" : "Show anyway";
-        button.lastChild!.textContent = label;
-        button.ariaLabel = label;
+        if (button.lastChild?.textContent !== label) button.lastChild!.textContent = label;
+        if (button.ariaLabel !== label) button.ariaLabel = label;
         button.onclick = async event => {
             event.preventDefault();
             event.stopPropagation();
@@ -99,11 +107,15 @@ export function applyExclusionState(
     reason: ExclusionReason,
 ): void {
     const kind: BlacklistCardKind = getBlacklistCardKind(card, button);
+    const element = card as HTMLElement;
+    const kindClass = `edf-exclusion-kind-${kind}`;
 
-    card.classList.remove(...KIND_CLASSES);
-    card.classList.add(`edf-exclusion-kind-${kind}`);
+    if (!card.classList.contains(kindClass)) {
+        card.classList.remove(...KIND_CLASSES);
+        card.classList.add(kindClass);
+    }
     card.classList.toggle("edf-listing-card-excluded", reason !== "none");
-    (card as HTMLElement).dataset.exclusionReason = reason;
+    if (element.dataset.exclusionReason !== reason) element.dataset.exclusionReason = reason;
 }
 
 const EYE_OFF_SELECTOR = '[data-testid="listing-card-hide-again"]';
