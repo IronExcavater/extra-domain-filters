@@ -29,9 +29,7 @@ function bindBlacklistButton(
     if (shortlistButton.parentElement?.querySelector(".edf-blacklist-button")) return;
 
     const button = cloneBlacklistButton(shortlistButton, {
-        inactiveClassName: shortlistButton.closest("#shortlist")
-            ? shortlistButton.className
-            : undefined,
+        skin: { inactive: shortlistButton.className },
     });
     insertBlacklistButton(shortlistButton, button);
 

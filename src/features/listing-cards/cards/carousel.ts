@@ -1,6 +1,6 @@
-import { isBlacklisted, type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
+import { type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
-import { toggleBundleBlacklist } from "../blacklist/bundle";
+import { getBlacklistedBundleUrls, toggleBundleBlacklist } from "../blacklist/bundle";
 import { cloneBlacklistButton, updateButton } from "../blacklist/button";
 import {
     CAROUSEL_CHILD_SELECTOR,
@@ -81,12 +81,12 @@ export function getCarouselMembers(carouselCard: HTMLElement): { url: string; sn
 }
 
 export function updateCarouselCard(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
-    const urls = getCarouselMembers(carouselCard).map(member => member.url);
-    const blacklistedUrls = urls.filter(url => isBlacklisted(blacklist, url));
+    const members = getCarouselMembers(carouselCard);
+    const blacklistedUrls = getBlacklistedBundleUrls(members, blacklist);
     const button = carouselCard.querySelector<HTMLButtonElement>('.edf-carousel-blacklist-button');
 
     if (button) {
-        button.hidden = urls.length <= 1;
+        button.hidden = members.length <= 1;
         updateButton(button, blacklistedUrls.length > 0, "Blacklist featured properties");
         applyExclusionState(carouselCard, button, blacklistedUrls.length > 0 ? "blacklisted" : "none");
         if (blacklistedUrls.length > 0) {

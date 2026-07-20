@@ -1,8 +1,6 @@
-import { removeBlacklistUrls } from "../../../domain/blacklist/store";
 import { isBlacklisted, type BlacklistEntry } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
-import { replaceWithUnbinIcon } from "../../../shared/ui/icons";
-import { toggleBundleBlacklist, type BundleMember } from "../blacklist/bundle";
+import { getBlacklistedBundleUrls, toggleBundleBlacklist, type BundleMember } from "../blacklist/bundle";
 import { cloneBlacklistButton, updateButton } from "../blacklist/button";
 import {
     getChildListingUrl,
@@ -12,7 +10,7 @@ import {
     PROJECT_MARKER_SELECTOR,
     SHORTLIST_BUTTON_SELECTOR,
 } from "../dom/card";
-import { getExclusionRow } from "../exclusion/row";
+import { getExclusionRow, updateExclusionRow } from "../exclusion/row";
 
 function getProjectUrl(projectCard: HTMLElement): string | undefined {
     const anchor = projectCard.querySelector<HTMLAnchorElement>('a[href*="/project/"]');
@@ -53,25 +51,32 @@ export function updateProjectBlacklistSummary(
     projectExcluded: boolean,
 ): void {
     const children = [...projectCard.querySelectorAll<HTMLElement>('[data-testid="listing-card-child-listing"]')];
-    const blacklistedUrls = children
+    const blacklistedChildren = children
         .map(child => ({ child, url: getChildListingUrl(child) }))
         .filter((entry): entry is { child: HTMLElement; url: string } =>
             entry.url !== undefined && isBlacklisted(blacklist, entry.url),
         );
+    const members = getProjectMembers(projectCard);
+    const blacklistedUrls = getBlacklistedBundleUrls(members, blacklist);
 
-    const blacklistedChildren = new Set(blacklistedUrls.map(entry => entry.child));
+    const hiddenChildren = new Set(blacklistedChildren.map(entry => entry.child));
     for (const child of children) {
-        child.hidden = blacklistedChildren.has(child);
+        const hidden = hiddenChildren.has(child);
+        if (child.hidden !== hidden) child.hidden = hidden;
     }
 
     const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
     if (bulkButton) {
-        bulkButton.classList.remove("edf-adaptive-foreground");
-        bulkButton.style.removeProperty("--edf-adaptive-foreground");
-        bulkButton.style.color = "#fff";
+        if (bulkButton.classList.contains("edf-adaptive-foreground")) {
+            bulkButton.classList.remove("edf-adaptive-foreground");
+        }
+        if (bulkButton.style.getPropertyValue("--edf-adaptive-foreground")) {
+            bulkButton.style.removeProperty("--edf-adaptive-foreground");
+        }
+        if (bulkButton.style.color !== "rgb(255, 255, 255)") bulkButton.style.color = "#fff";
         updateButton(
             bulkButton,
-            getProjectMembers(projectCard).some(member => isBlacklisted(blacklist, member.url)),
+            blacklistedUrls.length > 0,
             "Blacklist project",
         );
     }
@@ -86,24 +91,12 @@ export function updateProjectBlacklistSummary(
 
     const row = getProjectAggregateRow(projectCard, projectHeader);
     const text = row.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-row-text"]');
+    updateExclusionRow(projectCard, blacklistedUrls, "blacklisted");
     if (text) {
-        text.textContent = blacklistedUrls.length === 1
-            ? `Blacklisted: ${getTitle(blacklistedUrls[0].child)}`
+        const label = blacklistedChildren.length === 1
+            ? `Blacklisted: ${getTitle(blacklistedChildren[0].child)}`
             : `Blacklisted in ${getTitle(projectCard)}`;
-    }
-
-    const button = row.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');
-    if (button) {
-        const icon = button.querySelector("svg");
-        if (icon) replaceWithUnbinIcon(icon);
-        button.lastChild!.textContent = "Unblacklist";
-        button.ariaLabel = "Unblacklist";
-        button.onclick = async event => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            await removeBlacklistUrls(blacklistedUrls.map(entry => entry.url));
-        };
+        if (text.textContent !== label) text.textContent = label;
     }
 }
 

@@ -9,6 +9,17 @@ const RESET_FILTER_BUTTON_CLASS = "css-8vgasn";
 
 type NotesByUrl = Record<string, string>;
 
+function getRowKey(entry: BlacklistEntry): string {
+    return getBlacklistListing(entry).url;
+}
+
+function getRowVersion(entry: BlacklistEntry, note: string | undefined): string {
+    return JSON.stringify({
+        active: !entry.removedAt,
+        note: note ?? "",
+    });
+}
+
 function findShortlistContainer(): HTMLElement | undefined {
     const shortlistRoot = document.querySelector("#shortlist");
     return shortlistRoot?.firstElementChild instanceof HTMLElement
@@ -314,6 +325,8 @@ function createShortlistStyledBlacklistRow(
 
     card.dataset.active = String(active);
     card.dataset.edfBlacklistRow = "true";
+    card.dataset.edfBlacklistUrl = listing.url;
+    card.dataset.edfBlacklistVersion = getRowVersion(entry, note);
     card.setAttribute("data-testid", "extra-domain-filters-blacklist-row");
 
     setLinkUrls(card, listing.url);
@@ -346,12 +359,14 @@ function createFallbackBlacklistRow(
     const actions = document.createElement("div");
     const toggle = document.createElement("button");
 
-    card.className = "edf-blacklist-fallback-card";
+    card.className = "edf-blacklist-snapshot";
     card.dataset.active = String(active);
     card.dataset.edfBlacklistRow = "true";
+    card.dataset.edfBlacklistUrl = listing.url;
+    card.dataset.edfBlacklistVersion = getRowVersion(entry, note);
     card.setAttribute("data-testid", "extra-domain-filters-blacklist-row");
 
-    media.className = "edf-blacklist-fallback-media";
+    media.className = "edf-blacklist-snapshot-media";
     media.href = listing.url;
     if (listing.thumbnailUrl) {
         const image = document.createElement("img");
@@ -362,14 +377,14 @@ function createFallbackBlacklistRow(
         media.append(image);
     }
 
-    body.className = "edf-blacklist-fallback-body";
-    address.className = "edf-blacklist-fallback-address";
+    body.className = "edf-blacklist-snapshot-body";
+    address.className = "edf-blacklist-snapshot-address";
     address.href = listing.url;
     address.textContent = getVisibleText(listing.displayAddress, listing.title);
-    price.className = "edf-blacklist-fallback-price";
+    price.className = "edf-blacklist-snapshot-price";
     price.textContent = getVisibleText(listing.price);
 
-    actions.className = "edf-blacklist-fallback-actions";
+    actions.className = "edf-blacklist-snapshot-actions";
     toggle.type = "button";
     toggle.className = `${buttonClass} edf-blacklist-button`;
     toggle.dataset.edfInactiveClass = buttonClass;
@@ -386,6 +401,36 @@ function createFallbackBlacklistRow(
     card.append(media, body);
 
     return card;
+}
+
+function reconcileRows(
+    container: HTMLElement,
+    list: HTMLElement,
+    entries: BlacklistEntry[],
+    notes: NotesByUrl,
+): void {
+    const template = getTemplateCard(container);
+    const existingRows = new Map(
+        [...list.querySelectorAll<HTMLElement>('[data-testid="extra-domain-filters-blacklist-row"]')]
+            .map(row => [row.dataset.edfBlacklistUrl, row] as const)
+            .filter((entry): entry is [string, HTMLElement] => entry[0] !== undefined),
+    );
+
+    const rows = entries.map(entry => {
+        const url = getRowKey(entry);
+        const version = getRowVersion(entry, notes[url]);
+        const existing = existingRows.get(url);
+
+        if (existing?.dataset.edfBlacklistVersion === version) {
+            return existing;
+        }
+
+        return template
+            ? createShortlistStyledBlacklistRow(container, template, entry, notes[url])
+            : createFallbackBlacklistRow(container, entry, notes[url]);
+    });
+
+    list.replaceChildren(...rows);
 }
 
 async function render(container: HTMLElement, list: HTMLElement): Promise<void> {
@@ -417,13 +462,7 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
         }
     }
 
-    const template = getTemplateCard(container);
-    if (!template) {
-        list.replaceChildren(...entries.map(entry => createFallbackBlacklistRow(container, entry, notes[entry.url])));
-        return;
-    }
-
-    list.replaceChildren(...entries.map(entry => createShortlistStyledBlacklistRow(container, template, entry, notes[entry.url])));
+    reconcileRows(container, list, entries, notes);
 }
 
 const mountBlacklistPage: PageMount = async (context) => {

@@ -19,3 +19,12 @@ export function isBundleSelected(
 ): boolean {
     return members.some(member => isBlacklisted(blacklist, member.url));
 }
+
+export function getBlacklistedBundleUrls(
+    members: readonly { url: string }[],
+    blacklist: readonly BlacklistEntry[],
+): string[] {
+    return members
+        .map(member => member.url)
+        .filter(url => isBlacklisted(blacklist, url));
+}

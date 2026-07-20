@@ -46,8 +46,10 @@ function insertButton(): { button: HTMLButtonElement; shortlistButton?: HTMLButt
     const shareButton = document.querySelector<HTMLButtonElement>(SHARE_SELECTOR);
     const button = shortlistButton
         ? cloneBlacklistButton(shortlistButton, {
-            activeClassName: ACTIVE_SHORTLIST_CLASS,
-            inactiveClassName: shareButton?.className,
+            skin: {
+                active: ACTIVE_SHORTLIST_CLASS,
+                inactive: shareButton?.className ?? shortlistButton.className,
+            },
         })
         : document.createElement("button");
 
