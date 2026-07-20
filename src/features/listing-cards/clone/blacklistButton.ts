@@ -6,6 +6,10 @@ const INACTIVE_SHORTLIST_CLASS_KEY = "edfInactiveShortlistClass";
 const ACTIVE_SHORTLIST_CLASS_KEY = "edfActiveShortlistClass";
 const KNOWN_INACTIVE_LISTING_CARD_CLASS = "css-bhcn0k";
 const KNOWN_ACTIVE_LISTING_CARD_CLASS = "css-9xfbzc";
+const NORMAL_LISTING_CARD_BUTTON_SKIN: ButtonSkin = {
+    active: "css-1m4oqag",
+    inactive: "css-zwjexa",
+};
 const LISTING_DETAILS_ACTIVE_CLASS = "css-11t19a7";
 const ACTIVE_SHORTLIST_CLASS_NAMES = ["active", "is-active", "isActive", "shortlisted"];
 
@@ -183,16 +187,20 @@ export function cloneBlacklistButton(
 ): HTMLButtonElement {
     const button = shortlistButton.cloneNode(true) as HTMLButtonElement;
     const icon = button.querySelector("svg");
+    const isNativeAppearance = (options.appearance ?? "native") === "native";
     const fallbackInactiveClass = isShortlisted(shortlistButton)
         ? getLocalInactiveShortlistClass(shortlistButton) ??
-            getDocumentInactiveShortlistClass() ??
-            KNOWN_INACTIVE_LISTING_CARD_CLASS
+            (isNativeAppearance
+                ? NORMAL_LISTING_CARD_BUTTON_SKIN.inactive
+                : getDocumentInactiveShortlistClass() ?? KNOWN_INACTIVE_LISTING_CARD_CLASS)
         : shortlistButton.className;
     const fallbackActiveClass =
         (isShortlisted(shortlistButton)
             ? shortlistButton.className
             : getLocalActiveShortlistClass(shortlistButton) ??
-                getDocumentActiveShortlistClass()) ??
+                (isNativeAppearance
+                    ? NORMAL_LISTING_CARD_BUTTON_SKIN.active
+                    : getDocumentActiveShortlistClass())) ??
         (shortlistButton.dataset.testid?.startsWith("listing-details__address-cta-button-shortlist")
             ? LISTING_DETAILS_ACTIVE_CLASS
             : undefined);
