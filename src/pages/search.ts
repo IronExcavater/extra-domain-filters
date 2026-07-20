@@ -1,5 +1,6 @@
 import { bindFilterTriggers, injectFilters } from "../features/filters";
 import { bindListingCards } from "../features/listing-cards";
+import { bindMapPins } from "../features/map/pins";
 import { PageMount } from "../shared/platform/router";
 
 const mountSearchPage: PageMount = async (context) => {
@@ -9,6 +10,7 @@ const mountSearchPage: PageMount = async (context) => {
     );
     injectFilters(context.logger, context.url);
     bindListingCards(context);
+    bindMapPins(context);
 };
 
 export default mountSearchPage;
