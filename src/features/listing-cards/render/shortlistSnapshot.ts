@@ -8,6 +8,18 @@ function setText(element: Element | null, text: string | undefined): void {
     if (element && text) element.textContent = text;
 }
 
+function setAddress(address: HTMLElement | null, value: string | undefined): void {
+    if (!address || !value) return;
+
+    const line = document.createElement("span");
+    const sourceLine = address.querySelector<HTMLElement>('[data-testid="address-line1"]');
+
+    line.setAttribute("data-testid", "address-line1");
+    if (sourceLine?.className) line.className = sourceLine.className;
+    line.textContent = value;
+    address.replaceChildren(line);
+}
+
 function createImage(listing: ListingSnapshot): HTMLElement {
     const imageLink = document.createElement("a");
     const imageWrapper = document.createElement("div");
@@ -117,7 +129,7 @@ function createTemplatedShortlistSnapshotCard(
         priceRow.append(actions.blacklistButton);
     }
 
-    if (address) address.textContent = listing.displayAddress ?? listing.title;
+    setAddress(address, listing.displayAddress ?? listing.title);
     if (addressLink) addressLink.href = listing.url;
 
     return card;

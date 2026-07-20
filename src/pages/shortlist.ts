@@ -67,9 +67,10 @@ function syncSelectionControls(container: HTMLElement): void {
         const id = getCardId(card);
         if (!id) continue;
 
-        const title = card.querySelector<HTMLElement>('[data-testid="address-wrapper"]');
-        const heading = title?.querySelector<HTMLElement>("h2, h3") ?? title ?? card;
-        heading.prepend(createSelectionCheckbox(
+        const title = card.querySelector<HTMLElement>('[data-testid="address-line1"]') ??
+            card.querySelector<HTMLElement>('[data-testid="address-wrapper"]') ??
+            card;
+        title.prepend(createSelectionCheckbox(
             selectedCardIds.has(id),
             "Select shortlisted listing",
             checked => {

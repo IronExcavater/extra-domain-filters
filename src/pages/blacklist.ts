@@ -179,9 +179,10 @@ function createBlacklistRow(
     card.dataset.edfBlacklistRow = "true";
     card.dataset.edfBlacklistUrl = listing.url;
     card.dataset.edfBlacklistVersion = getRowVersion(entry);
-    const title = card.querySelector<HTMLElement>('[data-testid="address-wrapper"]');
-    const heading = title?.querySelector<HTMLElement>("h2, h3") ?? title ?? card;
-    heading.prepend(createSelectionInput(listing.url, onSelectionChange));
+    const title = card.querySelector<HTMLElement>('[data-testid="address-line1"]') ??
+        card.querySelector<HTMLElement>('[data-testid="address-wrapper"]') ??
+        card;
+    title.prepend(createSelectionInput(listing.url, onSelectionChange));
 
     button.type = "button";
     button.className = `${SHORTLIST_CARD_BUTTON_SKIN.active} edf-blacklist-button`;

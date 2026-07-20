@@ -217,8 +217,10 @@
 .edf-blacklist-row-list [data-edf-blacklist-row="true"] {
     align-self: start;
     height: max-content !important;
+    max-width: none !important;
     min-height: 0 !important;
     min-width: 0;
+    width: 100% !important;
 }
 
 .edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-wrapper-tall"] {
