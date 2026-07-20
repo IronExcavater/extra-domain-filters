@@ -34,19 +34,23 @@ function getControls(container: HTMLElement): HTMLElement {
     if (existing) return existing;
 
     const controls = document.createElement("div");
-    const sort = container.querySelector('[data-testid="listing-tabs__filters-sort-by"]');
-
     controls.className = "edf-page-actions";
     controls.setAttribute("data-testid", "extra-domain-filters-shortlist-controls");
-    if (sort?.parentElement) {
-        const label = document.createElement("span");
-        label.className = "edf-sort-label";
-        label.textContent = "Sort by";
-        sort.parentElement.insertBefore(controls, sort);
-        sort.parentElement.insertBefore(label, sort);
-    } else container.prepend(controls);
+    const list = container.querySelector('[data-testid="listing-card-container"]')?.parentElement;
+    if (list) list.before(controls);
+    else container.prepend(controls);
 
     return controls;
+}
+
+function ensureSortLabel(container: HTMLElement): void {
+    const sort = container.querySelector('[data-testid="listing-tabs__filters-sort-by"]');
+    if (!sort || sort.previousElementSibling?.getAttribute("data-edf-sort-label") === "true") return;
+
+    const label = document.createElement("span");
+    label.dataset.edfSortLabel = "true";
+    label.textContent = "Sort by";
+    sort.before(label);
 }
 
 function removeSelectionControls(container: HTMLElement): void {
@@ -86,6 +90,7 @@ function clearCards(container: HTMLElement, ids: readonly string[]): void {
 
 function renderControls(container: HTMLElement): void {
     const controls = getControls(container);
+    ensureSortLabel(container);
     const cards = getCards(container);
     const visibleIds = getCardIds(cards);
 

@@ -52,7 +52,7 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
 
     clearButton.ariaLabel = "Clear selected listings";
     clearButton.textContent = "Clear selection";
-    clearButton.disabled = selectedVisibleCount === 0;
+    clearButton.hidden = selectedVisibleCount === 0;
     clearButton.addEventListener("click", () => {
         options.onClear(visible.filter(id => selected.has(id)));
     });

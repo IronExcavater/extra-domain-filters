@@ -121,7 +121,7 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
     if (!sourceButton || !details || !getProjectUrl(projectCard)) return;
     if (projectCard.querySelector(".edf-project-blacklist-button")) return;
 
-    const button = cloneBlacklistButton(sourceButton);
+    const button = cloneBlacklistButton(sourceButton, { appearance: "native" });
     button.dataset.blacklistScope = "project";
     button.classList.add("edf-project-blacklist-button");
     insertProjectBlacklistButton(details, button);

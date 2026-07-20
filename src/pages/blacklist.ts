@@ -127,18 +127,19 @@ function getControls(container: HTMLElement, list: HTMLElement): HTMLDivElement 
     controls.className = "edf-page-actions";
     controls.setAttribute("data-testid", "extra-domain-filters-blacklist-controls");
 
-    const sort = container.querySelector('[data-testid="listing-tabs__filters-sort-by"]');
-    if (sort?.parentElement) {
-        const label = document.createElement("span");
-        label.className = "edf-sort-label";
-        label.textContent = "Sort by";
-        sort.parentElement.insertBefore(controls, sort);
-        sort.parentElement.insertBefore(label, sort);
-    } else {
-        list.before(controls);
-    }
+    list.before(controls);
 
     return controls;
+}
+
+function ensureSortLabel(container: HTMLElement): void {
+    const sort = container.querySelector('[data-testid="listing-tabs__filters-sort-by"]');
+    if (!sort || sort.previousElementSibling?.getAttribute("data-edf-sort-label") === "true") return;
+
+    const label = document.createElement("span");
+    label.dataset.edfSortLabel = "true";
+    label.textContent = "Sort by";
+    sort.before(label);
 }
 
 function createSelectionInput(url: string, onChange: () => void): HTMLLabelElement {
@@ -174,6 +175,7 @@ function createBlacklistRow(
     button.className = `${SHORTLIST_CARD_BUTTON_SKIN.active} edf-blacklist-button`;
     button.dataset.edfInactiveClass = SHORTLIST_CARD_BUTTON_SKIN.inactive;
     button.dataset.edfActiveClass = SHORTLIST_CARD_BUTTON_SKIN.active;
+    button.dataset.edfButtonSkin = "shortlist";
     button.setAttribute("data-testid", "extra-domain-filters-blacklist-toggle");
     setBlacklistButtonState(button, active, "Re-blacklist");
     button.addEventListener("click", event => {
@@ -223,6 +225,7 @@ async function render(
     const entries = [...all].sort((first, second) => second.addedAt - first.addedAt);
 
     const controls = getControls(container, list);
+    ensureSortLabel(container);
     const message = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
 
     renderSelectionControls({
@@ -267,6 +270,7 @@ const mountBlacklistPage: PageMount = async (context) => {
     context.signal.addEventListener("abort", () => {
         unwatchBlacklist();
         container.querySelector('[data-testid="extra-domain-filters-blacklist-controls"]')?.remove();
+        container.querySelector('[data-edf-sort-label="true"]')?.remove();
         restoreMessage();
         restoreTitle();
         restoreList();

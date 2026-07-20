@@ -19,6 +19,7 @@ export const SHORTLIST_CARD_BUTTON_SKIN: ButtonSkin = {
 };
 
 export interface CloneBlacklistButtonOptions {
+    appearance?: "native" | "shortlist";
     skin?: ButtonSkin;
 }
 
@@ -175,6 +176,7 @@ export function cloneBlacklistButton(
     button.tabIndex = 0;
     button.removeAttribute("aria-disabled");
     button.setAttribute("data-testid", "listing-card-blacklist");
+    button.dataset.edfButtonSkin = options.appearance ?? "native";
     applyButtonSkin(button, skin);
     if (!isShortlisted(shortlistButton)) {
         setDocumentInactiveShortlistClass(shortlistButton.className);

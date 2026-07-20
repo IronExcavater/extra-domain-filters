@@ -53,6 +53,16 @@
     flex: 0 0 auto;
 }
 
+.edf-project-blacklist-button > svg {
+    color: inherit !important;
+}
+
+.edf-project-blacklist-button:hover,
+.edf-project-blacklist-button:focus-visible,
+.edf-project-blacklist-button:active {
+    color: rgb(255 204 0) !important;
+}
+
 .edf-blacklist-shortlist-placeholder {
     opacity: 0.4;
 }
@@ -179,12 +189,19 @@
     display: flex;
     gap: 8px;
     justify-content: flex-end;
-    margin-left: auto;
-    margin-right: 8px;
+    margin: 0 0 12px auto;
 }
 
 .edf-blacklist-row-list {
+    display: grid;
     gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.edf-blacklist-row-list [data-edf-blacklist-row="true"],
+.edf-blacklist-row-list [data-testid="listing-card-wrapper-tall"] {
+    height: auto;
+    min-height: 0;
 }
 
 .edf-action-button {
@@ -207,9 +224,9 @@
     color: rgb(0 135 0);
 }
 
-.edf-sort-label {
+[data-edf-sort-label="true"] {
     color: rgb(50 64 89);
-    margin-left: 12px;
+    margin-right: 8px;
 }
 
 .edf-selection-checkbox {
@@ -220,11 +237,31 @@
 }
 
 .edf-selection-checkbox input {
-    accent-color: rgb(0 135 0);
+    appearance: none;
+    background: #fff;
+    border: 1px solid rgb(166 176 190);
+    border-radius: 3px;
     cursor: pointer;
     height: 18px;
     margin: 0;
+    position: relative;
     width: 18px;
+}
+
+.edf-selection-checkbox input:checked {
+    background: rgb(0 135 0);
+    border-color: rgb(0 135 0);
+}
+
+.edf-selection-checkbox input:checked::after {
+    color: #fff;
+    content: "✓";
+    font-size: 15px;
+    font-weight: 700;
+    left: 2px;
+    line-height: 15px;
+    position: absolute;
+    top: 0;
 }
 
 .edf-hide-again-button {
@@ -256,14 +293,14 @@
     display: none !important;
 }
 
-.edf-blacklist-button[data-active="false"] > svg {
+.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] > svg {
     color: rgb(30 41 61 / 30%);
     fill: transparent;
     transition: color 0.2s ease-in-out, fill 0.2s ease-in-out;
 }
 
-.edf-blacklist-button[data-active="false"]:hover > svg,
-.edf-blacklist-button[data-active="false"]:focus-visible > svg {
+.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:hover > svg,
+.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:focus-visible > svg {
     color: rgb(255 204 0);
 }
 
@@ -275,8 +312,14 @@
     padding: 0 !important;
 }
 
-.edf-project-blacklist-button:hover,
-.edf-project-blacklist-button:focus-visible,
-.edf-project-blacklist-button:active {
-    color: rgb(255 204 0) !important;
+@media (width <= 1024px) {
+    .edf-blacklist-row-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (width <= 640px) {
+    .edf-blacklist-row-list {
+        grid-template-columns: 1fr;
+    }
 }
