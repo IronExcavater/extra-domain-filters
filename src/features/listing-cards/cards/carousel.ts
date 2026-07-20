@@ -1,7 +1,7 @@
 import { type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
 import { getBlacklistedBundleUrls, toggleBundleBlacklist } from "../blacklist/bundle";
-import { cloneBlacklistButton, cloneFeaturedControlButton, updateButton } from "../blacklist/button";
+import { cloneBlacklistButton, cloneFeaturedControlButton, updateButton } from "../clone/blacklistButton";
 import {
     CAROUSEL_CHILD_SELECTOR,
     getChildListingUrl,
@@ -83,7 +83,7 @@ export function getCarouselMembers(carouselCard: HTMLElement): { url: string; sn
 export function updateCarouselCard(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
     const members = getCarouselMembers(carouselCard);
     const blacklistedUrls = getBlacklistedBundleUrls(members, blacklist);
-    const button = carouselCard.querySelector<HTMLButtonElement>('.edf-carousel-blacklist-button');
+    const button = carouselCard.querySelector<HTMLButtonElement>('.edf-featured-blacklist-button');
 
     if (button) {
         button.hidden = members.length <= 1;
@@ -105,8 +105,8 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
         controls?.sourceButton;
     if (!sourceButton) return;
 
-    const existingButton = controls?.controls.querySelector<HTMLButtonElement>('.edf-carousel-blacklist-button') ??
-        carouselCard.querySelector('.edf-carousel-blacklist-button');
+    const existingButton = controls?.controls.querySelector<HTMLButtonElement>('.edf-featured-blacklist-button') ??
+        carouselCard.querySelector('.edf-featured-blacklist-button');
     if (existingButton) return;
 
     const button = controls?.sourceButton
@@ -122,11 +122,11 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
     button.title = "Blacklist featured properties";
     if (controls) {
         if (!controls.sourceButton) {
-            button.classList.add("edf-carousel-blacklist-button");
+            button.classList.add("edf-featured-blacklist-button");
         }
         controls.controls.append(button);
     } else {
-        button.classList.add("edf-carousel-blacklist-button");
+        button.classList.add("edf-featured-blacklist-button");
         carouselCard.prepend(button);
     }
 

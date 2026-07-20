@@ -2,8 +2,8 @@ import { addOrReplaceBlacklistEntry, getBlacklist, toggleBlacklistListing } from
 import { resolveListingSnapshot } from "../../../domain/listings/cache";
 import { isBlacklisted, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
+import { removeFromShortlist, updateButton } from "../clone/blacklistButton";
 import { getListingSnapshot } from "../dom/card";
-import { removeFromShortlist, updateButton } from "./button";
 
 async function refreshBlacklistSnapshot(
     listing: ListingSnapshot,

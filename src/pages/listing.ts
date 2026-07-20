@@ -1,7 +1,7 @@
 import { getBlacklist, toggleBlacklistListing } from "../domain/blacklist/store";
 import { resolveListingSnapshot } from "../domain/listings/cache";
 import { matchListing, type BlacklistEntry } from "../domain/matching";
-import { cloneBlacklistButton, removeFromShortlist, setBlacklistButtonState } from "../features/listing-cards/blacklist/button";
+import { cloneBlacklistButton, removeFromShortlist, setBlacklistButtonState } from "../features/listing-cards/clone/blacklistButton";
 import { PageMount } from "../shared/platform/router";
 import { onStorageChange } from "../shared/platform/storage";
 import { getSettings } from "../shared/state/settings";

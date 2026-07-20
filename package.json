@@ -7,6 +7,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
+    "dev:hmr": "node scripts/dev-hmr.mjs",
     "build": "vite build",
     "prepare": "husky",
     "typecheck": "tsc --noEmit",

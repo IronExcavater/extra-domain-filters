@@ -1,10 +1,10 @@
 import { getBlacklist } from "../../domain/blacklist/store";
 import { PageContext } from "../../shared/platform/router";
 import { getSettings } from "../../shared/state/settings";
-import { cloneBlacklistButton, insertBlacklistButton, SHORTLIST_CARD_BUTTON_SKIN } from "./blacklist/button";
 import { toggleBlacklist } from "./blacklist/toggle";
 import { bindCarouselCard } from "./cards/carousel";
 import { bindProjectCard } from "./cards/project";
+import { cloneBlacklistButton, insertBlacklistButton, SHORTLIST_CARD_BUTTON_SKIN } from "./clone/blacklistButton";
 import {
     getCard,
     getBlacklistCardKind,

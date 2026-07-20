@@ -1,7 +1,7 @@
 import { isBlacklisted, type BlacklistEntry } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
 import { getBlacklistedBundleUrls, toggleBundleBlacklist, type BundleMember } from "../blacklist/bundle";
-import { cloneBlacklistButton, updateButton } from "../blacklist/button";
+import { cloneBlacklistButton, updateButton } from "../clone/blacklistButton";
 import {
     getChildListingUrl,
     getListingSnapshot,

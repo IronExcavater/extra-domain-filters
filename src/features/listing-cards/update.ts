@@ -1,9 +1,9 @@
 import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
 import { type Settings } from "../../shared/state/settings";
 import { isBundleSelected } from "./blacklist/bundle";
-import { updateButton } from "./blacklist/button";
 import { getCarouselMembers, updateCarouselCard } from "./cards/carousel";
 import { updateProjectBlacklistSummary } from "./cards/project";
+import { updateButton } from "./clone/blacklistButton";
 import {
     BLACKLIST_BUTTON_SELECTOR,
     CAROUSEL_CHILD_SELECTOR,
@@ -29,7 +29,7 @@ function resolveVisibleReason(rawReason: ExclusionReason, url: string): Exclusio
 }
 
 function syncCarouselBulkButtonState(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
-    const button = carouselCard.querySelector<HTMLButtonElement>('.edf-carousel-blacklist-button');
+    const button = carouselCard.querySelector<HTMLButtonElement>('.edf-featured-blacklist-button');
     if (!button) return;
 
     const members = getCarouselMembers(carouselCard);

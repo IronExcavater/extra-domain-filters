@@ -34,11 +34,5 @@ export default defineManifest({
             css: ['src/app/main.css'],
             run_at: 'document_idle',
         },
-    ],
-    web_accessible_resources: [
-        {
-            matches: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
-            resources: ['src/app/main.ts']
-        }
     ]
 });

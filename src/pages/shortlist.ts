@@ -1,7 +1,10 @@
 import { bindListingCards } from "../features/listing-cards";
 import { PageMount } from "../shared/platform/router";
+import { createSelectionCheckbox, renderSelectionControls } from "../shared/ui/selection";
 
-const selectedCards = new WeakSet<HTMLElement>();
+const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
+
+const selectedCardIds = new Set<string>();
 let selectionMode = false;
 
 function getContainer(): HTMLElement | undefined {
@@ -16,6 +19,17 @@ function getCards(container: HTMLElement): HTMLElement[] {
     return [...container.querySelectorAll<HTMLElement>('[data-testid="listing-card-container"]')];
 }
 
+function getCardId(card: HTMLElement): string | undefined {
+    const url = card.querySelector<HTMLAnchorElement>('a[href*="domain.com.au"]')?.href;
+    return url ? new URL(url, window.location.origin).href : undefined;
+}
+
+function getCardIds(cards: readonly HTMLElement[]): string[] {
+    return cards
+        .map(getCardId)
+        .filter((id): id is string => id !== undefined);
+}
+
 function getControls(container: HTMLElement): HTMLElement {
     const existing = container.querySelector<HTMLElement>('[data-testid="extra-domain-filters-shortlist-controls"]');
     if (existing) return existing;
@@ -23,7 +37,7 @@ function getControls(container: HTMLElement): HTMLElement {
     const controls = document.createElement("div");
     const sort = container.querySelector('[data-testid="listing-tabs__filters-sort-by"]');
 
-    controls.className = "edf-blacklist-page-controls";
+    controls.className = "edf-page-actions";
     controls.setAttribute("data-testid", "extra-domain-filters-shortlist-controls");
     if (sort?.parentElement) sort.parentElement.insertBefore(controls, sort);
     else container.prepend(controls);
@@ -40,26 +54,27 @@ function syncSelectionControls(container: HTMLElement): void {
     if (!selectionMode) return;
 
     for (const card of getCards(container)) {
-        const label = document.createElement("label");
-        const input = document.createElement("input");
+        const id = getCardId(card);
+        if (!id) continue;
 
-        label.className = "edf-selection-checkbox";
-        input.type = "checkbox";
-        input.ariaLabel = "Select shortlisted listing";
-        input.checked = selectedCards.has(card);
-        input.addEventListener("change", () => {
-            if (input.checked) selectedCards.add(card);
-            else selectedCards.delete(card);
-            renderControls(container);
-        });
-        label.append(input);
-        card.prepend(label);
+        card.prepend(createSelectionCheckbox(
+            selectedCardIds.has(id),
+            "Select shortlisted listing",
+            checked => {
+                if (checked) selectedCardIds.add(id);
+                else selectedCardIds.delete(id);
+                renderControls(container);
+            },
+        ));
     }
 }
 
-function clearSelected(container: HTMLElement): void {
+function clearCards(container: HTMLElement, ids: readonly string[]): void {
+    const selected = new Set(ids);
+
     for (const card of getCards(container)) {
-        if (!selectedCards.has(card)) continue;
+        const id = getCardId(card);
+        if (!id || !selected.has(id)) continue;
 
         card.querySelector<HTMLButtonElement>('[data-testid="listing-card-shortlist-shortlisted"]')?.click();
     }
@@ -68,52 +83,34 @@ function clearSelected(container: HTMLElement): void {
 function renderControls(container: HTMLElement): void {
     const controls = getControls(container);
     const cards = getCards(container);
-    const selectedCount = cards.filter(card => selectedCards.has(card)).length;
-    const selectionButton = document.createElement("button");
-    const selectAllButton = document.createElement("button");
-    const clearButton = document.createElement("button");
+    const visibleIds = getCardIds(cards);
 
-    selectionButton.type = "button";
-    selectionButton.className = "css-8vgasn edf-blacklist-clear-button";
-    selectionButton.textContent = selectionMode ? "Cancel selection" : "Select";
-    selectionButton.addEventListener("click", () => {
-        selectionMode = !selectionMode;
-        if (!selectionMode) {
-            for (const card of cards) selectedCards.delete(card);
-        }
-        renderControls(container);
-        syncSelectionControls(container);
+    renderSelectionControls({
+        allCount: cards.length,
+        buttonClassName: ACTION_BUTTON_CLASS,
+        controls,
+        mode: selectionMode,
+        onClear: ids => {
+            clearCards(container, selectionMode ? ids : visibleIds);
+            selectedCardIds.clear();
+            renderControls(container);
+            syncSelectionControls(container);
+        },
+        onModeChange: active => {
+            selectionMode = active;
+            if (!selectionMode) selectedCardIds.clear();
+            renderControls(container);
+            syncSelectionControls(container);
+        },
+        onSelectionChange: ids => {
+            selectedCardIds.clear();
+            for (const id of ids) selectedCardIds.add(id);
+            renderControls(container);
+            syncSelectionControls(container);
+        },
+        selectedIds: [...selectedCardIds],
+        visibleIds,
     });
-
-    selectAllButton.type = "button";
-    selectAllButton.className = "css-8vgasn edf-blacklist-clear-button";
-    selectAllButton.hidden = !selectionMode;
-    selectAllButton.textContent = selectedCount === cards.length ? "Deselect all" : "Select all";
-    selectAllButton.addEventListener("click", () => {
-        if (selectedCount === cards.length) {
-            for (const card of cards) selectedCards.delete(card);
-        } else {
-            for (const card of cards) selectedCards.add(card);
-        }
-        renderControls(container);
-        syncSelectionControls(container);
-    });
-
-    clearButton.type = "button";
-    clearButton.className = "css-8vgasn edf-blacklist-clear-button";
-    clearButton.textContent = selectionMode ? "Clear selected" : "Clear all";
-    clearButton.disabled = selectionMode ? selectedCount === 0 : cards.length === 0;
-    clearButton.addEventListener("click", () => {
-        if (!selectionMode) {
-            for (const card of cards) selectedCards.add(card);
-        }
-        clearSelected(container);
-        for (const card of cards) selectedCards.delete(card);
-        renderControls(container);
-        syncSelectionControls(container);
-    });
-
-    controls.replaceChildren(selectionButton, selectAllButton, clearButton);
 }
 
 const mountShortlistPage: PageMount = async (context) => {

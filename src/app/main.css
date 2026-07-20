@@ -181,7 +181,7 @@
     margin: 8px 12px;
 }
 
-.edf-blacklist-page-controls {
+.edf-page-actions {
     align-items: center;
     display: flex;
     gap: 8px;
@@ -194,7 +194,7 @@
     gap: 12px;
 }
 
-.edf-blacklist-clear-button {
+.edf-action-button {
     align-items: center;
     background-color: #fff;
     border: 1px solid rgb(197 203 213);
@@ -209,12 +209,12 @@
     padding: 0 28px;
 }
 
-.edf-blacklist-clear-button:hover {
+.edf-action-button:hover {
     border-color: rgb(0 135 0);
     color: rgb(0 135 0);
 }
 
-.edf-blacklist-sort-control {
+.edf-sort-control {
     align-items: center;
     border: 1px solid rgb(197 203 213);
     border-radius: 8px;
@@ -222,7 +222,7 @@
     min-height: 46px;
 }
 
-.edf-blacklist-sort-label {
+.edf-sort-label {
     color: rgb(50 64 89);
     margin-left: 12px;
 }
@@ -256,12 +256,12 @@
     color: rgb(30 41 61 / 100%);
 }
 
-.edf-carousel-blacklist-button {
+.edf-featured-blacklist-button {
     color: rgb(19 18 18);
 }
 
-.edf-carousel-blacklist-button[data-active="true"],
-.edf-carousel-blacklist-button[aria-pressed="true"] {
+.edf-featured-blacklist-button[data-active="true"],
+.edf-featured-blacklist-button[aria-pressed="true"] {
     color: rgb(19 18 18);
 }
 

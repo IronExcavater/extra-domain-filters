@@ -197,7 +197,7 @@ export function cloneFeaturedControlButton(stepperButton: HTMLButtonElement): HT
     button.setAttribute("data-testid", "listing-card-blacklist");
     button.dataset.edfInactiveClass = stepperButton.className;
     button.className = stepperButton.className;
-    button.classList.add("edf-carousel-blacklist-button");
+    button.classList.add("edf-featured-blacklist-button");
     setBlacklistButtonState(button, false, "Blacklist featured properties");
 
     return button;
