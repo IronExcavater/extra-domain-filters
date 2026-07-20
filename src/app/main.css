@@ -159,10 +159,7 @@
 }
 
 .edf-blacklist-row-list {
-    align-items: start;
-    display: grid !important;
     gap: 12px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .edf-blacklist-owned-notes {
@@ -173,6 +170,24 @@
 
 .edf-blacklist-owned-note-field {
     display: flex;
+}
+
+.edf-blacklist-clear-button {
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid rgb(197 203 213);
+    border-radius: 4px;
+    color: rgb(50 64 89);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 20px;
+}
+
+.edf-blacklist-clear-button:hover {
+    border-color: rgb(50 64 89);
 }
 
 .edf-blacklist-fallback-card {
@@ -217,18 +232,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-}
-
-@media (width <= 960px) {
-    .edf-blacklist-row-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (width <= 640px) {
-    .edf-blacklist-row-list {
-        grid-template-columns: 1fr;
-    }
 }
 
 .edf-hide-again-button {

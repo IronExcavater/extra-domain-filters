@@ -264,9 +264,10 @@ function replaceNotesControls(
     listing: ListingSnapshot,
     note: string | undefined,
 ): void {
-    const buttonClass = getDomainButtonClass(container);
     const existingActions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
     const actions = existingActions ?? document.createElement("div");
+    const buttonClass = existingActions?.querySelector<HTMLButtonElement>("button")?.className ??
+        getDomainButtonClass(container);
     const blacklistButton = card.querySelector<HTMLButtonElement>(
         '[data-testid="extra-domain-filters-blacklist-toggle"]',
     );
@@ -398,7 +399,7 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
 
     const clearButton = document.createElement("button");
     clearButton.type = "button";
-    clearButton.className = RESET_FILTER_BUTTON_CLASS;
+    clearButton.className = `${RESET_FILTER_BUTTON_CLASS} edf-blacklist-clear-button`;
     clearButton.ariaLabel = "Clear all blacklist selections";
     clearButton.textContent = "Clear all";
     clearButton.disabled = all.length === 0;
