@@ -32,7 +32,7 @@ function bindBlacklistButton(
         appearance: shortlistButton.closest("#shortlist") ? "shortlist" : "native",
         skin: shortlistButton.closest("#shortlist")
             ? SHORTLIST_CARD_BUTTON_SKIN
-            : { inactive: shortlistButton.className },
+            : undefined,
     });
     if (kind === "carousel-child") button.dataset.blacklistScope = "carousel-child";
     insertBlacklistButton(shortlistButton, button);

@@ -25,6 +25,7 @@ export const SHORTLIST_CARD_BUTTON_SKIN: ButtonSkin = {
 
 export interface CloneBlacklistButtonOptions {
     appearance?: "native" | "shortlist";
+    label?: string;
     skin?: ButtonSkin;
 }
 
@@ -142,6 +143,14 @@ function getOrCreateButtonIcon(button: HTMLButtonElement): SVGSVGElement {
     return icon;
 }
 
+function setButtonLabel(button: HTMLButtonElement, label: string | undefined): void {
+    if (!label) return;
+
+    const text = [...button.querySelectorAll<HTMLElement>("span")]
+        .find(element => !element.querySelector("svg"));
+    if (text && text.textContent !== label) text.textContent = label;
+}
+
 function setBlacklistIcon(icon: SVGSVGElement, active: boolean): void {
     const iconState = active ? "unbin" : "bin";
     if (icon.getAttribute("data-edf-icon-state") === iconState) return;
@@ -216,6 +225,7 @@ export function cloneBlacklistButton(
     button.setAttribute("data-testid", "listing-card-blacklist");
     button.dataset.edfButtonSkin = options.appearance ?? "native";
     applyButtonSkin(button, skin);
+    setButtonLabel(button, options.label ?? "Blacklist");
     if (!isShortlisted(shortlistButton)) {
         setDocumentInactiveShortlistClass(shortlistButton.className);
     } else {
