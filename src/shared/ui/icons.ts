@@ -5,6 +5,7 @@ import chevronSvg from "../../../public/chevron.svg?raw";
 import eyeOffSvg from "../../../public/eye-off.svg?raw";
 import eyeSvg from "../../../public/eye.svg?raw";
 import parkingSvg from "../../../public/parking.svg?raw";
+import shareSvg from "../../../public/share.svg?raw";
 import shortlistSvg from "../../../public/shortlist.svg?raw";
 import unbinSvg from "../../../public/unbin.svg?raw";
 
@@ -47,6 +48,10 @@ export function replaceWithUnbinIcon(target: SVGElement): void {
 
 export function replaceWithShortlistIcon(target: SVGElement): void {
     setSvgIcon(target, shortlistSvg);
+}
+
+export function replaceWithShareIcon(target: SVGElement): void {
+    setSvgIcon(target, shareSvg);
 }
 
 export function replaceWithBedIcon(target: SVGElement): void {

@@ -1,4 +1,6 @@
 import { getSettings } from "../../shared/state/settings";
+import { replaceWithShareIcon } from "../../shared/ui/icons";
+import { cloneActionButton } from "./clone/action";
 import { syncSharedFilterParams } from "./searchParams";
 
 async function copy(text: string): Promise<void> {
@@ -20,21 +22,19 @@ export async function bindFilterShareButton(): Promise<void> {
     const source = document.querySelector<HTMLButtonElement>('button[name="property-alert"]');
     if (!source || source.parentElement?.querySelector('[data-testid="extra-domain-filters-share"]')) return;
 
-    const button = source.cloneNode(true) as HTMLButtonElement;
-    const label = [...button.querySelectorAll<HTMLElement>("span")].find(span => !span.querySelector("svg"));
-    button.type = "button";
+    const button = cloneActionButton(source, { icon: replaceWithShareIcon });
     button.name = "extra-domain-filters-share";
     button.dataset.testid = "extra-domain-filters-share";
     button.ariaLabel = "Copy filtered search link";
-    if (label) label.textContent = "Share filters";
+    button.title = "Share filters";
+    button.classList.add("edf-filter-share-button");
+    source.parentElement?.classList.add("edf-filter-actions");
     button.addEventListener("click", async event => {
         event.preventDefault();
         syncSharedFilterParams(await getSettings());
         await copy(window.location.href);
-        if (label) {
-            label.textContent = "Copied";
-            window.setTimeout(() => { label.textContent = "Share filters"; }, 1400);
-        }
+        button.title = "Copied";
+        window.setTimeout(() => { button.title = "Share filters"; }, 1400);
     });
     source.after(button);
 }

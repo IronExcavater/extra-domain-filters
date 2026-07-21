@@ -60,18 +60,20 @@
 }
 
 .edf-project-blacklist-button {
-    color: var(--edf-project-foreground, currentColor) !important;
+    color: var(--edf-project-foreground, currentColor);
     flex: 0 0 auto;
 }
 
-.edf-project-blacklist-button :is(svg, svg *) {
-    color: inherit !important;
+.edf-filter-actions {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
 }
 
-.edf-project-blacklist-button:hover,
-.edf-project-blacklist-button:focus-visible,
-.edf-project-blacklist-button[data-active="true"] {
-    color: var(--edf-project-foreground, currentColor) !important;
+.edf-filter-share-button {
+    min-width: 40px;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
 }
 
 .edf-blacklist-shortlist-placeholder {

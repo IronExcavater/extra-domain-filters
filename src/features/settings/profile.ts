@@ -1,92 +1,20 @@
 import { observeUrlChanges, type PageContext } from "../../shared/platform/router";
 import { getSettings, updateSettings, type Settings } from "../../shared/state/settings";
-import type { DeepPartial } from "../../shared/utils/types";
+import { SETTINGS_SECTIONS, type SettingDefinition } from "./definitions";
 
 const SETTINGS_QUERY = "extra-domain-filters";
 const SETTINGS_VALUE = "settings";
-
-type ToggleDefinition = {
-    title: string;
-    description: string;
-    read(settings: Settings): boolean;
-    write(value: boolean): DeepPartial<Settings>;
-};
-
-const TOGGLES: ToggleDefinition[] = [
-    {
-        title: "Extra Domain Filters",
-        description: "Enable all extension features on Domain.",
-        read: settings => settings.flags.enableExtension,
-        write: enableExtension => ({ flags: { enableExtension } }),
-    },
-    {
-        title: "Blacklist",
-        description: "Show blacklist actions and hide blacklisted listings.",
-        read: settings => settings.flags.enableBlacklist,
-        write: enableBlacklist => ({ flags: { enableBlacklist } }),
-    },
-    {
-        title: "Ad blocking",
-        description: "Remove promoted placement cards from results.",
-        read: settings => settings.flags.enableAdBlocking,
-        write: enableAdBlocking => ({ flags: { enableAdBlocking } }),
-    },
-    {
-        title: "Map matches",
-        description: "Show preference matches on listing map pins.",
-        read: settings => settings.flags.enableMapPins,
-        write: enableMapPins => ({ flags: { enableMapPins } }),
-    },
-    {
-        title: "Featured controls",
-        description: "Add blacklist and pause controls to featured carousels.",
-        read: settings => settings.flags.enableCarouselControls,
-        write: enableCarouselControls => ({ flags: { enableCarouselControls } }),
-    },
-    {
-        title: "Could-haves filter",
-        description: "Show optional property preference filters.",
-        read: settings => settings.filters.enabled.couldHaves,
-        write: couldHaves => ({ filters: { enabled: { couldHaves } } }),
-    },
-    {
-        title: "Exclude keywords filter",
-        description: "Show custom keyword exclusions.",
-        read: settings => settings.filters.enabled.excludeKeywords,
-        write: excludeKeywords => ({ filters: { enabled: { excludeKeywords } } }),
-    },
-    {
-        title: "Strata fees filter",
-        description: "Show the maximum quarterly strata fee filter.",
-        read: settings => settings.filters.enabled.strataFees,
-        write: strataFees => ({ filters: { enabled: { strataFees } } }),
-    },
-    {
-        title: "Property type exclusions",
-        description: "Use unselected property types as exclusions.",
-        read: settings => settings.filters.enabled.propertyTypes,
-        write: propertyTypes => ({ filters: { enabled: { propertyTypes } } }),
-    },
-    {
-        title: "Hide non-matches",
-        description: "Hide listings that do not match any selected could-have.",
-        read: settings => settings.filters.excludeWhenNoCouldHaveMatch,
-        write: excludeWhenNoCouldHaveMatch => ({ filters: { excludeWhenNoCouldHaveMatch } }),
-    },
-    {
-        title: "Match tags",
-        description: "Show selected preference matches on listing cards.",
-        read: settings => settings.display.showPreferenceTags,
-        write: showPreferenceTags => ({ display: { showPreferenceTags } }),
-    },
-];
 
 function isSettingsView(url = new URL(window.location.href)): boolean {
     return url.searchParams.get(SETTINGS_QUERY) === SETTINGS_VALUE;
 }
 
 function findProfileShell(): HTMLElement | undefined {
-    return document.querySelector<HTMLElement>(".css-1nlilx1") ?? undefined;
+    const nav = [...document.querySelectorAll<HTMLElement>("nav ul")]
+        .find(candidate => /my details|account security/i.test(candidate.textContent ?? ""));
+    return nav?.closest<HTMLElement>(".css-1nlilx1") ??
+        nav?.parentElement?.parentElement ??
+        undefined;
 }
 
 function waitForProfileShell(signal: AbortSignal): Promise<HTMLElement> {
@@ -108,7 +36,7 @@ function waitForProfileShell(signal: AbortSignal): Promise<HTMLElement> {
     });
 }
 
-function createRow(template: HTMLElement, definition: ToggleDefinition, settings: Settings): HTMLElement {
+function createRow(template: HTMLElement, definition: SettingDefinition, settings: Settings): HTMLElement {
     const row = template.cloneNode(true) as HTMLElement;
     const paragraphs = row.querySelectorAll<HTMLParagraphElement>("p");
     const input = row.querySelector<HTMLInputElement>('input[type="checkbox"]');
@@ -127,7 +55,9 @@ function createRow(template: HTMLElement, definition: ToggleDefinition, settings
 }
 
 function createPanel(shell: HTMLElement, settings: Settings): HTMLElement | undefined {
-    const content = shell.querySelector<HTMLElement>(".css-1m3si3y");
+    const nav = shell.querySelector("nav");
+    const content = shell.querySelector<HTMLElement>(".css-1m3si3y") ??
+        (nav?.parentElement?.nextElementSibling?.querySelector<HTMLElement>("div"));
     const sourceSection = content?.querySelector<HTMLElement>(".css-u4p3do");
     const sourceRow = sourceSection?.querySelector<HTMLElement>(".css-jbxx87");
     if (!content || !sourceSection || !sourceRow) return undefined;
@@ -137,7 +67,13 @@ function createPanel(shell: HTMLElement, settings: Settings): HTMLElement | unde
     const heading = document.createElement("h2");
     heading.className = content.querySelector("h2")?.className ?? "";
     heading.textContent = "Extra Domain Filters";
-    panel.append(heading, ...TOGGLES.map(definition => createRow(sourceRow, definition, settings)));
+    panel.append(heading);
+    for (const section of SETTINGS_SECTIONS) {
+        const sectionHeading = document.createElement("h3");
+        sectionHeading.className = sourceSection.querySelector("h3")?.className ?? "";
+        sectionHeading.textContent = section.title;
+        panel.append(sectionHeading, ...section.settings.map(definition => createRow(sourceRow, definition, settings)));
+    }
     content.append(panel);
     return panel;
 }
