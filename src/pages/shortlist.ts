@@ -13,6 +13,7 @@ import { PageMount } from "../shared/platform/router";
 import { createSelectionCheckbox, renderSelectionControls, replaceSelection } from "../shared/ui/selection";
 
 const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
+const NOTE_MAX_HEIGHT = 144;
 
 const selectedCardIds = new Set<string>();
 const noteValues = new WeakMap<HTMLTextAreaElement, string>();
@@ -55,6 +56,11 @@ function setNativeTextareaValue(textarea: HTMLTextAreaElement, value: string): v
     textarea.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+function resizeInlineNote(editor: HTMLTextAreaElement): void {
+    editor.style.height = "auto";
+    editor.style.height = `${Math.min(editor.scrollHeight, NOTE_MAX_HEIGHT)}px`;
+}
+
 async function saveInlineNote(card: HTMLElement, editor: HTMLTextAreaElement): Promise<void> {
     const value = editor.value.trim();
     if (noteValues.get(editor) === value) return;
@@ -63,7 +69,8 @@ async function saveInlineNote(card: HTMLElement, editor: HTMLTextAreaElement): P
     await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
     const nativeEditor = [...card.querySelectorAll<HTMLTextAreaElement>("textarea")]
-        .find(textarea => textarea !== editor);
+        .find(textarea => textarea !== editor) ??
+        card.querySelector<HTMLTextAreaElement>("textarea");
     if (!nativeEditor) return;
 
     setNativeTextareaValue(nativeEditor, value);
@@ -75,17 +82,25 @@ function configureInlineNote(card: HTMLElement): void {
     const textarea = card.querySelector<HTMLTextAreaElement>("textarea:not(.edf-inline-note)");
     if (!textarea?.disabled) return;
 
-    const editor = textarea.cloneNode(true) as HTMLTextAreaElement;
-    editor.classList.add("edf-inline-note");
-    editor.disabled = false;
-    editor.readOnly = false;
-    editor.value = textarea.value;
-    noteValues.set(editor, editor.value.trim());
-    editor.addEventListener("blur", () => void saveInlineNote(card, editor));
-    editor.addEventListener("keydown", event => {
-        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") editor.blur();
+    textarea.classList.add("edf-inline-note");
+    textarea.disabled = false;
+    textarea.readOnly = false;
+    textarea.removeAttribute("aria-readonly");
+    noteValues.set(textarea, textarea.value.trim());
+
+    for (const type of ["pointerdown", "mousedown", "click", "dblclick"] as const) {
+        textarea.addEventListener(type, event => {
+            event.stopImmediatePropagation();
+            event.stopPropagation();
+        }, { capture: true });
+    }
+
+    textarea.addEventListener("input", () => resizeInlineNote(textarea));
+    textarea.addEventListener("blur", () => void saveInlineNote(card, textarea));
+    textarea.addEventListener("keydown", event => {
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") textarea.blur();
     });
-    textarea.replaceWith(editor);
+    requestAnimationFrame(() => resizeInlineNote(textarea));
 }
 
 function configureCards(container: HTMLElement): void {
