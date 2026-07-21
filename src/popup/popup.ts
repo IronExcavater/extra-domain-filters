@@ -54,5 +54,4 @@ async function render(): Promise<void> {
 
 onStorageChange<Settings>("settings", () => void render());
 onStorageChange("blacklist", () => void render());
-onStorageChange("filter-presets", () => void render());
 void render();

@@ -485,60 +485,6 @@ body {
     width: 18px;
 }
 
-.edf-popup-preset-form {
-    display: grid;
-    gap: 8px;
-    grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.edf-popup-preset-form input {
-    border: 1px solid #d0d3d9;
-    border-radius: 3px;
-    color: #1e293d;
-    font: inherit;
-    min-width: 0;
-    padding: 7px 9px;
-}
-
-.edf-popup-preset-empty {
-    color: #626a78;
-    font-size: 14px;
-    line-height: 20px;
-    margin: 10px 0 0;
-}
-
-.edf-popup-preset-row {
-    align-items: center;
-    border-top: 1px solid #e4e6ea;
-    display: grid;
-    font-size: 14px;
-    gap: 8px;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    line-height: 20px;
-    margin-top: 10px;
-    padding-top: 10px;
-}
-
-.edf-popup-preset-row > span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.edf-popup-preset-button {
-    background: transparent;
-    border: 0;
-    color: #008700;
-    cursor: pointer;
-    font: inherit;
-    font-size: 13px;
-    padding: 0;
-}
-
-.edf-popup-preset-button:hover {
-    text-decoration: underline;
-}
-
 .edf-popup-filter-field input:focus {
     border-color: #4ab535;
     box-shadow: 0 0 0 1px #4ab535;

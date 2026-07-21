@@ -43,6 +43,7 @@ export default defineManifest({
                 'src/features/listing-cards/carousel.css',
                 'src/features/navigation/styles.css',
                 'src/features/settings/settings.css',
+                'src/features/saved-searches/styles.css',
                 'src/features/user-listings/styles.css',
             ],
             run_at: 'document_idle',

@@ -1,7 +1,6 @@
 import { PREFERENCES, STRATA_MAX } from "../domain/matching";
 import { createSharedFilterUrl } from "../features/filters/searchParams";
 import { copyText } from "../shared/platform/clipboard";
-import { getFilterPresets, removeFilterPreset, saveFilterPreset, setFilterPresetPinned } from "../shared/state/presets";
 import { getSettings, toggleListId, updateSettings, type Settings } from "../shared/state/settings";
 
 function createHeading(text: string, className: string): HTMLHeadingElement {
@@ -112,73 +111,6 @@ function createShareButton(settings: Settings): HTMLButtonElement {
     return button;
 }
 
-function createPresetControls(settings: Settings): HTMLElement {
-    const section = document.createElement("section");
-    const heading = document.createElement("h2");
-    const form = document.createElement("div");
-    const name = document.createElement("input");
-    const save = document.createElement("button");
-    const list = document.createElement("div");
-
-    section.className = "edf-popup-filter-section";
-    heading.className = "edf-popup-filter-title";
-    heading.textContent = "Saved presets";
-    form.className = "edf-popup-preset-form";
-    name.placeholder = "Preset name";
-    save.className = "edf-settings-action";
-    save.type = "button";
-    save.textContent = "Save preset";
-    save.addEventListener("click", async () => {
-        save.disabled = true;
-        await saveFilterPreset(name.value, settings.filters);
-        name.value = "";
-        save.disabled = false;
-        await renderPresets(list);
-    });
-    form.append(name, save);
-    section.append(heading, form, list);
-    void renderPresets(list);
-    return section;
-}
-
-async function renderPresets(container: HTMLElement): Promise<void> {
-    const presets = await getFilterPresets();
-    const content = document.createDocumentFragment();
-    if (presets.length === 0) {
-        const empty = document.createElement("p");
-        empty.className = "edf-popup-preset-empty";
-        empty.textContent = "Saved presets can be pinned to Domain's recent searches.";
-        content.append(empty);
-    }
-
-    for (const preset of presets) {
-        const row = document.createElement("div");
-        const title = document.createElement("span");
-        const pin = document.createElement("button");
-        const remove = document.createElement("button");
-
-        row.className = "edf-popup-preset-row";
-        title.textContent = preset.name;
-        pin.className = "edf-popup-preset-button";
-        pin.type = "button";
-        pin.textContent = preset.pinned ? "Unpin" : "Pin";
-        pin.addEventListener("click", async () => {
-            await setFilterPresetPinned(preset.id, !preset.pinned);
-            await renderPresets(container);
-        });
-        remove.className = "edf-popup-preset-button";
-        remove.type = "button";
-        remove.textContent = "Remove";
-        remove.addEventListener("click", async () => {
-            await removeFilterPreset(preset.id);
-            await renderPresets(container);
-        });
-        row.append(title, pin, remove);
-        content.append(row);
-    }
-    container.replaceChildren(content);
-}
-
 export async function createFiltersContent(): Promise<HTMLElement> {
     const settings = await getSettings();
     const content = document.createElement("section");
@@ -204,6 +136,6 @@ export async function createFiltersContent(): Promise<HTMLElement> {
 
     details.className = "edf-popup-filter-section";
     details.append(createKeywordInput(settings), createStrataInput(settings), createToggle(settings));
-    content.append(header, preferences, details, createPresetControls(settings));
+    content.append(header, preferences, details);
     return content;
 }
