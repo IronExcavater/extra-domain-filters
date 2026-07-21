@@ -184,7 +184,7 @@ async function render(
         clearLabel: "Unblacklist",
         controls,
         onClear: ids => {
-            void removeBlacklistUrls(ids).then(() => selectedUrls.clear());
+            void removeBlacklistUrls(ids);
         },
         onSelectionChange: ids => {
             replaceSelection(selectedUrls, ids);

@@ -1,4 +1,4 @@
-import { getBlacklist, toggleBlacklistListing } from "../domain/blacklist/store";
+import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
 import { isBlacklisted } from "../domain/matching";
 import { bindListingCards } from "../features/listing-cards";
 import { getListingSnapshot } from "../features/listing-cards/dom/card";
@@ -38,7 +38,7 @@ function syncSelectionControls(container: HTMLElement): void {
             checked => {
                 if (checked) selectedCardIds.add(id);
                 else selectedCardIds.delete(id);
-                renderControls(container);
+                void renderControls(container);
             },
         ));
     }
@@ -119,9 +119,14 @@ function clearCards(container: HTMLElement, ids: readonly string[]): void {
     }
 }
 
-async function blacklistCards(container: HTMLElement, ids: readonly string[]): Promise<void> {
+async function toggleBlacklistCards(container: HTMLElement, ids: readonly string[]): Promise<void> {
     const selected = new Set(ids);
     const blacklist = await getBlacklist();
+
+    if (ids.some(id => isBlacklisted(blacklist, id))) {
+        await removeBlacklistUrls(ids);
+        return;
+    }
 
     for (const card of getUserListingCards(container)) {
         const id = getUserListingUrl(card);
@@ -132,7 +137,7 @@ async function blacklistCards(container: HTMLElement, ids: readonly string[]): P
     }
 }
 
-function renderControls(container: HTMLElement): void {
+async function renderControls(container: HTMLElement): Promise<void> {
     const cards = getUserListingCards(container);
     const controls = getPageActions({
         id: "shortlist",
@@ -142,26 +147,28 @@ function renderControls(container: HTMLElement): void {
             : container,
     });
     const visibleIds = getUserListingUrls(cards);
+    const blacklist = await getBlacklist();
+    const selectedIds = [...selectedCardIds];
+    const hasBlacklistedSelection = selectedIds.some(id => isBlacklisted(blacklist, id));
 
     renderSelectionControls({
         actions: [{
-            label: "Blacklist",
+            label: hasBlacklistedSelection ? "Unblacklist" : "Blacklist",
             onAction: ids => {
-                void blacklistCards(container, ids).then(() => selectedCardIds.clear());
+                void toggleBlacklistCards(container, ids).then(() => void renderControls(container));
             },
         }],
         buttonClassName: ACTION_BUTTON_CLASS,
-        clearLabel: "Remove from shortlist",
+        clearLabel: "Unshortlist",
         controls,
         onClear: ids => {
             clearCards(container, ids);
-            selectedCardIds.clear();
-            renderControls(container);
+            void renderControls(container);
             configureCards(container);
         },
         onSelectionChange: ids => {
             replaceSelection(selectedCardIds, ids);
-            renderControls(container);
+            void renderControls(container);
             configureCards(container);
         },
         selectedIds: [...selectedCardIds],
@@ -173,7 +180,7 @@ const mountShortlistPage: PageMount = async (context) => {
     bindListingCards(context, { showBlacklistedView: false });
     const container = findUserListingsContainer();
     if (container) {
-        renderControls(container);
+        await renderControls(container);
         configureCards(container);
 
         let frame: number | undefined;
@@ -181,7 +188,7 @@ const mountShortlistPage: PageMount = async (context) => {
             if (frame !== undefined) return;
             frame = requestAnimationFrame(() => {
                 frame = undefined;
-                renderControls(container);
+                void renderControls(container);
                 configureCards(container);
             });
         };
