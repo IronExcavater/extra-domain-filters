@@ -41,6 +41,7 @@ export default defineManifest({
                 'src/features/listing-cards/styles.css',
                 'src/features/listing-cards/exclusion/styles.css',
                 'src/features/listing-cards/carousel.css',
+                'src/features/navigation/styles.css',
                 'src/features/settings/settings.css',
                 'src/features/user-listings/styles.css',
             ],

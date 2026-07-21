@@ -6,14 +6,14 @@ body {
 
 .edf-settings-popup {
     --edf-settings-card-padding: 18px;
-    --edf-settings-description-line-height: 18px;
-    --edf-settings-description-size: 13px;
-    --edf-settings-page-title-line-height: 28px;
-    --edf-settings-page-title-size: 22px;
+    --edf-settings-description-line-height: 19px;
+    --edf-settings-description-size: 14px;
+    --edf-settings-page-title-line-height: 30px;
+    --edf-settings-page-title-size: 24px;
     --edf-settings-row-title-line-height: 20px;
-    --edf-settings-row-title-size: 14px;
-    --edf-settings-section-title-line-height: 24px;
-    --edf-settings-section-title-size: 18px;
+    --edf-settings-row-title-size: 15px;
+    --edf-settings-section-title-line-height: 26px;
+    --edf-settings-section-title-size: 20px;
 
     background: #f7f6f3;
     padding: 16px;
@@ -33,4 +33,26 @@ body {
 
 .edf-settings-popup .edf-settings-row {
     padding: 12px 0;
+}
+
+.edf-settings-popup .edf-settings-toggle {
+    height: 28px;
+    width: 54px;
+}
+
+.edf-settings-popup .edf-settings-toggle-indicator {
+    border-radius: 14px;
+}
+
+.edf-settings-popup .edf-settings-toggle-switch {
+    height: 20px;
+    width: 20px;
+}
+
+.edf-settings-popup .edf-settings-toggle-input:checked + .edf-settings-toggle-indicator .edf-settings-toggle-switch {
+    transform: translateX(26px);
+}
+
+.edf-settings-popup .edf-settings-toggle-label {
+    top: 6px;
 }

@@ -10,15 +10,15 @@
 .edf-settings-popup {
     --edf-settings-border: #e4e6ea;
     --edf-settings-card-padding: 28px;
-    --edf-settings-description-line-height: 20px;
-    --edf-settings-description-size: 14px;
+    --edf-settings-description-line-height: 22px;
+    --edf-settings-description-size: 16px;
     --edf-settings-muted: #3c475b;
-    --edf-settings-page-title-line-height: 36px;
-    --edf-settings-page-title-size: 28px;
+    --edf-settings-page-title-line-height: 38px;
+    --edf-settings-page-title-size: 30px;
     --edf-settings-row-title-line-height: 24px;
-    --edf-settings-row-title-size: 16px;
-    --edf-settings-section-title-line-height: 32px;
-    --edf-settings-section-title-size: 24px;
+    --edf-settings-row-title-size: 17px;
+    --edf-settings-section-title-line-height: 34px;
+    --edf-settings-section-title-size: 26px;
     --edf-settings-surface: #fff;
     --edf-settings-text: #1e293d;
 
@@ -37,7 +37,7 @@
 .edf-settings-title {
     color: var(--edf-settings-text);
     font-size: var(--edf-settings-page-title-size);
-    font-weight: 700;
+    font-weight: 400;
     line-height: var(--edf-settings-page-title-line-height);
     margin: 0;
 }
@@ -63,7 +63,7 @@
 .edf-settings-section-title {
     color: var(--edf-settings-text);
     font-size: var(--edf-settings-section-title-size);
-    font-weight: 700;
+    font-weight: 400;
     line-height: var(--edf-settings-section-title-line-height);
     margin: 0 0 8px;
 }
@@ -102,9 +102,9 @@
 
 .edf-settings-toggle {
     flex: 0 0 auto;
-    height: 34px;
+    height: 30px;
     position: relative;
-    width: 66px;
+    width: 58px;
 }
 
 .edf-settings-toggle-control,
@@ -126,27 +126,27 @@
 
 .edf-settings-toggle-indicator {
     background: #d1d5dd;
-    border-radius: 18px;
+    border-radius: 15px;
     transition: background-color 160ms ease;
 }
 
 .edf-settings-toggle-switch {
     background: var(--edf-settings-surface);
     border-radius: 50%;
-    height: 26px;
+    height: 22px;
     left: 4px;
     position: absolute;
     top: 4px;
     transition: transform 160ms ease;
-    width: 26px;
+    width: 22px;
 }
 
 .edf-settings-toggle-label {
     color: var(--edf-settings-text);
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 12px;
+    line-height: 16px;
     position: absolute;
-    right: 7px;
+    right: 6px;
     top: 7px;
 }
 
@@ -155,12 +155,12 @@
 }
 
 .edf-settings-toggle-input:checked + .edf-settings-toggle-indicator .edf-settings-toggle-switch {
-    transform: translateX(32px);
+    transform: translateX(28px);
 }
 
 .edf-settings-toggle-input:checked + .edf-settings-toggle-indicator .edf-settings-toggle-label {
     color: #fff;
-    left: 9px;
+    left: 8px;
     right: auto;
 }
 
