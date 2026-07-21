@@ -30,12 +30,12 @@ function createToggle(definition: SettingDefinition, settings: Settings): HTMLLa
     const switchControl = document.createElement("span");
     const id = `extra-domain-filters-${definition.title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`;
 
-    toggle.className = "domain-checkbox is-toggle css-u9441l edf-profile-toggle";
+    toggle.className = "edf-settings-toggle";
     toggle.htmlFor = id;
-    inputWrapper.className = "domain-checkbox__input domain-checkbox--toggle css-16rankl";
-    indicator.className = "domain-checkbox__control-indicator css-152nx9z";
-    switchControl.className = "domain-checkbox__control-switch css-7ce1c0";
-    input.className = "domain-checkbox__checkbox css-xl3zjr";
+    inputWrapper.className = "edf-settings-toggle-control";
+    indicator.className = "edf-settings-toggle-indicator";
+    switchControl.className = "edf-settings-toggle-switch";
+    input.className = "edf-settings-toggle-input";
     input.type = "checkbox";
     input.id = id;
     input.checked = definition.read(settings);
@@ -44,7 +44,7 @@ function createToggle(definition: SettingDefinition, settings: Settings): HTMLLa
     indicator.append(switchControl);
     inputWrapper.append(input, indicator);
     const label = document.createElement("div");
-    label.className = "domain-checkbox__label is-hidden css-15xz373";
+    label.className = "edf-settings-visually-hidden";
     label.textContent = definition.title;
     toggle.append(inputWrapper, label);
     return toggle;
@@ -56,9 +56,10 @@ function createRow(definition: SettingDefinition, settings: Settings): HTMLEleme
     const title = document.createElement("p");
     const description = document.createElement("p");
 
-    row.className = "css-jbxx87 edf-profile-setting-row";
-    title.className = "css-1hnnm";
-    description.className = "css-1gn7nan edf-profile-setting-description";
+    row.className = "edf-settings-row";
+    copy.className = "edf-settings-copy";
+    title.className = "edf-settings-row-title";
+    description.className = "edf-settings-row-description";
     title.textContent = definition.title;
     description.textContent = definition.description;
     copy.append(title, description);
@@ -73,23 +74,23 @@ function createPanel(shell: HTMLElement, settings: Settings): HTMLElement | unde
     if (!content) return undefined;
 
     const panel = document.createElement("div");
-    panel.className = "css-1m3si3y";
+    panel.className = "edf-settings-panel";
     panel.dataset.extraDomainFiltersSettings = "true";
     const introduction = document.createElement("div");
-    introduction.className = "css-8qb8m4";
+    introduction.className = "edf-settings-introduction";
     const heading = document.createElement("h2");
-    heading.className = "css-1svyqee";
+    heading.className = "edf-settings-title";
     heading.textContent = "Extra Domain Filters";
     const description = document.createElement("p");
-    description.className = "css-1x6nyim";
+    description.className = "edf-settings-description";
     description.textContent = "Manage how Extra Domain Filters changes your Domain experience.";
     introduction.append(heading, description);
     panel.append(introduction);
     for (const section of SETTINGS_SECTIONS) {
         const sectionElement = document.createElement("div");
-        sectionElement.className = "css-u4p3do";
+        sectionElement.className = "edf-settings-section";
         const sectionHeading = document.createElement("h3");
-        sectionHeading.className = "css-12i8801";
+        sectionHeading.className = "edf-settings-section-title";
         sectionHeading.textContent = section.title;
         sectionElement.append(sectionHeading, ...section.settings.map(definition => createRow(definition, settings)));
         panel.append(sectionElement);

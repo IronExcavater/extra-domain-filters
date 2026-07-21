@@ -37,6 +37,8 @@ export interface FilterFeatureSettings {
 
 export interface MatchDisplaySettings {
     showPreferenceTags: boolean;
+    hideBlacklistedListings: boolean;
+    animateListingUpdates: boolean;
 }
 
 export interface QueueSettings {
@@ -74,6 +76,8 @@ export const DEFAULT_SETTINGS: Settings = {
     },
     display: {
         showPreferenceTags: true,
+        hideBlacklistedListings: true,
+        animateListingUpdates: true,
     },
     queue: {
         concurrency: 3,

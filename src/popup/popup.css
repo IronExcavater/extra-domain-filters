@@ -1,127 +1,49 @@
-:root {
-    color: #1e293d;
-    font-family: var(--type-body-family, "Graphik", "Helvetica Neue", Arial, sans-serif);
-}
-
 body {
     margin: 0;
     min-width: 392px;
 }
 
-.popup-profile {
-    padding: 16px;
+.edf-settings-popup {
+    background: #fff;
+    padding: 20px;
 }
 
-.popup-profile h1,
-.popup-profile h2,
-.popup-profile p {
-    margin: 0;
+.edf-settings-popup .edf-settings-introduction {
+    margin-bottom: 20px;
 }
 
-.popup-profile-introduction {
-    margin-bottom: 18px;
+.edf-settings-popup .edf-settings-title {
+    font-size: 22px;
+    line-height: 30px;
 }
 
-.popup-profile h1 {
-    color: #1e293d;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 28px;
-}
-
-.popup-profile-introduction p {
-    color: #626a78;
+.edf-settings-popup .edf-settings-description {
     font-size: 14px;
     line-height: 20px;
     margin-top: 4px;
 }
 
-.popup-settings-section + .popup-settings-section {
-    border-top: 1px solid #e4e6ea;
-    margin-top: 12px;
+.edf-settings-popup .edf-settings-section + .edf-settings-section {
+    margin-top: 16px;
     padding-top: 16px;
 }
 
-.popup-settings-section h2 {
-    color: #1e293d;
+.edf-settings-popup .edf-settings-section-title {
     font-size: 16px;
-    font-weight: 700;
     line-height: 24px;
     margin-bottom: 4px;
 }
 
-.popup-setting-row {
-    align-items: center;
-    display: flex;
-    gap: 16px;
-    justify-content: space-between;
+.edf-settings-popup .edf-settings-row {
     min-height: 56px;
 }
 
-.popup-setting-row > div {
-    min-width: 0;
-}
-
-.popup-setting-row p:first-child {
-    color: #1e293d;
+.edf-settings-popup .edf-settings-row-title {
     font-size: 14px;
     line-height: 20px;
 }
 
-.popup-setting-row p:last-child {
-    color: #626a78;
+.edf-settings-popup .edf-settings-row-description {
     font-size: 13px;
     line-height: 18px;
-    margin-top: 2px;
-}
-
-.popup-toggle {
-    flex: 0 0 auto;
-    height: 24px;
-    position: relative;
-    width: 42px;
-}
-
-.popup-toggle input {
-    cursor: pointer;
-    height: 100%;
-    inset: 0;
-    margin: 0;
-    opacity: 0;
-    position: absolute;
-    width: 100%;
-    z-index: 1;
-}
-
-.popup-toggle-indicator {
-    background: #a7adb8;
-    border-radius: 12px;
-    display: block;
-    height: 100%;
-    transition: background-color 160ms ease;
-}
-
-.popup-toggle-indicator::after {
-    background: #fff;
-    border-radius: 50%;
-    content: "";
-    height: 18px;
-    left: 3px;
-    position: absolute;
-    top: 3px;
-    transition: transform 160ms ease;
-    width: 18px;
-}
-
-.popup-toggle input:checked + .popup-toggle-indicator {
-    background: #148a08;
-}
-
-.popup-toggle input:checked + .popup-toggle-indicator::after {
-    transform: translateX(18px);
-}
-
-.popup-toggle input:focus-visible + .popup-toggle-indicator {
-    outline: 2px solid #148a08;
-    outline-offset: 2px;
 }

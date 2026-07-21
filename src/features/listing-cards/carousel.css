@@ -1,0 +1,25 @@
+[class~="slideControlsIcons"] > span,
+[class~="slideControlsIcons"] svg,
+.slick-arrow:has([data-testid^="carousel-button-"]) > svg {
+    display: block;
+    margin: auto;
+}
+
+.slick-arrow:has([data-testid^="carousel-button-"]) {
+    align-items: center;
+    display: inline-flex !important;
+    justify-content: center;
+    line-height: 0;
+    padding: 0 !important;
+}
+
+.edf-featured-blacklist-button,
+.edf-featured-blacklist-button[data-active="true"],
+.edf-featured-blacklist-button[aria-pressed="true"] {
+    color: rgb(19 18 18);
+}
+
+.slick-slide.edf-carousel-child-blacklisted,
+.edf-carousel-child-blacklisted:not(.slick-slide) {
+    display: none !important;
+}

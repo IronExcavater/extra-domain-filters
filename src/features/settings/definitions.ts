@@ -93,12 +93,26 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     },
     {
         id: "matching",
-        title: "Matching",
-        settings: [{
-            title: "Match tags",
-            description: "Show selected preference matches on listing cards.",
-            read: settings => settings.display.showPreferenceTags,
-            write: showPreferenceTags => ({ display: { showPreferenceTags } }),
-        }],
+        title: "Display",
+        settings: [
+            {
+                title: "Match tags",
+                description: "Show selected preference matches on listing cards.",
+                read: settings => settings.display.showPreferenceTags,
+                write: showPreferenceTags => ({ display: { showPreferenceTags } }),
+            },
+            {
+                title: "Hide blacklisted listings",
+                description: "Collapse blacklisted cards from search results while keeping their actions available.",
+                read: settings => settings.display.hideBlacklistedListings,
+                write: hideBlacklistedListings => ({ display: { hideBlacklistedListings } }),
+            },
+            {
+                title: "Animate listing updates",
+                description: "Animate cards into their new positions after filters or blacklists change.",
+                read: settings => settings.display.animateListingUpdates,
+                write: animateListingUpdates => ({ display: { animateListingUpdates } }),
+            },
+        ],
     },
 ];

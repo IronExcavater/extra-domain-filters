@@ -1,0 +1,15 @@
+.edf-filter-actions {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+}
+
+.edf-filter-share-button {
+    min-width: 40px;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+}
+
+.edf-filter-share-button > span:last-of-type {
+    padding-left: 0 !important;
+}

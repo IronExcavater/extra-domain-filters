@@ -1,0 +1,109 @@
+.edf-project-blacklist-summary {
+    display: flex;
+    margin: 8px 12px;
+}
+
+.edf-page-actions {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin: 0;
+}
+
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] textarea,
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-buttons-wrapper"] {
+    display: none !important;
+}
+
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] .css-dx7vs9 {
+    padding-top: 0 !important;
+}
+
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] .css-1yiglqa {
+    height: auto !important;
+}
+
+.edf-action-button {
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid rgb(197 203 213);
+    border-radius: 3px;
+    color: rgb(50 64 89);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-weight: 400;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 18px;
+}
+
+.edf-action-button:hover {
+    border-color: rgb(0 135 0);
+    color: rgb(0 135 0);
+}
+
+.edf-action-button[hidden] {
+    display: none;
+}
+
+[data-edf-sort-label="true"] {
+    color: rgb(100 100 99);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 20px;
+    padding-left: 8px;
+}
+
+.edf-sort-actions {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.edf-selection-checkbox {
+    align-items: center;
+    display: inline-block;
+    flex: 0 0 auto;
+    margin: 0 8px 0 0;
+    pointer-events: auto;
+    position: relative;
+    vertical-align: middle;
+    z-index: 4;
+}
+
+.edf-selection-checkbox input {
+    appearance: none;
+    background: #fff;
+    border: 1px solid rgb(166 176 190);
+    border-radius: 3px;
+    cursor: pointer;
+    height: 18px;
+    margin: 0;
+    position: relative;
+    width: 18px;
+}
+
+.edf-listing-card-button-container > .edf-selection-checkbox {
+    display: inline-flex;
+}
+
+.edf-selection-checkbox input:checked {
+    background: rgb(0 135 0);
+    border-color: rgb(0 135 0);
+}
+
+.edf-selection-checkbox input:checked::after {
+    color: #fff;
+    content: "✓";
+    display: grid;
+    font-size: 15px;
+    font-weight: 700;
+    inset: 0;
+    line-height: 1;
+    place-items: center;
+    position: absolute;
+}

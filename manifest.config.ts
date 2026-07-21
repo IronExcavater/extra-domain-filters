@@ -31,7 +31,15 @@ export default defineManifest({
         {
             matches: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
             js: ['src/app/main.ts'],
-            css: ['src/app/main.css'],
+            css: [
+                'src/app/tokens.css',
+                'src/features/filters/styles.css',
+                'src/features/listing-cards/styles.css',
+                'src/features/listing-cards/exclusion/styles.css',
+                'src/features/listing-cards/carousel.css',
+                'src/features/settings/settings.css',
+                'src/features/user-listings/styles.css',
+            ],
             run_at: 'document_idle',
         },
     ]

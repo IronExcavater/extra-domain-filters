@@ -1,0 +1,139 @@
+.edf-settings-panel,
+.edf-settings-popup {
+    --edf-settings-action: #0f4b19;
+    --edf-settings-border: #e4e6ea;
+    --edf-settings-muted: #626a78;
+    --edf-settings-surface: #fff;
+    --edf-settings-text: #1e293d;
+
+    color: var(--edf-settings-text);
+    font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
+}
+
+.edf-settings-panel {
+    max-width: 680px;
+}
+
+.edf-settings-introduction {
+    margin-bottom: 24px;
+}
+
+.edf-settings-title {
+    color: var(--edf-settings-text);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 32px;
+    margin: 0;
+}
+
+.edf-settings-description {
+    color: var(--edf-settings-muted);
+    font-size: 16px;
+    line-height: 24px;
+    margin: 8px 0 0;
+}
+
+.edf-settings-section + .edf-settings-section {
+    border-top: 1px solid var(--edf-settings-border);
+    margin-top: 24px;
+    padding-top: 24px;
+}
+
+.edf-settings-section-title {
+    color: var(--edf-settings-text);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 28px;
+    margin: 0 0 8px;
+}
+
+.edf-settings-row {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    min-height: 64px;
+}
+
+.edf-settings-copy {
+    min-width: 0;
+}
+
+.edf-settings-row-title {
+    color: var(--edf-settings-text);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+    margin: 0;
+}
+
+.edf-settings-row-description {
+    color: var(--edf-settings-muted);
+    font-size: 14px;
+    line-height: 20px;
+    margin: 2px 0 0;
+}
+
+.edf-settings-toggle {
+    flex: 0 0 auto;
+    height: 24px;
+    position: relative;
+    width: 42px;
+}
+
+.edf-settings-toggle-control,
+.edf-settings-toggle-indicator {
+    display: block;
+    height: 100%;
+}
+
+.edf-settings-toggle-input {
+    cursor: pointer;
+    height: 100%;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    z-index: 1;
+}
+
+.edf-settings-toggle-indicator {
+    background: #a7adb8;
+    border-radius: 12px;
+    transition: background-color 160ms ease;
+}
+
+.edf-settings-toggle-switch {
+    background: var(--edf-settings-surface);
+    border-radius: 50%;
+    height: 18px;
+    left: 3px;
+    position: absolute;
+    top: 3px;
+    transition: transform 160ms ease;
+    width: 18px;
+}
+
+.edf-settings-toggle-input:checked + .edf-settings-toggle-indicator {
+    background: #148a08;
+}
+
+.edf-settings-toggle-input:checked + .edf-settings-toggle-indicator .edf-settings-toggle-switch {
+    transform: translateX(18px);
+}
+
+.edf-settings-toggle-input:focus-visible + .edf-settings-toggle-indicator {
+    outline: 2px solid #148a08;
+    outline-offset: 2px;
+}
+
+.edf-settings-visually-hidden {
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    position: absolute;
+    width: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
