@@ -23,16 +23,23 @@ function createSetting(definition: SettingDefinition, settings: Settings): HTMLE
     input.checked = definition.read(settings);
     input.ariaLabel = definition.title;
     const indicator = document.createElement("span");
+    const stateLabel = document.createElement("span");
     indicator.className = "edf-settings-toggle-indicator";
     input.className = "edf-settings-toggle-input";
     const control = document.createElement("span");
     control.className = "edf-settings-toggle-control";
     const switchControl = document.createElement("span");
     switchControl.className = "edf-settings-toggle-switch";
-    indicator.append(switchControl);
+    stateLabel.className = "edf-settings-toggle-label";
+    const syncLabel = (): void => { stateLabel.textContent = input.checked ? "On" : "Off"; };
+    syncLabel();
+    indicator.append(stateLabel, switchControl);
     control.append(input, indicator);
     toggle.append(control);
-    input.addEventListener("change", () => void updateSettings(definition.write(input.checked)));
+    input.addEventListener("change", () => {
+        syncLabel();
+        void updateSettings(definition.write(input.checked));
+    });
     row.append(copy, toggle);
     return row;
 }

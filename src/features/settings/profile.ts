@@ -28,6 +28,7 @@ function createToggle(definition: SettingDefinition, settings: Settings): HTMLLa
     const inputWrapper = document.createElement("div");
     const indicator = document.createElement("div");
     const switchControl = document.createElement("span");
+    const stateLabel = document.createElement("span");
     const id = `extra-domain-filters-${definition.title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`;
 
     toggle.className = "edf-settings-toggle";
@@ -35,13 +36,19 @@ function createToggle(definition: SettingDefinition, settings: Settings): HTMLLa
     inputWrapper.className = "edf-settings-toggle-control";
     indicator.className = "edf-settings-toggle-indicator";
     switchControl.className = "edf-settings-toggle-switch";
+    stateLabel.className = "edf-settings-toggle-label";
     input.className = "edf-settings-toggle-input";
     input.type = "checkbox";
     input.id = id;
     input.checked = definition.read(settings);
     input.ariaLabel = definition.title;
-    input.addEventListener("change", () => void updateSettings(definition.write(input.checked)));
-    indicator.append(switchControl);
+    const syncLabel = (): void => { stateLabel.textContent = input.checked ? "On" : "Off"; };
+    syncLabel();
+    input.addEventListener("change", () => {
+        syncLabel();
+        void updateSettings(definition.write(input.checked));
+    });
+    indicator.append(stateLabel, switchControl);
     inputWrapper.append(input, indicator);
     const label = document.createElement("div");
     label.className = "edf-settings-visually-hidden";
