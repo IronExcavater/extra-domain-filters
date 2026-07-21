@@ -22,7 +22,12 @@ export async function bindFilterShareButton(): Promise<void> {
     const source = document.querySelector<HTMLButtonElement>('button[name="property-alert"]');
     if (!source || source.parentElement?.querySelector('[data-testid="extra-domain-filters-share"]')) return;
 
-    const button = cloneActionButton(source, { icon: replaceWithShareIcon });
+    const button = cloneActionButton(source, {
+        icon: replaceWithShareIcon,
+        label: "Share filters",
+    });
+    const label = [...button.querySelectorAll<HTMLElement>("span")]
+        .find(span => !span.querySelector("svg"));
     button.name = "extra-domain-filters-share";
     button.dataset.testid = "extra-domain-filters-share";
     button.ariaLabel = "Copy filtered search link";
@@ -33,8 +38,13 @@ export async function bindFilterShareButton(): Promise<void> {
         event.preventDefault();
         syncSharedFilterParams(await getSettings());
         await copy(window.location.href);
+        button.blur();
+        if (label) label.textContent = "Copied";
         button.title = "Copied";
-        window.setTimeout(() => { button.title = "Share filters"; }, 1400);
+        window.setTimeout(() => {
+            button.title = "Share filters";
+            if (label) label.textContent = "Share filters";
+        }, 1400);
     });
     source.after(button);
 }

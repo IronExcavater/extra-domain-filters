@@ -7,6 +7,7 @@ import { SETTINGS_SECTIONS } from "./definitions";
 type HeadingTag = "h1" | "h2" | "h3";
 
 interface SettingsViewOptions {
+    includeIntroduction?: boolean;
     sectionHeading: HeadingTag;
     titleHeading: HeadingTag;
 }
@@ -118,17 +119,19 @@ function createHeading(tag: HeadingTag, className: string, text: string): HTMLEl
 
 export function createSettingsContent(settings: Settings, options: SettingsViewOptions): DocumentFragment {
     const content = document.createDocumentFragment();
-    const introduction = document.createElement("div");
-    const description = document.createElement("p");
+    if (options.includeIntroduction !== false) {
+        const introduction = document.createElement("div");
+        const description = document.createElement("p");
 
-    introduction.className = "edf-settings-introduction";
-    description.className = "edf-settings-description";
-    description.textContent = "Manage how Extra Domain Filters changes your Domain experience.";
-    introduction.append(
-        createHeading(options.titleHeading, "edf-settings-title", "Extra Domain Filters"),
-        description,
-    );
-    content.append(introduction);
+        introduction.className = "edf-settings-introduction";
+        description.className = "edf-settings-description";
+        description.textContent = "Manage how Extra Domain Filters changes your Domain experience.";
+        introduction.append(
+            createHeading(options.titleHeading, "edf-settings-title", "Extra Domain Filters"),
+            description,
+        );
+        content.append(introduction);
+    }
 
     for (const section of SETTINGS_SECTIONS) {
         const card = document.createElement("section");

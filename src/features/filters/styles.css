@@ -5,11 +5,11 @@
 }
 
 .edf-filter-share-button {
-    min-width: 40px;
+    min-width: auto;
     padding-left: 10px !important;
     padding-right: 10px !important;
 }
 
 .edf-filter-share-button > span:last-of-type {
-    padding-left: 0 !important;
+    padding-left: 8px !important;
 }
