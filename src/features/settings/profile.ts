@@ -70,7 +70,9 @@ function createPanel(shell: HTMLElement, settings: Settings): HTMLElement | unde
             ? nav.parentElement.nextElementSibling
             : undefined);
     const sourceSection = content?.querySelector<HTMLElement>(".css-u4p3do") ?? content;
-    const sourceRow = sourceSection?.querySelector<HTMLElement>(".css-hyniss, .css-jbxx87");
+    const sourceRow = sourceSection?.querySelector<HTMLElement>(".css-hyniss, .css-jbxx87") ??
+        sourceSection?.querySelector<HTMLElement>("div") ??
+        sourceSection;
     if (!content || !sourceSection || !sourceRow) return undefined;
 
     const panel = sourceSection.cloneNode(false) as HTMLElement;
@@ -132,11 +134,30 @@ function bindSettingsTab(shell: HTMLElement, panel: HTMLElement, signal: AbortSi
 }
 
 export async function mountProfileSettings(context: PageContext): Promise<void> {
-    const shell = await waitForProfileShell(context.signal);
-    if (shell.querySelector('[data-extra-domain-filters-settings="true"]')) return;
+    await waitForProfileShell(context.signal);
 
-    const panel = createPanel(shell, await getSettings());
-    if (!panel) return;
-    bindSettingsTab(shell, panel, context.signal);
+    let frame: number | undefined;
+    const inject = async (): Promise<void> => {
+        const shell = findProfileShell();
+        if (!shell || shell.querySelector('[data-extra-domain-filters-settings="true"]')) return;
+
+        const panel = createPanel(shell, await getSettings());
+        if (panel) bindSettingsTab(shell, panel, context.signal);
+    };
+    const schedule = (): void => {
+        if (frame !== undefined || context.signal.aborted) return;
+        frame = requestAnimationFrame(() => {
+            frame = undefined;
+            void inject();
+        });
+    };
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.body, { childList: true, subtree: true });
+    await inject();
+
+    context.signal.addEventListener("abort", () => {
+        observer.disconnect();
+        if (frame !== undefined) cancelAnimationFrame(frame);
+    }, { once: true });
     observeUrlChanges(() => undefined, context.signal);
 }
