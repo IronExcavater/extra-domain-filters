@@ -66,8 +66,8 @@ function createRow(template: HTMLElement, definition: SettingDefinition, setting
 function createPanel(shell: HTMLElement, settings: Settings): HTMLElement | undefined {
     const nav = shell.querySelector("nav");
     const content = shell.querySelector<HTMLElement>(".css-1m3si3y") ??
-        (nav?.parentElement?.nextElementSibling instanceof HTMLElement
-            ? nav.parentElement.nextElementSibling
+        (nav?.nextElementSibling instanceof HTMLElement
+            ? nav.nextElementSibling
             : undefined);
     const sourceSection = content?.querySelector<HTMLElement>(".css-u4p3do") ?? content;
     const sourceRow = sourceSection?.querySelector<HTMLElement>(".css-hyniss, .css-jbxx87") ??
