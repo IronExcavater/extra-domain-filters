@@ -30,12 +30,12 @@ function createToggle(definition: SettingDefinition, settings: Settings): HTMLLa
     const switchControl = document.createElement("span");
     const id = `extra-domain-filters-${definition.title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`;
 
-    toggle.className = "domain-checkbox is-toggle edf-profile-toggle";
+    toggle.className = "domain-checkbox is-toggle css-u9441l edf-profile-toggle";
     toggle.htmlFor = id;
-    inputWrapper.className = "domain-checkbox__input domain-checkbox--toggle";
-    indicator.className = "domain-checkbox__control-indicator";
-    switchControl.className = "domain-checkbox__control-switch";
-    input.className = "domain-checkbox__checkbox";
+    inputWrapper.className = "domain-checkbox__input domain-checkbox--toggle css-16rankl";
+    indicator.className = "domain-checkbox__control-indicator css-152nx9z";
+    switchControl.className = "domain-checkbox__control-switch css-7ce1c0";
+    input.className = "domain-checkbox__checkbox css-xl3zjr";
     input.type = "checkbox";
     input.id = id;
     input.checked = definition.read(settings);
@@ -43,49 +43,56 @@ function createToggle(definition: SettingDefinition, settings: Settings): HTMLLa
     input.addEventListener("change", () => void updateSettings(definition.write(input.checked)));
     indicator.append(switchControl);
     inputWrapper.append(input, indicator);
-    toggle.append(inputWrapper);
+    const label = document.createElement("div");
+    label.className = "domain-checkbox__label is-hidden css-15xz373";
+    label.textContent = definition.title;
+    toggle.append(inputWrapper, label);
     return toggle;
 }
 
-function createRow(template: HTMLElement, definition: SettingDefinition, settings: Settings): HTMLElement {
-    const row = template.cloneNode(true) as HTMLElement;
+function createRow(definition: SettingDefinition, settings: Settings): HTMLElement {
+    const row = document.createElement("div");
     const copy = document.createElement("div");
     const title = document.createElement("p");
     const description = document.createElement("p");
 
-    title.className = row.querySelector("p")?.className ?? "";
-    description.className = "edf-profile-setting-description";
+    row.className = "css-jbxx87 edf-profile-setting-row";
+    title.className = "css-1hnnm";
+    description.className = "css-1gn7nan edf-profile-setting-description";
     title.textContent = definition.title;
     description.textContent = definition.description;
     copy.append(title, description);
-    row.classList.add("edf-profile-setting-row");
     row.replaceChildren(copy, createToggle(definition, settings));
     return row;
 }
 
 function createPanel(shell: HTMLElement, settings: Settings): HTMLElement | undefined {
     const nav = shell.querySelector("nav");
-    const content = shell.querySelector<HTMLElement>(".css-1m3si3y") ??
-        (nav?.nextElementSibling instanceof HTMLElement
-            ? nav.nextElementSibling
-            : undefined);
-    const sourceSection = content?.querySelector<HTMLElement>(".css-u4p3do") ?? content;
-    const sourceRow = sourceSection?.querySelector<HTMLElement>(".css-hyniss, .css-jbxx87") ??
-        sourceSection?.querySelector<HTMLElement>("div") ??
-        sourceSection;
-    if (!content || !sourceSection || !sourceRow) return undefined;
+    const content = shell.querySelector<HTMLElement>(".css-1jo5qpx > div:last-child") ??
+        (nav?.nextElementSibling instanceof HTMLElement ? nav.nextElementSibling : undefined);
+    if (!content) return undefined;
 
-    const panel = sourceSection.cloneNode(false) as HTMLElement;
+    const panel = document.createElement("div");
+    panel.className = "css-1m3si3y";
     panel.dataset.extraDomainFiltersSettings = "true";
+    const introduction = document.createElement("div");
+    introduction.className = "css-8qb8m4";
     const heading = document.createElement("h2");
-    heading.className = content.querySelector("h2")?.className ?? "";
+    heading.className = "css-1svyqee";
     heading.textContent = "Extra Domain Filters";
-    panel.append(heading);
+    const description = document.createElement("p");
+    description.className = "css-1x6nyim";
+    description.textContent = "Manage how Extra Domain Filters changes your Domain experience.";
+    introduction.append(heading, description);
+    panel.append(introduction);
     for (const section of SETTINGS_SECTIONS) {
+        const sectionElement = document.createElement("div");
+        sectionElement.className = "css-u4p3do";
         const sectionHeading = document.createElement("h3");
-        sectionHeading.className = sourceSection.querySelector("h3")?.className ?? "";
+        sectionHeading.className = "css-12i8801";
         sectionHeading.textContent = section.title;
-        panel.append(sectionHeading, ...section.settings.map(definition => createRow(sourceRow, definition, settings)));
+        sectionElement.append(sectionHeading, ...section.settings.map(definition => createRow(definition, settings)));
+        panel.append(sectionElement);
     }
     content.append(panel);
     return panel;
@@ -96,6 +103,17 @@ function bindSettingsTab(shell: HTMLElement, panel: HTMLElement, signal: AbortSi
     const source = list?.querySelector<HTMLLIElement>("li");
     const sourceButton = source?.querySelector<HTMLButtonElement>("button");
     if (!list || !source || !sourceButton) return;
+
+    const nativeButtons = [...list.querySelectorAll<HTMLButtonElement>(":scope > li > button")];
+    const classCounts = new Map<string, number>();
+    nativeButtons.forEach(nativeButton => {
+        classCounts.set(nativeButton.className, (classCounts.get(nativeButton.className) ?? 0) + 1);
+    });
+    const inactiveClass = [...classCounts.entries()]
+        .sort((first, second) => second[1] - first[1])[0]?.[0] ?? sourceButton.className;
+    const activeClass = nativeButtons
+        .find(nativeButton => nativeButton.className !== inactiveClass)
+        ?.className ?? sourceButton.className;
 
     const item = source.cloneNode(true) as HTMLLIElement;
     const button = item.querySelector<HTMLButtonElement>("button");
@@ -110,6 +128,10 @@ function bindSettingsTab(shell: HTMLElement, panel: HTMLElement, signal: AbortSi
     });
     list.append(item);
 
+    const setNativeTabsInactive = (): void => {
+        nativeButtons.forEach(nativeButton => { nativeButton.className = inactiveClass; });
+    };
+
     const updateView = (): void => {
         const active = isSettingsView();
         panel.hidden = !active;
@@ -117,17 +139,25 @@ function bindSettingsTab(shell: HTMLElement, panel: HTMLElement, signal: AbortSi
             if (child === panel || child.closest("nav")) return;
             (child as HTMLElement).hidden = active;
         });
-        button.className = active ? sourceButton.className : button.className;
+        if (active) {
+            setNativeTabsInactive();
+            button.className = activeClass;
+        } else {
+            button.className = inactiveClass;
+        }
     };
 
     list.addEventListener("click", event => {
         const target = event.target;
         if (!(target instanceof Element) || target.closest('[data-extra-domain-filters-settings-tab="true"]')) return;
-        if (!target.closest("button")) return;
+        const selectedButton = target.closest<HTMLButtonElement>("button");
+        if (!selectedButton) return;
         const url = new URL(window.location.href);
         if (!url.searchParams.has(SETTINGS_QUERY)) return;
         url.searchParams.delete(SETTINGS_QUERY);
         history.pushState({}, "", url);
+        setNativeTabsInactive();
+        selectedButton.className = activeClass;
     });
     updateView();
     window.addEventListener("extra-domain-filters:url-change", updateView, { signal });
