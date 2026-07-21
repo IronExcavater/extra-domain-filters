@@ -61,6 +61,36 @@ function resizeInlineNote(editor: HTMLTextAreaElement): void {
     editor.style.height = `${Math.min(editor.scrollHeight, NOTE_MAX_HEIGHT)}px`;
 }
 
+function bindInlineNoteIsolation(signal: AbortSignal): void {
+    const eventTypes = [
+        "pointerdown",
+        "mousedown",
+        "click",
+        "dblclick",
+        "focusin",
+        "beforeinput",
+        "input",
+        "change",
+        "keydown",
+        "keyup",
+        "paste",
+    ] as const;
+
+    for (const type of eventTypes) {
+        document.addEventListener(type, event => {
+            const target = event.target;
+            if (!(target instanceof HTMLTextAreaElement) || !target.classList.contains("edf-inline-note")) return;
+
+            if (type === "input") resizeInlineNote(target);
+            if (type === "keydown" && event instanceof KeyboardEvent && (event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                target.blur();
+            }
+            event.stopImmediatePropagation();
+            event.stopPropagation();
+        }, { capture: true, signal });
+    }
+}
+
 async function saveInlineNote(card: HTMLElement, editor: HTMLTextAreaElement): Promise<void> {
     const value = editor.value.trim();
     if (noteValues.get(editor) === value) return;
@@ -88,18 +118,7 @@ function configureInlineNote(card: HTMLElement): void {
     textarea.removeAttribute("aria-readonly");
     noteValues.set(textarea, textarea.value.trim());
 
-    for (const type of ["pointerdown", "mousedown", "click", "dblclick"] as const) {
-        textarea.addEventListener(type, event => {
-            event.stopImmediatePropagation();
-            event.stopPropagation();
-        }, { capture: true });
-    }
-
-    textarea.addEventListener("input", () => resizeInlineNote(textarea));
     textarea.addEventListener("blur", () => void saveInlineNote(card, textarea));
-    textarea.addEventListener("keydown", event => {
-        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") textarea.blur();
-    });
     requestAnimationFrame(() => resizeInlineNote(textarea));
 }
 
@@ -178,6 +197,7 @@ async function renderControls(container: HTMLElement): Promise<void> {
 
 const mountShortlistPage: PageMount = async (context) => {
     bindListingCards(context, { showBlacklistedView: false });
+    bindInlineNoteIsolation(context.signal);
     const container = findUserListingsContainer();
     if (container) {
         await renderControls(container);

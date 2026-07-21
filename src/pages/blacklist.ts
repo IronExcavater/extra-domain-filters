@@ -19,6 +19,7 @@ import { createSelectionCheckbox, renderSelectionControls, replaceSelection } fr
 const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
 
 const selectedUrls = new Set<string>();
+const sessionEntryUrls = new Set<string>();
 
 function getRowKey(entry: BlacklistEntry): string {
     return getBlacklistListing(entry).url;
@@ -172,8 +173,10 @@ async function render(
     template?: HTMLElement,
 ): Promise<void> {
     const all = await getBlacklist();
+    const activeEntries = all.filter(entry => !entry.removedAt);
+    activeEntries.forEach(entry => sessionEntryUrls.add(getRowKey(entry)));
     const entries = all
-        .filter(entry => !entry.removedAt)
+        .filter(entry => !entry.removedAt || sessionEntryUrls.has(getRowKey(entry)))
         .sort((first, second) => second.addedAt - first.addedAt);
 
     const controls = getPageActions({ id: "blacklist", container, fallbackAnchor: list });
