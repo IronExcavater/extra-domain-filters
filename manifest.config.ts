@@ -27,6 +27,10 @@ export default defineManifest({
     },
     permissions: ['storage', 'alarms', 'unlimitedStorage'],
     host_permissions: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
+    web_accessible_resources: [{
+        resources: ['public/fonts/F37Bolton-VF.ttf'],
+        matches: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
+    }],
     content_scripts: [
         {
             matches: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
