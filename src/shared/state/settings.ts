@@ -5,7 +5,6 @@ import { applyPatch, type DeepPartial } from "../utils/types";
 export interface Settings {
     flags: FlagSettings;
     filters: FilterSettings;
-    display: MatchDisplaySettings;
     queue: QueueSettings;
     cache: CacheSettings;
 }
@@ -33,12 +32,6 @@ export interface FilterFeatureSettings {
     excludeKeywords: boolean;
     strataFees: boolean;
     propertyTypes: boolean;
-}
-
-export interface MatchDisplaySettings {
-    showPreferenceTags: boolean;
-    hideBlacklistedListings: boolean;
-    animateListingUpdates: boolean;
 }
 
 export interface QueueSettings {
@@ -73,11 +66,6 @@ export const DEFAULT_SETTINGS: Settings = {
         enableAdBlocking: true,
         enableMapPins: true,
         enableCarouselControls: true,
-    },
-    display: {
-        showPreferenceTags: true,
-        hideBlacklistedListings: true,
-        animateListingUpdates: true,
     },
     queue: {
         concurrency: 3,

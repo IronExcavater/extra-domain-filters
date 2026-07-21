@@ -57,7 +57,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     },
     {
         id: "filters",
-        title: "Filters",
+        title: "Search filters",
         settings: [
             {
                 title: "Could-haves filter",
@@ -88,30 +88,6 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
                 description: "Hide listings that do not match any selected could-have.",
                 read: settings => settings.filters.excludeWhenNoCouldHaveMatch,
                 write: excludeWhenNoCouldHaveMatch => ({ filters: { excludeWhenNoCouldHaveMatch } }),
-            },
-        ],
-    },
-    {
-        id: "matching",
-        title: "Display",
-        settings: [
-            {
-                title: "Match tags",
-                description: "Show selected preference matches on listing cards.",
-                read: settings => settings.display.showPreferenceTags,
-                write: showPreferenceTags => ({ display: { showPreferenceTags } }),
-            },
-            {
-                title: "Hide blacklisted listings",
-                description: "Collapse blacklisted cards from search results while keeping their actions available.",
-                read: settings => settings.display.hideBlacklistedListings,
-                write: hideBlacklistedListings => ({ display: { hideBlacklistedListings } }),
-            },
-            {
-                title: "Animate listing updates",
-                description: "Animate cards into their new positions after filters or blacklists change.",
-                read: settings => settings.display.animateListingUpdates,
-                write: animateListingUpdates => ({ display: { animateListingUpdates } }),
             },
         ],
     },

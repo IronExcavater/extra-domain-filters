@@ -100,6 +100,29 @@
     margin: 2px 0 0;
 }
 
+.edf-settings-action {
+    background: var(--edf-settings-surface);
+    border: 1px solid #c5cbd5;
+    border-radius: 3px;
+    color: var(--edf-settings-text);
+    cursor: pointer;
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: 14px;
+    line-height: 20px;
+    padding: 7px 12px;
+}
+
+.edf-settings-action:disabled {
+    cursor: default;
+    opacity: 0.65;
+}
+
+.edf-settings-action:hover:not(:disabled) {
+    border-color: #008700;
+    color: #008700;
+}
+
 .edf-settings-toggle {
     flex: 0 0 auto;
     height: 30px;

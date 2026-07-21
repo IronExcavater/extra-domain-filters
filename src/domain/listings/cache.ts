@@ -1,4 +1,4 @@
-import { getFromStorage, setInStorage } from "../../shared/platform/storage";
+import { getFromStorage, removeInStorage, setInStorage } from "../../shared/platform/storage";
 import type { ListingSnapshot } from "../matching";
 
 interface ListingCacheEntry {
@@ -9,6 +9,11 @@ interface ListingCacheEntry {
 const CACHE_KEY = "listingCache";
 const memoryCache = new Map<string, ListingCacheEntry>();
 const pendingFetches = new Map<string, Promise<ListingSnapshot>>();
+
+export async function clearListingCache(): Promise<void> {
+    memoryCache.clear();
+    await removeInStorage(CACHE_KEY);
+}
 
 function normalizeUrl(url: string): string {
     return url.replace(/\/$/, "");

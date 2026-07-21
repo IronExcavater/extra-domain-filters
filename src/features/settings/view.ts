@@ -1,3 +1,5 @@
+import { setBlacklist } from "../../domain/blacklist/store";
+import { clearListingCache } from "../../domain/listings/cache";
 import { updateSettings, type Settings } from "../../shared/state/settings";
 import type { SettingDefinition } from "./definitions";
 import { SETTINGS_SECTIONS } from "./definitions";
@@ -8,6 +10,28 @@ interface SettingsViewOptions {
     sectionHeading: HeadingTag;
     titleHeading: HeadingTag;
 }
+
+interface MaintenanceAction {
+    description: string;
+    label: string;
+    run(): Promise<void>;
+    title: string;
+}
+
+const MAINTENANCE_ACTIONS: MaintenanceAction[] = [
+    {
+        title: "Clear listing cache",
+        description: "Remove cached listing details and images. They will be collected again when needed.",
+        label: "Clear cache",
+        run: clearListingCache,
+    },
+    {
+        title: "Clear blacklist",
+        description: "Remove every listing from the extension blacklist.",
+        label: "Clear blacklist",
+        run: () => setBlacklist([]),
+    },
+];
 
 function createToggle(definition: SettingDefinition, settings: Settings): HTMLLabelElement {
     const toggle = document.createElement("label");
@@ -59,6 +83,32 @@ function createRow(definition: SettingDefinition, settings: Settings): HTMLEleme
     return row;
 }
 
+function createActionRow(action: MaintenanceAction): HTMLElement {
+    const row = document.createElement("div");
+    const copy = document.createElement("div");
+    const title = document.createElement("p");
+    const description = document.createElement("p");
+    const button = document.createElement("button");
+
+    row.className = "edf-settings-row";
+    copy.className = "edf-settings-copy";
+    title.className = "edf-settings-row-title";
+    description.className = "edf-settings-row-description";
+    button.className = "edf-settings-action";
+    button.type = "button";
+    title.textContent = action.title;
+    description.textContent = action.description;
+    button.textContent = action.label;
+    button.addEventListener("click", async () => {
+        button.disabled = true;
+        await action.run();
+        button.textContent = "Cleared";
+    });
+    copy.append(title, description);
+    row.append(copy, button);
+    return row;
+}
+
 function createHeading(tag: HeadingTag, className: string, text: string): HTMLElement {
     const heading = document.createElement(tag);
     heading.className = className;
@@ -89,6 +139,14 @@ export function createSettingsContent(settings: Settings, options: SettingsViewO
         );
         content.append(card);
     }
+
+    const maintenance = document.createElement("section");
+    maintenance.className = "edf-settings-section";
+    maintenance.append(
+        createHeading(options.sectionHeading, "edf-settings-section-title", "Maintenance"),
+        ...MAINTENANCE_ACTIONS.map(createActionRow),
+    );
+    content.append(maintenance);
 
     return content;
 }
