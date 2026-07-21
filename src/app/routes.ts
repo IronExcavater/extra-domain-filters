@@ -40,6 +40,13 @@ export const routes: Route[] = [
         load: () => import('../pages/agency.ts'),
     },
     {
+        id: 'profile',
+        test: match({
+            path: '/user/user-profile',
+        }),
+        load: () => import('../pages/profile.ts'),
+    },
+    {
         id: 'blacklist',
         test: match({
             path: '/user/shortlist',

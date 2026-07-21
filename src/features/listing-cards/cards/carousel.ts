@@ -191,7 +191,11 @@ export function updateCarouselCard(carouselCard: HTMLElement, blacklist: Blackli
     carouselCard.hidden = false;
 }
 
-export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext): void {
+export function bindCarouselCard(
+    carouselCard: HTMLElement,
+    context: PageContext,
+    options: { enableBlacklist: boolean },
+): void {
     if (!carouselCard.matches(TOPSPOT_CAROUSEL_SELECTOR)) return;
 
     const controls = findCarouselControls(carouselCard);
@@ -199,15 +203,29 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
         controls?.sourceButton;
     if (!sourceButton) return;
 
-    const existingButton = controls?.controls.querySelector<HTMLButtonElement>('.edf-featured-blacklist-button') ??
-        carouselCard.querySelector('.edf-featured-blacklist-button');
-    if (existingButton) {
+    if (!options.enableBlacklist) {
         if (controls?.sourceButton) {
             bindCarouselPauseControl(
                 carouselCard,
                 controls.controls,
                 controls.sourceButton,
                 getCarouselMembers(carouselCard).length,
+            );
+        }
+        return;
+    }
+
+    const existingButton = controls?.controls.querySelector<HTMLButtonElement>('.edf-featured-blacklist-button') ??
+        carouselCard.querySelector('.edf-featured-blacklist-button');
+    if (existingButton) {
+        const memberCount = getCarouselMembers(carouselCard).length;
+        existingButton.hidden = memberCount <= 1;
+        if (controls?.sourceButton) {
+            bindCarouselPauseControl(
+                carouselCard,
+                controls.controls,
+                controls.sourceButton,
+                memberCount,
             );
         }
         return;
@@ -239,6 +257,7 @@ export function bindCarouselCard(carouselCard: HTMLElement, context: PageContext
         button.classList.add("edf-featured-blacklist-button");
         carouselCard.prepend(button);
     }
+    button.hidden = getCarouselMembers(carouselCard).length <= 1;
 
     button.addEventListener("click", async event => {
         event.preventDefault();

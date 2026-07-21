@@ -190,19 +190,22 @@ export function matchListing(
     const text = `${listing.title}\n${listing.text}`;
     const filters = settings.filters;
 
-    const exclusionReason: ExclusionReason = isBlacklisted(blacklist, listing.url)
-        ? "blacklisted"
-        : includesAny(text, filters.excludeKeywords) ||
-            exceedsStrataMax(text, filters.strataMaxDollars) ||
-            matchesExcludedPropertyType(listing.propertyType, filters.excludePropertyKeywords)
-            ? "filtered"
-            : "none";
-
     const matchedPreferences = PREFERENCES.filter(
         preference =>
             filters.couldHaveRuleIds.includes(preference.id) &&
             preference.pattern.test(text),
     );
+    const excludesCouldHaveMismatch = filters.excludeWhenNoCouldHaveMatch &&
+        filters.couldHaveRuleIds.length > 0 &&
+        matchedPreferences.length === 0;
+    const exclusionReason: ExclusionReason = isBlacklisted(blacklist, listing.url)
+        ? "blacklisted"
+        : includesAny(text, filters.excludeKeywords) ||
+            exceedsStrataMax(text, filters.strataMaxDollars) ||
+            matchesExcludedPropertyType(listing.propertyType, filters.excludePropertyKeywords) ||
+            excludesCouldHaveMismatch
+            ? "filtered"
+            : "none";
 
     return {
         exclusionReason,

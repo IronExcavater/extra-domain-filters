@@ -1,16 +1,19 @@
 import { bindFilterTriggers, injectFilters } from "../features/filters";
+import { bindFilterShareButton } from "../features/filters/share";
 import { bindListingCards } from "../features/listing-cards";
 import { bindMapPins } from "../features/map/pins";
 import { PageMount } from "../shared/platform/router";
+import { getSettings } from "../shared/state/settings";
 
 const mountSearchPage: PageMount = async (context) => {
     bindFilterTriggers(
         ['allfilters', 'mode', 'price', 'bedrooms', 'propertyTypes'].map(id => `button#${id}`),
         context,
     );
-    injectFilters(context.logger, context.url);
+    void injectFilters(context.logger, context.url);
     bindListingCards(context);
-    bindMapPins(context);
+    void bindFilterShareButton();
+    if ((await getSettings()).flags.enableMapPins) bindMapPins(context);
 };
 
 export default mountSearchPage;

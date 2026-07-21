@@ -3,14 +3,16 @@ import { createClaimTracker } from "../../shared/dom/claim";
 import { bindLazyTrigger } from "../../shared/dom/trigger";
 import { Logger } from "../../shared/platform/logging";
 import { observeUrlChanges, PageContext } from "../../shared/platform/router";
+import { onStorageChange } from "../../shared/platform/storage";
 import { Property } from "../../shared/state/property";
-import { getSettings, toggleListId, updateSettings } from "../../shared/state/settings";
+import { getSettings, toggleListId, updateSettings, type Settings } from "../../shared/state/settings";
 import { snapPrice } from "../../shared/utils/number";
 import { createDraftProperty } from "./bindings/draft";
 import { cloneCheckboxInput } from "./clone/checkbox";
 import { cloneSliderInput } from "./clone/slider";
 import { cloneTextInput } from "./clone/text";
 import { isRentMode, observeModeChanges } from "./mode";
+import { applySharedFilterParams, syncSharedFilterParams } from "./searchParams";
 
 function refreshPriceTitles(url: URL): void {
     for (const priceDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__price-range"]')) {
@@ -33,6 +35,10 @@ function appendCustomFilter(anchor: HTMLElement, filter: HTMLElement): void {
 }
 
 export function bindFilterTriggers(selectors: string[], context: PageContext): void {
+    const unwatchSettings = onStorageChange<Settings>("settings", settings => {
+        if (settings) syncSharedFilterParams(settings);
+    });
+    context.signal.addEventListener("abort", unwatchSettings, { once: true });
     observeUrlChanges(url => {
         refreshPriceTitles(url);
         injectFilters(context.logger, url);
@@ -50,9 +56,12 @@ export function bindFilterTriggers(selectors: string[], context: PageContext): v
 
 export async function injectFilters(logger: Logger, url: URL) {
     logger.info('Injecting filters');
+    await applySharedFilterParams(url);
+    const settings = await getSettings();
 
     for (const mustHaveDiv of document.querySelectorAll<HTMLElement>('[data-testid="dynamic-search-filters__feature-options"]')) {
         if (!claim(mustHaveDiv)) continue;
+        if (!settings.filters.enabled.couldHaves) continue;
 
         const mustHaveTitle = mustHaveDiv.children[0];
 
@@ -101,6 +110,7 @@ export async function injectFilters(logger: Logger, url: URL) {
 
     for (const includeDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__keywords"]')) {
         if (!claim(includeDiv)) continue;
+        if (!settings.filters.enabled.excludeKeywords) continue;
 
         const includeTitle = includeDiv.querySelector('h3');
         const includeInput = includeDiv.querySelector<HTMLInputElement>('input');
@@ -143,6 +153,7 @@ export async function injectFilters(logger: Logger, url: URL) {
 
     for (const priceDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__price-range"]')) {
         if (!claim(priceDiv)) continue;
+        if (!settings.filters.enabled.strataFees) continue;
 
         const settingsProperty = Property.from('number', {
             get: async () => {
@@ -176,6 +187,7 @@ export async function injectFilters(logger: Logger, url: URL) {
 
     for (const propertyTypesDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__property-types"]')) {
         if (!claim(propertyTypesDiv)) continue;
+        if (!settings.filters.enabled.propertyTypes) continue;
 
         const updatePropertyExclusions = async (): Promise<void> => {
             const checkboxes = [...propertyTypesDiv.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];

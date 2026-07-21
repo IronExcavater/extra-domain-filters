@@ -5,6 +5,7 @@ import { applyPatch, type DeepPartial } from "../utils/types";
 export interface Settings {
     flags: FlagSettings;
     filters: FilterSettings;
+    display: MatchDisplaySettings;
     queue: QueueSettings;
     cache: CacheSettings;
 }
@@ -12,6 +13,9 @@ export interface Settings {
 export interface FlagSettings {
     enableExtension: boolean;
     enableBlacklist: boolean;
+    enableAdBlocking: boolean;
+    enableMapPins: boolean;
+    enableCarouselControls: boolean;
 }
 
 export interface FilterSettings {
@@ -20,6 +24,19 @@ export interface FilterSettings {
     couldHaveRuleIds: string[];
     customPreferenceText: string;
     excludePropertyKeywords: string[];
+    enabled: FilterFeatureSettings;
+    excludeWhenNoCouldHaveMatch: boolean;
+}
+
+export interface FilterFeatureSettings {
+    couldHaves: boolean;
+    excludeKeywords: boolean;
+    strataFees: boolean;
+    propertyTypes: boolean;
+}
+
+export interface MatchDisplaySettings {
+    showPreferenceTags: boolean;
 }
 
 export interface QueueSettings {
@@ -40,10 +57,23 @@ export const DEFAULT_SETTINGS: Settings = {
         couldHaveRuleIds: [],
         customPreferenceText: '',
         excludePropertyKeywords: [],
+        enabled: {
+            couldHaves: true,
+            excludeKeywords: true,
+            strataFees: true,
+            propertyTypes: true,
+        },
+        excludeWhenNoCouldHaveMatch: false,
     },
     flags: {
         enableExtension: true,
         enableBlacklist: true,
+        enableAdBlocking: true,
+        enableMapPins: true,
+        enableCarouselControls: true,
+    },
+    display: {
+        showPreferenceTags: true,
     },
     queue: {
         concurrency: 3,
@@ -57,7 +87,7 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 export async function getSettings(): Promise<Settings> {
-    return await getFromStorage<Settings>('settings') ?? DEFAULT_SETTINGS;
+    return applyPatch(DEFAULT_SETTINGS, await getFromStorage<Settings>('settings') ?? {});
 }
 
 export async function updateSettings(patch: DeepPartial<Settings>, current?: Settings) {

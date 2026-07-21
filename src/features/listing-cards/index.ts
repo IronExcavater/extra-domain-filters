@@ -1,6 +1,7 @@
 import { type BlacklistEntry } from "../../domain/matching";
 import { PageContext } from "../../shared/platform/router";
 import { onStorageChange } from "../../shared/platform/storage";
+import { getSettings } from "../../shared/state/settings";
 import { injectListingCards } from "./bind";
 import { bindAdRemoval } from "./cards/ads";
 import { disposeCarouselControls, disposeDetachedCarouselControls } from "./cards/carousel";
@@ -21,7 +22,9 @@ export function bindListingCards(
 ): void {
     const showBlacklistedView = options.showBlacklistedView ?? true;
 
-    bindAdRemoval(context.signal);
+    void getSettings().then(settings => {
+        if (settings.flags.enableAdBlocking && !context.signal.aborted) bindAdRemoval(context.signal);
+    });
 
     let scanFrame: number | undefined;
     let refreshInProgress = false;

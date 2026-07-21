@@ -66,23 +66,26 @@ export async function injectListingCards(
     showBlacklistedView = true,
 ): Promise<void> {
     disposeDetachedCarouselControls();
-
-    for (const projectCard of document.querySelectorAll<HTMLElement>(PROJECT_CARD_SELECTOR)) {
-        bindProjectCard(projectCard, context);
-    }
-
-    for (const carouselCard of document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)) {
-        bindCarouselCard(carouselCard, context);
-    }
-
-    for (const shortlistButton of document.querySelectorAll<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR)) {
-        bindBlacklistButton(shortlistButton, context);
-    }
-
     const [settings, blacklist = []] = await Promise.all([
         getSettings(),
         getBlacklist(),
     ]);
 
-    updateListingCards(settings, blacklist, showBlacklistedView);
+    if (settings.flags.enableBlacklist) {
+        for (const projectCard of document.querySelectorAll<HTMLElement>(PROJECT_CARD_SELECTOR)) {
+            bindProjectCard(projectCard, context);
+        }
+
+        for (const shortlistButton of document.querySelectorAll<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR)) {
+            bindBlacklistButton(shortlistButton, context);
+        }
+    }
+
+    if (settings.flags.enableCarouselControls) {
+        for (const carouselCard of document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)) {
+            bindCarouselCard(carouselCard, context, { enableBlacklist: settings.flags.enableBlacklist });
+        }
+    }
+
+    updateListingCards(settings, settings.flags.enableBlacklist ? blacklist : [], showBlacklistedView);
 }
