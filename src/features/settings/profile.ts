@@ -1,3 +1,4 @@
+import { waitForElement } from "../../shared/dom/wait";
 import { observeUrlChanges, type PageContext } from "../../shared/platform/router";
 import { getSettings, updateSettings, type Settings } from "../../shared/state/settings";
 import { SETTINGS_SECTIONS, type SettingDefinition } from "./definitions";
@@ -18,22 +19,7 @@ function findProfileShell(): HTMLElement | undefined {
 }
 
 function waitForProfileShell(signal: AbortSignal): Promise<HTMLElement> {
-    const existing = findProfileShell();
-    if (existing) return Promise.resolve(existing);
-
-    return new Promise((resolve, reject) => {
-        const observer = new MutationObserver(() => {
-            const shell = findProfileShell();
-            if (!shell) return;
-            observer.disconnect();
-            resolve(shell);
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-        signal.addEventListener("abort", () => {
-            observer.disconnect();
-            reject(new DOMException("Unmounted", "AbortError"));
-        }, { once: true });
-    });
+    return waitForElement(findProfileShell, signal);
 }
 
 function createRow(template: HTMLElement, definition: SettingDefinition, settings: Settings): HTMLElement {

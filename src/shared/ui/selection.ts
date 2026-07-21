@@ -14,6 +14,11 @@ export interface SelectionAction {
     onAction(ids: readonly string[]): void;
 }
 
+export function replaceSelection(selection: Set<string>, ids: readonly string[]): void {
+    selection.clear();
+    ids.forEach(id => selection.add(id));
+}
+
 function createButton(className: string): HTMLButtonElement {
     const button = document.createElement("button");
 
