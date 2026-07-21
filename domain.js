@@ -503,7 +503,7 @@ function configureStrataSlider(sliderWrapper) {
             //await saveFiltersToURL();
         }
         isDragging = false;
-    })
+    });
 }
 
 function sliderShowValue(handle, foreground, label, value, max) {

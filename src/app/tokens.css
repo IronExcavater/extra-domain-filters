@@ -1,0 +1,5 @@
+:root {
+    --edf-color-blacklist-inactive: rgb(100 100 99);
+    --edf-color-shortlist-hover: rgb(255 204 0);
+    --edf-color-shortlist-inactive: rgb(30 41 61 / 30%);
+}

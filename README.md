@@ -21,7 +21,15 @@ This browser extension supercharges domain.com.au by adding advanced filtering o
 
 ### 🔹 Manual Installation (Developer)
 1. **Download or clone** this repository.
-2. **Load the unpacked extension** (root directory) in your browser’s extension developer mode.
+2. Run `npm install`.
+3. Run `npm run dev`.
+4. In Chrome's extension developer mode, choose **Load unpacked** and select the generated `dist` directory.
+5. Keep Vite running while developing. CRXJS handles content-script HMR/live reload from the dev server.
+
+### 🔹 Release Build
+1. Run `npm run build`.
+2. The build output is `dist`.
+3. The packaged zip is written to `release`.
 
 ## 🎯 Usage
 1. Search for properties on **[Domain.com.au](https://www.domain.com.au)**.
