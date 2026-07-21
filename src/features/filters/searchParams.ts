@@ -46,7 +46,16 @@ export async function applySharedFilterParams(url: URL): Promise<void> {
 }
 
 export function syncSharedFilterParams(settings: Settings): void {
-    const url = new URL(window.location.href);
+    const url = createSharedFilterUrl(settings, new URL(window.location.href));
+
+    if (url.href !== window.location.href) history.replaceState({}, "", url);
+}
+
+export function createSharedFilterUrl(
+    settings: Pick<Settings, "filters">,
+    base = new URL("https://www.domain.com.au/sale/"),
+): URL {
+    const url = new URL(base);
     const params = url.searchParams;
     setList(params, PARAMS.couldHaves, settings.filters.couldHaveRuleIds);
     setList(params, PARAMS.excludeKeywords, settings.filters.excludeKeywords);
@@ -56,5 +65,5 @@ export function syncSharedFilterParams(settings: Settings): void {
     if (settings.filters.excludeWhenNoCouldHaveMatch) params.set(PARAMS.hideNonMatches, "1");
     else params.delete(PARAMS.hideNonMatches);
 
-    if (url.href !== window.location.href) history.replaceState({}, "", url);
+    return url;
 }

@@ -8,7 +8,6 @@ export interface Settings {
     queue: QueueSettings;
     cache: CacheSettings;
 }
-
 export interface FlagSettings {
     enableExtension: boolean;
     enableBlacklist: boolean;
@@ -92,7 +91,6 @@ export function toggleListId(ids: string[], id: string, checked: boolean): strin
         ? [...new Set([...ids, id])]
         : ids.filter(existing => existing !== id);
 }
-
 export interface BlacklistEntry {
     url: string;
     addedAt: number;
@@ -100,11 +98,4 @@ export interface BlacklistEntry {
     displayAddress?: string;
     thumbnailUrl?: string;
     listing?: ListingSnapshot;
-}
-
-export interface FilterPreset {
-    id: string;
-    name: string;
-    createdAt: number;
-    filters: FilterSettings;
 }
