@@ -22,30 +22,55 @@ function waitForProfileShell(signal: AbortSignal): Promise<HTMLElement> {
     return waitForElement(findProfileShell, signal);
 }
 
-function createRow(template: HTMLElement, definition: SettingDefinition, settings: Settings): HTMLElement {
-    const row = template.cloneNode(true) as HTMLElement;
-    const paragraphs = row.querySelectorAll<HTMLParagraphElement>("p");
-    const input = row.querySelector<HTMLInputElement>('input[type="checkbox"]');
-    const label = row.querySelector<HTMLLabelElement>("label");
-
-    if (!input || !label || paragraphs.length < 2) throw new Error("Unable to clone a profile setting row");
-
+function createToggle(definition: SettingDefinition, settings: Settings): HTMLLabelElement {
+    const toggle = document.createElement("label");
+    const input = document.createElement("input");
+    const inputWrapper = document.createElement("div");
+    const indicator = document.createElement("div");
+    const switchControl = document.createElement("span");
     const id = `extra-domain-filters-${definition.title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`;
-    paragraphs[0].textContent = definition.title;
-    paragraphs[1].textContent = definition.description;
+
+    toggle.className = "domain-checkbox is-toggle edf-profile-toggle";
+    toggle.htmlFor = id;
+    inputWrapper.className = "domain-checkbox__input domain-checkbox--toggle";
+    indicator.className = "domain-checkbox__control-indicator";
+    switchControl.className = "domain-checkbox__control-switch";
+    input.className = "domain-checkbox__checkbox";
+    input.type = "checkbox";
     input.id = id;
     input.checked = definition.read(settings);
-    label.htmlFor = id;
+    input.ariaLabel = definition.title;
     input.addEventListener("change", () => void updateSettings(definition.write(input.checked)));
+    indicator.append(switchControl);
+    inputWrapper.append(input, indicator);
+    toggle.append(inputWrapper);
+    return toggle;
+}
+
+function createRow(template: HTMLElement, definition: SettingDefinition, settings: Settings): HTMLElement {
+    const row = template.cloneNode(true) as HTMLElement;
+    const copy = document.createElement("div");
+    const title = document.createElement("p");
+    const description = document.createElement("p");
+
+    title.className = row.querySelector("p")?.className ?? "";
+    description.className = "edf-profile-setting-description";
+    title.textContent = definition.title;
+    description.textContent = definition.description;
+    copy.append(title, description);
+    row.classList.add("edf-profile-setting-row");
+    row.replaceChildren(copy, createToggle(definition, settings));
     return row;
 }
 
 function createPanel(shell: HTMLElement, settings: Settings): HTMLElement | undefined {
     const nav = shell.querySelector("nav");
     const content = shell.querySelector<HTMLElement>(".css-1m3si3y") ??
-        (nav?.parentElement?.nextElementSibling?.querySelector<HTMLElement>("div"));
-    const sourceSection = content?.querySelector<HTMLElement>(".css-u4p3do");
-    const sourceRow = sourceSection?.querySelector<HTMLElement>(".css-jbxx87");
+        (nav?.parentElement?.nextElementSibling instanceof HTMLElement
+            ? nav.parentElement.nextElementSibling
+            : undefined);
+    const sourceSection = content?.querySelector<HTMLElement>(".css-u4p3do") ?? content;
+    const sourceRow = sourceSection?.querySelector<HTMLElement>(".css-hyniss, .css-jbxx87");
     if (!content || !sourceSection || !sourceRow) return undefined;
 
     const panel = sourceSection.cloneNode(false) as HTMLElement;

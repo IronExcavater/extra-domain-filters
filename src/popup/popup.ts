@@ -9,7 +9,7 @@ function createToggle(
     settings: Settings,
 ): HTMLElement {
     const row = document.createElement("label");
-    row.className = "setting-row";
+    row.className = "popup-setting-row";
     const copy = document.createElement("span");
     const title = document.createElement("strong");
     const description = document.createElement("small");
@@ -18,13 +18,13 @@ function createToggle(
     copy.append(title, description);
 
     const toggle = document.createElement("span");
-    toggle.className = "domain-checkbox is-toggle";
+    toggle.className = "popup-toggle";
     const input = document.createElement("input");
     input.type = "checkbox";
     input.checked = definition.read(settings);
     input.ariaLabel = definition.title;
     const indicator = document.createElement("span");
-    indicator.className = "toggle-indicator";
+    indicator.className = "popup-toggle-indicator";
     toggle.append(input, indicator);
     input.addEventListener("change", () => void updateSettings(definition.write(input.checked)));
     row.append(copy, toggle);
@@ -38,7 +38,9 @@ async function render(): Promise<void> {
     const active = SETTINGS_SECTIONS.find(section => section.id === activeSectionId) ?? SETTINGS_SECTIONS[0];
 
     const shell = document.createElement("main");
+    shell.className = "popup-profile";
     const heading = document.createElement("header");
+    heading.className = "popup-profile-heading";
     const title = document.createElement("h1");
     title.textContent = "Extra Domain Filters";
     const subtitle = document.createElement("p");
@@ -46,7 +48,7 @@ async function render(): Promise<void> {
     heading.append(title, subtitle);
 
     const layout = document.createElement("div");
-    layout.className = "settings-layout";
+    layout.className = "popup-profile-layout";
     const navigation = document.createElement("nav");
     const tabs = document.createElement("ul");
     for (const section of SETTINGS_SECTIONS) {
@@ -66,7 +68,7 @@ async function render(): Promise<void> {
     navigation.append(tabs);
 
     const content = document.createElement("section");
-    content.className = "settings-content";
+    content.className = "popup-settings-content";
     const sectionTitle = document.createElement("h2");
     sectionTitle.textContent = active.title;
     content.append(sectionTitle, ...active.settings.map(setting => createToggle(setting, settings)));

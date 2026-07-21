@@ -76,6 +76,25 @@
     padding-right: 10px !important;
 }
 
+[data-extra-domain-filters-settings="true"] .edf-profile-setting-row {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    min-height: 56px;
+}
+
+[data-extra-domain-filters-settings="true"] .edf-profile-setting-description {
+    color: var(--color-neutral-medium-default, #626a78);
+    font-size: 14px;
+    line-height: 20px;
+    margin-top: 2px;
+}
+
+[data-extra-domain-filters-settings="true"] .edf-profile-toggle {
+    flex: 0 0 auto;
+}
+
 .edf-blacklist-shortlist-placeholder {
     opacity: 0.4;
 }
