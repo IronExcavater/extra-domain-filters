@@ -48,10 +48,12 @@ export function updateListingCards(
     blacklist: BlacklistEntry[],
     showBlacklistedView: boolean,
 ): void {
-    const layoutBefore = new Map(
-        [...document.querySelectorAll<HTMLElement>(TOP_LEVEL_CARD_SELECTOR)]
-            .map(card => [card, card.getBoundingClientRect()] as const),
-    );
+    const layoutBefore = settings.display.animateListingUpdates
+        ? new Map(
+            [...document.querySelectorAll<HTMLElement>(TOP_LEVEL_CARD_SELECTOR)]
+                .map(card => [card, card.getBoundingClientRect()] as const),
+        )
+        : new Map<HTMLElement, DOMRect>();
     const wholeProjectReasons = new Map<Element, ExclusionReason>();
 
     document.querySelectorAll<HTMLButtonElement>(BLACKLIST_BUTTON_SELECTOR)
@@ -69,7 +71,10 @@ export function updateListingCards(
                 settings,
                 blacklist,
             );
-            const reason = resolveVisibleReason(rawMatch.exclusionReason, url);
+            const resolvedReason = resolveVisibleReason(rawMatch.exclusionReason, url);
+            const reason = resolvedReason === "blacklisted" && !settings.display.hideBlacklistedListings
+                ? "none"
+                : resolvedReason;
 
             updateButton(
                 button,
