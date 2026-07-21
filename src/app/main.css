@@ -435,3 +435,7 @@
     line-height: 0;
     padding: 0 !important;
 }
+
+.edf-filter-share-button > span:last-of-type {
+    padding-left: 0 !important;
+}
