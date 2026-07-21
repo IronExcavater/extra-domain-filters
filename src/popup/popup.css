@@ -1,53 +1,36 @@
 body {
+    background: #f7f6f3;
     margin: 0;
     min-width: 392px;
 }
 
 .edf-settings-popup {
-    background: #fff;
-    padding: 24px;
+    --edf-settings-card-padding: 18px;
+    --edf-settings-description-line-height: 18px;
+    --edf-settings-description-size: 13px;
+    --edf-settings-page-title-line-height: 28px;
+    --edf-settings-page-title-size: 22px;
+    --edf-settings-row-title-line-height: 20px;
+    --edf-settings-row-title-size: 14px;
+    --edf-settings-section-title-line-height: 24px;
+    --edf-settings-section-title-size: 18px;
+
+    background: #f7f6f3;
+    padding: 16px;
 }
 
 .edf-settings-popup .edf-settings-introduction {
-    margin-bottom: 28px;
-}
-
-.edf-settings-popup .edf-settings-title {
-    font-size: 28px;
-    line-height: 36px;
-}
-
-.edf-settings-popup .edf-settings-description {
-    font-size: 16px;
-    line-height: 24px;
-    margin-top: 12px;
+    margin-bottom: 20px;
 }
 
 .edf-settings-popup .edf-settings-section {
-    border-radius: 12px;
-    padding: 24px;
+    border-radius: 10px;
 }
 
 .edf-settings-popup .edf-settings-section + .edf-settings-section {
     margin-top: 16px;
 }
 
-.edf-settings-popup .edf-settings-section-title {
-    font-size: 22px;
-    line-height: 30px;
-    margin-bottom: 8px;
-}
-
 .edf-settings-popup .edf-settings-row {
-    padding: 16px 0;
-}
-
-.edf-settings-popup .edf-settings-row-title {
-    font-size: 16px;
-    line-height: 22px;
-}
-
-.edf-settings-popup .edf-settings-row-description {
-    font-size: 14px;
-    line-height: 20px;
+    padding: 12px 0;
 }

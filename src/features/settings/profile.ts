@@ -1,7 +1,7 @@
 import { waitForElement } from "../../shared/dom/wait";
 import { observeUrlChanges, type PageContext } from "../../shared/platform/router";
-import { getSettings, updateSettings, type Settings } from "../../shared/state/settings";
-import { SETTINGS_SECTIONS, type SettingDefinition } from "./definitions";
+import { getSettings } from "../../shared/state/settings";
+import { createSettingsContent } from "./view";
 
 const SETTINGS_QUERY = "extra-domain-filters";
 const SETTINGS_VALUE = "settings";
@@ -22,59 +22,7 @@ function waitForProfileShell(signal: AbortSignal): Promise<HTMLElement> {
     return waitForElement(findProfileShell, signal);
 }
 
-function createToggle(definition: SettingDefinition, settings: Settings): HTMLLabelElement {
-    const toggle = document.createElement("label");
-    const input = document.createElement("input");
-    const inputWrapper = document.createElement("div");
-    const indicator = document.createElement("div");
-    const switchControl = document.createElement("span");
-    const stateLabel = document.createElement("span");
-    const id = `extra-domain-filters-${definition.title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`;
-
-    toggle.className = "edf-settings-toggle";
-    toggle.htmlFor = id;
-    inputWrapper.className = "edf-settings-toggle-control";
-    indicator.className = "edf-settings-toggle-indicator";
-    switchControl.className = "edf-settings-toggle-switch";
-    stateLabel.className = "edf-settings-toggle-label";
-    input.className = "edf-settings-toggle-input";
-    input.type = "checkbox";
-    input.id = id;
-    input.checked = definition.read(settings);
-    input.ariaLabel = definition.title;
-    const syncLabel = (): void => { stateLabel.textContent = input.checked ? "On" : "Off"; };
-    syncLabel();
-    input.addEventListener("change", () => {
-        syncLabel();
-        void updateSettings(definition.write(input.checked));
-    });
-    indicator.append(stateLabel, switchControl);
-    inputWrapper.append(input, indicator);
-    const label = document.createElement("div");
-    label.className = "edf-settings-visually-hidden";
-    label.textContent = definition.title;
-    toggle.append(inputWrapper, label);
-    return toggle;
-}
-
-function createRow(definition: SettingDefinition, settings: Settings): HTMLElement {
-    const row = document.createElement("div");
-    const copy = document.createElement("div");
-    const title = document.createElement("p");
-    const description = document.createElement("p");
-
-    row.className = "edf-settings-row";
-    copy.className = "edf-settings-copy";
-    title.className = "edf-settings-row-title";
-    description.className = "edf-settings-row-description";
-    title.textContent = definition.title;
-    description.textContent = definition.description;
-    copy.append(title, description);
-    row.replaceChildren(copy, createToggle(definition, settings));
-    return row;
-}
-
-function createPanel(shell: HTMLElement, settings: Settings): HTMLElement | undefined {
+function createPanel(shell: HTMLElement): HTMLElement | undefined {
     const nav = shell.querySelector("nav");
     const content = shell.querySelector<HTMLElement>(".css-1jo5qpx > div:last-child") ??
         (nav?.nextElementSibling instanceof HTMLElement ? nav.nextElementSibling : undefined);
@@ -83,25 +31,6 @@ function createPanel(shell: HTMLElement, settings: Settings): HTMLElement | unde
     const panel = document.createElement("div");
     panel.className = "edf-settings-panel";
     panel.dataset.extraDomainFiltersSettings = "true";
-    const introduction = document.createElement("div");
-    introduction.className = "edf-settings-introduction";
-    const heading = document.createElement("h2");
-    heading.className = "edf-settings-title";
-    heading.textContent = "Extra Domain Filters";
-    const description = document.createElement("p");
-    description.className = "edf-settings-description";
-    description.textContent = "Manage how Extra Domain Filters changes your Domain experience.";
-    introduction.append(heading, description);
-    panel.append(introduction);
-    for (const section of SETTINGS_SECTIONS) {
-        const sectionElement = document.createElement("div");
-        sectionElement.className = "edf-settings-section";
-        const sectionHeading = document.createElement("h3");
-        sectionHeading.className = "edf-settings-section-title";
-        sectionHeading.textContent = section.title;
-        sectionElement.append(sectionHeading, ...section.settings.map(definition => createRow(definition, settings)));
-        panel.append(sectionElement);
-    }
     content.append(panel);
     return panel;
 }
@@ -179,8 +108,14 @@ export async function mountProfileSettings(context: PageContext): Promise<void> 
         const shell = findProfileShell();
         if (!shell || shell.querySelector('[data-extra-domain-filters-settings="true"]')) return;
 
-        const panel = createPanel(shell, await getSettings());
-        if (panel) bindSettingsTab(shell, panel, context.signal);
+        const panel = createPanel(shell);
+        if (!panel) return;
+
+        panel.append(createSettingsContent(await getSettings(), {
+            sectionHeading: "h3",
+            titleHeading: "h2",
+        }));
+        bindSettingsTab(shell, panel, context.signal);
     };
     const schedule = (): void => {
         if (frame !== undefined || context.signal.aborted) return;
