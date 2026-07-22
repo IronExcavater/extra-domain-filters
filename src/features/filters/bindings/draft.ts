@@ -1,4 +1,5 @@
 import { createClaimTracker } from "../../../shared/dom/claim";
+import type { LifecycleScope } from "../../../shared/platform/lifecycle";
 import { Property, PropertyKind, PropertyValue } from "../../../shared/state/property";
 
 type DraftEntry = {
@@ -26,12 +27,16 @@ export async function createDraftProperty<K extends PropertyKind>(
     element: Element,
     target: Property<K>,
     defaultValue: PropertyValue<K>,
+    lifecycle: LifecycleScope,
 ): Promise<Property<K>> {
     const scope = element.closest('[role="dialog"]') ?? document.body;
 
     const submit = scope.querySelector<HTMLButtonElement>(submitSelector);
 
-    if (!submit) return target;
+    if (!submit) {
+        lifecycle.add(() => target.dispose());
+        return target;
+    }
 
     let confirmed = await target.get();
 
@@ -44,7 +49,7 @@ export async function createDraftProperty<K extends PropertyKind>(
         draftsByScope.set(scope, drafts);
     }
 
-    drafts.add({
+    const entry: DraftEntry = {
         reset: async () => {
             await property.set(defaultValue);
             await target.set(defaultValue);
@@ -56,6 +61,12 @@ export async function createDraftProperty<K extends PropertyKind>(
             confirmed = next;
             await target.set(next);
         },
+    };
+    drafts.add(entry);
+    lifecycle.add(() => {
+        drafts.delete(entry);
+        property.dispose();
+        target.dispose();
     });
 
     bindScope(scope, drafts);

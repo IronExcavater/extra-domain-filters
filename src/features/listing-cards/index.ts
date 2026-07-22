@@ -1,4 +1,6 @@
 import { type BlacklistEntry } from "../../domain/matching";
+import { isOwnedNode } from "../../shared/dom/ownership";
+import { createFrameReconciler } from "../../shared/dom/reconcile";
 import { PageContext } from "../../shared/platform/router";
 import { onStorageChange } from "../../shared/platform/storage";
 import { getSettings } from "../../shared/state/settings";
@@ -21,57 +23,29 @@ export function bindListingCards(
     options: BindListingCardsOptions = {},
 ): void {
     const showBlacklistedView = options.showBlacklistedView ?? true;
+    const scope = context.scope.child("listing-cards");
+    const featureContext: PageContext = {
+        get url() {
+            return context.url;
+        },
+        logger: context.logger,
+        scope,
+        signal: scope.signal,
+    };
 
     void getSettings().then(settings => {
-        if (settings.flags.enableAdBlocking && !context.signal.aborted) bindAdRemoval(context.signal);
+        if (settings.flags.enableAdBlocking && !scope.disposed) bindAdRemoval(scope.signal);
     });
 
-    let scanFrame: number | undefined;
-    let refreshInProgress = false;
-    let refreshQueued = false;
-
-    const refresh = async (): Promise<void> => {
-        if (refreshInProgress) {
-            refreshQueued = true;
-            return;
-        }
-
-        refreshInProgress = true;
-
-        try {
-            await injectListingCards(context, showBlacklistedView);
-        } finally {
-            refreshInProgress = false;
-
-            if (refreshQueued && !context.signal.aborted) {
-                refreshQueued = false;
-                schedule();
-            }
-        }
-    };
-
-    const schedule = (): void => {
-        if (scanFrame !== undefined) return;
-
-        scanFrame = requestAnimationFrame(() => {
-            scanFrame = undefined;
-            void refresh().catch(error =>
-                context.logger.warn("Failed to refresh listing cards", error)
-            );
-        });
-    };
-
-    const cancelScheduledScan = (): void => {
-        if (scanFrame === undefined) return;
-
-        cancelAnimationFrame(scanFrame);
-        scanFrame = undefined;
-    };
-
-    schedule();
+    const reconciler = createFrameReconciler(
+        scope,
+        () => injectListingCards(featureContext, showBlacklistedView),
+        error => context.logger.warn("Failed to refresh listing cards", error),
+    );
+    reconciler.schedule();
 
     const isExtensionNode = (node: Node): boolean =>
-        node instanceof Element && Boolean(
+        isOwnedNode(node) || node instanceof Element && Boolean(
             node.closest('[class*="edf-"]') ??
             node.closest('[data-testid^="extra-domain-filters-"]'),
         );
@@ -88,25 +62,21 @@ export function bindListingCards(
         );
 
     const observer = new MutationObserver(mutations => {
-        disposeDetachedCarouselControls();
+        if (mutations.some(mutation => mutation.removedNodes.length > 0)) {
+            disposeDetachedCarouselControls();
+        }
 
         const hasExternalAddition = mutations.some(mutation =>
             [...mutation.addedNodes].some(containsListing),
         );
 
-        if (hasExternalAddition) schedule();
+        if (hasExternalAddition) reconciler.schedule();
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    scope.add(() => observer.disconnect());
 
-    const unwatchBlacklist = onStorageChange<BlacklistEntry[]>("blacklist", schedule);
-    const unwatchSettings = onStorageChange("settings", schedule);
-    window.addEventListener(REVEAL_CHANGE_EVENT, schedule, { signal: context.signal });
-
-    context.signal.addEventListener("abort", () => {
-        observer.disconnect();
-        cancelScheduledScan();
-        disposeCarouselControls();
-        unwatchBlacklist();
-        unwatchSettings();
-    }, { once: true });
+    scope.add(onStorageChange<BlacklistEntry[]>("blacklist", reconciler.schedule));
+    scope.add(onStorageChange("settings", reconciler.schedule));
+    scope.add(disposeCarouselControls);
+    window.addEventListener(REVEAL_CHANGE_EVENT, reconciler.schedule, { signal: scope.signal });
 }

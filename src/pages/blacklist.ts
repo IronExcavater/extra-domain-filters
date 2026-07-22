@@ -12,6 +12,7 @@ import {
     restorePageActions,
     waitForUserListingsContainer,
 } from "../features/user-listings/page";
+import { markOwned } from "../shared/dom/ownership";
 import { PageMount } from "../shared/platform/router";
 import { onStorageChange } from "../shared/platform/storage";
 import { createSelectionCheckbox, renderSelectionControls, replaceSelection } from "../shared/ui/selection";
@@ -44,6 +45,7 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
         ? `${realList.className} edf-blacklist-row-list`
         : "edf-blacklist-row-list";
     list.setAttribute("data-testid", "extra-domain-filters-blacklist-list");
+    markOwned(list, "blacklist-list");
 
     if (realList instanceof HTMLElement) {
         realList.style.setProperty("display", "none", "important");

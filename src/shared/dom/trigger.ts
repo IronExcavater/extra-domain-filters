@@ -6,6 +6,9 @@ export function bindLazyTrigger(
     onReady: (context: PageContext) => void,
     context: PageContext,
 ): void {
+    let frame: number | undefined;
+    let observer: MutationObserver | undefined;
+
     const findClickedSelector = (target: EventTarget | null): string | undefined =>
         selectors.find(selector =>
             target instanceof Element && Boolean(target.closest(selector))
@@ -16,30 +19,38 @@ export function bindLazyTrigger(
             element.getClientRects().length > 0
         );
 
-    const waitForTarget = (ready: () => void): void => {
-        requestAnimationFrame(() => {
+    const waitForTarget = (): void => {
+        if (frame !== undefined || observer) return;
+
+        frame = requestAnimationFrame(() => {
+            frame = undefined;
             if (findTarget()) {
-                ready();
+                onReady(context);
                 return;
             }
 
-            const observer = new MutationObserver(() => {
+            observer = new MutationObserver(() => {
                 if (!findTarget()) return;
 
-                observer.disconnect();
-                ready();
+                observer?.disconnect();
+                observer = undefined;
+                onReady(context);
             });
 
-            context.signal.addEventListener('abort', () => observer.disconnect(), { once: true });
             observer.observe(document.body, { childList: true, subtree: true });
         });
     };
+
+    context.scope.add(() => {
+        if (frame !== undefined) cancelAnimationFrame(frame);
+        observer?.disconnect();
+    });
 
     document.addEventListener('click', event => {
         const selector = findClickedSelector(event.target);
         if (!selector) return;
 
         context.logger.info('Trigger clicked', selector);
-        waitForTarget(() => onReady(context));
+        waitForTarget();
     }, { signal: context.signal, capture: true });
 }

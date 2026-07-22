@@ -1,5 +1,5 @@
 import { STRATA_MAX, type ListingSnapshot } from "../../domain/matching";
-import { getFromStorage, setInStorage } from "../platform/storage";
+import { createStorageRepository } from "../platform/repository";
 import { applyPatch, type DeepPartial } from "../utils/types";
 
 export interface Settings {
@@ -78,13 +78,27 @@ export const DEFAULT_SETTINGS: Settings = {
     }
 }
 
+const settingsRepository = createStorageRepository<Settings>({
+    key: "settings",
+    version: 1,
+    createDefault: () => structuredClone(DEFAULT_SETTINGS),
+    normalize: value => applyPatch(
+        DEFAULT_SETTINGS,
+        typeof value === "object" && value !== null ? value as DeepPartial<Settings> : {},
+    ),
+});
+
 export async function getSettings(): Promise<Settings> {
-    return applyPatch(DEFAULT_SETTINGS, await getFromStorage<Settings>('settings') ?? {});
+    return settingsRepository.get();
 }
 
 export async function updateSettings(patch: DeepPartial<Settings>, current?: Settings) {
-    const updated = applyPatch(current ?? await getSettings(), patch);
-    await setInStorage<Settings>('settings', updated);
+    if (current) {
+        await settingsRepository.set(applyPatch(current, patch));
+        return;
+    }
+
+    await settingsRepository.update(settings => applyPatch(settings, patch));
 }
 
 export function toggleListId(ids: string[], id: string, checked: boolean): string[] {

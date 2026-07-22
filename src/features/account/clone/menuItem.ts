@@ -1,3 +1,4 @@
+import { markOwned } from "../../../shared/dom/ownership";
 import { getFromStorage, onStorageChange } from "../../../shared/platform/storage";
 import { replaceWithBinIcon } from "../../../shared/ui/icons";
 import { match } from "../../../shared/utils/regex";
@@ -148,5 +149,5 @@ export async function cloneMenuItem(
         badge.remove();
     }
 
-    return item;
+    return markOwned(item, "account-menu-item");
 }

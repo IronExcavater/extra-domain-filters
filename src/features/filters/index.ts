@@ -1,7 +1,7 @@
 import { PREFERENCES, STRATA_MAX } from "../../domain/matching";
 import { createClaimTracker } from "../../shared/dom/claim";
+import { markOwned } from "../../shared/dom/ownership";
 import { bindLazyTrigger } from "../../shared/dom/trigger";
-import { Logger } from "../../shared/platform/logging";
 import { observeUrlChanges, PageContext } from "../../shared/platform/router";
 import { onStorageChange } from "../../shared/platform/storage";
 import { Property } from "../../shared/state/property";
@@ -31,17 +31,17 @@ function appendCustomFilter(anchor: HTMLElement, filter: HTMLElement): void {
             ?.remove();
     }
 
-    anchor.after(filter);
+    anchor.after(markOwned(filter, "search-filter"));
 }
 
 export function bindFilterTriggers(selectors: string[], context: PageContext): void {
     const unwatchSettings = onStorageChange<Settings>("settings", settings => {
         if (settings) syncSharedFilterParams(settings);
     });
-    context.signal.addEventListener("abort", unwatchSettings, { once: true });
+    context.scope.add(unwatchSettings);
     observeUrlChanges(url => {
         refreshPriceTitles(url);
-        injectFilters(context.logger, url);
+        void injectFilters(context, url);
     }, context.signal);
 
     observeModeChanges(() => refreshPriceTitles(new URL(window.location.href)), context.signal);
@@ -49,12 +49,13 @@ export function bindFilterTriggers(selectors: string[], context: PageContext): v
     bindLazyTrigger(
         selectors,
         '[data-testid*="dynamic-search-filters"]',
-        ctx => injectFilters(ctx.logger, ctx.url),
+        ctx => injectFilters(ctx),
         context,
     );
 }
 
-export async function injectFilters(logger: Logger, url: URL) {
+export async function injectFilters(context: PageContext, url = context.url) {
+    const logger = context.logger;
     logger.info('Injecting filters');
     await applySharedFilterParams(url);
     const settings = await getSettings();
@@ -91,7 +92,12 @@ export async function injectFilters(logger: Logger, url: URL) {
                     }}, settings);
                 },
             });
-            const draftProperty = await createDraftProperty(mustHaveDiv, settingsProperty, false);
+            const draftProperty = await createDraftProperty(
+                mustHaveDiv,
+                settingsProperty,
+                false,
+                context.scope,
+            );
 
             couldHaveDiv.appendChild(await cloneCheckboxInput(
                 checkboxDiv,
@@ -130,7 +136,12 @@ export async function injectFilters(logger: Logger, url: URL) {
                 await updateSettings({ filters: { excludeKeywords }});
             },
         });
-        const draftProperty = await createDraftProperty(includeDiv, settingsProperty, '');
+        const draftProperty = await createDraftProperty(
+            includeDiv,
+            settingsProperty,
+            '',
+            context.scope,
+        );
 
         const excludeDiv = await cloneTextInput(
             includeDiv,
@@ -164,7 +175,12 @@ export async function injectFilters(logger: Logger, url: URL) {
                 await updateSettings({ filters: { strataMaxDollars: value }});
             },
         });
-        const draftProperty = await createDraftProperty(priceDiv, settingsProperty, STRATA_MAX);
+        const draftProperty = await createDraftProperty(
+            priceDiv,
+            settingsProperty,
+            STRATA_MAX,
+            context.scope,
+        );
 
         const strataFeesDiv = await cloneSliderInput(
             priceDiv,
@@ -213,7 +229,9 @@ export async function injectFilters(logger: Logger, url: URL) {
             await updateSettings({ filters: { excludePropertyKeywords } });
         };
 
-        propertyTypesDiv.addEventListener('change', updatePropertyExclusions);
+        propertyTypesDiv.addEventListener('change', updatePropertyExclusions, {
+            signal: context.signal,
+        });
         await updatePropertyExclusions();
 
         logger.info('Bound property types exclusions');

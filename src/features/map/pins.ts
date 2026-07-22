@@ -1,6 +1,7 @@
 import { getBlacklist } from "../../domain/blacklist/store";
 import { matchListing, type BlacklistEntry, type ListingSnapshot } from "../../domain/matching";
 import { type PageContext } from "../../shared/platform/router";
+import { onStorageChange } from "../../shared/platform/storage";
 import { getSettings, type Settings } from "../../shared/state/settings";
 import { calibrateMap, findNearestPoint, type GeoPoint, type PixelPoint } from "./calibration";
 
@@ -129,6 +130,7 @@ function requestMapQueryState(): void {
 }
 
 export function bindMapPins(context: PageContext): void {
+    const scope = context.scope.child("map-pins");
     let frame: number | undefined;
     let timer: number | undefined;
     let refreshing = false;
@@ -167,7 +169,7 @@ export function bindMapPins(context: PageContext): void {
             if (!calibration) return;
 
             const [settings, blacklist = []] = await Promise.all([getSettings(), getBlacklist()]);
-            if (context.signal.aborted) return;
+            if (scope.disposed) return;
 
             for (const pin of pins) {
                 const listing = findNearestPoint(calibration.toGeo(pin.pixel), cachedListings);
@@ -175,7 +177,7 @@ export function bindMapPins(context: PageContext): void {
             }
         } finally {
             refreshing = false;
-            if (refreshQueued && !context.signal.aborted) {
+            if (refreshQueued && !scope.disposed) {
                 refreshQueued = false;
                 schedule();
             }
@@ -183,7 +185,7 @@ export function bindMapPins(context: PageContext): void {
     };
 
     const schedule = (): void => {
-        if (frame !== undefined || context.signal.aborted) return;
+        if (frame !== undefined || scope.disposed) return;
 
         frame = requestAnimationFrame(() => {
             frame = undefined;
@@ -219,12 +221,14 @@ export function bindMapPins(context: PageContext): void {
         if (markers.length > 0 || addedElements.some(element => element.matches("#__NEXT_DATA__"))) schedule();
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    scope.add(onStorageChange<BlacklistEntry[]>("blacklist", schedule));
+    scope.add(onStorageChange("settings", schedule));
     schedule();
 
-    context.signal.addEventListener("abort", () => {
+    scope.add(() => {
         observer.disconnect();
         resizeObserver.disconnect();
         if (frame !== undefined) cancelAnimationFrame(frame);
         if (timer !== undefined) window.clearTimeout(timer);
-    }, { once: true });
+    });
 }

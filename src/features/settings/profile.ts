@@ -1,3 +1,4 @@
+import { markOwned } from "../../shared/dom/ownership";
 import { waitForElement } from "../../shared/dom/wait";
 import { observeUrlChanges, type PageContext } from "../../shared/platform/router";
 import { getSettings } from "../../shared/state/settings";
@@ -31,7 +32,7 @@ function createPanel(shell: HTMLElement): HTMLElement | undefined {
     const panel = document.createElement("div");
     panel.className = "edf-settings-panel";
     panel.dataset.extraDomainFiltersSettings = "true";
-    content.append(panel);
+    content.append(markOwned(panel, "profile-settings"));
     return panel;
 }
 
@@ -57,6 +58,7 @@ function bindSettingsTab(shell: HTMLElement, panel: HTMLElement, signal: AbortSi
     if (!button) return;
 
     item.dataset.extraDomainFiltersSettingsTab = "true";
+    markOwned(item, "profile-settings-tab");
     button.textContent = "Extension preferences";
     button.addEventListener("click", () => {
         const url = new URL(window.location.href);

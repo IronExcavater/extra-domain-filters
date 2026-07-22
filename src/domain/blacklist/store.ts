@@ -1,4 +1,4 @@
-import { getFromStorage, setInStorage } from "../../shared/platform/storage";
+import { createStorageRepository } from "../../shared/platform/repository";
 import {
     addBlacklistEntry,
     isBlacklisted,
@@ -8,51 +8,56 @@ import {
 } from "../matching";
 
 const BLACKLIST_KEY = "blacklist";
+const blacklistRepository = createStorageRepository<BlacklistEntry[]>({
+    key: BLACKLIST_KEY,
+    version: 1,
+    createDefault: () => [],
+    normalize: value => Array.isArray(value) ? value as BlacklistEntry[] : [],
+});
 
 export async function getBlacklist(): Promise<BlacklistEntry[]> {
-    return (await getFromStorage<BlacklistEntry[]>(BLACKLIST_KEY)) ?? [];
+    return blacklistRepository.get();
 }
 
 export async function setBlacklist(entries: readonly BlacklistEntry[]): Promise<void> {
-    await setInStorage(BLACKLIST_KEY, [...entries]);
+    await blacklistRepository.set([...entries]);
 }
 
 export async function addOrReplaceBlacklistEntry(listing: ListingSnapshot): Promise<void> {
-    await setBlacklist(addBlacklistEntry(await getBlacklist(), listing));
+    await blacklistRepository.update(entries => addBlacklistEntry(entries, listing));
 }
 
 export async function removeBlacklistUrls(urls: string | readonly string[]): Promise<void> {
-    const entries = await getBlacklist();
-    const next = [urls].flat()
-        .reduce((current, url) => removeBlacklistEntry(current, url), entries);
-
-    await setBlacklist(next);
+    await blacklistRepository.update(entries =>
+        [urls].flat().reduce(
+            (current, url) => removeBlacklistEntry(current, url),
+            entries,
+        ),
+    );
 }
 
 export async function toggleBlacklistListing(listing: ListingSnapshot): Promise<boolean> {
-    const entries = await getBlacklist();
-    const active = isBlacklisted(entries, listing.url);
-
-    await setBlacklist(
-        active
+    let nextActive = false;
+    await blacklistRepository.update(entries => {
+        const active = isBlacklisted(entries, listing.url);
+        nextActive = !active;
+        return active
             ? removeBlacklistEntry(entries, listing.url)
-            : addBlacklistEntry(entries, listing),
-    );
-
-    return !active;
+            : addBlacklistEntry(entries, listing);
+    });
+    return nextActive;
 }
 
 export async function toggleBlacklistListings(
     listings: readonly ListingSnapshot[],
 ): Promise<boolean> {
-    const entries = await getBlacklist();
-    const anyActive = listings.some(listing => isBlacklisted(entries, listing.url));
-
-    await setBlacklist(
-        anyActive
+    let nextActive = false;
+    await blacklistRepository.update(entries => {
+        const anyActive = listings.some(listing => isBlacklisted(entries, listing.url));
+        nextActive = !anyActive;
+        return anyActive
             ? listings.reduce((current, listing) => removeBlacklistEntry(current, listing.url), entries)
-            : listings.reduce((current, listing) => addBlacklistEntry(current, listing), entries),
-    );
-
-    return !anyActive;
+            : listings.reduce((current, listing) => addBlacklistEntry(current, listing), entries);
+    });
+    return nextActive;
 }

@@ -1,3 +1,4 @@
+import { markOwned } from "../../../shared/dom/ownership";
 import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 
 const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
@@ -242,7 +243,7 @@ export function cloneBlacklistButton(
 
     if (icon) setBlacklistIcon(button, icon, false);
 
-    return button;
+    return markOwned(button, "listing-blacklist-action");
 }
 
 export function cloneFeaturedControlButton(stepperButton: HTMLButtonElement): HTMLButtonElement {
@@ -257,7 +258,7 @@ export function cloneFeaturedControlButton(stepperButton: HTMLButtonElement): HT
     button.classList.add("edf-featured-blacklist-button");
     setBlacklistButtonState(button, false, "Blacklist featured properties");
 
-    return button;
+    return markOwned(button, "featured-blacklist-action");
 }
 
 export function cloneFeaturedActionButton(
@@ -274,7 +275,7 @@ export function cloneFeaturedActionButton(
     button.ariaLabel = label;
     button.title = label;
 
-    return button;
+    return markOwned(button, "featured-carousel-action");
 }
 
 export function insertBlacklistButton(

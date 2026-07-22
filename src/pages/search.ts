@@ -10,9 +10,9 @@ const mountSearchPage: PageMount = async (context) => {
         ['allfilters', 'mode', 'price', 'bedrooms', 'propertyTypes'].map(id => `button#${id}`),
         context,
     );
-    void injectFilters(context.logger, context.url);
+    void injectFilters(context);
     bindListingCards(context);
-    void bindFilterShareButton();
+    void bindFilterShareButton(context);
     if ((await getSettings()).flags.enableMapPins) bindMapPins(context);
 };
 

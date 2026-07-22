@@ -98,25 +98,22 @@ const mountListingPage: PageMount = async (context) => {
         await toggleBlacklistListing(listing);
         if (!active && shortlistButton) removeFromShortlist(shortlistButton);
         await syncButton(button, url);
-    });
+    }, { signal: context.signal });
 
     shortlistButton?.addEventListener("click", () => {
         requestAnimationFrame(async () => {
             if (!isShortlisted(shortlistButton)) return;
             await removeBlacklistUrls(url);
         });
-    });
+    }, { signal: context.signal });
 
     await syncButton(button, url);
 
-    const unwatch = onStorageChange<BlacklistEntry[]>(
+    context.scope.add(onStorageChange<BlacklistEntry[]>(
         "blacklist",
         () => void syncButton(button, url),
-    );
-    context.signal.addEventListener("abort", () => {
-        unwatch();
-        button.remove();
-    }, { once: true });
+    ));
+    context.scope.add(() => button.remove());
 };
 
 export default mountListingPage;

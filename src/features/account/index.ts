@@ -41,10 +41,10 @@ export function bindAccountMenuTrigger(context: PageContext): void {
         }
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    context.signal.addEventListener("abort", () => {
+    context.scope.add(() => {
         observer.disconnect();
         if (frame !== undefined) cancelAnimationFrame(frame);
-    }, { once: true });
+    });
 }
 
 export async function injectAccountMenu(logger: Logger): Promise<void> {

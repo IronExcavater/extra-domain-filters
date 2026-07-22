@@ -47,7 +47,7 @@ function bindBlacklistButton(
         event.stopPropagation();
         event.stopImmediatePropagation();
         await toggleBlacklist(card, url, context, shortlistButton, button);
-    }, { capture: true });
+    }, { capture: true, signal: context.signal });
 
     shortlistButton.addEventListener("click", () => {
         requestAnimationFrame(async () => {
@@ -58,7 +58,7 @@ function bindBlacklistButton(
                 await removeBlacklistUrls(url);
             }
         });
-    });
+    }, { signal: context.signal });
 }
 
 export async function injectListingCards(

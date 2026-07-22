@@ -1,3 +1,5 @@
+import { markOwned } from "../dom/ownership";
+
 export interface SelectionControlOptions {
     actions?: readonly SelectionAction[];
     buttonClassName: string;
@@ -50,7 +52,7 @@ export function createSelectionCheckbox(
     });
     label.append(input);
 
-    return label;
+    return markOwned(label, "selection-checkbox");
 }
 
 export function renderSelectionControls(options: SelectionControlOptions): void {

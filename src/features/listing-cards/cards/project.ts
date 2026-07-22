@@ -159,5 +159,5 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
         event.stopPropagation();
         event.stopImmediatePropagation();
         await toggleBundleBlacklist(getProjectMembers(projectCard));
-    }, { capture: true });
+    }, { capture: true, signal: context.signal });
 }

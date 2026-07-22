@@ -56,6 +56,7 @@ function bindCarouselPauseControl(
     controls: HTMLElement,
     sourceButton: HTMLButtonElement,
     memberCount: number,
+    signal: AbortSignal,
 ): void {
     const existing = controls.querySelector<HTMLButtonElement>('[data-testid="listing-card-carousel-pause"]');
     const button = existing ?? cloneFeaturedActionButton(
@@ -92,8 +93,12 @@ function bindCarouselPauseControl(
         const label = state.paused ? "Play featured carousel" : "Pause featured carousel";
         button.ariaLabel = label;
         button.title = label;
-    });
+    }, { signal });
     state.observer.observe(track, { attributes: true, attributeFilter: ["style"] });
+    signal.addEventListener("abort", () => {
+        state.observer.disconnect();
+        if (pausedCarousels.get(carouselCard) === state) pausedCarousels.delete(carouselCard);
+    }, { once: true });
 }
 
 function findChildSlides(carouselCard: HTMLElement): HTMLElement[] {
@@ -210,6 +215,7 @@ export function bindCarouselCard(
                 controls.controls,
                 controls.sourceButton,
                 getCarouselMembers(carouselCard).length,
+                context.signal,
             );
         }
         return;
@@ -226,6 +232,7 @@ export function bindCarouselCard(
                 controls.controls,
                 controls.sourceButton,
                 memberCount,
+                context.signal,
             );
         }
         return;
@@ -252,6 +259,7 @@ export function bindCarouselCard(
             controls.controls,
             controls.sourceButton ?? button,
             getCarouselMembers(carouselCard).length,
+            context.signal,
         );
     } else {
         button.classList.add("edf-featured-blacklist-button");
@@ -267,7 +275,5 @@ export function bindCarouselCard(
         const members = getCarouselMembers(carouselCard);
 
         await toggleBundleBlacklist(members);
-    }, { capture: true });
-
-    void context;
+    }, { capture: true, signal: context.signal });
 }

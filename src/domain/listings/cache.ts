@@ -1,4 +1,4 @@
-import { getFromStorage, removeInStorage, setInStorage } from "../../shared/platform/storage";
+import { createStorageRepository } from "../../shared/platform/repository";
 import type { ListingSnapshot } from "../matching";
 
 interface ListingCacheEntry {
@@ -9,10 +9,18 @@ interface ListingCacheEntry {
 const CACHE_KEY = "listingCache";
 const memoryCache = new Map<string, ListingCacheEntry>();
 const pendingFetches = new Map<string, Promise<ListingSnapshot>>();
+const cacheRepository = createStorageRepository<Record<string, ListingCacheEntry>>({
+    key: CACHE_KEY,
+    version: 1,
+    createDefault: () => ({}),
+    normalize: value => value !== null && typeof value === "object" && !Array.isArray(value)
+        ? value as Record<string, ListingCacheEntry>
+        : {},
+});
 
 export async function clearListingCache(): Promise<void> {
     memoryCache.clear();
-    await removeInStorage(CACHE_KEY);
+    await cacheRepository.clear();
 }
 
 function normalizeUrl(url: string): string {
@@ -20,11 +28,7 @@ function normalizeUrl(url: string): string {
 }
 
 async function readCache(): Promise<Record<string, ListingCacheEntry>> {
-    return (await getFromStorage<Record<string, ListingCacheEntry>>(CACHE_KEY)) ?? {};
-}
-
-async function writeCache(cache: Record<string, ListingCacheEntry>): Promise<void> {
-    await setInStorage(CACHE_KEY, cache);
+    return cacheRepository.get();
 }
 
 export async function getCachedListing(url: string): Promise<ListingSnapshot | undefined> {
@@ -44,9 +48,7 @@ export async function cacheListing(listing: ListingSnapshot): Promise<ListingSna
     const entry = { listing, cachedAt: Date.now() };
     memoryCache.set(key, entry);
 
-    const cache = await readCache();
-    cache[key] = entry;
-    await writeCache(cache);
+    await cacheRepository.update(cache => ({ ...cache, [key]: entry }));
 
     return listing;
 }

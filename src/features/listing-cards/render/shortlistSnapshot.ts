@@ -1,4 +1,5 @@
 import type { ListingSnapshot } from "../../../domain/matching";
+import { markOwned } from "../../../shared/dom/ownership";
 
 export interface ShortlistSnapshotActions {
     blacklistButton: HTMLButtonElement;
@@ -130,7 +131,7 @@ export function createShortlistSnapshotCard(
     wrapper.append(media, content);
     card.append(wrapper);
 
-    return card;
+    return markOwned(card, "listing-snapshot");
 }
 
 function createTemplatedShortlistSnapshotCard(

@@ -1,16 +1,18 @@
 import { MaybePromise } from "../utils/types";
+import { createLifecycleScope, type Disposer, type LifecycleScope } from "./lifecycle";
 import { Logger } from "./logging";
 
 export interface PageContext {
     url: URL;
     signal: AbortSignal;
+    scope: LifecycleScope;
     logger: Logger;
 }
 
-export type PageMount = (context: PageContext) => MaybePromise<void>;
+export type PageMount = (context: PageContext) => MaybePromise<void | Disposer>;
 
 const URL_CHANGE_EVENT = "extra-domain-filters:url-change";
-let historyPatched = false;
+const HISTORY_PATCH_KEY = "__extraDomainFiltersHistoryPatched";
 
 export interface Route {
     id: string;
@@ -19,9 +21,9 @@ export interface Route {
 }
 
 function installHistoryObserver(): void {
-    if (historyPatched) return;
-
-    historyPatched = true;
+    const patchedHistory = history as History & Record<string, unknown>;
+    if (patchedHistory[HISTORY_PATCH_KEY]) return;
+    patchedHistory[HISTORY_PATCH_KEY] = true;
 
     for (const method of ["pushState", "replaceState"] as const) {
         const original = history[method];
@@ -77,8 +79,8 @@ export function createRouter(
         ]),
     );
 
-    let lifecycleController: AbortController | undefined;
-    let activeController: AbortController | undefined;
+    let lifecycleScope: LifecycleScope | undefined;
+    let activeScope: LifecycleScope | undefined;
     let activeLogger: Logger | undefined;
     let activeKey: string | undefined;
 
@@ -89,9 +91,9 @@ export function createRouter(
         if (nextKey === activeKey) return;
 
         activeLogger?.debug('Unmounting');
-        activeController?.abort();
+        activeScope?.dispose();
 
-        activeController = undefined;
+        activeScope = undefined;
         activeKey = undefined;
         activeLogger = undefined;
 
@@ -105,8 +107,8 @@ export function createRouter(
             throw new Error(`Logger not found for route "${route.id}"`);
         }
 
-        const controller = new AbortController();
-        activeController = controller;
+        const scope = lifecycleScope?.child(route.id) ?? createLifecycleScope(undefined, route.id);
+        activeScope = scope;
         activeKey = nextKey;
 
         activeLogger.info('Mounting', url.href);
@@ -114,19 +116,28 @@ export function createRouter(
         try {
             const { default: mount } = await route.load();
 
-            if (controller.signal.aborted) return;
+            if (scope.disposed) return;
 
-            await mount({ url, signal: controller.signal, logger: activeLogger });
+            const disposer = await mount({
+                get url() {
+                    return new URL(window.location.href);
+                },
+                signal: scope.signal,
+                scope,
+                logger: activeLogger,
+            });
+            if (disposer) scope.add(disposer);
             
-            if (!controller.signal.aborted) activeLogger.info('Mounted');
+            if (!scope.disposed) activeLogger.info('Mounted');
         }
         catch (error) {
-            if (controller.signal.aborted) return;
+            if (scope.disposed) return;
 
             activeLogger.error('Failed to mount', error);
 
-            if (activeController === controller) {
-                activeController = undefined;
+            if (activeScope === scope) {
+                scope.dispose();
+                activeScope = undefined;
                 activeKey = undefined;
                 activeLogger = undefined;
             }
@@ -136,25 +147,26 @@ export function createRouter(
     }
 
     function start(onError: (error: unknown) => void): void {
-        if (lifecycleController) return;
+        if (lifecycleScope) return;
 
-        lifecycleController = new AbortController();
+        lifecycleScope = createLifecycleScope(undefined, "router");
 
         const runSafely = (url?: URL): void => {
             void run(url).catch(onError);
         }
         
         runSafely();
-        observeUrlChanges(runSafely, lifecycleController.signal);
+        observeUrlChanges(runSafely, lifecycleScope.signal);
     }
 
     function stop(): void {
-        lifecycleController?.abort();
-        lifecycleController = undefined;
-
-        activeController?.abort();
-        activeController = undefined;
+        activeScope?.dispose();
+        activeScope = undefined;
+        activeLogger = undefined;
         activeKey = undefined;
+
+        lifecycleScope?.dispose();
+        lifecycleScope = undefined;
     }
 
     return {

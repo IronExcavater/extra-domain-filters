@@ -17,5 +17,5 @@ export function bindAdRemoval(signal: AbortSignal): void {
     const observer = new MutationObserver(hideAds);
     observer.observe(document.body, { childList: true, subtree: true });
 
-    signal.addEventListener('abort', () => observer.disconnect());
+    signal.addEventListener('abort', () => observer.disconnect(), { once: true });
 }
