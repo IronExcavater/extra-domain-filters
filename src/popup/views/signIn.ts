@@ -1,4 +1,4 @@
-import wordmarkSvg from "../../../public/icons/brand/wordmark.svg?raw";
+import wordmarkUrl from "../../../public/icons/brand/wordmark.svg?url";
 import { signIn } from "../../domain/account/client";
 
 interface SignInViewOptions {
@@ -14,10 +14,12 @@ function createGoogleMark(): SVGSVGElement {
     return icon;
 }
 
-function createWordmark(): SVGSVGElement {
-    return new DOMParser()
-        .parseFromString(wordmarkSvg, "image/svg+xml")
-        .documentElement as unknown as SVGSVGElement;
+function createWordmark(): HTMLImageElement {
+    const image = document.createElement("img");
+
+    image.alt = "Extra Domain Filters";
+    image.src = wordmarkUrl;
+    return image;
 }
 
 export function createSignInView(options: SignInViewOptions): HTMLElement {
@@ -32,8 +34,7 @@ export function createSignInView(options: SignInViewOptions): HTMLElement {
 
     view.className = "edf-popup-sign-in";
     panel.className = "edf-popup-sign-in-panel";
-    brand.setAttribute("class", "edf-popup-sign-in-brand");
-    brand.setAttribute("aria-label", "Extra Domain Filters");
+    brand.className = "edf-popup-sign-in-brand";
     back.className = "edf-popup-sign-in-back";
     back.type = "button";
     back.textContent = "Back";

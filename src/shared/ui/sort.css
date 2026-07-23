@@ -85,11 +85,35 @@
     border-radius: 8px 0 8px 8px;
     left: auto;
     min-width: 212px;
-    overflow: hidden;
+    overflow: visible;
     position: absolute;
     right: 0;
     top: 100%;
     z-index: 30;
+}
+
+.edf-sort-dropdown-menu::before {
+    background: var(--edf-color-surface);
+    border-left: 1px solid rgb(244 251 238);
+    border-top: 1px solid rgb(244 251 238);
+    content: "";
+    height: 10px;
+    position: absolute;
+    right: 16px;
+    top: -6px;
+    transform: rotate(45deg);
+    width: 10px;
+    z-index: -1;
+}
+
+.edf-sort-dropdown-menu > :first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 0;
+}
+
+.edf-sort-dropdown-menu > :last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 .edf-sort-dropdown-option {

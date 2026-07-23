@@ -1,4 +1,4 @@
-import wordmarkSvg from "../../../public/icons/brand/wordmark.svg?raw";
+import wordmarkUrl from "../../../public/icons/brand/wordmark.svg?url";
 import { signOut } from "../../domain/account/client";
 import type { AccountState } from "../../domain/account/model";
 import { createButton, createSvgIcon, type IconRenderer } from "../../shared/ui/elements";
@@ -17,6 +17,7 @@ interface NavigationOptions {
     data: PopupData;
     onNavigate(view: PopupView): void;
     onSessionChange(): void;
+    signal: AbortSignal;
 }
 
 const NAV_ITEMS = [
@@ -24,10 +25,12 @@ const NAV_ITEMS = [
     { label: "Blacklist", view: "blacklist" },
 ] satisfies Array<{ label: string; view: PopupView }>;
 
-function parseWordmark(): SVGSVGElement {
-    return new DOMParser()
-        .parseFromString(wordmarkSvg, "image/svg+xml")
-        .documentElement as unknown as SVGSVGElement;
+function createWordmark(): HTMLImageElement {
+    const image = document.createElement("img");
+
+    image.alt = "Extra Domain Filters";
+    image.src = wordmarkUrl;
+    return image;
 }
 
 function createAvatar(state: AccountState): HTMLElement {
@@ -90,10 +93,10 @@ function createIdentity(account: AccountState): HTMLElement | undefined {
 }
 
 export function createNavigation(options: NavigationOptions): HTMLElement {
-    const { activeView, data, onNavigate, onSessionChange } = options;
+    const { activeView, data, onNavigate, onSessionChange, signal } = options;
     const header = document.createElement("header");
     const brand = createButton("", "edf-popup-brand");
-    const logo = parseWordmark();
+    const logo = createWordmark();
     const navigation = document.createElement("nav");
     const account = document.createElement("details");
     const summary = document.createElement("summary");
@@ -119,6 +122,12 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
     }
 
     account.className = "edf-popup-account";
+    document.addEventListener("pointerdown", event => {
+        if (!account.contains(event.target as Node)) account.open = false;
+    }, { capture: true, signal });
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") account.open = false;
+    }, { signal });
     summary.className = "edf-popup-account-summary edf-popup-navigation-item";
     if (data.account?.status === "signed-in") {
         summary.append(createAvatar(data.account));

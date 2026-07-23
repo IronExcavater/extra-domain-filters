@@ -369,10 +369,23 @@
     border-radius: 4px;
     box-shadow: var(--edf-shadow-popover);
     box-sizing: border-box;
-    min-width: 280px;
+    width: min(232px, calc(100vw - 24px));
     padding: 12px;
     position: fixed;
     z-index: 2147483647;
+}
+
+.edf-saved-search-alert-popover::before {
+    background: var(--edf-color-surface);
+    border-left: 1px solid var(--edf-color-border);
+    border-top: 1px solid var(--edf-color-border);
+    content: "";
+    height: 10px;
+    position: absolute;
+    right: 18px;
+    top: -6px;
+    transform: rotate(45deg);
+    width: 10px;
 }
 
 .edf-saved-search-alert-popover-title {
@@ -381,6 +394,7 @@
     font-weight: 400;
     line-height: 20px;
     margin: 0 0 8px;
+    overflow-wrap: anywhere;
 }
 
 .edf-saved-search-alert-popover-options {

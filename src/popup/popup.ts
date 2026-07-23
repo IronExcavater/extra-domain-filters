@@ -89,6 +89,7 @@ async function render(animate = true): Promise<void> {
             data,
             onNavigate: navigate,
             onSessionChange: () => void render(),
+            signal,
         }));
     }
     shell.append(view);
