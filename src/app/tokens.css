@@ -1,5 +1,26 @@
 :root {
+    --edf-color-heading: #3c475b;
+    --edf-color-text: #131212;
+    --edf-color-muted: #646463;
+    --edf-color-border: #e1e1df;
+    --edf-color-surface: #fff;
+    --edf-color-surface-muted: #f7f7f5;
+    --edf-color-icon: #867a70;
+    --edf-color-green: #008a08;
+    --edf-color-green-hover: #006d00;
+    --edf-color-green-tint: #f7fcf1;
+    --edf-color-danger: #dc2626;
+    --edf-radius-control: 8px;
+    --edf-radius-card: 3px;
+    --edf-radius-dialog: 12px;
+    --edf-shadow-card: 0 1px 3px 0 #d0d3d9;
+    --edf-shadow-popover: 0 2px 8px 0 #d0d3d9;
     --edf-color-blacklist-inactive: rgb(100 100 99);
     --edf-color-shortlist-hover: rgb(255 204 0);
-    --edf-color-shortlist-inactive: rgb(30 41 61 / 30%);
+    --edf-color-shortlist-inactive: rgb(100 100 99 / 30%);
+}
+
+.edf-theme-2026 {
+    --edf-radius-control: 12px;
+    --edf-color-heading: #131212;
 }

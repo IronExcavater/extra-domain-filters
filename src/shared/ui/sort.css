@@ -1,0 +1,112 @@
+.edf-sort-control {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+}
+
+.edf-sort-control-label {
+    color: #646463;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+    white-space: nowrap;
+}
+
+.edf-sort-dropdown {
+    position: relative;
+}
+
+.edf-sort-dropdown-button {
+    align-items: center;
+    background: var(--edf-color-surface);
+    border: 0.8px solid var(--edf-color-border);
+    border-radius: var(--edf-radius-control);
+    color: var(--edf-color-text);
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 400;
+    gap: 8px;
+    justify-content: space-between;
+    line-height: 24px;
+    height: 40px;
+    min-width: 136px;
+    padding: 7px 12px;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.edf-sort-dropdown-button:focus-visible {
+    box-shadow: 0 0 0 2px rgb(14 168 0 / 24%);
+    outline: none;
+}
+
+.edf-sort-dropdown-button:hover {
+    background: var(--edf-color-surface-muted);
+    border-color: var(--edf-color-border);
+}
+
+.edf-sort-dropdown-button:active {
+    background: #eef4ec;
+}
+
+.edf-sort-dropdown[open] .edf-sort-dropdown-button {
+    background: var(--edf-color-surface);
+    border-color: rgb(244 251 238);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.edf-sort-dropdown-button::-webkit-details-marker {
+    display: none;
+}
+
+.edf-sort-chevron {
+    color: var(--edf-color-text);
+    height: 14px;
+    transform: rotate(0);
+    transition: transform 160ms ease;
+    width: 14px;
+}
+
+.edf-sort-dropdown[open] .edf-sort-chevron {
+    transform: rotate(180deg);
+}
+
+.edf-sort-dropdown-menu {
+    background: var(--edf-color-surface);
+    border: 1px solid rgb(244 251 238);
+    box-shadow: 0 2px 6px rgb(60 71 91 / 12%);
+    display: grid;
+    border-radius: 8px 0 8px 8px;
+    left: auto;
+    min-width: 212px;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 30;
+}
+
+.edf-sort-dropdown-option {
+    background: var(--edf-color-surface);
+    border: 0;
+    color: #131212;
+    cursor: pointer;
+    font: inherit;
+    font-size: 16px;
+    line-height: 24px;
+    padding: 12px 20px;
+    text-align: left;
+    transition:
+        background-color 140ms ease,
+        color 140ms ease;
+}
+
+.edf-sort-dropdown-option:hover {
+    background: var(--edf-color-surface-muted);
+}

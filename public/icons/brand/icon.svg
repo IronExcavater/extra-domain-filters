@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Extra Domain Filters icon">
+  <rect width="128" height="128" rx="28" fill="#00A400"/>
+  <path d="M28 30H100L72 64V94L56 102V64L28 30Z" fill="#FFFFFF"/>
+  <path d="M44 42H84L66 64V84L62 86V64L44 42Z" fill="#00A400" opacity=".16"/>
+</svg>

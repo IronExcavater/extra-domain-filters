@@ -1,0 +1,170 @@
+.edf-domain-button,
+.edf-domain-select {
+    background: var(--edf-color-surface);
+    border: 0.8px solid var(--edf-color-border);
+    border-radius: var(--edf-radius-control);
+    color: var(--edf-color-text);
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 22px;
+    min-height: 40px;
+}
+
+.edf-domain-button {
+    cursor: pointer;
+    padding: 8px 16px;
+}
+
+.edf-domain-select {
+    padding: 0 34px 0 16px;
+}
+
+.edf-domain-button:disabled {
+    cursor: default;
+    opacity: 0.65;
+}
+
+.edf-selection-action {
+    appearance: none;
+    background: var(--edf-color-surface);
+    border: 0.8px solid var(--edf-color-border);
+    border-radius: var(--edf-radius-control);
+    box-sizing: border-box;
+    color: var(--edf-color-text);
+    cursor: pointer;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    min-height: 40px;
+    line-height: 22px;
+    padding: 8px 16px;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        color 150ms ease;
+}
+
+.edf-selection-action:disabled {
+    cursor: default;
+    opacity: 0.65;
+}
+
+.edf-selection-action:hover:not(:disabled) {
+    background: var(--edf-color-surface-muted);
+    border-color: var(--edf-color-border);
+}
+
+.edf-selection-action:active:not(:disabled) {
+    background: #eef4ec;
+}
+
+.edf-domain-button:hover:not(:disabled),
+.edf-domain-select:hover:not(:disabled) {
+    background: var(--edf-color-surface-muted);
+    border-color: var(--edf-color-border);
+    color: var(--edf-color-text);
+}
+
+.edf-icon-button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--edf-color-text);
+    cursor: pointer;
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    padding: 3px;
+    width: 28px;
+}
+
+.edf-icon-button:disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.edf-icon-button:hover:not(:disabled) {
+    background: var(--edf-color-surface-muted);
+    color: var(--edf-color-text);
+}
+
+.edf-icon-button svg {
+    height: 20px;
+    width: 20px;
+}
+
+.edf-selection-checkbox {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 18px;
+    margin: 0 8px 0 0;
+    pointer-events: auto;
+    position: relative;
+    vertical-align: middle;
+    width: 18px;
+    z-index: 4;
+}
+
+.edf-selection-checkbox input {
+    appearance: none;
+    background: var(--edf-color-surface);
+    border: 1px solid #d0d3d9;
+    border-radius: 2px;
+    cursor: pointer;
+    display: block;
+    height: 18px;
+    margin: 0;
+    box-sizing: border-box;
+    position: relative;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        box-shadow 150ms ease;
+    width: 18px;
+    z-index: 1;
+}
+
+.edf-selection-checkbox input:hover {
+    border-color: var(--edf-color-green);
+    box-shadow: 0 0 0 2px rgb(14 168 0 / 16%);
+}
+
+.edf-selection-checkbox input:focus-visible {
+    border-color: var(--edf-color-green);
+    box-shadow: 0 0 0 2px rgb(14 168 0 / 24%);
+    outline: 0;
+}
+
+.edf-selection-checkbox input:checked {
+    background: var(--edf-color-green);
+    border-color: var(--edf-color-green);
+    box-shadow: none;
+}
+
+.edf-selection-checkbox-indicator {
+    align-items: center;
+    color: #fff;
+    display: flex;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    height: 100%;
+    left: 50%;
+    line-height: 1;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 150ms ease;
+    width: 100%;
+    justify-content: center;
+    z-index: 2;
+}
+
+label.edf-selection-checkbox[data-checked="true"] .edf-selection-checkbox-indicator,
+.edf-selection-checkbox input:checked + .edf-selection-checkbox-indicator {
+    opacity: 1;
+}

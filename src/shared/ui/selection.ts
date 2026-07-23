@@ -1,4 +1,5 @@
 import { markOwned } from "../dom/ownership";
+import { createButton } from "./elements";
 
 export interface SelectionControlOptions {
     actions?: readonly SelectionAction[];
@@ -21,13 +22,10 @@ export function replaceSelection(selection: Set<string>, ids: readonly string[])
     ids.forEach(id => selection.add(id));
 }
 
-function createButton(className: string): HTMLButtonElement {
-    const button = document.createElement("button");
-
-    button.type = "button";
-    button.className = className;
-
-    return button;
+export function setSelectionCheckboxState(input: HTMLInputElement, checked: boolean): void {
+    input.checked = checked;
+    const label = input.closest<HTMLElement>(".edf-selection-checkbox");
+    if (label) label.dataset.checked = String(checked);
 }
 
 export function createSelectionCheckbox(
@@ -37,10 +35,12 @@ export function createSelectionCheckbox(
 ): HTMLLabelElement {
     const label = document.createElement("label");
     const input = document.createElement("input");
+    const indicator = document.createElement("span");
 
     label.className = "edf-selection-checkbox";
     input.type = "checkbox";
     input.checked = checked;
+    label.dataset.checked = String(checked);
     input.ariaLabel = labelText;
     for (const eventName of ["pointerdown", "pointerup", "click"] as const) {
         label.addEventListener(eventName, event => event.stopPropagation(), { capture: true });
@@ -48,9 +48,13 @@ export function createSelectionCheckbox(
     }
     input.addEventListener("change", event => {
         event.stopPropagation();
+        label.dataset.checked = String(input.checked);
         onChange(input.checked);
     });
-    label.append(input);
+    indicator.className = "edf-selection-checkbox-indicator";
+    indicator.ariaHidden = "true";
+    indicator.textContent = "\u2713";
+    label.append(input, indicator);
 
     return markOwned(label, "selection-checkbox");
 }
@@ -59,12 +63,14 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     const selected = new Set(options.selectedIds);
     const visible = options.visibleIds;
     const selectedVisibleCount = visible.filter(id => selected.has(id)).length;
-    const selectAllButton = createButton(options.buttonClassName);
-    const clearButton = createButton(options.buttonClassName);
+    const selectAllButton = createButton("", options.buttonClassName);
+    const clearButton = createButton("", options.buttonClassName);
 
     selectAllButton.textContent = selectedVisibleCount === visible.length ? "Deselect all" : "Select all";
     selectAllButton.hidden = visible.length === 0;
-    selectAllButton.addEventListener("click", () => {
+    selectAllButton.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
         options.onSelectionChange(
             selectedVisibleCount === visible.length
                 ? []
@@ -75,15 +81,21 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     clearButton.ariaLabel = options.clearLabel ?? "Clear selected listings";
     clearButton.textContent = options.clearLabel ?? "Clear selection";
     clearButton.hidden = selectedVisibleCount === 0;
-    clearButton.addEventListener("click", () => {
+    clearButton.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
         options.onClear(visible.filter(id => selected.has(id)));
     });
 
     const actionButtons = (options.actions ?? []).map(action => {
-        const button = createButton(options.buttonClassName);
+        const button = createButton("", options.buttonClassName);
         button.textContent = action.label;
         button.hidden = selectedVisibleCount === 0;
-        button.addEventListener("click", () => action.onAction(visible.filter(id => selected.has(id))));
+        button.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            action.onAction(visible.filter(id => selected.has(id)));
+        });
         return button;
     });
 
