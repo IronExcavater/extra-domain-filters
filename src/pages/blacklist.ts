@@ -140,6 +140,7 @@ function preserveMessage(container: HTMLElement): () => void {
 function createRow(
     entry: BlacklistEntry,
     renderRows: () => void,
+    renderControls: () => void,
 ): HTMLElement {
     const listing = getBlacklistListing(entry);
     const retained = retainedUnblacklistedEntries.has(listing.url);
@@ -158,7 +159,7 @@ function createRow(
         onSelectionChange: checked => {
             if (checked) selectedUrls.add(listing.url);
             else selectedUrls.delete(listing.url);
-            renderRows();
+            renderControls();
         },
         openLinksInNewTab: false,
         selected: selectedUrls.has(listing.url),
@@ -173,6 +174,7 @@ function reconcileRows(
     list: HTMLElement,
     entries: readonly BlacklistEntry[],
     renderRows: () => void,
+    renderControls: () => void,
 ): void {
     const existing = new Map(
         [...list.querySelectorAll<HTMLElement>("[data-blacklist-url]")]
@@ -190,7 +192,7 @@ function reconcileRows(
             return card;
         }
 
-        return createRow(entry, renderRows);
+        return createRow(entry, renderRows, renderControls);
     });
 
     list.replaceChildren(...cards);
@@ -213,24 +215,35 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
     });
     const message = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
     const renderRows = (): void => void render(container, list);
+    const visibleIds = entries.map(entry => getBlacklistListing(entry).url);
+    const syncCheckboxes = (): void => {
+        for (const card of list.querySelectorAll<HTMLElement>("[data-blacklist-url]")) {
+            const checkbox = card.querySelector<HTMLInputElement>(".edf-selection-checkbox input");
+            if (checkbox) setSelectionCheckboxState(checkbox, selectedUrls.has(card.dataset.blacklistUrl ?? ""));
+        }
+    };
+    const renderControls = (): void => {
+        renderSelectionControls({
+            buttonClassName: "edf-selection-action",
+            clearLabel: "Unblacklist",
+            controls,
+            onClear: ids => void removeBlacklistUrls(ids),
+            onSelectionChange: ids => {
+                replaceSelection(selectedUrls, ids);
+                syncCheckboxes();
+                renderControls();
+            },
+            selectedIds: [...selectedUrls],
+            visibleIds,
+        });
+    };
 
-    renderSelectionControls({
-        buttonClassName: "edf-selection-action",
-        clearLabel: "Unblacklist",
-        controls,
-        onClear: ids => void removeBlacklistUrls(ids),
-        onSelectionChange: ids => {
-            replaceSelection(selectedUrls, ids);
-            renderRows();
-        },
-        selectedIds: [...selectedUrls],
-        visibleIds: entries.map(entry => getBlacklistListing(entry).url),
-    });
+    renderControls();
     if (message) {
         message.hidden = entries.length > 0;
         if (entries.length === 0) message.textContent = "No blacklisted properties yet.";
     }
-    reconcileRows(list, entries, renderRows);
+    reconcileRows(list, entries, renderRows, renderControls);
 }
 
 const mountBlacklistPage: PageMount = async context => {

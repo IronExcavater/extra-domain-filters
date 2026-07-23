@@ -30,11 +30,22 @@ function bindMenuChevron(control: HTMLElement, context: PageContext): void {
     const sync = (): void => {
         control.dataset.edfNavigationOpen = String(control.getAttribute("aria-expanded") === "true");
     };
+    const setOpen = (open: boolean): void => {
+        control.dataset.edfNavigationOpen = String(open);
+    };
 
     const observer = new MutationObserver(sync);
 
     sync();
-    control.addEventListener("click", () => requestAnimationFrame(sync), { signal: context.signal });
+    control.addEventListener("click", () => {
+        setOpen(control.dataset.edfNavigationOpen !== "true");
+    }, { signal: context.signal });
+    document.addEventListener("pointerdown", event => {
+        if (!control.contains(event.target as Node)) setOpen(false);
+    }, { capture: true, signal: context.signal });
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") setOpen(false);
+    }, { signal: context.signal });
     observer.observe(control, { attributes: true, attributeFilter: ["aria-expanded"] });
     context.scope.add(() => {
         observer.disconnect();

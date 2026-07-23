@@ -25,6 +25,7 @@ import { onStorageChange } from "../shared/platform/storage";
 import {
     renderSelectionControls,
     replaceSelection,
+    setSelectionCheckboxState,
 } from "../shared/ui/selection";
 import { createSortControl, type SortControl } from "../shared/ui/sort";
 import { createTabs } from "../shared/ui/tabs";
@@ -81,7 +82,6 @@ function renderCards(
             search.notificationFrequency,
             search.filterParams,
         ]),
-        selected: sorted.filter(search => selectedSearchIds.has(search.id)).map(search => search.id),
     });
     if (list.dataset.edfSignature === signature) return;
 
@@ -99,6 +99,13 @@ function renderCards(
         selected: selectedSearchIds.has(search.id),
         signal,
     })));
+}
+
+function syncSelectionCheckboxes(list: HTMLElement): void {
+    for (const card of list.querySelectorAll<HTMLElement>("[data-savedsearch-id]")) {
+        const checkbox = card.querySelector<HTMLInputElement>(".edf-selection-checkbox input");
+        if (checkbox) setSelectionCheckboxState(checkbox, selectedSearchIds.has(card.dataset.savedsearchId ?? ""));
+    }
 }
 
 const mountSavedSearchesPage: PageMount = context => {
@@ -125,10 +132,7 @@ const mountSavedSearchesPage: PageMount = context => {
             onClear: ids => void removeSelected(ids, currentSearches),
             onSelectionChange: ids => {
                 replaceSelection(selectedSearchIds, ids);
-                if (list) list.dataset.edfSignature = "";
-                if (list) {
-                    renderCards(list, currentSearches, sort, context.signal, renderControls);
-                }
+                if (list) syncSelectionCheckboxes(list);
                 renderControls();
             },
             selectedIds: [...selectedSearchIds],
@@ -186,9 +190,7 @@ const mountSavedSearchesPage: PageMount = context => {
         list ??= getOrCreateList();
         ensureToolbar();
         renderCards(list, visibleSearches(), sort, context.signal, () => {
-            list?.removeAttribute("data-edf-signature");
             renderControls();
-            reconcile.schedule();
         });
         renderControls();
     }, error => context.logger.error("Could not render saved searches", error));
