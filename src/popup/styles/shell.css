@@ -1,0 +1,85 @@
+html,
+body,
+#app {
+    height: 600px;
+    overflow: hidden;
+    width: 760px;
+}
+
+body {
+    background: rgb(253 252 251);
+    margin: 0;
+}
+
+.edf-settings-popup {
+    --edf-settings-card-padding: 18px;
+    --edf-settings-description-line-height: 19px;
+    --edf-settings-description-size: 14px;
+    --edf-settings-page-title-line-height: 30px;
+    --edf-settings-page-title-size: 24px;
+    --edf-settings-row-title-line-height: 20px;
+    --edf-settings-row-title-size: 15px;
+    --edf-settings-section-title-line-height: 26px;
+    --edf-settings-section-title-size: 20px;
+
+    background: rgb(253 252 251);
+    color: var(--edf-color-heading);
+    display: grid;
+    font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
+    grid-template-rows: 60px minmax(0, 1fr);
+    height: 100%;
+    overflow: hidden;
+}
+
+.edf-popup-auth-shell {
+    grid-template-rows: minmax(0, 1fr);
+}
+
+.edf-popup-content {
+    background: rgb(253 252 251);
+    box-sizing: border-box;
+    min-height: 0;
+    overflow: auto;
+    padding: 22px 24px;
+    scrollbar-gutter: stable;
+}
+
+.edf-popup-content > * {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 960px;
+}
+
+.edf-settings-popup .edf-settings-section {
+    border-radius: 4px;
+}
+
+.edf-settings-popup .edf-settings-section + .edf-settings-section {
+    margin-top: 16px;
+}
+
+.edf-settings-popup .edf-settings-row {
+    padding: 12px 0;
+}
+
+.edf-settings-popup .edf-settings-toggle {
+    height: 28px;
+    width: 54px;
+}
+
+.edf-settings-popup .edf-settings-toggle-indicator {
+    border-radius: 14px;
+}
+
+.edf-settings-popup .edf-settings-toggle-switch {
+    height: 20px;
+    width: 20px;
+}
+
+.edf-settings-popup .edf-settings-toggle-input:checked + .edf-settings-toggle-indicator .edf-settings-toggle-switch {
+    transform: translateX(26px);
+}
+
+.edf-settings-popup .edf-settings-toggle-label {
+    top: 6px;
+}
