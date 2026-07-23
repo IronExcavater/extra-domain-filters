@@ -28,6 +28,8 @@
 
 .edf-settings-panel {
     max-width: 648px;
+    margin-top: 32px;
+    scroll-margin-top: 104px;
 }
 
 .edf-settings-introduction {

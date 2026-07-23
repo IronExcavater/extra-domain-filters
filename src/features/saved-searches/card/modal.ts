@@ -1,5 +1,6 @@
 import { saveSearch, type SavedSearch } from "../../../domain/searches/savedSearches";
 import { markOwned } from "../../../shared/dom/ownership";
+import { getSettings } from "../../../shared/state/settings";
 import { createButton, createSvgIcon } from "../../../shared/ui/elements";
 import { replaceWithCloseIcon } from "../../../shared/ui/icons";
 import { createDropdownControl } from "../../../shared/ui/sort";
@@ -14,7 +15,17 @@ import {
 } from "./summary";
 import type { SavedSearchActions } from "./types";
 
-const FREQUENCIES = ["daily", "weekly", "none"] as const;
+const DEFAULT_FREQUENCIES = ["daily", "weekly"] as const;
+const EXTENSION_FREQUENCIES = [...DEFAULT_FREQUENCIES, "none"] as const;
+
+function getFrequencies(
+    search: SavedSearch,
+    enableNeverFrequency: boolean,
+): readonly SavedSearch["notificationFrequency"][] {
+    return enableNeverFrequency || search.notificationFrequency === "none"
+        ? EXTENSION_FREQUENCIES
+        : DEFAULT_FREQUENCIES;
+}
 
 function getFrequencyLabel(frequency: SavedSearch["notificationFrequency"]): string {
     if (frequency === "none") return "Never";
@@ -93,13 +104,15 @@ async function saveAlert(search: SavedSearch, actions: SavedSearchActions): Prom
     await saveSearch({ ...search, id: search.id });
 }
 
-export function openAlertModal(
+export async function openAlertModal(
     search: SavedSearch,
     actions: SavedSearchActions = {},
     anchor?: HTMLElement,
-): void {
+): Promise<void> {
+    const settings = await getSettings();
+    const frequencies = getFrequencies(search, settings.savedSearches.enableNeverFrequency);
     if (actions.compactAlertModal && anchor) {
-        openAlertPopover(search, actions, anchor);
+        openAlertPopover(search, actions, anchor, frequencies);
         return;
     }
     document.querySelector<HTMLElement>('[data-testid="extra-domain-saved-search-alert-modal"]')?.remove();
@@ -141,7 +154,7 @@ export function openAlertModal(
     subtitle.append(highlight, " for this search?");
 
     radios.className = "edf-saved-search-alert-radios";
-    radios.append(...FREQUENCIES.map(frequency => createFrequencyRadio(search, frequency)));
+    radios.append(...frequencies.map(frequency => createFrequencyRadio(search, frequency)));
     offMarketRadios.className = "edf-saved-search-alert-radios";
     offMarketRadios.append(
         createRadioOption(`edf-off-market-${search.id}`, "immediate", "Immediate", true),
@@ -190,6 +203,7 @@ function openAlertPopover(
     search: SavedSearch,
     actions: SavedSearchActions,
     anchor: HTMLElement,
+    frequencyOptions: readonly SavedSearch["notificationFrequency"][],
 ): void {
     document.querySelector<HTMLElement>('[data-testid="extra-domain-saved-search-alert-popover"]')?.remove();
 
@@ -223,7 +237,7 @@ function openAlertPopover(
         onChange: frequency => {
             selected = frequency as SavedSearch["notificationFrequency"];
         },
-        options: FREQUENCIES.map(frequency => [frequency, getFrequencyLabel(frequency)] as const),
+        options: frequencyOptions.map(frequency => [frequency, getFrequencyLabel(frequency)] as const),
         signal: scope.signal,
         value: selected,
     });

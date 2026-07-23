@@ -3,6 +3,7 @@ import { onBodyMutations } from "../../shared/dom/bodyMutations";
 import { markOwned } from "../../shared/dom/ownership";
 import type { PageContext } from "../../shared/platform/router";
 import { onStorageChange } from "../../shared/platform/storage";
+import { getSettings } from "../../shared/state/settings";
 import { showToast } from "../../shared/ui/toast";
 import { cloneActionButton, setActionButtonSelected } from "./clone/action";
 import { extractSharedFilterParams } from "./searchParams";
@@ -292,8 +293,10 @@ export async function updatePropertyAlertButtons(): Promise<void> {
     }
 }
 
-function enhanceAlertModal(modal: HTMLElement, signal: AbortSignal): void {
+async function enhanceAlertModal(modal: HTMLElement, signal: AbortSignal): Promise<void> {
     if (modal.dataset.edfAlertEnhanced === "true") return;
+    const settings = await getSettings();
+    if (!settings.savedSearches.enableNeverFrequency || signal.aborted) return;
 
     const group = getFrequencyGroup(modal);
     const daily = group && getFrequencyControls(group)[0];
@@ -387,7 +390,7 @@ export function bindPropertyAlertModal(context: PageContext): void {
 
     const reconcile = (): void => {
         const modal = getAlertModal();
-        if (modal) enhanceAlertModal(modal, context.signal);
+        if (modal) void enhanceAlertModal(modal, context.signal);
         else void updatePropertyAlertButtons().catch(error =>
             context.logger.warn("Failed to update property alert state", error)
         );

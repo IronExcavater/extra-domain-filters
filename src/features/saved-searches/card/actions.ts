@@ -2,6 +2,7 @@ import {
     removeSavedSearch,
     type SavedSearch,
 } from "../../../domain/searches/savedSearches";
+import { trackTelemetry } from "../../../domain/telemetry/client";
 import { markOwned } from "../../../shared/dom/ownership";
 import { writeClipboardText } from "../../../shared/platform/clipboard";
 import { createButton, createIconButton } from "../../../shared/ui/elements";
@@ -46,7 +47,8 @@ export function createNotificationButton(
     button.addEventListener("click", event => {
         event.preventDefault();
         event.stopPropagation();
-        openAlertModal(search, actions, button);
+        void trackTelemetry({ name: "feature_used", feature: "saved_search_frequency" });
+        void openAlertModal(search, actions, button);
     });
 
     return button;
@@ -66,6 +68,7 @@ export function createDeleteButton(
     button.addEventListener("click", event => {
         event.preventDefault();
         event.stopPropagation();
+        void trackTelemetry({ name: "feature_used", feature: "saved_search_delete" });
         button.disabled = true;
         void removeSearch(search, actions)
             .then(() => notify(actions, "Saved search deleted"))
@@ -88,6 +91,7 @@ export function createShareButton(
     button.addEventListener("click", async event => {
         event.preventDefault();
         event.stopPropagation();
+        void trackTelemetry({ name: "feature_used", feature: "saved_search_share" });
         button.disabled = true;
         try {
             const url = await createSearchShareUrl(

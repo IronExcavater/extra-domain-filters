@@ -2,6 +2,7 @@ import { getAccountState, signIn, signOut } from "../../domain/account/client";
 import type { AccountState } from "../../domain/account/model";
 import { setBlacklist } from "../../domain/blacklist/store";
 import { clearListingCache } from "../../domain/listings/cache";
+import { trackTelemetry } from "../../domain/telemetry/client";
 import { updateSettings, type Settings } from "../../shared/state/settings";
 import { createSvgIcon } from "../../shared/ui/elements";
 import {
@@ -124,6 +125,7 @@ function createToggle(definition: SettingDefinition, settings: Settings): HTMLLa
     input.addEventListener("change", () => {
         syncLabel();
         void updateSettings(definition.write(input.checked));
+        void trackTelemetry({ name: "feature_used", feature: "settings" });
     });
     indicator.append(stateLabel, switchControl);
     control.append(input, indicator);
@@ -194,6 +196,9 @@ function createSupportLink(link: SupportLink): HTMLElement {
     row.target = "_blank";
     row.ariaLabel = `${link.title} (opens in a new tab)`;
     row.title = link.title;
+    row.addEventListener("click", () => {
+        void trackTelemetry({ name: "feature_used", feature: "support_link" });
+    });
     icon.className = "edf-settings-support-icon";
     copy.className = "edf-settings-support-copy";
     title.className = "edf-settings-support-title";

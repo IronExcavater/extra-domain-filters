@@ -6,6 +6,7 @@ export interface Settings {
     flags: FlagSettings;
     filters: FilterSettings;
     queue: QueueSettings;
+    savedSearches: SavedSearchSettings;
     cache: CacheSettings;
     sync: SyncSettings;
     telemetry: TelemetrySettings;
@@ -47,6 +48,10 @@ export interface CacheSettings {
     ttlMs: number;
 }
 
+export interface SavedSearchSettings {
+    enableNeverFrequency: boolean;
+}
+
 export interface SyncSettings {
     enabled: boolean;
 }
@@ -86,6 +91,9 @@ export const DEFAULT_SETTINGS: Settings = {
     },
     cache: {
         ttlMs: 7 * 24 * 60 * 60 * 1000,
+    },
+    savedSearches: {
+        enableNeverFrequency: true,
     },
     sync: {
         enabled: true,

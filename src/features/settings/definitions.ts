@@ -92,8 +92,18 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
         ],
     },
     {
-        id: "account-privacy",
-        title: "Account and privacy",
+        id: "saved-searches",
+        title: "Saved searches",
+        settings: [{
+            title: "Local-only alerts",
+            description: "Add the Never frequency for alerts managed by the extension instead of Domain email.",
+            read: settings => settings.savedSearches.enableNeverFrequency,
+            write: enableNeverFrequency => ({ savedSearches: { enableNeverFrequency } }),
+        }],
+    },
+    {
+        id: "account",
+        title: "Account",
         settings: [
             {
                 title: "Cross-device sync",
@@ -101,15 +111,21 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
                 read: settings => settings.sync.enabled,
                 write: enabled => ({ sync: { enabled } }),
             },
+        ],
+    },
+    {
+        id: "privacy",
+        title: "Privacy",
+        settings: [
             {
                 title: "Usage analytics",
-                description: "Share feature usage without account IDs, property addresses, searches, or page URLs.",
+                description: "Share anonymous feature categories. Search terms, property details, page URLs, and account identifiers are excluded.",
                 read: settings => settings.telemetry.analyticsEnabled,
                 write: analyticsEnabled => ({ telemetry: { analyticsEnabled } }),
             },
             {
                 title: "Error diagnostics",
-                description: "Share error categories and performance timings without page or property content.",
+                description: "Share error categories and timing buckets, without page or property content.",
                 read: settings => settings.telemetry.diagnosticsEnabled,
                 write: diagnosticsEnabled => ({ telemetry: { diagnosticsEnabled } }),
             },

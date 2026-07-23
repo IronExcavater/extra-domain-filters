@@ -3,7 +3,20 @@ import { isOneOf, isPlainObject } from "../../shared/utils/types";
 export type TelemetryArea = "authentication" | "blacklist" | "filters" | "lifecycle" | "settings" | "sync";
 
 const TELEMETRY_AREAS = ["authentication", "blacklist", "filters", "lifecycle", "settings", "sync"] as const;
-const FEATURE_NAMES = ["blacklist", "filter_share", "map_matches", "settings"] as const;
+const FEATURE_NAMES = [
+    "blacklist",
+    "could_haves",
+    "exclude_keywords",
+    "filter_share",
+    "map_matches",
+    "property_type_exclusions",
+    "saved_search_delete",
+    "saved_search_frequency",
+    "saved_search_share",
+    "settings",
+    "strata_fees",
+    "support_link",
+] as const;
 const SYNC_AREAS = ["blacklist", "settings"] as const;
 const SYNC_RESULTS = ["failure", "success"] as const;
 const SYNC_DURATION_BUCKETS = ["under_250ms", "under_1s", "under_5s", "over_5s"] as const;
@@ -15,7 +28,19 @@ export type TelemetryEventInput =
         version: string;
     }
     | {
-        feature: "blacklist" | "filter_share" | "map_matches" | "settings";
+        feature:
+            | "blacklist"
+            | "could_haves"
+            | "exclude_keywords"
+            | "filter_share"
+            | "map_matches"
+            | "property_type_exclusions"
+            | "saved_search_delete"
+            | "saved_search_frequency"
+            | "saved_search_share"
+            | "settings"
+            | "strata_fees"
+            | "support_link";
         name: "feature_used";
     }
     | {

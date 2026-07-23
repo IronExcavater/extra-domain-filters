@@ -1,4 +1,5 @@
 import { PREFERENCES, STRATA_MAX } from "../../domain/matching";
+import { trackTelemetry } from "../../domain/telemetry/client";
 import { createClaimTracker } from "../../shared/dom/claim";
 import { markOwned, OWNED_ELEMENT_ATTRIBUTE } from "../../shared/dom/ownership";
 import { bindLazyTrigger } from "../../shared/dom/trigger";
@@ -95,6 +96,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
                     await updateSettings({ filters: { couldHaveRuleIds:
                         toggleListId(settings.filters.couldHaveRuleIds, preference.id, value)
                     }}, settings);
+                    void trackTelemetry({ name: "feature_used", feature: "could_haves" });
                 },
             });
             const draftProperty = await createDraftProperty(
@@ -140,6 +142,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
             set: async value => {
                 const excludeKeywords = value.split(',').map(k => k.trim()).filter(Boolean);
                 await updateSettings({ filters: { excludeKeywords }});
+                void trackTelemetry({ name: "feature_used", feature: "exclude_keywords" });
             },
         });
         const draftProperty = await createDraftProperty(
@@ -180,6 +183,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
             },
             set: async value => {
                 await updateSettings({ filters: { strataMaxDollars: value }});
+                void trackTelemetry({ name: "feature_used", feature: "strata_fees" });
             },
         });
         const draftProperty = await createDraftProperty(
@@ -215,7 +219,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
         if (!claim(propertyTypesDiv)) continue;
         if (!settings.filters.enabled.propertyTypes) continue;
 
-        const updatePropertyExclusions = async (): Promise<void> => {
+        const updatePropertyExclusions = async (track = false): Promise<void> => {
             const checkboxes = [...propertyTypesDiv.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
             const anyChecked = checkboxes.some(checkbox => checkbox.checked);
 
@@ -237,9 +241,12 @@ export async function injectFilters(context: PageContext, url = context.url) {
                 : [];
 
             await updateSettings({ filters: { excludePropertyKeywords } });
+            if (track) void trackTelemetry({ name: "feature_used", feature: "property_type_exclusions" });
         };
 
-        propertyTypesDiv.addEventListener('change', updatePropertyExclusions, {
+        propertyTypesDiv.addEventListener('change', () => {
+            void updatePropertyExclusions(true);
+        }, {
             signal: context.signal,
         });
         if (context.signal.aborted) return;

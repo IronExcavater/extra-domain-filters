@@ -133,6 +133,9 @@ const mountSavedSearchesPage: PageMount = context => {
             onSelectionChange: ids => {
                 replaceSelection(selectedSearchIds, ids);
                 if (list) syncSelectionCheckboxes(list);
+                requestAnimationFrame(() => {
+                    if (list?.isConnected) syncSelectionCheckboxes(list);
+                });
                 renderControls();
             },
             selectedIds: [...selectedSearchIds],
