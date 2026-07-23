@@ -1,3 +1,9 @@
 node_modules
 dist
 release
+.env
+.env.*
+!.env.example
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*

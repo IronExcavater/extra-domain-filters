@@ -1,12 +1,14 @@
 import { STRATA_MAX, type ListingSnapshot } from "../../domain/matching";
 import { createStorageRepository } from "../platform/repository";
-import { applyPatch, type DeepPartial } from "../utils/types";
+import { applyPatch, isPlainObject, type DeepPartial } from "../utils/types";
 
 export interface Settings {
     flags: FlagSettings;
     filters: FilterSettings;
     queue: QueueSettings;
     cache: CacheSettings;
+    sync: SyncSettings;
+    telemetry: TelemetrySettings;
 }
 
 export interface FlagSettings {
@@ -45,6 +47,15 @@ export interface CacheSettings {
     ttlMs: number;
 }
 
+export interface SyncSettings {
+    enabled: boolean;
+}
+
+export interface TelemetrySettings {
+    analyticsEnabled: boolean;
+    diagnosticsEnabled: boolean;
+}
+
 export const DEFAULT_SETTINGS: Settings = {
     filters: {
         excludeKeywords: [],
@@ -75,21 +86,32 @@ export const DEFAULT_SETTINGS: Settings = {
     },
     cache: {
         ttlMs: 7 * 24 * 60 * 60 * 1000,
-    }
+    },
+    sync: {
+        enabled: true,
+    },
+    telemetry: {
+        analyticsEnabled: true,
+        diagnosticsEnabled: true,
+    },
 }
 
 const settingsRepository = createStorageRepository<Settings>({
     key: "settings",
-    version: 1,
+    version: 2,
     createDefault: () => structuredClone(DEFAULT_SETTINGS),
     normalize: value => applyPatch(
         DEFAULT_SETTINGS,
-        typeof value === "object" && value !== null ? value as DeepPartial<Settings> : {},
+        isPlainObject(value) ? value as DeepPartial<Settings> : {},
     ),
 });
 
 export async function getSettings(): Promise<Settings> {
     return settingsRepository.get();
+}
+
+export async function setSettings(settings: Settings): Promise<void> {
+    await settingsRepository.set(settings);
 }
 
 export async function updateSettings(patch: DeepPartial<Settings>, current?: Settings) {
@@ -114,11 +136,4 @@ export interface BlacklistEntry {
     displayAddress?: string;
     thumbnailUrl?: string;
     listing?: ListingSnapshot;
-}
-
-export interface FilterPreset {
-    id: string;
-    name: string;
-    createdAt: number;
-    filters: FilterSettings;
 }

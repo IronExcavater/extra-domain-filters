@@ -1,67 +1,87 @@
-export function getFromStorage<T>(key: string): Promise<T | undefined> {
-    const read = (res: Record<string, unknown>): T | undefined =>
-        res[key] as T | undefined;
-
-    return new Promise((resolve) => {
-        chrome.storage.local.get(key, (r) => {
-            resolve(read(r));
-        });
-    });
+export function isExtensionContextUnavailable(error?: unknown): boolean {
+    return chrome.runtime?.id === undefined ||
+        (
+            error instanceof Error &&
+            /extension context invalidated|context invalidated|receiving end does not exist/i.test(error.message)
+        );
 }
 
-export function mustGetFromStorage<T>(key: string): Promise<T> {
-    const read = (res: Record<string, unknown>): T => {
-        if (!(key in res))
-            throw new Error(`Required storage key ${key} not found`);
-        return res[key] as T;
-    };
+export async function getFromStorage<T>(key: string): Promise<T | undefined> {
+    try {
+        const result = await chrome.storage.local.get(key);
+        return result[key] as T | undefined;
+    } catch (error) {
+        if (isExtensionContextUnavailable(error)) return undefined;
+        throw error;
+    }
+}
 
-    return new Promise((resolve, reject) => {
-        chrome.storage.local.get(key, (r) => {
-            try {
-                resolve(read(r));
-            } catch (err) {
-                reject(err);
-            }
-        });
-    });
+export async function mustGetFromStorage<T>(key: string): Promise<T> {
+    let result: Record<string, unknown>;
+    try {
+        result = await chrome.storage.local.get(key);
+    } catch (error) {
+        if (isExtensionContextUnavailable(error)) {
+            throw new Error("Extension context is no longer available. Reload the page after reloading the extension.");
+        }
+        throw error;
+    }
+
+    if (!(key in result)) throw new Error(`Required storage key ${key} not found`);
+    return result[key] as T;
 }
 
 export async function setInStorage<T>(
     key: string,
-    value: T | undefined
+    value: T | undefined,
 ): Promise<void> {
-    await chrome.storage.local.set({ [key]: value });
+    try {
+        await chrome.storage.local.set({ [key]: value });
+    } catch (error) {
+        if (!isExtensionContextUnavailable(error)) throw error;
+    }
 }
 
 export async function removeInStorage(key: string): Promise<void> {
-    await chrome.storage.local.remove(key);
+    try {
+        await chrome.storage.local.remove(key);
+    } catch (error) {
+        if (!isExtensionContextUnavailable(error)) throw error;
+    }
 }
 
 type StorageChangeHandler<T> = (
     value: T | undefined,
-    previous: T | undefined
+    previous: T | undefined,
 ) => void;
 
 export function onStorageChange<T>(
     key: string,
     handler: StorageChangeHandler<T>,
-    options?: { area?: chrome.storage.AreaName }
-) {
-    const area = options?.area ?? 'local';
+    options?: { area?: chrome.storage.AreaName },
+): () => void {
+    const area = options?.area ?? "local";
     const listener = (
         changes: Record<string, chrome.storage.StorageChange>,
-        areaName: string
+        areaName: string,
     ) => {
         if (areaName !== area) return;
         const change = changes[key];
         if (!change) return;
         handler(
             change.newValue as T | undefined,
-            change.oldValue as T | undefined
+            change.oldValue as T | undefined,
         );
     };
 
+    if (isExtensionContextUnavailable()) return () => undefined;
+
     chrome.storage.onChanged.addListener(listener);
-    return () => chrome.storage.onChanged.removeListener(listener);
+    return () => {
+        try {
+            chrome.storage.onChanged.removeListener(listener);
+        } catch (error) {
+            if (!isExtensionContextUnavailable(error)) throw error;
+        }
+    };
 }

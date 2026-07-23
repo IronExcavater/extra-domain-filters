@@ -1,0 +1,17 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "sharedSearches",
+      "fieldPath": "expiresAt",
+      "indexes": [],
+      "ttl": true
+    },
+    {
+      "collectionGroup": "telemetry",
+      "fieldPath": "expiresAt",
+      "indexes": [],
+      "ttl": true
+    }
+  ]
+}

@@ -21,6 +21,7 @@
     "@crxjs/vite-plugin": "^2.7.1",
     "@types/chrome": "^0.2.2",
     "@types/node": "^26.1.0",
+    "firebase": "^12.16.0",
     "vite": "^8.1.3"
   },
   "devDependencies": {

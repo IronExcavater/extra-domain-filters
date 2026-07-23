@@ -1,0 +1,108 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owns(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isClock(clock) {
+      return clock is map
+        && clock.keys().hasOnly(['counter', 'deviceId', 'timestamp'])
+        && clock.counter is int
+        && clock.deviceId is string
+        && clock.timestamp is int;
+    }
+
+    function isSyncRecord(recordId) {
+      return request.resource.data.keys().hasOnly(['deleted', 'id', 'updated', 'value'])
+        && request.resource.data.id == recordId
+        && isClock(request.resource.data.updated)
+        && (!request.resource.data.keys().hasAny(['deleted']) || isClock(request.resource.data.deleted))
+        && request.resource.data.value is map;
+    }
+
+    match /users/{userId}/settings/preferences {
+      allow read: if owns(userId);
+      allow create, update: if owns(userId)
+        && request.resource.data.keys().hasOnly(['fields', 'schemaVersion', 'updatedAt'])
+        && request.resource.data.fields is map
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.updatedAt is int;
+    }
+
+    match /users/{userId}/blacklist/{recordId} {
+      allow read: if owns(userId);
+      allow create, update: if owns(userId)
+        && isSyncRecord(recordId)
+        && request.resource.data.value.keys().hasOnly(['addedAt', 'url'])
+        && request.resource.data.value.addedAt is int
+        && request.resource.data.value.url is string;
+    }
+
+    match /users/{userId}/savedSearches/{recordId} {
+      allow read: if owns(userId);
+      allow create, update: if owns(userId)
+        && isSyncRecord(recordId)
+        && request.resource.data.value.keys().hasOnly([
+          'createdAt',
+          'domainId',
+          'filterParams',
+          'id',
+          'notificationFrequency',
+          'title',
+          'updatedAt',
+          'url'
+        ])
+        && request.resource.data.value.id == recordId
+        && request.resource.data.value.createdAt is int
+        && request.resource.data.value.filterParams is string
+        && request.resource.data.value.notificationFrequency in ['daily', 'none', 'weekly']
+        && request.resource.data.value.title is string
+        && request.resource.data.value.updatedAt is int
+        && request.resource.data.value.url is string
+        && (
+          !request.resource.data.value.keys().hasAny(['domainId']) ||
+          request.resource.data.value.domainId is string
+        );
+    }
+
+    match /users/{userId}/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /sharedSearches/{shareId} {
+      allow get: if resource.data.expiresAt > request.time;
+      allow list: if false;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'createdAt', 'expiresAt', 'id', 'ownerId', 'params', 'schemaVersion'
+        ])
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.id == shareId
+        && request.resource.data.params is string
+        && request.resource.data.params.size() <= 8000
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt > request.resource.data.createdAt
+        && request.resource.data.expiresAt <= request.resource.data.createdAt + duration.value(7, 'd');
+      allow update: if false;
+      allow delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /telemetry/{eventId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['createdAt', 'deviceId', 'expiresAt', 'id', 'input'])
+        && request.resource.data.id == eventId
+        && request.resource.data.createdAt is int
+        && request.resource.data.deviceId is string
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt <= request.time + duration.value(30, 'd')
+        && request.resource.data.input is map;
+      allow read, update, delete: if false;
+    }
+  }
+}
