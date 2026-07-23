@@ -74,11 +74,16 @@ export async function createDraftProperty<K extends PropertyKind>(
     return property;
 }
 
+function ignoreDraftError(error: unknown): void {
+    if (error instanceof Error && /extension context invalidated|context invalidated/i.test(error.message)) return;
+    console.warn("[Extra Domain Filters] Failed to synchronize filter draft", error);
+}
+
 function bindScope(scope: Element, drafts: Set<DraftEntry>): void {
     if (!claimScope(scope)) return;
 
     const commit = (): void => {
-        for (const draft of drafts) void draft.commit();
+        for (const draft of drafts) void draft.commit().catch(ignoreDraftError);
     };
 
     scope.addEventListener('click', event => {
@@ -91,7 +96,7 @@ function bindScope(scope: Element, drafts: Set<DraftEntry>): void {
         }
 
         if (target.closest(clearSelector)) {
-            for (const draft of drafts) void draft.reset();
+            for (const draft of drafts) void draft.reset().catch(ignoreDraftError);
         }
     }, { capture: true });
 
@@ -101,7 +106,7 @@ function bindScope(scope: Element, drafts: Set<DraftEntry>): void {
         const observer = new MutationObserver(() => {
             if (scope.getAttribute('aria-hidden') !== 'true') return;
 
-            for (const draft of drafts) void draft.restore();
+            for (const draft of drafts) void draft.restore().catch(ignoreDraftError);
         });
 
         observer.observe(scope, { attributes: true, attributeFilter: ['aria-hidden'] });

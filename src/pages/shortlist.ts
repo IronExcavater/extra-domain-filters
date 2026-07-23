@@ -2,37 +2,90 @@ import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../do
 import { isBlacklisted } from "../domain/matching";
 import { bindListingCards } from "../features/listing-cards";
 import { getListingSnapshot } from "../features/listing-cards/dom/card";
+import { enableStickyHeader } from "../features/navigation";
 import {
     findUserListingsContainer,
     getPageActions,
     getUserListingCards,
     getUserListingUrl,
     getUserListingUrls,
+    replaceUserListingTabs,
 } from "../features/user-listings/page";
 import { PageMount } from "../shared/platform/router";
 import { createSelectionCheckbox, renderSelectionControls, replaceSelection } from "../shared/ui/selection";
+import { createSortControl } from "../shared/ui/sort";
 
-const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
-const NOTE_MAX_HEIGHT = 144;
+const ACTION_BUTTON_CLASS = "edf-selection-action";
 
 const selectedCardIds = new Set<string>();
-const noteValues = new WeakMap<HTMLTextAreaElement, string>();
+
+type ReconcileCards = () => void;
 
 function removeSelectionControls(container: HTMLElement): void {
     container.querySelectorAll(".edf-selection-checkbox").forEach(element => element.remove());
 }
 
-function syncSelectionControls(container: HTMLElement): void {
+function configureNoteActions(card: HTMLElement, reconcileCards: ReconcileCards): void {
+    const actions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
+    const textarea = card.querySelector<HTMLTextAreaElement>("textarea");
+    if (!actions) {
+        textarea?.classList.add("edf-listing-card-notes-default");
+        card.classList.remove("edf-listing-card-notes-editing");
+        return;
+    }
+
+    const save = [...actions.querySelectorAll<HTMLButtonElement>("button")]
+        .find(button =>
+            /save notes/i.test(button.textContent ?? "") ||
+            button.dataset.edfNotesConfigured === "true",
+        );
+    if (!save) {
+        card.classList.remove("edf-listing-card-notes-editing");
+        card.querySelectorAll<HTMLElement>(".edf-listing-card-notes-default")
+            .forEach(element => element.classList.remove("edf-listing-card-notes-default"));
+        textarea?.classList.add("edf-listing-card-notes-default");
+        actions.querySelectorAll<HTMLButtonElement>("button").forEach(button => {
+            const label = button.textContent?.trim().toLowerCase();
+            if (label === "enquire") button.classList.add("edf-listing-card-enquire-action");
+            if (label === "edit notes") {
+                button.textContent = "View notes";
+                button.ariaLabel = "View notes";
+            }
+        });
+        return;
+    }
+    if (!textarea) return;
+    textarea.classList.remove("edf-listing-card-notes-default");
+    textarea.parentElement?.classList.add("edf-listing-card-notes-field");
+    textarea.parentElement?.parentElement?.classList.add("edf-listing-card-notes-container");
+
+    const buttons = [...actions.querySelectorAll<HTMLButtonElement>("button")];
+    const cancel = buttons.find(button => /cancel/i.test(button.textContent ?? ""));
+    if (!cancel || !save || save.dataset.edfNotesConfigured === "true") return;
+
+    cancel.classList.add("edf-listing-card-notes-cancel");
+    save.dataset.edfNotesConfigured = "true";
+    save.textContent = "View details";
+    save.ariaLabel = "View listing details";
+    save.addEventListener("click", event => {
+        if (textarea.value.trim()) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        cancel.click();
+    }, { capture: true });
+    save.addEventListener("click", () => {
+        window.setTimeout(reconcileCards, 120);
+    });
+}
+
+function syncSelectionControls(container: HTMLElement, reconcileCards: ReconcileCards): void {
     removeSelectionControls(container);
 
     for (const card of getUserListingCards(container)) {
         const id = getUserListingUrl(card);
         if (!id) continue;
 
-        const priceRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]') ??
-            card;
-        priceRow.classList.add("edf-listing-card-button-container");
-        priceRow.prepend(createSelectionCheckbox(
+        const checkbox = createSelectionCheckbox(
             selectedCardIds.has(id),
             "Select shortlisted listing",
             checked => {
@@ -40,91 +93,32 @@ function syncSelectionControls(container: HTMLElement): void {
                 else selectedCardIds.delete(id);
                 void renderControls(container);
             },
-        ));
+        );
+        const noteActions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
+        if (noteActions) {
+            const savesNotes = [...noteActions.querySelectorAll<HTMLButtonElement>("button")]
+                .some(button =>
+                    /save notes/i.test(button.textContent ?? "") ||
+                    button.dataset.edfNotesConfigured === "true",
+                );
+            card.classList.toggle("edf-listing-card-notes-editing", savesNotes);
+            noteActions.prepend(checkbox);
+            configureNoteActions(card, reconcileCards);
+            continue;
+        }
+
+        card.classList.remove("edf-listing-card-notes-editing");
+        const priceRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]') ?? card;
+        priceRow.classList.add("edf-listing-card-button-container");
+        priceRow.prepend(checkbox);
     }
 }
 
-function findCardButton(card: HTMLElement, label: string): HTMLButtonElement | undefined {
-    return [...card.querySelectorAll<HTMLButtonElement>("button")]
-        .find(button => button.textContent?.trim() === label);
-}
-
-function setNativeTextareaValue(textarea: HTMLTextAreaElement, value: string): void {
-    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")
-        ?.set?.call(textarea, value);
-    textarea.dispatchEvent(new Event("input", { bubbles: true }));
-    textarea.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-function resizeInlineNote(editor: HTMLTextAreaElement): void {
-    editor.style.height = "auto";
-    editor.style.height = `${Math.min(editor.scrollHeight, NOTE_MAX_HEIGHT)}px`;
-}
-
-function bindInlineNoteIsolation(signal: AbortSignal): void {
-    const eventTypes = [
-        "pointerdown",
-        "mousedown",
-        "click",
-        "dblclick",
-        "focusin",
-        "beforeinput",
-        "input",
-        "change",
-        "keydown",
-        "keyup",
-        "paste",
-    ] as const;
-
-    for (const type of eventTypes) {
-        document.addEventListener(type, event => {
-            const target = event.target;
-            if (!(target instanceof HTMLTextAreaElement) || !target.classList.contains("edf-inline-note")) return;
-
-            if (type === "input") resizeInlineNote(target);
-            if (type === "keydown" && event instanceof KeyboardEvent && (event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                target.blur();
-            }
-            event.stopImmediatePropagation();
-            event.stopPropagation();
-        }, { capture: true, signal });
-    }
-}
-
-async function saveInlineNote(card: HTMLElement, editor: HTMLTextAreaElement): Promise<void> {
-    const value = editor.value.trim();
-    if (noteValues.get(editor) === value) return;
-
-    findCardButton(card, "Edit Notes")?.click();
-    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
-    const nativeEditor = [...card.querySelectorAll<HTMLTextAreaElement>("textarea")]
-        .find(textarea => textarea !== editor) ??
-        card.querySelector<HTMLTextAreaElement>("textarea");
-    if (!nativeEditor) return;
-
-    setNativeTextareaValue(nativeEditor, value);
-    findCardButton(card, "Save Notes")?.click();
-    noteValues.set(editor, value);
-}
-
-function configureInlineNote(card: HTMLElement): void {
-    const textarea = card.querySelector<HTMLTextAreaElement>("textarea:not(.edf-inline-note)");
-    if (!textarea?.disabled) return;
-
-    textarea.classList.add("edf-inline-note");
-    textarea.disabled = false;
-    textarea.readOnly = false;
-    textarea.removeAttribute("aria-readonly");
-    noteValues.set(textarea, textarea.value.trim());
-
-    textarea.addEventListener("blur", () => void saveInlineNote(card, textarea));
-    requestAnimationFrame(() => resizeInlineNote(textarea));
-}
-
-function configureCards(container: HTMLElement): void {
-    syncSelectionControls(container);
-    getUserListingCards(container).forEach(configureInlineNote);
+function configureCards(
+    container: HTMLElement,
+    reconcileCards: ReconcileCards = () => undefined,
+): void {
+    syncSelectionControls(container, reconcileCards);
 }
 
 function clearCards(container: HTMLElement, ids: readonly string[]): void {
@@ -188,28 +182,88 @@ async function renderControls(container: HTMLElement): Promise<void> {
         onSelectionChange: ids => {
             replaceSelection(selectedCardIds, ids);
             void renderControls(container);
-            configureCards(container);
         },
         selectedIds: [...selectedCardIds],
         visibleIds,
     });
 }
 
+function chooseNativeSort(nativeSort: HTMLElement, label: string): void {
+    nativeSort.querySelector<HTMLButtonElement>("button")?.click();
+    requestAnimationFrame(() => {
+        const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')]
+            .find(candidate => candidate.textContent?.trim().toLowerCase() === label.toLowerCase());
+
+        option?.click();
+    });
+}
+
+function installSortControl(container: HTMLElement, signal: AbortSignal): () => void {
+    const nativeSort = container.querySelector<HTMLElement>('[data-testid="listing-tabs__filters-sort-by"]');
+    const actions = container.querySelector<HTMLElement>('[data-testid="extra-domain-filters-shortlist-sort-actions"]');
+    const filterGroup = actions?.querySelector<HTMLElement>(".edf-control-group:last-child");
+    const nativeLabel = actions?.querySelector<HTMLElement>('[data-edf-sort-label="true"]');
+    if (!nativeSort || !filterGroup) return () => undefined;
+
+    const sort = createSortControl({
+        ariaLabel: "Sort shortlisted properties",
+        onChange: () => chooseNativeSort(nativeSort, sort.value()),
+        options: [
+            ["Date shortlisted", "Date shortlisted"],
+            ["Newest", "Newest"],
+            ["Lowest price", "Lowest price"],
+            ["Highest price", "Highest price"],
+            ["Earliest inspection", "Earliest inspection"],
+            ["Suburb", "Suburb"],
+        ],
+        signal,
+    });
+
+    nativeSort.hidden = true;
+    if (nativeLabel) nativeLabel.hidden = true;
+    filterGroup.append(sort.element);
+
+    return () => {
+        nativeSort.hidden = false;
+        if (nativeLabel) nativeLabel.hidden = false;
+        sort.element.remove();
+    };
+}
+
 const mountShortlistPage: PageMount = async (context) => {
+    enableStickyHeader(context);
     bindListingCards(context, { showBlacklistedView: false });
-    bindInlineNoteIsolation(context.signal);
     const container = findUserListingsContainer();
     if (container) {
-        await renderControls(container);
-        configureCards(container);
-
         let frame: number | undefined;
+        let reconcileTimer: number | undefined;
+        const reconcileCards = (): void => {
+            if (reconcileTimer !== undefined) {
+                window.clearTimeout(reconcileTimer);
+                reconcileTimer = undefined;
+            }
+            const currentContainer = findUserListingsContainer();
+            if (!currentContainer) return;
+            configureCards(currentContainer, schedule);
+        };
         const schedule = (): void => {
+            if (reconcileTimer !== undefined) window.clearTimeout(reconcileTimer);
+            reconcileTimer = window.setTimeout(reconcileCards, 120);
+        };
+        await renderControls(container);
+        configureCards(container, schedule);
+        const actions = container.querySelector<HTMLElement>(
+            '[data-testid="extra-domain-filters-shortlist-sort-actions"]',
+        ) ?? undefined;
+        const restoreTabs = replaceUserListingTabs(container, context.signal, undefined, actions);
+        const restoreSort = installSortControl(container, context.signal);
+
+        const scheduleControls = (): void => {
             if (frame !== undefined) return;
             frame = requestAnimationFrame(() => {
                 frame = undefined;
                 void renderControls(container);
-                configureCards(container);
+                configureCards(container, schedule);
             });
         };
         const observer = new MutationObserver(mutations => {
@@ -218,12 +272,16 @@ const mountShortlistPage: PageMount = async (context) => {
                     node instanceof Element && !node.closest('[class*="edf-"]'),
                 ),
             );
-            if (hasDomainAddition) schedule();
+            if (hasDomainAddition) scheduleControls();
         });
         observer.observe(container, { childList: true, subtree: true });
+        scheduleControls();
         context.signal.addEventListener("abort", () => {
             observer.disconnect();
+            restoreTabs();
+            restoreSort();
             if (frame !== undefined) cancelAnimationFrame(frame);
+            if (reconcileTimer !== undefined) window.clearTimeout(reconcileTimer);
         }, { once: true });
     }
 };

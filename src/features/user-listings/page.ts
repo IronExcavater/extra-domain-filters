@@ -30,18 +30,22 @@ export function getUserListingUrls(cards: readonly HTMLElement[]): string[] {
         .filter((url): url is string => url !== undefined);
 }
 
-export function overridePageTitle(container: HTMLElement, titleText: string): () => void {
+export function overridePageTitle(
+    container: HTMLElement,
+    titleText: string,
+    documentTitle: string | false = titleText,
+): () => void {
     const title = container.querySelector<HTMLElement>('[data-testid="shortlist__title"], h1, h2');
     if (!title) return () => undefined;
 
     const originalTitle = title.textContent;
     const originalDocumentTitle = document.title;
     title.textContent = titleText;
-    document.title = titleText;
+    if (documentTitle) document.title = documentTitle;
 
     return () => {
         title.textContent = originalTitle;
-        document.title = originalDocumentTitle;
+        if (documentTitle) document.title = originalDocumentTitle;
     };
 }
 
@@ -75,13 +79,19 @@ export function getPageActions(options: PageActionsOptions): HTMLDivElement {
     }
 
     const actions = document.createElement("div");
+    const selectionGroup = document.createElement("div");
+    const filterGroup = document.createElement("div");
     const label = document.createElement("span");
     actions.className = "edf-sort-actions";
+    selectionGroup.className = "edf-control-group";
+    filterGroup.className = "edf-control-group";
     actions.setAttribute("data-testid", getActionsTestId(options.id));
     label.dataset.edfSortLabel = "true";
     label.textContent = "Sort by";
     sort.before(actions);
-    actions.append(controls, label, sort);
+    selectionGroup.append(controls);
+    filterGroup.append(label, sort);
+    actions.append(selectionGroup, filterGroup);
     return controls;
 }
 
@@ -91,4 +101,94 @@ export function restorePageActions(container: HTMLElement, id: string): void {
     if (sort && actions) actions.replaceWith(sort);
     else actions?.remove();
     container.querySelector(`[data-testid="${getControlsTestId(id)}"]`)?.remove();
+}
+
+type ListingFilter = "all" | "buy" | "rent";
+
+function isListingFilter(value: string): value is ListingFilter {
+    return value === "all" || value === "buy" || value === "rent";
+}
+
+export function replaceUserListingTabs(
+    container: HTMLElement,
+    signal: AbortSignal,
+    onChange?: (filter: ListingFilter) => void,
+    actions?: HTMLElement,
+): () => void {
+    const native = container.querySelector<HTMLElement>('[role="tablist"]');
+    const nativeTabs = [...(native?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [])];
+    if (!native || nativeTabs.length === 0) return () => undefined;
+
+    const tabs = document.createElement("div");
+    const originalHidden = native.hidden;
+    const sync = (): void => {
+        const selected = nativeTabs.find(tab => tab.ariaSelected === "true")?.textContent?.trim().toLowerCase();
+
+        tabs.querySelectorAll<HTMLButtonElement>("button").forEach(button => {
+            button.ariaSelected = String(button.dataset.filter === selected);
+        });
+    };
+
+    tabs.className = "edf-collection-tabs edf-listing-tabs";
+    tabs.setAttribute("role", "tablist");
+    nativeTabs.forEach(nativeTab => {
+        const filter = nativeTab.textContent?.trim().toLowerCase();
+        if (!filter || !isListingFilter(filter)) return;
+
+        const tab = document.createElement("button");
+        tab.className = "edf-collection-tab edf-listing-tab";
+        tab.dataset.filter = filter;
+        tab.setAttribute("role", "tab");
+        tab.textContent = filter;
+        tab.addEventListener("click", () => {
+            if (onChange) onChange(filter);
+            else nativeTab.click();
+            sync();
+        }, { signal });
+        tabs.append(tab);
+    });
+
+    const actionsParent = actions?.parentNode;
+    const actionsNextSibling = actions?.nextSibling;
+    const toolbar = actions
+        ? document.createElement("div")
+        : undefined;
+    if (toolbar && actions) {
+        toolbar.className = "edf-listing-page-toolbar";
+        native.before(toolbar);
+        toolbar.append(tabs, actions);
+    } else {
+        native.before(tabs);
+    }
+    native.hidden = true;
+    const observer = new MutationObserver(sync);
+    observer.observe(native, { attributes: true, childList: true, subtree: true });
+    signal.addEventListener("abort", () => {
+        observer.disconnect();
+        if (actions && actionsParent) {
+            if (actionsNextSibling?.parentNode === actionsParent) {
+                actionsParent.insertBefore(actions, actionsNextSibling);
+            } else {
+                actionsParent.append(actions);
+            }
+        }
+        toolbar?.remove();
+        tabs.remove();
+        native.hidden = originalHidden;
+    }, { once: true });
+    sync();
+
+    return () => {
+        observer.disconnect();
+        if (actions && actionsParent) {
+            if (actionsNextSibling?.parentNode === actionsParent) {
+                actionsParent.insertBefore(actions, actionsNextSibling);
+            } else {
+                actionsParent.append(actions);
+            }
+        }
+        toolbar?.remove();
+        tabs.remove();
+        native.hidden = originalHidden;
+    };
 }

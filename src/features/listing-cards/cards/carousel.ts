@@ -38,7 +38,7 @@ export function disposeCarouselControls(): void {
 
 function setPauseIcon(button: HTMLButtonElement, paused: boolean): void {
     const icon = button.querySelector<SVGSVGElement>("svg");
-    if (!icon || button.dataset.paused === String(paused)) return;
+    if (!icon) return;
 
     icon.setAttribute("viewBox", "0 0 24 24");
     icon.replaceChildren();

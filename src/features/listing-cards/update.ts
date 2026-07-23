@@ -25,6 +25,8 @@ import {
 } from "./exclusion/row";
 import { updatePreferenceTags } from "./render/preferenceTags";
 
+const layoutAnimations = new WeakMap<HTMLElement, Animation>();
+
 function resolveVisibleReason(rawReason: ExclusionReason, url: string): ExclusionReason {
     return rawReason === "filtered" && isRevealed(url) ? "none" : rawReason;
 }
@@ -127,14 +129,33 @@ export function updateListingCards(
         const after = card.getBoundingClientRect();
         const x = before.left - after.left;
         const y = before.top - after.top;
-        if (x === 0 && y === 0) continue;
+        const expandedBy = after.height - before.height;
+        if (x === 0 && y === 0 && expandedBy === 0) continue;
 
-        card.animate(
+        layoutAnimations.get(card)?.cancel();
+        const animation = card.animate(
             [
-                { opacity: 0.72, transform: `translate(${x}px, ${y}px) scale(0.985)` },
-                { opacity: 1, transform: "translate(0, 0) scale(1)" },
+                {
+                    clipPath: expandedBy > 0
+                        ? `inset(0 0 ${expandedBy}px 0 round ${getComputedStyle(card).borderRadius})`
+                        : "inset(0)",
+                    opacity: 0.72,
+                    transform: `translate(${x}px, ${y}px) scale(0.985)`,
+                },
+                {
+                    clipPath: "inset(0)",
+                    opacity: 1,
+                    transform: "translate(0, 0) scale(1)",
+                },
             ],
-            { duration: 300, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+            { duration: 280, easing: "cubic-bezier(0.2, 0, 0, 1)" },
         );
+        layoutAnimations.set(card, animation);
+        animation.addEventListener("finish", () => {
+            if (layoutAnimations.get(card) === animation) layoutAnimations.delete(card);
+        }, { once: true });
+        animation.addEventListener("cancel", () => {
+            if (layoutAnimations.get(card) === animation) layoutAnimations.delete(card);
+        }, { once: true });
     }
 }

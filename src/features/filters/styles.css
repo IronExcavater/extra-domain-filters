@@ -4,12 +4,15 @@
     gap: 8px;
 }
 
-.edf-filter-share-button {
+.edf-search-share-button {
     min-width: auto;
-    padding-left: 10px !important;
-    padding-right: 10px !important;
 }
 
-.edf-filter-share-button > span:last-of-type {
-    padding-left: 8px !important;
+.edf-filter-actions > button svg {
+    height: 22px !important;
+    width: 22px !important;
+}
+
+.edf-search-share-button > span:last-of-type {
+    padding-left: 10px !important;
 }

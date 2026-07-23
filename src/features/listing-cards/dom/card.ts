@@ -127,6 +127,16 @@ function getFeature(card: Element, pattern: RegExp): string | undefined {
     return undefined;
 }
 
+function getPropertyType(card: Element): string | undefined {
+    return [...card.querySelectorAll('[data-testid="property-features-feature"]')]
+        .map(feature => feature.textContent?.trim().replace(/\s+/g, " "))
+        .find((text): text is string =>
+            text !== undefined &&
+            /^[a-z][a-z\s&/-]+$/i.test(text) &&
+            !/^(beds?|bath|parking|car|garage)\b/i.test(text),
+        );
+}
+
 export function getListingImageUrls(card: Element): string[] {
     const urls = new Set<string>();
 
@@ -162,6 +172,7 @@ export function getListingSnapshot(
         },
         price: card.querySelector('[data-testid="listing-card-price"]')
             ?.textContent?.trim(),
+        propertyType: getPropertyType(card),
         thumbnailUrl: includeThumbnail ? getThumbnailUrl(card) : undefined,
         imageUrls: includeThumbnail ? getListingImageUrls(card) : undefined,
     };

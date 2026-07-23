@@ -1,6 +1,9 @@
+import { onBodyMutations } from "../../shared/dom/bodyMutations";
 import { Logger } from "../../shared/platform/logging";
-import { PageContext } from "../../shared/platform/router";
+import { observeUrlChanges, PageContext } from "../../shared/platform/router";
 import { cloneMenuItem } from "./clone/menuItem";
+
+let activeInjection: Promise<void> | undefined;
 
 export function bindAccountMenuTrigger(context: PageContext): void {
     let frame: number | undefined;
@@ -24,7 +27,7 @@ export function bindAccountMenuTrigger(context: PageContext): void {
         }
     }, { capture: true, signal: context.signal });
 
-    const observer = new MutationObserver(mutations => {
+    onBodyMutations(mutations => {
         if (
             mutations.some(mutation =>
                 [...mutation.addedNodes].some(node =>
@@ -39,15 +42,21 @@ export function bindAccountMenuTrigger(context: PageContext): void {
         ) {
             scheduleInject();
         }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    }, context.signal);
+    observeUrlChanges(scheduleInject, context.signal);
     context.scope.add(() => {
-        observer.disconnect();
         if (frame !== undefined) cancelAnimationFrame(frame);
     });
 }
 
-export async function injectAccountMenu(logger: Logger): Promise<void> {
+export function injectAccountMenu(logger: Logger): Promise<void> {
+    activeInjection ??= performAccountMenuInjection(logger).finally(() => {
+        activeInjection = undefined;
+    });
+    return activeInjection;
+}
+
+async function performAccountMenuInjection(logger: Logger): Promise<void> {
     const blacklistActive = new URL(window.location.href).searchParams.get('blacklist') === '1';
     const shortlistLinks = [...document.querySelectorAll<HTMLAnchorElement>("a")]
         .filter(link =>
@@ -61,6 +70,7 @@ export async function injectAccountMenu(logger: Logger): Promise<void> {
 
     if (shortlistLinks.length === 0) return;
 
+    const sourcesByList = new Map<HTMLElement, { item: HTMLLIElement; link: HTMLAnchorElement }>();
     for (const shortlistLink of shortlistLinks) {
         const sourceItem = shortlistLink.closest('li');
         const itemList = sourceItem?.parentElement;
@@ -68,18 +78,28 @@ export async function injectAccountMenu(logger: Logger): Promise<void> {
         if (!shortlistLink.querySelector("svg") || !shortlistLink.querySelector("span")) {
             continue;
         }
+        if (!sourcesByList.has(itemList)) {
+            sourcesByList.set(itemList, { item: sourceItem as HTMLLIElement, link: shortlistLink });
+        }
+    }
 
+    for (const { item: sourceItem, link: shortlistLink } of sourcesByList.values()) {
+        const itemList = sourceItem.parentElement;
+        if (!itemList) continue;
         const blacklistUrl = new URL(shortlistLink.href);
         blacklistUrl.searchParams.set('blacklist', '1');
         const existingItems = [
             ...itemList.querySelectorAll<HTMLLIElement>('[data-testid="account-menu__blacklist-item"]'),
         ];
-        const existing = existingItems.find(item => item.previousElementSibling === sourceItem);
+        const existing = existingItems[0];
         const inactiveItem = [...itemList.children]
             .find(item =>
                 item instanceof HTMLLIElement &&
                 item !== sourceItem &&
-                item.getAttribute('data-testid') !== 'account-menu__blacklist-item'
+                item.getAttribute('data-testid') !== 'account-menu__blacklist-item' &&
+                item.querySelector<HTMLAnchorElement>("a")?.getAttribute("aria-current") !== "page" &&
+                item.querySelector<HTMLAnchorElement>("a")?.dataset.selected !== "true" &&
+                item.dataset.selected !== "true"
             );
 
         for (const item of existingItems) {
@@ -97,6 +117,8 @@ export async function injectAccountMenu(logger: Logger): Promise<void> {
 
         if (!existing) {
             logger.info('Injecting account menu');
+            itemList.insertBefore(blacklistItem, sourceItem.nextSibling);
+        } else if (blacklistItem.previousElementSibling !== sourceItem) {
             itemList.insertBefore(blacklistItem, sourceItem.nextSibling);
         }
 

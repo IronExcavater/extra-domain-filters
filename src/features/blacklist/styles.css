@@ -1,0 +1,155 @@
+.edf-blacklist-card-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.edf-blacklist-card {
+    background: var(--edf-color-surface);
+    border: 1px solid #dfe3e8;
+    border-radius: var(--edf-radius-card);
+    box-shadow: var(--edf-shadow-card);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.edf-blacklist-card-media {
+    aspect-ratio: 3 / 2;
+    background: #e8edf2;
+    display: block;
+    overflow: hidden;
+}
+
+.edf-blacklist-card-media img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 180ms ease;
+    width: 100%;
+}
+
+.edf-blacklist-card-media:hover img {
+    transform: scale(1.015);
+}
+
+.edf-blacklist-card-body {
+    padding: 12px 14px 14px;
+}
+
+.edf-blacklist-card-heading {
+    align-items: center;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.edf-blacklist-card-heading .edf-selection-checkbox {
+    margin-right: 2px;
+}
+
+.edf-blacklist-card-price {
+    color: var(--edf-color-heading);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 24px;
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.edf-blacklist-card-toggle {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: #f0bd00;
+    cursor: pointer;
+    display: inline-flex;
+    height: 32px;
+    justify-content: center;
+    padding: 4px;
+    transition: color 150ms ease;
+    width: 32px;
+}
+
+.edf-blacklist-card-toggle:disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.edf-blacklist-card-toggle[data-active="false"] {
+    color: var(--edf-color-shortlist-inactive);
+}
+
+.edf-blacklist-card-toggle[data-active="false"]:hover:not(:disabled) {
+    color: #f0bd00;
+}
+
+.edf-blacklist-card-toggle:hover:not(:disabled) {
+    color: #ffd000;
+}
+
+.edf-blacklist-card-toggle:active:not(:disabled) {
+    color: #e2ad00;
+}
+
+.edf-blacklist-card-toggle svg {
+    display: block;
+    height: 24px;
+    width: 24px;
+}
+
+.edf-blacklist-card-address {
+    color: var(--edf-color-heading);
+    display: -webkit-box;
+    font-size: 16px;
+    line-height: 23px;
+    margin-top: 6px;
+    overflow: hidden;
+    text-decoration: none;
+    transition: color 150ms ease;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.edf-blacklist-card-address:hover {
+    color: var(--edf-color-green);
+}
+
+.edf-blacklist-card-features {
+    align-items: center;
+    color: #737d91;
+    display: flex;
+    font-size: 14px;
+    gap: 12px;
+    line-height: 20px;
+    margin-top: 7px;
+}
+
+.edf-blacklist-card-feature {
+    align-items: center;
+    display: inline-flex;
+    gap: 4px;
+}
+
+.edf-blacklist-card-feature svg {
+    height: 18px;
+    width: 18px;
+}
+
+.edf-popup-blacklist-grid.edf-blacklist-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (width <= 900px) {
+    .edf-blacklist-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (width <= 600px) {
+    .edf-blacklist-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

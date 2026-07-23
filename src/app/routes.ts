@@ -1,66 +1,73 @@
-import { Route } from '../shared/platform/router';
-import { match } from '../shared/utils/regex';
+import type { Route } from "../shared/platform/router";
+import { match } from "../shared/utils/regex";
 
 const LISTING_PATH_PATTERN = /^\/[^/]+-\d{6,}\/?$/;
 
 export const routes: Route[] = [
     {
-        id: 'home',
+        id: "home",
         test: match({
-            path: '/'
+            path: "/",
         }),
-        load: () => import('../pages/home.ts'),
+        load: () => import("../pages/home.ts"),
     },
     {
-        id: 'search',
+        id: "search",
         test: match({
-            prefix: ['/sale', '/rent']
+            prefix: ["/sale", "/rent"],
         }),
-        load: () => import('../pages/search.ts'),
+        load: () => import("../pages/search.ts"),
     },
     {
-        id: 'listing',
+        id: "listing",
         test: match({
-            pattern: LISTING_PATH_PATTERN
+            pattern: LISTING_PATH_PATTERN,
         }),
-        load: () => import('../pages/listing.ts'),
+        load: () => import("../pages/listing.ts"),
     },
     {
-        id: 'project',
+        id: "project",
         test: match({
-            prefix: ['/project/']
+            prefix: ["/project/"],
         }),
-        load: () => import('../pages/listing.ts'),
+        load: () => import("../pages/listing.ts"),
     },
     {
-        id: 'agency',
+        id: "agency",
         test: match({
-            prefix: ['/real-estate-agencies/']
+            prefix: ["/real-estate-agencies/"],
         }),
-        load: () => import('../pages/agency.ts'),
+        load: () => import("../pages/agency.ts"),
     },
     {
-        id: 'profile',
+        id: "profile",
         test: match({
-            path: '/user/user-profile',
+            path: "/user/user-profile",
         }),
-        load: () => import('../pages/profile.ts'),
+        load: () => import("../pages/profile.ts"),
     },
     {
-        id: 'blacklist',
+        id: "saved-searches",
         test: match({
-            path: '/user/shortlist',
+            path: "/user/saved-searches",
+        }),
+        load: () => import("../pages/savedSearches.ts"),
+    },
+    {
+        id: "blacklist",
+        test: match({
+            path: "/user/shortlist",
             search: {
-                blacklist: '1',
+                blacklist: "1",
             },
         }),
-        load: () => import('../pages/blacklist.ts'),
+        load: () => import("../pages/blacklist.ts"),
     },
     {
-        id: 'shortlist',
+        id: "shortlist",
         test: match({
-            path: '/user/shortlist',
+            path: "/user/shortlist",
         }),
-        load: () => import('../pages/shortlist.ts'),
+        load: () => import("../pages/shortlist.ts"),
     },
-]
+];

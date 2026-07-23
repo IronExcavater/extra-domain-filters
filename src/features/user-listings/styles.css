@@ -11,37 +11,16 @@
     margin: 0;
 }
 
-.edf-blacklist-row-list [data-edf-blacklist-row="true"] textarea,
-.edf-blacklist-row-list [data-edf-blacklist-row="true"] [data-testid="listing-card-buttons-wrapper"] {
-    display: none !important;
-}
-
-.edf-blacklist-row-list [data-edf-blacklist-row="true"] .css-dx7vs9 {
-    padding-top: 0 !important;
-}
-
-.edf-blacklist-row-list [data-edf-blacklist-row="true"] .css-1yiglqa {
-    height: auto !important;
-}
-
 .edf-action-button {
-    align-items: center;
-    background-color: #fff;
-    border: 1px solid rgb(197 203 213);
-    border-radius: 3px;
-    color: rgb(50 64 89);
-    cursor: pointer;
     display: inline-flex;
-    font: inherit;
-    font-weight: 400;
     justify-content: center;
-    min-height: 42px;
-    padding: 0 18px;
 }
 
-.edf-action-button:hover {
-    border-color: rgb(0 135 0);
-    color: rgb(0 135 0);
+.edf-control-group {
+    align-items: center;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .edf-action-button[hidden] {
@@ -59,51 +38,23 @@
 .edf-sort-actions {
     align-items: center;
     display: flex;
-    gap: 8px;
+    gap: 16px;
     justify-content: flex-end;
     margin-left: auto;
 }
 
-.edf-selection-checkbox {
-    align-items: center;
-    display: inline-block;
-    flex: 0 0 auto;
-    margin: 0 8px 0 0;
-    pointer-events: auto;
-    position: relative;
-    vertical-align: middle;
-    z-index: 4;
-}
-
-.edf-selection-checkbox input {
-    appearance: none;
-    background: #fff;
-    border: 1px solid rgb(166 176 190);
-    border-radius: 3px;
-    cursor: pointer;
-    height: 18px;
+.edf-listing-tabs {
     margin: 0;
-    position: relative;
-    width: 18px;
 }
 
-.edf-listing-card-button-container > .edf-selection-checkbox {
-    display: inline-flex;
+.edf-listing-page-toolbar {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    margin: 0 0 20px;
+    width: 100%;
 }
 
-.edf-selection-checkbox input:checked {
-    background: rgb(0 135 0);
-    border-color: rgb(0 135 0);
-}
-
-.edf-selection-checkbox input:checked::after {
-    color: #fff;
-    content: "✓";
-    display: grid;
-    font-size: 15px;
-    font-weight: 700;
-    inset: 0;
-    line-height: 1;
-    place-items: center;
-    position: absolute;
+#shortlist:has(.edf-listing-tabs) [role="tablist"]:not(.edf-listing-tabs) {
+    display: none !important;
 }

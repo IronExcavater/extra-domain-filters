@@ -179,7 +179,24 @@ function matchesExcludedPropertyType(
 ): boolean {
     if (!propertyType || excludePropertyKeywords.length === 0) return false;
 
-    return excludePropertyKeywords.includes(propertyType.trim().toLowerCase());
+    const normalizedType = propertyType.trim().toLowerCase();
+    const typeAliases = new Set(
+        normalizedType
+            .split(/\s*(?:&|\/|,|\band\b)\s*/i)
+            .map(part => part.trim())
+            .filter(Boolean),
+    );
+
+    return excludePropertyKeywords.some(keyword => {
+        const normalizedKeyword = keyword.trim().toLowerCase();
+        if (normalizedKeyword === normalizedType || typeAliases.has(normalizedKeyword)) return true;
+
+        return normalizedKeyword
+            .split(/\s*(?:&|\/|,|\band\b)\s*/i)
+            .map(part => part.trim())
+            .filter(Boolean)
+            .some(part => part === normalizedType || typeAliases.has(part));
+    });
 }
 
 export function matchListing(

@@ -3,7 +3,7 @@
     background: transparent;
     border: 0;
     border-radius: inherit;
-    color: rgb(30 41 61 / 72%);
+    color: #646463;
     display: none;
     gap: 12px;
     font-weight: 500;
@@ -29,7 +29,7 @@
     background: transparent;
     border: 0;
     border-radius: 999px;
-    color: rgb(30 41 61 / 72%);
+    color: #646463;
     cursor: pointer;
     display: inline-flex;
     flex: 0 0 auto;
@@ -47,8 +47,8 @@
 }
 
 .edf-exclusion-row-button:hover {
-    background: rgb(30 41 61 / 5%);
-    color: rgb(30 41 61 / 100%);
+    background: #f6f7f5;
+    color: #131212;
 }
 
 .edf-listing-card-excluded {
@@ -81,7 +81,12 @@
 
 .edf-exclusion-group {
     grid-column: 1 / -1;
+    margin-bottom: 16px;
     overflow: hidden;
+}
+
+.edf-exclusion-group-member {
+    display: none !important;
 }
 
 .edf-exclusion-group-header {
@@ -92,24 +97,39 @@
 }
 
 .edf-exclusion-group-text {
-    color: rgb(30 41 61 / 72%);
+    color: #646463;
     font-weight: 500;
 }
 
 .edf-exclusion-group-body {
     display: grid;
-    gap: 12px;
+    gap: 2px;
     max-height: 0;
     overflow: hidden;
     transition: max-height 260ms cubic-bezier(0.2, 0, 0, 1);
 }
 
+.edf-exclusion-group-item {
+    align-items: center;
+    color: #646463;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 36px;
+}
+
+.edf-exclusion-group-item-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .edf-hide-again-button {
     align-items: center;
     background: rgb(255 255 255 / 90%);
-    border: 1px solid rgb(30 41 61 / 15%);
+    border: 1px solid #e1e1df;
     border-radius: 999px;
-    color: rgb(30 41 61 / 70%);
+    color: #646463;
     cursor: pointer;
     display: inline-flex;
     padding: 4px;
@@ -117,5 +137,5 @@
 
 .edf-hide-again-button:hover {
     background: #fff;
-    color: rgb(30 41 61 / 100%);
+    color: #131212;
 }

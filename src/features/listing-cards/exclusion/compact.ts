@@ -1,9 +1,12 @@
 import type { ExclusionReason } from "../../../domain/matching";
-import { replaceWithChevronIcon } from "../../../shared/ui/icons";
-import { getBlacklistCardKind, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
+import { replaceWithChevronIcon, replaceWithEyeIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
+import { getBlacklistCardKind, getTitle, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
+import { resolveExclusionAction } from "./row";
 
 const GROUP_SELECTOR = '[data-testid="listing-card-exclusion-group"]';
 const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
+const GROUPED_CARD_CLASS = "edf-exclusion-group-member";
+const COLLAPSE_DELAY_MS = 180;
 const expandedUrls = new Set<string>();
 let previousSignature = "";
 
@@ -38,14 +41,9 @@ function getExcludedCard(element: Element): ExcludedCard | undefined {
 }
 
 function unwrapGroups(): void {
-    for (const group of document.querySelectorAll<HTMLElement>(GROUP_SELECTOR)) {
-        const body = group.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-group-body"]');
-        if (!body) {
-            group.remove();
-            continue;
-        }
-        group.replaceWith(...body.children);
-    }
+    document.querySelectorAll<HTMLElement>(GROUP_SELECTOR).forEach(group => group.remove());
+    document.querySelectorAll<HTMLElement>(`.${GROUPED_CARD_CLASS}`)
+        .forEach(card => card.classList.remove(GROUPED_CARD_CLASS));
 }
 
 function setExpanded(group: HTMLElement, expanded: boolean): void {
@@ -60,6 +58,42 @@ function setExpanded(group: HTMLElement, expanded: boolean): void {
     button.title = label;
 }
 
+function createGroupItem(item: ExcludedCard): HTMLElement {
+    const row = document.createElement("div");
+    const summary = document.createElement("span");
+    const restoreButton = document.createElement("button");
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const restoreIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+    row.className = "edf-exclusion-group-item";
+    summary.className = "edf-exclusion-group-item-text";
+    summary.textContent = getTitle(item.card);
+
+    icon.setAttribute("aria-hidden", "true");
+    icon.setAttribute("width", "16");
+    icon.setAttribute("height", "16");
+    (item.reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
+
+    restoreIcon.setAttribute("aria-hidden", "true");
+    restoreIcon.setAttribute("width", "18");
+    restoreIcon.setAttribute("height", "18");
+    replaceWithChevronIcon(restoreIcon);
+
+    restoreButton.type = "button";
+    restoreButton.className = "edf-exclusion-row-button";
+    restoreButton.ariaLabel = item.reason === "blacklisted" ? "Unblacklist" : "Show anyway";
+    restoreButton.title = restoreButton.ariaLabel;
+    restoreButton.append(restoreIcon);
+    restoreButton.addEventListener("click", async event => {
+        event.preventDefault();
+        event.stopPropagation();
+        await resolveExclusionAction(item.urls, item.reason);
+    });
+
+    row.append(icon, summary, restoreButton);
+    return row;
+}
+
 function createGroup(group: ExcludedCard[]): HTMLElement {
     const section = document.createElement("section");
     const header = document.createElement("div");
@@ -69,12 +103,13 @@ function createGroup(group: ExcludedCard[]): HTMLElement {
     const body = document.createElement("div");
     const urls = group.flatMap(item => item.urls);
     const expanded = urls.some(url => expandedUrls.has(url));
+    let collapseTimer: number | undefined;
 
     section.className = "edf-exclusion-group";
     section.setAttribute("data-testid", "listing-card-exclusion-group");
     header.className = "edf-exclusion-group-header";
     text.className = "edf-exclusion-group-text";
-    text.textContent = `${group.length} listings`;
+    text.textContent = `${group.length} listings hidden`;
 
     button.type = "button";
     button.className = "edf-exclusion-row-button";
@@ -87,7 +122,7 @@ function createGroup(group: ExcludedCard[]): HTMLElement {
 
     body.className = "edf-exclusion-group-body";
     body.setAttribute("data-testid", "listing-card-exclusion-group-body");
-    body.append(...group.map(item => item.card));
+    body.append(...group.map(createGroupItem));
     header.append(text, button);
     section.append(header, body);
 
@@ -101,6 +136,26 @@ function createGroup(group: ExcludedCard[]): HTMLElement {
         }
         setExpanded(section, nextExpanded);
     });
+    section.addEventListener("mouseenter", () => {
+        if (collapseTimer !== undefined) window.clearTimeout(collapseTimer);
+        setExpanded(section, true);
+    });
+    section.addEventListener("mouseleave", () => {
+        collapseTimer = window.setTimeout(() => {
+            if (!urls.some(url => expandedUrls.has(url))) setExpanded(section, false);
+        }, COLLAPSE_DELAY_MS);
+    });
+    section.addEventListener("focusin", () => {
+        if (collapseTimer !== undefined) window.clearTimeout(collapseTimer);
+        setExpanded(section, true);
+    });
+    section.addEventListener("focusout", () => {
+        collapseTimer = window.setTimeout(() => {
+            if (!section.matches(":focus-within") && !urls.some(url => expandedUrls.has(url))) {
+                setExpanded(section, false);
+            }
+        }, COLLAPSE_DELAY_MS);
+    });
 
     section.dataset.expanded = String(expanded);
     return section;
@@ -108,23 +163,34 @@ function createGroup(group: ExcludedCard[]): HTMLElement {
 
 function groupRun(run: ExcludedCard[]): void {
     if (run.length < 2) return;
-    const marker = document.createComment("");
-    run[0].card.before(marker);
+    for (const item of run) item.card.classList.add(GROUPED_CARD_CLASS);
     const section = createGroup(run);
-    marker.replaceWith(section);
+    run[0].card.before(section);
     if (section.dataset.expanded === "true") {
         requestAnimationFrame(() => setExpanded(section, true));
     }
 }
 
 function getCompactionSignature(): string {
-    return [...document.querySelectorAll<HTMLElement>(TOP_LEVEL_CARD_SELECTOR)]
-        .map(card => {
-            const excluded = getExcludedCard(card);
-            if (!excluded) return `visible:${card.dataset.listingId ?? ""}`;
-            return `${excluded.reason}:${excluded.urls.join(",")}`;
-        })
-        .join("|");
+    // Only excluded-card runs affect grouping output, so collapse any number of consecutive
+    // non-excluded cards into a single gap marker. Otherwise every card that infinite scroll
+    // appends changes the signature and forces a full unwrap+rebuild for no reason.
+    const parts: string[] = [];
+    let inGap = false;
+
+    for (const card of document.querySelectorAll<HTMLElement>(TOP_LEVEL_CARD_SELECTOR)) {
+        const excluded = getExcludedCard(card);
+        if (excluded) {
+            parts.push(`${excluded.reason}:${excluded.urls.join(",")}`);
+            inGap = false;
+            continue;
+        }
+
+        if (!inGap) parts.push("gap");
+        inGap = true;
+    }
+
+    return parts.join("|");
 }
 
 export function compactExcludedListingCards(): void {

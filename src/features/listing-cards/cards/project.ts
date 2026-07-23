@@ -84,14 +84,10 @@ export function updateProjectBlacklistSummary(
 
     const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
     if (bulkButton) {
-        const sibling = bulkButton.previousElementSibling;
-        const siblingText = sibling instanceof HTMLElement ? getVisibleTextElement(sibling) : undefined;
-        const color = siblingText
-            ? getComputedStyle(siblingText).color
-            : getProjectTextColor(
-                projectHeader,
-                projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR),
-            );
+        const color = getProjectTextColor(
+            projectHeader,
+            projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR),
+        );
         if (bulkButton.style.getPropertyValue("--edf-project-foreground") !== color) {
             bulkButton.style.setProperty("--edf-project-foreground", color);
         }
@@ -122,11 +118,7 @@ export function updateProjectBlacklistSummary(
 }
 
 function insertProjectBlacklistButton(details: HTMLElement, button: HTMLButtonElement): void {
-    const existingRow = details.querySelector(':scope > .edf-project-blacklist-row');
-    if (existingRow) {
-        existingRow.append(button);
-        return;
-    }
+    if (details.querySelector(':scope > .edf-project-blacklist-button')) return;
 
     const address = details.lastElementChild;
     if (!address) {
@@ -134,10 +126,12 @@ function insertProjectBlacklistButton(details: HTMLElement, button: HTMLButtonEl
         return;
     }
 
-    const row = document.createElement('div');
-    row.className = 'edf-project-blacklist-row';
-    address.replaceWith(row);
-    row.append(address, button);
+    if (address instanceof HTMLAnchorElement) {
+        address.after(button);
+        return;
+    }
+
+    address.append(button);
 }
 
 export function bindProjectCard(projectCard: HTMLElement, context: PageContext): void {

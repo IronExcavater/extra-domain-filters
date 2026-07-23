@@ -1,6 +1,6 @@
 import { PREFERENCES, STRATA_MAX } from "../../domain/matching";
 import { createClaimTracker } from "../../shared/dom/claim";
-import { markOwned } from "../../shared/dom/ownership";
+import { markOwned, OWNED_ELEMENT_ATTRIBUTE } from "../../shared/dom/ownership";
 import { bindLazyTrigger } from "../../shared/dom/trigger";
 import { observeUrlChanges, PageContext } from "../../shared/platform/router";
 import { onStorageChange } from "../../shared/platform/storage";
@@ -12,7 +12,11 @@ import { cloneCheckboxInput } from "./clone/checkbox";
 import { cloneSliderInput } from "./clone/slider";
 import { cloneTextInput } from "./clone/text";
 import { isRentMode, observeModeChanges } from "./mode";
-import { applySharedFilterParams, syncSharedFilterParams } from "./searchParams";
+import { syncSharedFilterParams } from "./searchParams";
+
+function reportAsyncError(context: PageContext, action: string): (error: unknown) => void {
+    return error => context.logger.warn(action, error);
+}
 
 function refreshPriceTitles(url: URL): void {
     for (const priceDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__price-range"]')) {
@@ -25,11 +29,13 @@ const claim = createClaimTracker<Element>();
 
 function appendCustomFilter(anchor: HTMLElement, filter: HTMLElement): void {
     const testId = filter.getAttribute("data-testid");
-    if (testId) {
-        anchor.parentElement
-            ?.querySelector<HTMLElement>(`:scope > [data-testid="${testId}"]`)
-            ?.remove();
-    }
+    const existingFilter = testId
+        ? anchor.parentElement?.querySelector(
+            `:scope > [${OWNED_ELEMENT_ATTRIBUTE}="search-filter"][data-testid="${testId}"]`,
+        )
+        : undefined;
+
+    if (existingFilter) return;
 
     anchor.after(markOwned(filter, "search-filter"));
 }
@@ -41,7 +47,6 @@ export function bindFilterTriggers(selectors: string[], context: PageContext): v
     context.scope.add(unwatchSettings);
     observeUrlChanges(url => {
         refreshPriceTitles(url);
-        void injectFilters(context, url);
     }, context.signal);
 
     observeModeChanges(() => refreshPriceTitles(new URL(window.location.href)), context.signal);
@@ -49,7 +54,7 @@ export function bindFilterTriggers(selectors: string[], context: PageContext): v
     bindLazyTrigger(
         selectors,
         '[data-testid*="dynamic-search-filters"]',
-        ctx => injectFilters(ctx),
+        ctx => injectFilters(ctx).catch(reportAsyncError(ctx, "Failed to inject filters after filter menu opened")),
         context,
     );
 }
@@ -57,8 +62,8 @@ export function bindFilterTriggers(selectors: string[], context: PageContext): v
 export async function injectFilters(context: PageContext, url = context.url) {
     const logger = context.logger;
     logger.info('Injecting filters');
-    await applySharedFilterParams(url);
     const settings = await getSettings();
+    if (context.signal.aborted) return;
 
     for (const mustHaveDiv of document.querySelectorAll<HTMLElement>('[data-testid="dynamic-search-filters__feature-options"]')) {
         if (!claim(mustHaveDiv)) continue;
@@ -109,6 +114,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
             ));
         }
 
+        if (context.signal.aborted) return;
         appendCustomFilter(mustHaveDiv, couldHaveDiv);
 
         logger.info('Appended preferences filter');
@@ -155,6 +161,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
         );
         excludeDiv.setAttribute('data-testid', 'dynamic-search-filters__preferences');
 
+        if (context.signal.aborted) return;
         appendCustomFilter(includeDiv, excludeDiv);
 
         logger.info('Appended exclude keywords filter');
@@ -194,12 +201,15 @@ export async function injectFilters(context: PageContext, url = context.url) {
         );
         strataFeesDiv.setAttribute('data-testid', 'dynamic-search-filters__strata-fees');
 
+        if (context.signal.aborted) return;
         appendCustomFilter(priceDiv, strataFeesDiv);
 
         logger.info('Appended strata fees filter');
     }
 
-    requestAnimationFrame(() => refreshPriceTitles(url));
+    requestAnimationFrame(() => {
+        if (!context.signal.aborted) refreshPriceTitles(url);
+    });
 
     for (const propertyTypesDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__property-types"]')) {
         if (!claim(propertyTypesDiv)) continue;
@@ -232,6 +242,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
         propertyTypesDiv.addEventListener('change', updatePropertyExclusions, {
             signal: context.signal,
         });
+        if (context.signal.aborted) return;
         await updatePropertyExclusions();
 
         logger.info('Bound property types exclusions');

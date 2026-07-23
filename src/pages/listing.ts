@@ -7,6 +7,7 @@ import {
     removeFromShortlist,
     setBlacklistButtonState,
 } from "../features/listing-cards/clone/blacklistButton";
+import { enableStickyHeader } from "../features/navigation";
 import { PageMount } from "../shared/platform/router";
 import { onStorageChange } from "../shared/platform/storage";
 import { getSettings } from "../shared/state/settings";
@@ -75,6 +76,7 @@ function insertButton(): { button: HTMLButtonElement; shortlistButton?: HTMLButt
 }
 
 const mountListingPage: PageMount = async (context) => {
+    enableStickyHeader(context);
     const url = context.url.href;
     const { button, shortlistButton } = insertButton();
     if (!button.isConnected) return;

@@ -1,4 +1,4 @@
-import { MaybePromise } from "../utils/types";
+import type { MaybePromise } from "../utils/types";
 import { createLifecycleScope, type Disposer, type LifecycleScope } from "./lifecycle";
 import { Logger } from "./logging";
 
@@ -17,7 +17,7 @@ const HISTORY_PATCH_KEY = "__extraDomainFiltersHistoryPatched";
 export interface Route {
     id: string;
     test: (url: URL) => boolean;
-    load(): Promise<{default: PageMount}>;
+    load(): Promise<{ default: PageMount }>;
 }
 
 function installHistoryObserver(): void {
@@ -48,17 +48,17 @@ export function observeUrlChanges(callback: (url: URL) => void, signal: AbortSig
 
         previousHref = window.location.href;
         callback(new URL(previousHref));
-    }
+    };
 
     const schedule = (): void => {
         if (signal.aborted || scheduled) return;
 
         scheduled = true;
         requestAnimationFrame(check);
-    }
+    };
 
-    window.addEventListener('popstate', schedule, { signal });
-    window.addEventListener('hashchange', schedule, { signal });
+    window.addEventListener("popstate", schedule, { signal });
+    window.addEventListener("hashchange", schedule, { signal });
     window.addEventListener(URL_CHANGE_EVENT, schedule, { signal });
 }
 
@@ -90,7 +90,7 @@ export function createRouter(
 
         if (nextKey === activeKey) return;
 
-        activeLogger?.debug('Unmounting');
+        activeLogger?.debug("Unmounting");
         activeScope?.dispose();
 
         activeScope = undefined;
@@ -98,7 +98,7 @@ export function createRouter(
         activeLogger = undefined;
 
         if (!route) {
-            logger.info('No matching route found for URL', url.href);
+            logger.info("No matching route found for URL", url.href);
             return;
         }
 
@@ -111,7 +111,7 @@ export function createRouter(
         activeScope = scope;
         activeKey = nextKey;
 
-        activeLogger.info('Mounting', url.href);
+        activeLogger.info("Mounting", url.href);
 
         try {
             const { default: mount } = await route.load();
@@ -127,13 +127,12 @@ export function createRouter(
                 logger: activeLogger,
             });
             if (disposer) scope.add(disposer);
-            
-            if (!scope.disposed) activeLogger.info('Mounted');
-        }
-        catch (error) {
+
+            if (!scope.disposed) activeLogger.info("Mounted");
+        } catch (error) {
             if (scope.disposed) return;
 
-            activeLogger.error('Failed to mount', error);
+            activeLogger.error("Failed to mount", error);
 
             if (activeScope === scope) {
                 scope.dispose();
@@ -153,8 +152,8 @@ export function createRouter(
 
         const runSafely = (url?: URL): void => {
             void run(url).catch(onError);
-        }
-        
+        };
+
         runSafely();
         observeUrlChanges(runSafely, lifecycleScope.signal);
     }

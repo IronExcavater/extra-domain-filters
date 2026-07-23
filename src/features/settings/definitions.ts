@@ -91,4 +91,28 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
             },
         ],
     },
+    {
+        id: "account-privacy",
+        title: "Account and privacy",
+        settings: [
+            {
+                title: "Cross-device sync",
+                description: "Sync preferences, saved searches, and blacklist changes when signed in.",
+                read: settings => settings.sync.enabled,
+                write: enabled => ({ sync: { enabled } }),
+            },
+            {
+                title: "Usage analytics",
+                description: "Share feature usage without account IDs, property addresses, searches, or page URLs.",
+                read: settings => settings.telemetry.analyticsEnabled,
+                write: analyticsEnabled => ({ telemetry: { analyticsEnabled } }),
+            },
+            {
+                title: "Error diagnostics",
+                description: "Share error categories and performance timings without page or property content.",
+                read: settings => settings.telemetry.diagnosticsEnabled,
+                write: diagnosticsEnabled => ({ telemetry: { diagnosticsEnabled } }),
+            },
+        ],
+    },
 ];

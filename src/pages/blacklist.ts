@@ -1,61 +1,118 @@
-import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
-import { getBlacklistListing, type BlacklistEntry } from "../domain/matching";
 import {
-    cloneBlacklistButton,
-    SHORTLIST_CARD_BUTTON_SKIN,
-    setBlacklistButtonState,
-} from "../features/listing-cards/clone/blacklistButton";
-import { createShortlistSnapshotCard } from "../features/listing-cards/render/shortlistSnapshot";
+    addOrReplaceBlacklistEntry,
+    getBlacklist,
+    removeBlacklistUrls,
+} from "../domain/blacklist/store";
+import {
+    getBlacklistListing,
+    type BlacklistEntry,
+} from "../domain/matching";
+import { createBlacklistCard } from "../features/blacklist/card";
+import {
+    filterBlacklistEntries,
+    sortBlacklistEntries,
+    type BlacklistFilter,
+    type BlacklistSort,
+} from "../features/blacklist/sort";
+import { enableStickyHeader } from "../features/navigation";
 import {
     getPageActions,
     overridePageTitle,
+    replaceUserListingTabs,
     restorePageActions,
     waitForUserListingsContainer,
 } from "../features/user-listings/page";
 import { markOwned } from "../shared/dom/ownership";
 import { PageMount } from "../shared/platform/router";
 import { onStorageChange } from "../shared/platform/storage";
-import { createSelectionCheckbox, renderSelectionControls, replaceSelection } from "../shared/ui/selection";
-
-const ACTION_BUTTON_CLASS = "css-8vgasn edf-action-button";
+import {
+    renderSelectionControls,
+    replaceSelection,
+    setSelectionCheckboxState,
+} from "../shared/ui/selection";
+import { createSortControl } from "../shared/ui/sort";
 
 const selectedUrls = new Set<string>();
-const sessionEntryUrls = new Set<string>();
-
-function getRowKey(entry: BlacklistEntry): string {
-    return getBlacklistListing(entry).url;
-}
+const retainedUnblacklistedEntries = new Map<string, BlacklistEntry>();
+let listingFilter: BlacklistFilter = "all";
+let listingSort: BlacklistSort = "newest";
 
 function getRowVersion(entry: BlacklistEntry): string {
     return JSON.stringify({
-        active: !entry.removedAt,
-        removedAt: entry.removedAt ?? null,
+        addedAt: entry.addedAt,
+        listing: getBlacklistListing(entry),
     });
 }
 
-function findListContainer(container: HTMLElement): { list: HTMLElement; restore: () => void } {
-    const existing = container.querySelector<HTMLElement>('[data-testid="extra-domain-filters-blacklist-list"]');
+function installSortControl(
+    container: HTMLElement,
+    renderRows: () => void,
+    signal: AbortSignal,
+): () => void {
+    const nativeSort = container.querySelector<HTMLElement>(
+        '[data-testid="listing-tabs__filters-sort-by"]',
+    );
+    const sortActions = container.querySelector<HTMLElement>(
+        '[data-testid="extra-domain-filters-blacklist-sort-actions"]',
+    );
+    const filterGroup = sortActions?.querySelector<HTMLElement>(".edf-control-group:last-child");
+    const nativeLabel = sortActions?.querySelector<HTMLElement>('[data-edf-sort-label="true"]');
+    if (!filterGroup) return () => undefined;
+
+    const sort = createSortControl({
+        ariaLabel: "Sort blacklisted properties",
+        onChange: () => {
+            listingSort = sort.value() as BlacklistSort;
+            renderRows();
+        },
+        options: [
+            ["newest", "Newest"],
+            ["oldest", "Oldest"],
+            ["price-asc", "Lowest price"],
+            ["price-desc", "Highest price"],
+        ],
+        signal,
+    });
+
+    if (nativeSort) nativeSort.hidden = true;
+    if (nativeLabel) nativeLabel.hidden = true;
+    filterGroup.append(markOwned(sort.element, "blacklist-sort"));
+
+    return () => {
+        if (nativeSort) nativeSort.hidden = false;
+        if (nativeLabel) nativeLabel.hidden = false;
+        sort.element.remove();
+    };
+}
+
+function installList(container: HTMLElement): { list: HTMLElement; restore: () => void } {
+    const existing = container.querySelector<HTMLElement>(
+        '[data-testid="extra-domain-filters-blacklist-list"]',
+    );
     if (existing) return { list: existing, restore: () => undefined };
 
-    const realList = container
+    const nativeList = container
         .querySelector('[data-testid="listing-card-container"]')
         ?.parentElement;
     const list = document.createElement("div");
-    list.className = realList instanceof HTMLElement
-        ? `${realList.className} edf-blacklist-row-list`
-        : "edf-blacklist-row-list";
-    list.setAttribute("data-testid", "extra-domain-filters-blacklist-list");
-    markOwned(list, "blacklist-list");
 
-    if (realList instanceof HTMLElement) {
-        realList.style.setProperty("display", "none", "important");
-        realList.after(list);
+    list.className = "edf-blacklist-card-grid edf-blacklist-page-grid";
+    list.dataset.testid = "extra-domain-filters-blacklist-list";
+    markOwned(list, "blacklist-list");
+    if (nativeList instanceof HTMLElement) {
+        const parent = nativeList.parentNode;
+        const nextSibling = nativeList.nextSibling;
+
+        nativeList.remove();
+        if (nextSibling) parent?.insertBefore(list, nextSibling);
+        else parent?.append(list);
 
         return {
             list,
             restore: () => {
-                realList.style.removeProperty("display");
                 list.remove();
+                if (nextSibling?.parentNode === parent) parent?.insertBefore(nativeList, nextSibling);
+                else parent?.append(nativeList);
             },
         };
     }
@@ -67,164 +124,140 @@ function findListContainer(container: HTMLElement): { list: HTMLElement; restore
     return { list, restore: () => list.remove() };
 }
 
-function findCardTemplate(container: HTMLElement): HTMLElement | undefined {
-    return container.querySelector<HTMLElement>(
-        '[data-testid="listing-card-container"]:not([data-edf-blacklist-row])',
-    ) ?? undefined;
-}
+function preserveMessage(container: HTMLElement): () => void {
+    const message = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
+    if (!message) return () => undefined;
 
-function findMessage(container: HTMLElement): () => void {
-    const element = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
-    if (!element) return () => undefined;
-
-    const originalHidden = element.hidden;
-    const originalText = element.textContent;
+    const hidden = message.hidden;
+    const text = message.textContent;
 
     return () => {
-        element.hidden = originalHidden;
-        element.textContent = originalText;
+        message.hidden = hidden;
+        message.textContent = text;
     };
 }
 
-function createSelectionInput(url: string, onChange: () => void): HTMLLabelElement {
-    return createSelectionCheckbox(
-        selectedUrls.has(url),
-        "Select blacklisted listing",
-        checked => {
-            if (checked) selectedUrls.add(url);
-            else selectedUrls.delete(url);
-            onChange();
-        },
-    );
-}
-
-function createBlacklistRow(
+function createRow(
     entry: BlacklistEntry,
-    onSelectionChange: () => void,
-    template?: HTMLElement,
+    renderRows: () => void,
 ): HTMLElement {
     const listing = getBlacklistListing(entry);
-    const active = !entry.removedAt;
-    const sourceButton = template?.querySelector<HTMLButtonElement>('[data-testid^="listing-card-shortlist"]');
-    const button = sourceButton
-        ? cloneBlacklistButton(sourceButton, {
-            appearance: "shortlist",
-            skin: SHORTLIST_CARD_BUTTON_SKIN,
-        })
-        : document.createElement("button");
-    const card = createShortlistSnapshotCard(listing, { blacklistButton: button }, template);
+    const retained = retainedUnblacklistedEntries.has(listing.url);
+    const card = createBlacklistCard(entry, {
+        active: !retained,
+        onToggle: async () => {
+            if (retainedUnblacklistedEntries.has(listing.url)) {
+                retainedUnblacklistedEntries.delete(listing.url);
+                await addOrReplaceBlacklistEntry(listing);
+            } else {
+                retainedUnblacklistedEntries.set(listing.url, entry);
+                await removeBlacklistUrls(listing.url);
+            }
+            renderRows();
+        },
+        onSelectionChange: checked => {
+            if (checked) selectedUrls.add(listing.url);
+            else selectedUrls.delete(listing.url);
+            renderRows();
+        },
+        openLinksInNewTab: false,
+        selected: selectedUrls.has(listing.url),
+    });
 
-    card.dataset.active = String(active);
-    card.dataset.edfBlacklistRow = "true";
-    card.dataset.edfBlacklistUrl = listing.url;
     card.dataset.edfBlacklistVersion = getRowVersion(entry);
-    const priceRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]') ??
-        card;
-    priceRow.classList.add("edf-listing-card-button-container");
-    priceRow.prepend(createSelectionInput(listing.url, onSelectionChange));
-
-    button.type = "button";
-    button.className = `${SHORTLIST_CARD_BUTTON_SKIN.active} edf-blacklist-button`;
-    button.dataset.edfInactiveClass = SHORTLIST_CARD_BUTTON_SKIN.inactive;
-    button.dataset.edfActiveClass = SHORTLIST_CARD_BUTTON_SKIN.active;
-    button.dataset.edfButtonSkin = "shortlist";
-    button.setAttribute("data-testid", "extra-domain-filters-blacklist-toggle");
-    setBlacklistButtonState(button, active, "Re-blacklist");
-    button.addEventListener("click", event => {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        void toggleBlacklistListing(listing);
-    }, { capture: true });
 
     return card;
 }
 
 function reconcileRows(
-    container: HTMLElement,
     list: HTMLElement,
-    entries: BlacklistEntry[],
-    template?: HTMLElement,
+    entries: readonly BlacklistEntry[],
+    renderRows: () => void,
 ): void {
-    const existingRows = new Map(
-        [...list.querySelectorAll<HTMLElement>('[data-edf-blacklist-row="true"]')]
-            .map(row => [row.dataset.edfBlacklistUrl, row] as const)
-            .filter((entry): entry is [string, HTMLElement] => entry[0] !== undefined),
+    const existing = new Map(
+        [...list.querySelectorAll<HTMLElement>("[data-blacklist-url]")]
+            .map(card => [card.dataset.blacklistUrl, card] as const)
+            .filter((value): value is [string, HTMLElement] => value[0] !== undefined),
     );
+    const cards = entries.map(entry => {
+        const url = getBlacklistListing(entry).url;
+        const card = existing.get(url);
 
-    const rows = entries.map(entry => {
-        const url = getRowKey(entry);
-        const version = getRowVersion(entry);
-        const existing = existingRows.get(url);
+        if (card?.dataset.edfBlacklistVersion === getRowVersion(entry)) {
+            const checkbox = card.querySelector<HTMLInputElement>(".edf-selection-checkbox input");
+            if (checkbox) setSelectionCheckboxState(checkbox, selectedUrls.has(url));
 
-        if (existing?.dataset.edfBlacklistVersion === version) {
-            const input = existing.querySelector<HTMLInputElement>('.edf-selection-checkbox input');
-            if (input) input.checked = selectedUrls.has(url);
-            return existing;
+            return card;
         }
 
-        return createBlacklistRow(entry, () => void render(container, list, template), template);
+        return createRow(entry, renderRows);
     });
 
-    list.replaceChildren(...rows);
+    list.replaceChildren(...cards);
 }
 
-async function render(
-    container: HTMLElement,
-    list: HTMLElement,
-    template?: HTMLElement,
-): Promise<void> {
+async function render(container: HTMLElement, list: HTMLElement): Promise<void> {
     const all = await getBlacklist();
-    const activeEntries = all.filter(entry => !entry.removedAt);
-    activeEntries.forEach(entry => sessionEntryUrls.add(getRowKey(entry)));
-    const entries = all
-        .filter(entry => !entry.removedAt || sessionEntryUrls.has(getRowKey(entry)))
-        .sort((first, second) => second.addedAt - first.addedAt);
-
-    const controls = getPageActions({ id: "blacklist", container, fallbackAnchor: list });
+    const active = all.filter(entry => !entry.removedAt);
+    const activeUrls = new Set(active.map(entry => entry.url));
+    const retained = [...retainedUnblacklistedEntries.values()]
+        .filter(entry => !activeUrls.has(entry.url));
+    const entries = sortBlacklistEntries(
+        filterBlacklistEntries([...active, ...retained], listingFilter),
+        listingSort,
+    );
+    const controls = getPageActions({
+        container,
+        fallbackAnchor: list,
+        id: "blacklist",
+    });
     const message = container.querySelector<HTMLElement>('[data-testid="shortlist__message_wrapper"]');
+    const renderRows = (): void => void render(container, list);
 
     renderSelectionControls({
-        buttonClassName: ACTION_BUTTON_CLASS,
+        buttonClassName: "edf-selection-action",
         clearLabel: "Unblacklist",
         controls,
-        onClear: ids => {
-            void removeBlacklistUrls(ids);
-        },
+        onClear: ids => void removeBlacklistUrls(ids),
         onSelectionChange: ids => {
             replaceSelection(selectedUrls, ids);
-            void render(container, list);
+            renderRows();
         },
         selectedIds: [...selectedUrls],
-        visibleIds: entries.map(getRowKey),
+        visibleIds: entries.map(entry => getBlacklistListing(entry).url),
     });
-
     if (message) {
         message.hidden = entries.length > 0;
-        if (entries.length === 0) {
-            message.textContent = "No blacklisted properties yet.";
-        }
+        if (entries.length === 0) message.textContent = "No blacklisted properties yet.";
     }
-
-    reconcileRows(container, list, entries, template);
+    reconcileRows(list, entries, renderRows);
 }
 
-const mountBlacklistPage: PageMount = async (context) => {
+const mountBlacklistPage: PageMount = async context => {
+    enableStickyHeader(context);
+    retainedUnblacklistedEntries.clear();
     const container = await waitForUserListingsContainer(context.signal);
-    const restoreTitle = overridePageTitle(container, "Blacklisted properties");
-    const restoreMessage = findMessage(container);
-    const template = findCardTemplate(container);
-    const { list, restore: restoreList } = findListContainer(container);
+    const restoreTitle = overridePageTitle(container, "Your blacklist", "Blacklisted properties");
+    const restoreMessage = preserveMessage(container);
+    const { list, restore: restoreList } = installList(container);
+    const renderRows = (): void => void render(container, list);
 
-    await render(container, list, template);
-
-    const unwatchBlacklist = onStorageChange<BlacklistEntry[]>(
-        "blacklist",
-        () => void render(container, list, template),
-    );
+    await render(container, list);
+    const actions = container.querySelector<HTMLElement>(
+        '[data-testid="extra-domain-filters-blacklist-sort-actions"]',
+    ) ?? undefined;
+    const restoreTabs = replaceUserListingTabs(container, context.signal, filter => {
+        listingFilter = filter;
+        renderRows();
+    }, actions);
+    const restoreSort = installSortControl(container, renderRows, context.signal);
+    const unwatchBlacklist = onStorageChange<BlacklistEntry[]>("blacklist", renderRows);
 
     context.signal.addEventListener("abort", () => {
+        retainedUnblacklistedEntries.clear();
         unwatchBlacklist();
+        restoreTabs();
+        restoreSort();
         restorePageActions(container, "blacklist");
         restoreMessage();
         restoreTitle();

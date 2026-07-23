@@ -24,13 +24,6 @@ export async function toggleBundleBlacklist(members: readonly BundleMember[]): P
     }
 }
 
-export function isBundleSelected(
-    members: readonly { url: string }[],
-    blacklist: readonly BlacklistEntry[],
-): boolean {
-    return members.some(member => isBlacklisted(blacklist, member.url));
-}
-
 export function getBlacklistedBundleUrls(
     members: readonly { url: string }[],
     blacklist: readonly BlacklistEntry[],

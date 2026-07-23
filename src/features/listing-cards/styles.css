@@ -1,8 +1,15 @@
+.edf-search-top-ad-hidden,
+[data-edf-srp-top-ad="true"],
+[data-testid="adb-srp-top"],
+[id^="google_ads_iframe_"][id*="/Top_"][id$="__container__"] {
+    display: none !important;
+}
+
 .edf-listing-card-button-container {
     align-items: center;
-    display: flex;
+    display: flex !important;
     gap: 6px;
-    justify-content: space-between;
+    justify-content: flex-start;
     min-width: 0;
     padding-right: 0 !important;
     width: 100%;
@@ -13,25 +20,91 @@
     min-width: 0;
 }
 
-.edf-listing-card-button-container > button {
+.edf-listing-card-button-container > button,
+.edf-listing-card-button-container > [data-testid^="listing-card-shortlist"],
+.edf-listing-card-button-container > .edf-blacklist-button {
     flex: 0 0 auto;
-    position: static;
+    inset: auto !important;
+    margin: 0 !important;
+    position: static !important;
+    transform: none !important;
 }
 
-.edf-listing-card-action-buttons {
-    align-items: center;
-    display: inline-flex;
-    flex: 0 0 auto;
-    gap: 6px;
-    justify-content: flex-end;
+.edf-listing-card-button-container > [data-testid^="listing-card-shortlist"] {
     margin-left: auto !important;
 }
 
-.edf-listing-card-action-buttons > button {
-    flex: 0 0 auto;
+.edf-listing-card-button-container > .edf-blacklist-button {
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    margin: 3px !important;
+    padding: 0;
+    position: relative !important;
+    text-align: inherit;
+    z-index: 3;
 }
 
-.edf-blacklist-row-list [data-edf-blacklist-row="true"] .edf-listing-card-action-buttons > .edf-blacklist-button {
+.edf-listing-card-button-container > .edf-selection-checkbox {
+    margin: 0 8px 0 0;
+}
+
+[data-testid="listing-card-buttons-wrapper"] > .edf-selection-checkbox {
+    align-self: center;
+    margin: 0 8px 0 0;
+    position: static !important;
+}
+
+[data-testid="listing-card-buttons-wrapper"] {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+
+.edf-listing-card-notes-editing [data-testid="listing-card-buttons-wrapper"] {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+
+.edf-listing-card-notes-editing textarea {
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    height: 100% !important;
+    max-height: none;
+    min-height: 0;
+    overflow: auto;
+    resize: none;
+    width: 100%;
+}
+
+.edf-listing-card-notes-editing {
+    overflow: visible;
+}
+
+.edf-listing-card-notes-field,
+.edf-listing-card-notes-container {
+    box-sizing: border-box;
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 180px;
+    width: 100%;
+}
+
+.edf-listing-card-notes-field {
+    min-height: 0;
+}
+
+.edf-listing-card-notes-default,
+.edf-listing-card-enquire-action,
+.edf-listing-card-notes-cancel {
+    display: none !important;
+}
+
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] .edf-blacklist-button {
     margin: 0 !important;
     position: static !important;
 }
@@ -44,13 +117,6 @@
     flex-direction: column;
     gap: 4px;
     overflow: visible;
-}
-
-.edf-project-blacklist-row {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-    justify-content: space-between;
 }
 
 .edf-project-blacklist-button {
@@ -82,69 +148,33 @@
     color: var(--color-neutral-surface-default, #fff);
 }
 
-.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] > svg {
-    color: var(--edf-color-blacklist-inactive);
-    fill: transparent;
+.edf-blacklist-button[data-edf-ready="false"] > svg {
+    transition: none !important;
+}
+
+.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] > svg,
+.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="true"] > svg {
     transition: color 0.2s ease-in-out, fill 0.2s ease-in-out;
 }
 
-.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] {
-    background: none;
-    border: 0;
-    color: inherit;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
-    margin: 3px;
-    padding: 0;
+.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"],
+.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="true"] {
+    cursor: pointer !important;
+    pointer-events: auto !important;
     position: relative;
-    text-align: inherit;
-    z-index: 3;
+    z-index: 4;
+}
+
+#shortlist .edf-blacklist-button[data-active="false"] {
+    color: var(--edf-color-shortlist-inactive) !important;
+    transition: color 160ms ease;
+}
+
+#shortlist .edf-blacklist-button[data-active="false"]:hover,
+#shortlist .edf-blacklist-button[data-active="false"]:focus-visible {
+    color: var(--edf-color-shortlist-hover) !important;
 }
 
 .edf-project-blacklist-button[data-active="false"]:not(:hover, :focus-visible) > svg {
     color: var(--edf-project-foreground, currentColor) !important;
-}
-
-.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:hover > svg,
-.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:focus-visible > svg {
-    color: var(--edf-color-shortlist-hover);
-}
-
-#shortlist .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] > svg {
-    color: var(--edf-color-shortlist-inactive);
-}
-
-#shortlist .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:hover > svg,
-#shortlist .edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"]:focus-visible > svg {
-    color: var(--edf-color-shortlist-hover);
-}
-
-#shortlist [data-testid="listing-card-wrapper-tall"] {
-    padding-bottom: 0 !important;
-}
-
-#shortlist [data-testid="listing-card-container"] .css-ki8muu {
-    height: auto !important;
-}
-
-#shortlist [data-testid="listing-card-buttons-wrapper"] {
-    display: none !important;
-}
-
-.edf-inline-note {
-    resize: vertical;
-}
-
-#shortlist .css-172sb8g {
-    align-items: stretch;
-    max-height: 160px;
-}
-
-#shortlist .css-172sb8g > textarea.edf-inline-note {
-    height: auto !important;
-    max-height: 144px;
-    min-height: 60px;
-    overflow-y: auto;
-    resize: none;
 }

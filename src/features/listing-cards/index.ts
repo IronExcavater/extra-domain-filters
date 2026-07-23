@@ -1,4 +1,5 @@
 import { type BlacklistEntry } from "../../domain/matching";
+import { onBodyMutations } from "../../shared/dom/bodyMutations";
 import { isOwnedNode } from "../../shared/dom/ownership";
 import { createFrameReconciler } from "../../shared/dom/reconcile";
 import { PageContext } from "../../shared/platform/router";
@@ -21,7 +22,7 @@ export interface BindListingCardsOptions {
 export function bindListingCards(
     context: PageContext,
     options: BindListingCardsOptions = {},
-): void {
+): () => void {
     const showBlacklistedView = options.showBlacklistedView ?? true;
     const scope = context.scope.child("listing-cards");
     const featureContext: PageContext = {
@@ -45,9 +46,11 @@ export function bindListingCards(
     reconciler.schedule();
 
     const isExtensionNode = (node: Node): boolean =>
-        isOwnedNode(node) || node instanceof Element && Boolean(
-            node.closest('[class*="edf-"]') ??
-            node.closest('[data-testid^="extra-domain-filters-"]'),
+        isOwnedNode(node) || (
+            node instanceof Element && Boolean(
+                node.closest('[class*="edf-"]') ??
+                node.closest('[data-testid^="extra-domain-filters-"]'),
+            )
         );
 
     const listingSelector = [
@@ -55,13 +58,22 @@ export function bindListingCards(
         PROJECT_CARD_SELECTOR,
         TOPSPOT_CAROUSEL_SELECTOR,
     ].join(",");
+    let quietTimer: number | undefined;
+
+    const scheduleAfterDomainSettles = (): void => {
+        if (quietTimer !== undefined) window.clearTimeout(quietTimer);
+        quietTimer = window.setTimeout(() => {
+            quietTimer = undefined;
+            reconciler.schedule();
+        }, 120);
+    };
 
     const containsListing = (node: Node): boolean =>
         node instanceof Element && !isExtensionNode(node) && (
             node.matches(listingSelector) || node.querySelector(listingSelector) !== null
         );
 
-    const observer = new MutationObserver(mutations => {
+    onBodyMutations(mutations => {
         if (mutations.some(mutation => mutation.removedNodes.length > 0)) {
             disposeDetachedCarouselControls();
         }
@@ -70,13 +82,16 @@ export function bindListingCards(
             [...mutation.addedNodes].some(containsListing),
         );
 
-        if (hasExternalAddition) reconciler.schedule();
+        if (hasExternalAddition) scheduleAfterDomainSettles();
+    }, scope.signal);
+    scope.add(() => {
+        if (quietTimer !== undefined) window.clearTimeout(quietTimer);
     });
-    observer.observe(document.body, { childList: true, subtree: true });
-    scope.add(() => observer.disconnect());
 
     scope.add(onStorageChange<BlacklistEntry[]>("blacklist", reconciler.schedule));
     scope.add(onStorageChange("settings", reconciler.schedule));
     scope.add(disposeCarouselControls);
     window.addEventListener(REVEAL_CHANGE_EVENT, reconciler.schedule, { signal: scope.signal });
+
+    return reconciler.schedule;
 }

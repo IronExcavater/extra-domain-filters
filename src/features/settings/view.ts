@@ -1,6 +1,16 @@
+import { getAccountState, signIn, signOut } from "../../domain/account/client";
+import type { AccountState } from "../../domain/account/model";
 import { setBlacklist } from "../../domain/blacklist/store";
 import { clearListingCache } from "../../domain/listings/cache";
 import { updateSettings, type Settings } from "../../shared/state/settings";
+import { createSvgIcon } from "../../shared/ui/elements";
+import {
+    replaceWithChromeWebStoreIcon,
+    replaceWithExternalIcon,
+    replaceWithGithubIcon,
+    replaceWithItchioIcon,
+    replaceWithLinkedInIcon,
+} from "../../shared/ui/icons";
 import type { SettingDefinition } from "./definitions";
 import { SETTINGS_SECTIONS } from "./definitions";
 
@@ -19,6 +29,17 @@ interface MaintenanceAction {
     title: string;
 }
 
+interface SupportLink {
+    href: string;
+    icon: "chrome-web-store" | "github" | "itchio" | "linked-in";
+    title: string;
+}
+
+interface SupportGroup {
+    links: readonly SupportLink[];
+    title: string;
+}
+
 const MAINTENANCE_ACTIONS: MaintenanceAction[] = [
     {
         title: "Clear listing cache",
@@ -31,6 +52,49 @@ const MAINTENANCE_ACTIONS: MaintenanceAction[] = [
         description: "Remove every listing from the extension blacklist.",
         label: "Clear blacklist",
         run: () => setBlacklist([]),
+    },
+];
+
+const SUPPORT_GROUPS: readonly SupportGroup[] = [
+    {
+        title: "",
+        links: [
+            {
+                title: "Source code",
+                href: "https://github.com/IronExcavater/extra-domain-filters",
+                icon: "github",
+            },
+            {
+                title: "Chrome Web Store",
+                href: "https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg",
+                icon: "chrome-web-store",
+            },
+            {
+                title: "Feedback and issues",
+                href: "https://github.com/IronExcavater/extra-domain-filters/issues/new/choose",
+                icon: "github",
+            },
+        ],
+    },
+    {
+        title: "",
+        links: [
+            {
+                title: "LinkedIn",
+                href: "https://www.linkedin.com/in/niclas-rogulski-459845302",
+                icon: "linked-in",
+            },
+            {
+                title: "GitHub",
+                href: "https://github.com/IronExcavater/IronExcavater",
+                icon: "github",
+            },
+            {
+                title: "itch.io",
+                href: "https://niclas-rogulski.itch.io",
+                icon: "itchio",
+            },
+        ],
     },
 ];
 
@@ -95,7 +159,7 @@ function createActionRow(action: MaintenanceAction): HTMLElement {
     copy.className = "edf-settings-copy";
     title.className = "edf-settings-row-title";
     description.className = "edf-settings-row-description";
-    button.className = "edf-settings-action";
+    button.className = "edf-settings-action edf-domain-button";
     button.type = "button";
     title.textContent = action.title;
     description.textContent = action.description;
@@ -117,6 +181,113 @@ function createHeading(tag: HeadingTag, className: string, text: string): HTMLEl
     return heading;
 }
 
+function createSupportLink(link: SupportLink): HTMLElement {
+    const row = document.createElement("a");
+    const icon = document.createElement("span");
+    const copy = document.createElement("span");
+    const title = document.createElement("span");
+    const external = document.createElement("span");
+
+    row.className = "edf-settings-support-link";
+    row.href = link.href;
+    row.rel = "noreferrer";
+    row.target = "_blank";
+    row.ariaLabel = `${link.title} (opens in a new tab)`;
+    row.title = link.title;
+    icon.className = "edf-settings-support-icon";
+    copy.className = "edf-settings-support-copy";
+    title.className = "edf-settings-support-title";
+    external.className = "edf-settings-support-external";
+    title.textContent = link.title;
+    const iconRenderer = {
+        "chrome-web-store": replaceWithChromeWebStoreIcon,
+        github: replaceWithGithubIcon,
+        itchio: replaceWithItchioIcon,
+        "linked-in": replaceWithLinkedInIcon,
+    }[link.icon];
+    icon.append(createSvgIcon(iconRenderer));
+    external.append(createSvgIcon(replaceWithExternalIcon));
+    copy.append(title);
+    row.append(icon, copy, external);
+    return row;
+}
+
+function createSupportGroup(group: SupportGroup): HTMLElement {
+    const section = document.createElement("div");
+    const title = document.createElement("h3");
+    const links = document.createElement("div");
+
+    section.className = "edf-settings-support-group";
+    title.className = "edf-settings-support-group-title";
+    links.className = "edf-settings-support-actions";
+    title.textContent = group.title;
+    links.append(...group.links.map(createSupportLink));
+    if (group.title) section.append(title);
+    section.append(links);
+    return section;
+}
+
+function createAccountSection(sectionHeading: HeadingTag): HTMLElement {
+    const section = document.createElement("section");
+    const row = document.createElement("div");
+    const copy = document.createElement("div");
+    const title = document.createElement("p");
+    const description = document.createElement("p");
+    const button = document.createElement("button");
+
+    section.className = "edf-settings-section";
+    row.className = "edf-settings-row";
+    copy.className = "edf-settings-copy";
+    title.className = "edf-settings-row-title";
+    description.className = "edf-settings-row-description";
+    button.className = "edf-settings-action edf-domain-button";
+    button.type = "button";
+    title.textContent = "Google account";
+    description.textContent = "Checking account status...";
+    button.disabled = true;
+    button.textContent = "Sign in";
+
+    const render = (state: AccountState): void => {
+        button.disabled = state.status === "unavailable";
+        button.textContent = state.status === "signed-in" ? "Sign out" : "Sign in";
+        description.textContent = state.status === "signed-in"
+            ? `Syncing as ${state.profile?.email ?? state.profile?.displayName ?? "Google user"}.`
+            : state.status === "unavailable"
+                ? "Account sync is not configured in this build."
+                : "Sign in to sync your extension data across devices.";
+    };
+
+    button.addEventListener("click", async () => {
+        button.disabled = true;
+        description.textContent = "Updating account...";
+
+        try {
+            const current = await getAccountState();
+            render(current.status === "signed-in" ? await signOut() : await signIn());
+        } catch (error) {
+            button.disabled = false;
+            description.textContent = error instanceof Error
+                ? error.message
+                : "Unable to update the account.";
+        }
+    });
+
+    void getAccountState().then(render).catch((error: unknown) => {
+        button.disabled = true;
+        description.textContent = error instanceof Error
+            ? error.message
+            : "Unable to connect to the extension background service.";
+    });
+
+    copy.append(title, description);
+    row.append(copy, button);
+    section.append(
+        createHeading(sectionHeading, "edf-settings-section-title", "Account"),
+        row,
+    );
+    return section;
+}
+
 export function createSettingsContent(settings: Settings, options: SettingsViewOptions): DocumentFragment {
     const content = document.createDocumentFragment();
     if (options.includeIntroduction !== false) {
@@ -132,6 +303,8 @@ export function createSettingsContent(settings: Settings, options: SettingsViewO
         );
         content.append(introduction);
     }
+
+    content.append(createAccountSection(options.sectionHeading));
 
     for (const section of SETTINGS_SECTIONS) {
         const card = document.createElement("section");
@@ -150,6 +323,30 @@ export function createSettingsContent(settings: Settings, options: SettingsViewO
         ...MAINTENANCE_ACTIONS.map(createActionRow),
     );
     content.append(maintenance);
+
+    const support = document.createElement("section");
+    const project = document.createElement("div");
+    const name = document.createElement("p");
+    const version = document.createElement("span");
+    const publisher = document.createElement("p");
+    support.className = "edf-settings-section";
+    support.dataset.section = "support";
+    project.className = "edf-settings-support-project";
+    name.className = "edf-settings-support-name";
+    version.className = "edf-settings-support-version";
+    publisher.className = "edf-settings-support-publisher";
+    name.textContent = "Extra Domain Filters";
+    version.textContent = `Version ${chrome.runtime.getManifest().version}`;
+    publisher.textContent = "Published and maintained by Niclas Rogulski.";
+    project.append(name, version);
+    support.append(
+        createHeading(options.sectionHeading, "edf-settings-section-title", "Support"),
+        project,
+        createSupportGroup(SUPPORT_GROUPS[0]),
+        publisher,
+        createSupportGroup(SUPPORT_GROUPS[1]),
+    );
+    content.append(support);
 
     return content;
 }

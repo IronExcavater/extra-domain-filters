@@ -1,6 +1,12 @@
 export interface CloneActionButtonOptions {
     label?: string;
     icon?: (icon: SVGSVGElement) => void;
+    selected?: boolean;
+}
+
+export function setActionButtonSelected(button: HTMLButtonElement, selected: boolean): void {
+    button.dataset.selected = String(selected);
+    if (!selected) button.classList.remove("edf-domain-button");
 }
 
 export function cloneActionButton(
@@ -18,6 +24,8 @@ export function cloneActionButton(
 
     if (icon && options.icon) options.icon(icon);
     else icon?.closest("span")?.remove();
+
+    if (options.selected !== undefined) setActionButtonSelected(button, options.selected);
 
     return button;
 }

@@ -2,7 +2,6 @@ import { markOwned } from "../../../shared/dom/ownership";
 import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 
 const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
-const BUTTON_GROUP_CLASS = "edf-listing-card-action-buttons";
 const INACTIVE_SHORTLIST_CLASS_KEY = "edfInactiveShortlistClass";
 const ACTIVE_SHORTLIST_CLASS_KEY = "edfActiveShortlistClass";
 const KNOWN_INACTIVE_LISTING_CARD_CLASS = "css-bhcn0k";
@@ -163,7 +162,6 @@ function setBlacklistIcon(
     active: boolean,
 ): void {
     const iconState = active && usesUnbinIcon(button) ? "unbin" : "bin";
-    if (icon.getAttribute("data-edf-icon-state") === iconState) return;
 
     (iconState === "unbin" ? replaceWithUnbinIcon : replaceWithBinIcon)(icon);
     icon.setAttribute("data-edf-icon-state", iconState);
@@ -184,6 +182,15 @@ export function setBlacklistButtonState(button: HTMLButtonElement, active: boole
     if (button.getAttribute("aria-pressed") !== nextActive) {
         button.setAttribute("aria-pressed", nextActive);
     }
+}
+
+function enableButtonTransition(button: HTMLButtonElement): void {
+    button.dataset.edfReady = "false";
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            if (button.isConnected) button.dataset.edfReady = "true";
+        });
+    });
 }
 
 export function updateButton(button: HTMLButtonElement, active: boolean, text = "Add to blacklist"): void {
@@ -241,7 +248,8 @@ export function cloneBlacklistButton(
     button.classList.add("edf-blacklist-button");
     button.classList.remove(...ACTIVE_SHORTLIST_CLASS_NAMES);
 
-    if (icon) setBlacklistIcon(button, icon, false);
+    if (icon) setBlacklistButtonState(button, false);
+    enableButtonTransition(button);
 
     return markOwned(button, "listing-blacklist-action");
 }
@@ -286,15 +294,5 @@ export function insertBlacklistButton(
     if (!parent) return;
 
     parent.classList.add(BUTTON_CONTAINER_CLASS);
-
-    const existingGroup = parent.querySelector<HTMLElement>(`:scope > .${BUTTON_GROUP_CLASS}`);
-    if (existingGroup) {
-        existingGroup.append(blacklistButton);
-        return;
-    }
-
-    const group = document.createElement("span");
-    group.className = BUTTON_GROUP_CLASS;
-    shortlistButton.replaceWith(group);
-    group.append(shortlistButton, blacklistButton);
+    shortlistButton.after(blacklistButton);
 }

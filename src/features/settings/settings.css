@@ -8,11 +8,11 @@
 
 .edf-settings-panel,
 .edf-settings-popup {
-    --edf-settings-border: #e4e6ea;
+    --edf-settings-border: #e1e1df;
     --edf-settings-card-padding: 28px;
     --edf-settings-description-line-height: 22px;
     --edf-settings-description-size: 16px;
-    --edf-settings-muted: #3c475b;
+    --edf-settings-muted: #646463;
     --edf-settings-page-title-line-height: 38px;
     --edf-settings-page-title-size: 30px;
     --edf-settings-row-title-line-height: 24px;
@@ -20,7 +20,7 @@
     --edf-settings-section-title-line-height: 34px;
     --edf-settings-section-title-size: 26px;
     --edf-settings-surface: #fff;
-    --edf-settings-text: #1e293d;
+    --edf-settings-text: #3c475b;
 
     color: var(--edf-settings-text);
     font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
@@ -52,7 +52,7 @@
 .edf-settings-section {
     background: var(--edf-settings-surface);
     border: 1px solid var(--edf-settings-border);
-    border-radius: 14px;
+    border-radius: 12px;
     padding: var(--edf-settings-card-padding);
 }
 
@@ -101,26 +101,129 @@
 }
 
 .edf-settings-action {
-    background: var(--edf-settings-surface);
-    border: 1px solid #c5cbd5;
-    border-radius: 3px;
-    color: var(--edf-settings-text);
-    cursor: pointer;
     flex: 0 0 auto;
-    font: inherit;
-    font-size: 14px;
+}
+
+.edf-settings-support-version {
+    color: var(--edf-settings-muted);
+    font-size: 12px;
+    font-weight: 700;
     line-height: 20px;
-    padding: 7px 12px;
+    text-transform: uppercase;
 }
 
-.edf-settings-action:disabled {
-    cursor: default;
-    opacity: 0.65;
+.edf-settings-support-project {
+    align-items: baseline;
+    display: flex;
+    justify-content: space-between;
+    margin: 2px 0 0;
 }
 
-.edf-settings-action:hover:not(:disabled) {
-    border-color: #008700;
-    color: #008700;
+.edf-settings-support-name {
+    color: var(--edf-settings-text);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 26px;
+    margin: 0;
+}
+
+.edf-settings-support-actions {
+    display: grid;
+    margin-top: 4px;
+}
+
+.edf-settings-support-link {
+    align-items: center;
+    border-top: 1px solid var(--edf-settings-border);
+    box-sizing: border-box;
+    color: var(--edf-settings-text);
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 34px minmax(0, 1fr) 20px;
+    min-height: 52px;
+    padding: 6px 0;
+    text-decoration: none;
+    transition: color 150ms ease;
+    width: 100%;
+}
+
+.edf-settings-support-link:hover {
+    color: #008a08;
+}
+
+.edf-settings-support-icon {
+    align-items: center;
+    display: inline-flex;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
+}
+
+.edf-settings-support-icon svg {
+    height: 30px;
+    width: 30px;
+}
+
+.edf-settings-support-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.edf-settings-support-title {
+    color: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 20px;
+}
+
+.edf-settings-support-external {
+    align-items: center;
+    color: var(--edf-settings-muted);
+    display: inline-flex;
+    height: 18px;
+    justify-content: center;
+    width: 16px;
+}
+
+.edf-settings-support-external svg {
+    height: 16px;
+    width: 16px;
+}
+
+.edf-settings-section[data-section="support"] {
+    padding: 24px;
+}
+
+.edf-settings-section[data-section="support"] .edf-settings-section-title {
+    font-size: 24px;
+    line-height: 30px;
+    margin-bottom: 6px;
+}
+
+.edf-settings-support-publisher {
+    color: var(--edf-settings-text);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+    margin: 20px 0 0;
+}
+
+.edf-settings-support-group {
+    margin-top: 10px;
+}
+
+.edf-settings-support-group + .edf-settings-support-group {
+    margin-top: 8px;
+    padding-top: 0;
+}
+
+.edf-settings-support-group-title {
+    color: var(--edf-settings-text);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 20px;
+    margin: 0;
 }
 
 .edf-settings-toggle {
@@ -174,7 +277,7 @@
 }
 
 .edf-settings-toggle-input:checked + .edf-settings-toggle-indicator {
-    background: #00a400;
+    background: #008a08;
 }
 
 .edf-settings-toggle-input:checked + .edf-settings-toggle-indicator .edf-settings-toggle-switch {
@@ -188,6 +291,6 @@
 }
 
 .edf-settings-toggle-input:focus-visible + .edf-settings-toggle-indicator {
-    outline: 2px solid #00a400;
+    outline: 2px solid #008a08;
     outline-offset: 2px;
 }
