@@ -233,6 +233,10 @@
     display: none !important;
 }
 
+html[data-edf-extension-reload="true"] [id="savedSearches"] {
+    visibility: hidden;
+}
+
 @media (width <= 760px) {
     .edf-saved-search-list {
         grid-template-columns: minmax(0, 1fr);

@@ -101,30 +101,13 @@ function resetMenuItemState(item: HTMLLIElement): void {
     link.removeAttribute("aria-current");
 }
 
-function isMenuItemActive(item: HTMLLIElement): boolean {
-    const link = item.querySelector<HTMLAnchorElement>("a");
-
-    return link?.getAttribute("aria-current") === "page" ||
-        link?.dataset.selected === "true" ||
-        item.dataset.selected === "true";
-}
-
 function getActiveClasses(
     source: HTMLLIElement,
-    item: HTMLLIElement,
     config: MenuItemConfig,
 ): MenuItemActiveClasses | undefined {
     if (!config.inactivePeer) return undefined;
 
-    const currentActive = [...(source.parentElement?.children ?? [])]
-        .find((candidate): candidate is HTMLLIElement =>
-            candidate instanceof HTMLLIElement && isMenuItemActive(candidate)
-        );
-
-    return captureMenuItemClasses(
-        currentActive ?? (config.active ? item : source),
-        config.inactivePeer,
-    );
+    return captureMenuItemClasses(source, config.inactivePeer);
 }
 
 function setLabel(link: HTMLAnchorElement, labelText: string): void {
@@ -155,7 +138,7 @@ export async function cloneMenuItem(
     item.removeAttribute("aria-hidden");
     item.style.display = "";
 
-    const activeClasses = getActiveClasses(source, item, config);
+    const activeClasses = getActiveClasses(source, config);
     const applyState = config.onStateChange ?? setMenuItemActiveState;
     const active = config.active ?? isBlacklistRoute(new URL(window.location.href));
 

@@ -98,10 +98,7 @@ async function performAccountMenuInjection(logger: Logger): Promise<void> {
             .find(item =>
                 item instanceof HTMLLIElement &&
                 item !== sourceItem &&
-                item.getAttribute('data-testid') !== 'account-menu__blacklist-item' &&
-                item.querySelector<HTMLAnchorElement>("a")?.getAttribute("aria-current") !== "page" &&
-                item.querySelector<HTMLAnchorElement>("a")?.dataset.selected !== "true" &&
-                item.dataset.selected !== "true"
+                item.getAttribute('data-testid') !== 'account-menu__blacklist-item'
             );
 
         for (const item of existingItems) {

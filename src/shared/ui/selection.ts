@@ -65,17 +65,29 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     const selectedVisibleCount = visible.filter(id => selected.has(id)).length;
     const selectAllButton = createButton("", options.buttonClassName);
     const clearButton = createButton("", options.buttonClassName);
+    let selectAllHandledOnPointer = false;
 
-    selectAllButton.textContent = selectedVisibleCount === visible.length ? "Deselect all" : "Select all";
-    selectAllButton.hidden = visible.length === 0;
-    selectAllButton.addEventListener("click", event => {
-        event.preventDefault();
-        event.stopPropagation();
+    const toggleVisibleSelection = (): void => {
         options.onSelectionChange(
             selectedVisibleCount === visible.length
                 ? []
                 : visible,
         );
+    };
+
+    selectAllButton.textContent = selectedVisibleCount === visible.length ? "Deselect all" : "Select all";
+    selectAllButton.hidden = visible.length === 0;
+    selectAllButton.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        selectAllHandledOnPointer = true;
+        toggleVisibleSelection();
+    });
+    selectAllButton.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (selectAllHandledOnPointer) return;
+        toggleVisibleSelection();
     });
 
     clearButton.ariaLabel = options.clearLabel ?? "Clear selected listings";
