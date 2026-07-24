@@ -337,12 +337,12 @@ export function createSettingsContent(settings: Settings, options: SettingsViewO
     support.className = "edf-settings-section";
     support.dataset.section = "support";
     project.className = "edf-settings-support-project";
-    name.className = "edf-settings-support-name";
+    name.className = "edf-settings-support-meta";
     version.className = "edf-settings-support-version";
-    publisher.className = "edf-settings-support-publisher";
+    publisher.className = "edf-settings-support-meta";
     name.textContent = "Extra Domain Filters";
     version.textContent = `Version ${chrome.runtime.getManifest().version}`;
-    publisher.textContent = "Published and maintained by Niclas Rogulski.";
+    publisher.textContent = "Developed and published by Niclas Rogulski.";
     project.append(name, version);
     support.append(
         createHeading(options.sectionHeading, "edf-settings-section-title", "Support"),

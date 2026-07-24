@@ -121,11 +121,11 @@
     margin: 2px 0 0;
 }
 
-.edf-settings-support-name {
+.edf-settings-support-meta {
     color: var(--edf-settings-text);
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 26px;
+    font-size: var(--edf-settings-row-title-size);
+    font-weight: 400;
+    line-height: var(--edf-settings-row-title-line-height);
     margin: 0;
 }
 
@@ -203,11 +203,7 @@
     margin-bottom: 6px;
 }
 
-.edf-settings-support-publisher {
-    color: var(--edf-settings-text);
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 20px;
+.edf-settings-support-group + .edf-settings-support-meta {
     margin: 20px 0 0;
 }
 
