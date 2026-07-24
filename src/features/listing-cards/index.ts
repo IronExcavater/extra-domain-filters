@@ -89,6 +89,7 @@ export function bindListingCards(
     });
 
     scope.add(onStorageChange<BlacklistEntry[]>("blacklist", reconciler.schedule));
+    scope.add(onStorageChange("listingCache", reconciler.schedule));
     scope.add(onStorageChange("settings", reconciler.schedule));
     scope.add(disposeCarouselControls);
     window.addEventListener(REVEAL_CHANGE_EVENT, reconciler.schedule, { signal: scope.signal });

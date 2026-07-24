@@ -5,12 +5,14 @@ import {
 } from "../shared/platform/messages";
 import { getAccountState, signIn, signOut } from "./account";
 import { startBlacklistSync } from "./blacklistSync";
+import { enqueueListingEnrichment, startListingEnrichment } from "./listingEnrichment";
 import { startSavedSearchSync } from "./savedSearchSync";
 import { startSettingsSync } from "./settingsSync";
 import { createSharedSearch, getSharedSearch } from "./sharedSearches";
 import { startTelemetry, trackTelemetry } from "./telemetry";
 
 startBlacklistSync();
+startListingEnrichment();
 startSettingsSync();
 startSavedSearchSync();
 startTelemetry();
@@ -22,6 +24,7 @@ async function handleRequest(request: ExtensionRequest): Promise<unknown> {
         case "account:sign-out": return signOut();
         case "shared-search:create": return createSharedSearch(request.params);
         case "shared-search:get": return getSharedSearch(request.id);
+        case "listing:enrich": return enqueueListingEnrichment(request.listings);
         case "telemetry:track": return trackTelemetry(request.event);
     }
 }

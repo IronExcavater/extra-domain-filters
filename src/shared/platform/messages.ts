@@ -1,4 +1,5 @@
 import type { AccountState } from "../../domain/account/model";
+import type { ListingSnapshot } from "../../domain/matching";
 import {
     isCreateSharedSearchInput,
     isSharedSearchId,
@@ -14,6 +15,7 @@ export type ExtensionRequest =
     | { type: "account:sign-out" }
     | { type: "shared-search:create"; params: string }
     | { type: "shared-search:get"; id: string }
+    | { listings: ListingSnapshot[]; type: "listing:enrich" }
     | { event: TelemetryEventInput; type: "telemetry:track" };
 
 export type ExtensionResponse<T> =
@@ -26,6 +28,7 @@ export interface ExtensionResponseMap {
     "account:sign-out": AccountState;
     "shared-search:create": SharedSearch;
     "shared-search:get": SharedSearch | undefined;
+    "listing:enrich": undefined;
     "telemetry:track": undefined;
 }
 
@@ -37,6 +40,9 @@ const REQUEST_VALIDATORS = {
     "account:sign-out": () => true,
     "shared-search:create": isCreateSharedSearchInput,
     "shared-search:get": value => isSharedSearchId(value.id),
+    "listing:enrich": value => Array.isArray(value.listings) && value.listings.length <= 24 &&
+        value.listings.every(listing => isPlainObject(listing) && typeof listing.url === "string" &&
+            typeof listing.title === "string" && typeof listing.text === "string"),
     "telemetry:track": value => isTelemetryEventInput(value.event),
 } satisfies Record<ExtensionRequest["type"], RequestValidator>;
 

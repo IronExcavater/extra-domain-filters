@@ -87,5 +87,5 @@ export async function injectListingCards(
         }
     }
 
-    updateListingCards(settings, settings.flags.enableBlacklist ? blacklist : [], showBlacklistedView);
+    await updateListingCards(settings, settings.flags.enableBlacklist ? blacklist : [], showBlacklistedView);
 }

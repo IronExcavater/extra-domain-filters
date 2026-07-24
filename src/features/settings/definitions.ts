@@ -89,6 +89,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
                 read: settings => settings.filters.excludeWhenNoCouldHaveMatch,
                 write: excludeWhenNoCouldHaveMatch => ({ filters: { excludeWhenNoCouldHaveMatch } }),
             },
+            {
+                title: "Listing detail enrichment",
+                description: "Fetch a small, rate-limited cache of viewed listing details to improve text-based matches.",
+                read: settings => settings.filters.enrichListingDetails,
+                write: enrichListingDetails => ({ filters: { enrichListingDetails } }),
+            },
         ],
     },
     {

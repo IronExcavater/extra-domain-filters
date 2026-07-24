@@ -28,6 +28,7 @@ export interface FilterSettings {
     excludePropertyKeywords: string[];
     enabled: FilterFeatureSettings;
     excludeWhenNoCouldHaveMatch: boolean;
+    enrichListingDetails: boolean;
 }
 
 export interface FilterFeatureSettings {
@@ -75,6 +76,7 @@ export const DEFAULT_SETTINGS: Settings = {
             propertyTypes: true,
         },
         excludeWhenNoCouldHaveMatch: false,
+        enrichListingDetails: false,
     },
     flags: {
         enableExtension: true,

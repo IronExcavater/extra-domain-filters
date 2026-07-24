@@ -1,3 +1,5 @@
+import { getCachedListings } from "../../domain/listings/cache";
+import { requestListingEnrichment } from "../../domain/listings/enrichment";
 import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
 import { type Settings } from "../../shared/state/settings";
 import { updateCarouselCard } from "./cards/carousel";
@@ -45,29 +47,40 @@ function getProjectActionUrls(card: Element, projectUrl: string): string[] {
     ];
 }
 
-export function updateListingCards(
+export async function updateListingCards(
     settings: Settings,
     blacklist: BlacklistEntry[],
     showBlacklistedView: boolean,
-): void {
+): Promise<void> {
     const layoutBefore = new Map(
         [...document.querySelectorAll<HTMLElement>(TOP_LEVEL_CARD_SELECTOR)]
             .map(card => [card, card.getBoundingClientRect()] as const),
     );
     const wholeProjectReasons = new Map<Element, ExclusionReason>();
-
-    document.querySelectorAll<HTMLButtonElement>(BLACKLIST_BUTTON_SELECTOR)
-        .forEach(button => {
-            if (button.dataset.blacklistScope === "carousel") return;
-
+    const cards = [...document.querySelectorAll<HTMLButtonElement>(BLACKLIST_BUTTON_SELECTOR)]
+        .flatMap(button => {
+            if (button.dataset.blacklistScope === "carousel") return [];
             const card = getCard(button);
-            if (!card) return;
-
+            if (!card) return [];
             const url = getListingUrl(button, card);
-            if (!url) return;
+            if (!url) return [];
+
+            return [{ button, card, snapshot: getListingSnapshot(card, url, { includeThumbnail: false }), url }];
+        });
+    const cachedListings = await getCachedListings(cards.map(({ url }) => url));
+
+    if (settings.filters.enrichListingDetails) {
+        requestListingEnrichment(cards.map(({ snapshot }) => snapshot));
+    }
+
+    cards.forEach(({ button, card, snapshot, url }) => {
+            const cached = cachedListings.get(url.replace(/\/$/, ""));
+            const listing = cached && cached.text.length > snapshot.text.length
+                ? { ...snapshot, ...cached, text: cached.text }
+                : snapshot;
 
             const rawMatch = matchListing(
-                getListingSnapshot(card, url, { includeThumbnail: false }),
+                listing,
                 settings,
                 blacklist,
             );

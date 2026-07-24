@@ -7,6 +7,7 @@ interface ListingCacheEntry {
 }
 
 const CACHE_KEY = "listingCache";
+const MAX_CACHE_ENTRIES = 250;
 const memoryCache = new Map<string, ListingCacheEntry>();
 const pendingFetches = new Map<string, Promise<ListingSnapshot>>();
 const cacheRepository = createStorageRepository<Record<string, ListingCacheEntry>>({
@@ -48,7 +49,16 @@ export async function cacheListing(listing: ListingSnapshot): Promise<ListingSna
     const entry = { listing, cachedAt: Date.now() };
     memoryCache.set(key, entry);
 
-    await cacheRepository.update(cache => ({ ...cache, [key]: entry }));
+    await cacheRepository.update(cache => {
+        const next = { ...cache, [key]: entry };
+        const keys = Object.entries(next)
+            .sort(([, first], [, second]) => second.cachedAt - first.cachedAt)
+            .slice(MAX_CACHE_ENTRIES)
+            .map(([url]) => url);
+
+        for (const url of keys) delete next[url];
+        return next;
+    });
 
     return listing;
 }
@@ -84,6 +94,53 @@ function parseListingPage(html: string): Pick<ListingSnapshot, "text" | "thumbna
     };
 }
 
+export async function getCachedListings(urls: readonly string[]): Promise<Map<string, ListingSnapshot>> {
+    const cache = await readCache();
+    const listings = new Map<string, ListingSnapshot>();
+
+    for (const url of urls) {
+        const key = normalizeUrl(url);
+        const entry = memoryCache.get(key) ?? cache[key];
+        if (!entry) continue;
+        memoryCache.set(key, entry);
+        listings.set(key, entry.listing);
+    }
+
+    return listings;
+}
+
+export type ListingEnrichmentStatus = "blocked" | "enriched" | "failed" | "throttled";
+
+export interface ListingEnrichmentResult {
+    listing?: ListingSnapshot;
+    status: ListingEnrichmentStatus;
+}
+
+export async function enrichListingSnapshot(
+    base: ListingSnapshot,
+    signal: AbortSignal,
+): Promise<ListingEnrichmentResult> {
+    try {
+        const response = await fetch(base.url, { signal });
+        if (response.status === 401 || response.status === 403) return { status: "blocked" };
+        if (response.status === 429) return { status: "throttled" };
+        if (!response.ok) return { status: "failed" };
+
+        const page = parseListingPage(await response.text());
+        const listing = {
+            ...base,
+            text: `${base.text}\n${page.text}`,
+            thumbnailUrl: page.thumbnailUrl ?? base.thumbnailUrl,
+            imageUrls: [...new Set([...(base.imageUrls ?? []), ...(page.imageUrls ?? [])])],
+        };
+
+        return { listing, status: "enriched" };
+    } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") throw error;
+        return { status: "failed" };
+    }
+}
+
 export async function resolveListingSnapshot(
     base: ListingSnapshot,
     options: { signal: AbortSignal; includeDetail: boolean }
@@ -99,19 +156,8 @@ export async function resolveListingSnapshot(
     const pending = pendingFetches.get(key);
     if (pending) return pending;
 
-    const request = fetch(base.url, { signal: options.signal })
-        .then(async response => {
-            if (!response.ok) return base;
-
-            const page = parseListingPage(await response.text());
-
-            return {
-                ...base,
-                text: `${base.text}\n${page.text}`,
-                thumbnailUrl: page.thumbnailUrl ?? base.thumbnailUrl,
-                imageUrls: [...new Set([...(base.imageUrls ?? []), ...(page.imageUrls ?? [])])],
-            };
-        })
+    const request = enrichListingSnapshot(base, options.signal)
+        .then(result => result.listing ?? base)
         .then(cacheListing)
         .finally(() => pendingFetches.delete(key));
 
