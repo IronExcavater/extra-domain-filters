@@ -30,10 +30,10 @@ header.header[role="banner"] button[aria-label="User profile"][data-edf-navigati
     transform: rotate(180deg);
 }
 
-header.header[role="banner"] a[role="button"][aria-haspopup="true"] svg {
+header.header[role="banner"] [data-testid="header-menu-desktop-option"] > a .css-1ohxmtf svg {
     transition: transform 160ms ease;
 }
 
-header.header[role="banner"] a[role="button"][aria-haspopup="true"][data-edf-navigation-open="true"] svg {
+header.header[role="banner"] [data-testid="header-menu-desktop-option"] > a[data-edf-navigation-open="true"] .css-1ohxmtf svg {
     transform: rotate(180deg);
 }

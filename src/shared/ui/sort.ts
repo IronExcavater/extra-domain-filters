@@ -44,6 +44,15 @@ export function createDropdownControl(options: DropdownControlOptions): SortCont
     summary.ariaLabel = options.ariaLabel;
     menu.className = "edf-sort-dropdown-menu";
 
+    const syncMenuCorner = (): void => {
+        if (!details.open) return;
+
+        const menuRadius = 8;
+        const widthDifference = menu.getBoundingClientRect().width - summary.getBoundingClientRect().width;
+
+        menu.dataset.edfRoundTopLeft = String(widthDifference > menuRadius + 0.5);
+    };
+
     const renderSummary = (): void => {
         const text = options.options.find(([value]) => value === selected)?.[1] ?? options.ariaLabel;
         summary.replaceChildren(text, createChevron());
@@ -72,10 +81,19 @@ export function createDropdownControl(options: DropdownControlOptions): SortCont
         details.open = false;
         summary.focus();
     }, { signal: options.signal });
+    details.addEventListener("toggle", () => {
+        if (!details.open) return;
+        requestAnimationFrame(syncMenuCorner);
+    }, { signal: options.signal });
     document.addEventListener("pointerdown", event => {
         if (!details.open || details.contains(event.target as Node)) return;
         details.open = false;
     }, { signal: options.signal });
+
+    const resizeObserver = new ResizeObserver(syncMenuCorner);
+    resizeObserver.observe(summary);
+    resizeObserver.observe(menu);
+    options.signal?.addEventListener("abort", () => resizeObserver.disconnect(), { once: true });
 
     renderSummary();
     details.append(summary, menu);

@@ -28,7 +28,8 @@ function bindMenuChevron(control: HTMLElement, context: PageContext): void {
     chevronControls.add(control);
 
     const sync = (): void => {
-        control.dataset.edfNavigationOpen = String(control.getAttribute("aria-expanded") === "true");
+        const expanded = control.getAttribute("aria-expanded");
+        if (expanded !== null) control.dataset.edfNavigationOpen = expanded;
     };
     const setOpen = (open: boolean): void => {
         control.dataset.edfNavigationOpen = String(open);
@@ -61,7 +62,7 @@ export function enableNavigationChevronAnimation(context: PageContext): void {
             bindAccountChevron(button, context);
         }
         for (const control of document.querySelectorAll<HTMLElement>(
-            'header.header[role="banner"] :is(a, button)[aria-haspopup="true"]',
+            'header.header[role="banner"] [data-testid="header-menu-desktop-option"] > a:has(.css-1ohxmtf)',
         )) {
             bindMenuChevron(control, context);
         }
