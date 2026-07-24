@@ -1,11 +1,24 @@
+[data-edf-account-menu-state] > a {
+    color: #3c475b !important;
+    transition: color 150ms ease;
+}
+
 [data-edf-account-menu-state="active"] > a {
-    color: var(--edf-color-green) !important;
+    color: #0ea800 !important;
 }
 
-[data-edf-account-menu-state="inactive"] > a {
-    color: var(--edf-color-text) !important;
+[data-edf-account-menu-state] > a:hover {
+    color: #0ea800 !important;
 }
 
-[data-edf-account-menu-state="active"] > a > span {
-    color: var(--edf-color-green);
+[data-edf-account-menu-state] > a > :is(svg, span) {
+    transition: color 150ms ease;
+}
+
+[data-edf-account-menu-state="active"] > a > :is(svg, span) {
+    color: #0ea800;
+}
+
+[data-edf-account-menu-state] > a:hover > :is(svg, span) {
+    color: #0ea800;
 }

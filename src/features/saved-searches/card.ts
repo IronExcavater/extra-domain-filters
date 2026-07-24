@@ -68,7 +68,7 @@ export function createSavedSearchCard(
     if (options.onSelectionChange) {
         headingRow.append(createSelectionCheckbox(
             options.selected ?? false,
-            `Select ${title.textContent ?? "saved search"}`,
+            `Select ${search.title || "saved search"}`,
             options.onSelectionChange,
         ));
     }

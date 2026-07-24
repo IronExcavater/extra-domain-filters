@@ -1,9 +1,6 @@
-import { onBodyMutations } from "../../shared/dom/bodyMutations";
 import { Logger } from "../../shared/platform/logging";
 import { observeUrlChanges, PageContext } from "../../shared/platform/router";
 import { cloneMenuItem } from "./clone/menuItem";
-
-let activeInjection: Promise<void> | undefined;
 
 export function bindAccountMenuTrigger(context: PageContext): void {
     let frame: number | undefined;
@@ -13,7 +10,7 @@ export function bindAccountMenuTrigger(context: PageContext): void {
 
         frame = requestAnimationFrame(() => {
             frame = undefined;
-            void injectAccountMenu(context.logger);
+            injectAccountMenu(context.logger);
         });
     };
 
@@ -27,7 +24,7 @@ export function bindAccountMenuTrigger(context: PageContext): void {
         }
     }, { capture: true, signal: context.signal });
 
-    onBodyMutations(mutations => {
+    const observer = new MutationObserver(mutations => {
         if (
             mutations.some(mutation =>
                 [...mutation.addedNodes].some(node =>
@@ -40,23 +37,22 @@ export function bindAccountMenuTrigger(context: PageContext): void {
                 )
             )
         ) {
-            scheduleInject();
+            injectAccountMenu(context.logger);
         }
-    }, context.signal);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
     observeUrlChanges(scheduleInject, context.signal);
     context.scope.add(() => {
         if (frame !== undefined) cancelAnimationFrame(frame);
+        observer.disconnect();
     });
 }
 
-export function injectAccountMenu(logger: Logger): Promise<void> {
-    activeInjection ??= performAccountMenuInjection(logger).finally(() => {
-        activeInjection = undefined;
-    });
-    return activeInjection;
+export function injectAccountMenu(logger: Logger): void {
+    performAccountMenuInjection(logger);
 }
 
-async function performAccountMenuInjection(logger: Logger): Promise<void> {
+function performAccountMenuInjection(logger: Logger): void {
     const currentUrl = new URL(window.location.href);
     const blacklistActive = currentUrl.searchParams.get('blacklist') === '1';
     const shortlistActive = currentUrl.pathname === '/user/shortlist' && !blacklistActive;
@@ -105,7 +101,7 @@ async function performAccountMenuInjection(logger: Logger): Promise<void> {
             if (item !== existing) item.remove();
         }
 
-        const blacklistItem = await cloneMenuItem(sourceItem as HTMLLIElement, {
+        const blacklistItem = cloneMenuItem(sourceItem as HTMLLIElement, {
             label: 'Blacklist',
             href: blacklistUrl.href,
             active: blacklistActive,

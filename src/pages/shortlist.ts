@@ -257,6 +257,7 @@ const mountShortlistPage: PageMount = async (context) => {
     if (container) {
         let frame: number | undefined;
         let reconcileTimer: number | undefined;
+        const recoveryTimers = new Set<number>();
         const recoveryFrames = new Set<number>();
         const reconcileCards = (): void => {
             if (reconcileTimer !== undefined) {
@@ -286,6 +287,13 @@ const mountShortlistPage: PageMount = async (context) => {
                 recoveryFrames.add(secondFrame);
             });
             recoveryFrames.add(firstFrame);
+            for (const delay of [160, 320]) {
+                const timer = window.setTimeout(() => {
+                    recoveryTimers.delete(timer);
+                    recoverCard();
+                }, delay);
+                recoveryTimers.add(timer);
+            }
         };
         await renderControls(container);
         configureCards(container, schedule);
@@ -327,6 +335,7 @@ const mountShortlistPage: PageMount = async (context) => {
             if (frame !== undefined) cancelAnimationFrame(frame);
             if (reconcileTimer !== undefined) window.clearTimeout(reconcileTimer);
             recoveryFrames.forEach(frameId => cancelAnimationFrame(frameId));
+            recoveryTimers.forEach(timer => window.clearTimeout(timer));
         }, { once: true });
     }
 };

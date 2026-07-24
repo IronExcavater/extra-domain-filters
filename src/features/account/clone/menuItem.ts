@@ -1,9 +1,6 @@
 import { markOwned } from "../../../shared/dom/ownership";
 import { getFromStorage, onStorageChange } from "../../../shared/platform/storage";
 import { replaceWithBinIcon } from "../../../shared/ui/icons";
-import { match } from "../../../shared/utils/regex";
-
-const isBlacklistRoute = match({ path: "/user/shortlist", search: { blacklist: "1" } });
 
 export interface MenuItemActiveClasses {
     activeItemClassName: string;
@@ -15,7 +12,7 @@ export interface MenuItemActiveClasses {
 export interface MenuItemConfig {
     label: string;
     href: string;
-    active?: boolean;
+    active: boolean;
     badge?: false | { storageKey: string };
     existingItem?: HTMLLIElement;
     inactivePeer?: HTMLLIElement;
@@ -25,7 +22,7 @@ export interface MenuItemConfig {
 
 const activeBadgeSubscriptions = new Map<string, () => void>();
 
-async function bindBadge(storageKey: string, badge: HTMLElement): Promise<void> {
+function bindBadge(storageKey: string, badge: HTMLElement): void {
     const setCount = (entries: readonly unknown[] | undefined): void => {
         const count = (entries ?? []).filter(entry =>
             typeof entry !== "object" ||
@@ -39,7 +36,7 @@ async function bindBadge(storageKey: string, badge: HTMLElement): Promise<void> 
 
     activeBadgeSubscriptions.get(storageKey)?.();
 
-    setCount(await getFromStorage<unknown[]>(storageKey));
+    void getFromStorage<unknown[]>(storageKey).then(setCount);
     activeBadgeSubscriptions.set(
         storageKey,
         onStorageChange<unknown[]>(storageKey, setCount),
@@ -116,10 +113,10 @@ function setLabel(link: HTMLAnchorElement, labelText: string): void {
     if (label) label.textContent = labelText;
 }
 
-export async function cloneMenuItem(
+export function cloneMenuItem(
     source: HTMLLIElement,
     config: MenuItemConfig,
-): Promise<HTMLLIElement> {
+): HTMLLIElement {
     const item = config.existingItem ?? source.cloneNode(true) as HTMLLIElement;
     const link = item.querySelector<HTMLAnchorElement>("a");
     const icon = link?.querySelector("svg");
@@ -141,11 +138,11 @@ export async function cloneMenuItem(
 
     const activeClasses = getActiveClasses(source, config);
     const applyState = config.onStateChange ?? setMenuItemActiveState;
-    const active = config.active ?? isBlacklistRoute(new URL(window.location.href));
+    const active = config.active;
 
     if (config.badge) {
         badge.setAttribute("data-testid", "account-menu__blacklist-count");
-        await bindBadge(config.badge.storageKey, badge);
+        bindBadge(config.badge.storageKey, badge);
     } else {
         badge.remove();
     }

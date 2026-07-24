@@ -8,6 +8,14 @@ const NATIVE_ENTRY_SELECTOR =
     '[data-testid="saved-searches__entry"]:not([data-extra-domain-filters-owner="saved-search-entry"])';
 const VIEW_LINK_SELECTOR = '[data-testid="saved-searches__view-properties"]';
 
+function readNewListingCount(entry: HTMLElement): number | undefined {
+    const match = entry.textContent?.match(/\b(\d[\d,]*)\s+new\b/i);
+    if (!match) return undefined;
+
+    const count = Number(match[1].replaceAll(",", ""));
+    return Number.isSafeInteger(count) && count >= 0 ? count : undefined;
+}
+
 function readDomainSearch(
     entry: HTMLElement,
     stored: readonly SavedSearch[],
@@ -31,6 +39,7 @@ function readDomainSearch(
             current?.filterParams ||
             "",
         id: current?.id ?? `domain:${domainId}`,
+        newListingCount: readNewListingCount(entry),
         notificationFrequency: current?.notificationFrequency ?? "weekly",
         title,
         updatedAt: current?.updatedAt ?? Date.now(),
@@ -42,6 +51,7 @@ function hasChanged(current: SavedSearch | undefined, next: SavedSearch): boolea
     return !current ||
         current.domainId !== next.domainId ||
         current.filterParams !== next.filterParams ||
+        current.newListingCount !== next.newListingCount ||
         current.notificationFrequency !== next.notificationFrequency ||
         current.title !== next.title ||
         current.url !== next.url;

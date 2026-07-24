@@ -67,14 +67,24 @@ export function createCategory(summary: SearchFilterSummary): HTMLHeadingElement
     return category;
 }
 
-export function createTitle(search: SavedSearch): HTMLHeadingElement {
+export function createTitle(search: SavedSearch): HTMLElement {
+    const wrapper = document.createElement("span");
     const title = document.createElement("h2");
 
+    wrapper.className = "edf-saved-search-title-content";
     title.className = "edf-saved-search-title";
     title.dataset.testid = "saved-searches__entry--title";
     title.textContent = getSearchTitle(search);
 
-    return title;
+    wrapper.append(title);
+    if (search.newListingCount !== undefined) {
+        const count = document.createElement("span");
+        count.className = "edf-saved-search-new-count";
+        count.textContent = `${search.newListingCount.toLocaleString("en-AU")} new`;
+        wrapper.append(count);
+    }
+
+    return wrapper;
 }
 
 export function createFilterChips(chips: readonly string[]): HTMLElement | undefined {

@@ -24,20 +24,22 @@
     background: transparent;
     border: 0;
     border-radius: 0;
-    color: #fff;
+    color: #fff !important;
     cursor: pointer;
     display: inline-flex;
-    height: 24px;
+    height: 32px;
     justify-content: center;
     padding: 0;
     position: absolute;
-    right: -32px;
-    top: 0;
-    width: 24px;
+    right: -40px;
+    top: -4px;
+    transition: background-color 150ms ease, color 150ms ease;
+    width: 32px;
 }
 
 .edf-saved-search-modal-close:hover {
-    color: rgb(255 255 255 / 72%);
+    background: rgb(255 255 255 / 14%);
+    color: #fff !important;
 }
 
 .edf-saved-search-modal-close:focus-visible {
@@ -46,8 +48,8 @@
 }
 
 .edf-saved-search-modal-close svg {
-    height: 24px;
-    width: 24px;
+    height: 28px;
+    width: 28px;
 }
 
 .edf-saved-search-alert-content {

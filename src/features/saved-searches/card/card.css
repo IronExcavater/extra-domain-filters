@@ -22,6 +22,13 @@
     text-decoration: none;
 }
 
+.edf-saved-search-title-content {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+}
+
 .edf-saved-search-category {
     color: #737d91;
     font-size: 14px;
@@ -46,6 +53,17 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.edf-saved-search-new-count {
+    background: #eef1f5;
+    border-radius: 2px;
+    color: #34415a;
+    flex: 0 0 auto;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    padding: 1px 5px;
 }
 
 .edf-saved-search-description {

@@ -10,6 +10,7 @@ export interface SavedSearch {
     domainId?: string;
     filterParams: string;
     id: string;
+    newListingCount?: number;
     notificationFrequency: SearchNotificationFrequency;
     title: string;
     updatedAt: number;
@@ -20,6 +21,7 @@ export interface SaveSearchInput {
     domainId?: string;
     filterParams: string;
     id?: string;
+    newListingCount?: number;
     notificationFrequency: SearchNotificationFrequency;
     title: string;
     url: string;
@@ -42,6 +44,10 @@ export function normalizeSavedSearch(value: unknown): SavedSearch | undefined {
         domainId: typeof value.domainId === "string" ? value.domainId : undefined,
         filterParams: value.filterParams,
         id: value.id,
+        newListingCount: typeof value.newListingCount === "number" &&
+            Number.isSafeInteger(value.newListingCount) && value.newListingCount >= 0
+            ? value.newListingCount
+            : undefined,
         notificationFrequency: value.notificationFrequency,
         title: value.title,
         updatedAt: value.updatedAt,
