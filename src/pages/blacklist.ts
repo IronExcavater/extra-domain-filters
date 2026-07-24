@@ -166,6 +166,7 @@ function createRow(
     });
 
     card.dataset.edfBlacklistVersion = getRowVersion(entry);
+    card.dataset.edfBlacklistActive = String(!retained);
 
     return card;
 }
@@ -185,7 +186,11 @@ function reconcileRows(
         const url = getBlacklistListing(entry).url;
         const card = existing.get(url);
 
-        if (card?.dataset.edfBlacklistVersion === getRowVersion(entry)) {
+        const active = !retainedUnblacklistedEntries.has(url);
+        if (
+            card?.dataset.edfBlacklistVersion === getRowVersion(entry) &&
+            card.dataset.edfBlacklistActive === String(active)
+        ) {
             const checkbox = card.querySelector<HTMLInputElement>(".edf-selection-checkbox input");
             if (checkbox) setSelectionCheckboxState(checkbox, selectedUrls.has(url));
 
@@ -227,7 +232,16 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
             buttonClassName: "edf-selection-action",
             clearLabel: "Unblacklist",
             controls,
-            onClear: ids => void removeBlacklistUrls(ids),
+            onClear: ids => {
+                const selected = new Set(ids);
+                for (const entry of entries) {
+                    const url = getBlacklistListing(entry).url;
+                    if (!selected.has(url)) continue;
+                    retainedUnblacklistedEntries.set(url, entry);
+                    selectedUrls.delete(url);
+                }
+                void removeBlacklistUrls(ids).then(renderRows);
+            },
             onSelectionChange: ids => {
                 replaceSelection(selectedUrls, ids);
                 syncCheckboxes();
