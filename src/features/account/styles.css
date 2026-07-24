@@ -1,0 +1,11 @@
+[data-edf-account-menu-state="active"] > a {
+    color: var(--edf-color-green) !important;
+}
+
+[data-edf-account-menu-state="inactive"] > a {
+    color: var(--edf-color-text) !important;
+}
+
+[data-edf-account-menu-state="active"] > a > span {
+    color: var(--edf-color-green);
+}

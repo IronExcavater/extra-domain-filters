@@ -87,6 +87,7 @@ function setMenuItemActiveState(
     if (active) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
 
+    item.dataset.edfAccountMenuState = active ? "active" : "inactive";
     item.dataset.selected = String(active);
     link.dataset.selected = String(active);
 }

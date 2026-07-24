@@ -81,7 +81,6 @@ function renderCards(
             search.updatedAt,
             search.notificationFrequency,
             search.filterParams,
-            selectedSearchIds.has(search.id),
         ]),
     });
     if (list.dataset.edfSignature === signature) return;
@@ -134,7 +133,6 @@ const mountSavedSearchesPage: PageMount = context => {
             onSelectionChange: ids => {
                 replaceSelection(selectedSearchIds, ids);
                 if (list) {
-                    renderCards(list, visibleSearches(), sort, context.signal, renderControls);
                     syncSelectionCheckboxes(list);
                 }
                 renderControls();

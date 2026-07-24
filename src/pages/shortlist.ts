@@ -12,7 +12,12 @@ import {
     replaceUserListingTabs,
 } from "../features/user-listings/page";
 import { PageMount } from "../shared/platform/router";
-import { createSelectionCheckbox, renderSelectionControls, replaceSelection } from "../shared/ui/selection";
+import {
+    createSelectionCheckbox,
+    renderSelectionControls,
+    replaceSelection,
+    setSelectionCheckboxState,
+} from "../shared/ui/selection";
 import { createSortControl } from "../shared/ui/sort";
 
 const ACTION_BUTTON_CLASS = "edf-selection-action";
@@ -127,6 +132,14 @@ function configureCards(
     syncSelectionControls(container, reconcileCards);
 }
 
+function syncSelectedCards(container: HTMLElement): void {
+    for (const card of getUserListingCards(container)) {
+        const id = getUserListingUrl(card);
+        const checkbox = card.querySelector<HTMLInputElement>(".edf-selection-checkbox input");
+        if (id && checkbox) setSelectionCheckboxState(checkbox, selectedCardIds.has(id));
+    }
+}
+
 function clearCards(container: HTMLElement, ids: readonly string[]): void {
     const selected = new Set(ids);
 
@@ -187,6 +200,7 @@ async function renderControls(container: HTMLElement): Promise<void> {
         },
         onSelectionChange: ids => {
             replaceSelection(selectedCardIds, ids);
+            syncSelectedCards(container);
             void renderControls(container);
         },
         selectedIds: [...selectedCardIds],

@@ -70,6 +70,7 @@ export default defineManifest(({ mode }) => {
                     'src/features/listing-cards/exclusion/styles.css',
                     'src/features/listing-cards/carousel.css',
                     'src/features/navigation/styles.css',
+                    'src/features/account/styles.css',
                     'src/features/settings/settings.css',
                     'src/features/user-listings/styles.css',
                 ],

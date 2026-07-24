@@ -55,7 +55,7 @@
 [data-testid="listing-card-buttons-wrapper"] > .edf-selection-checkbox {
     align-self: center;
     margin: 0 8px 0 0;
-    position: static !important;
+    position: relative !important;
 }
 
 [data-testid="listing-card-buttons-wrapper"] {
