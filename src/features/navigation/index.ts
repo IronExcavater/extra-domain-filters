@@ -11,8 +11,13 @@ function bindAccountChevron(button: HTMLButtonElement, context: PageContext): vo
         button.dataset.edfNavigationOpen = String(open);
     };
 
-    button.addEventListener("click", () => {
+    button.addEventListener("pointerdown", () => {
         setOpen(button.dataset.edfNavigationOpen !== "true");
+    }, { capture: true, signal: context.signal });
+    button.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+            setOpen(button.dataset.edfNavigationOpen !== "true");
+        }
     }, { signal: context.signal });
     document.addEventListener("pointerdown", event => {
         if (!button.contains(event.target as Node)) setOpen(false);
@@ -34,15 +39,21 @@ function bindMenuChevron(control: HTMLElement, context: PageContext): void {
     const setOpen = (open: boolean): void => {
         control.dataset.edfNavigationOpen = String(open);
     };
+    const menuItem = control.closest<HTMLElement>('[data-testid="header-menu-desktop-option"]') ?? control;
 
     const observer = new MutationObserver(sync);
 
     sync();
-    control.addEventListener("click", () => {
+    control.addEventListener("pointerdown", () => {
         setOpen(control.dataset.edfNavigationOpen !== "true");
+    }, { capture: true, signal: context.signal });
+    control.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+            setOpen(control.dataset.edfNavigationOpen !== "true");
+        }
     }, { signal: context.signal });
     document.addEventListener("pointerdown", event => {
-        if (!control.contains(event.target as Node)) setOpen(false);
+        if (!menuItem.contains(event.target as Node)) setOpen(false);
     }, { capture: true, signal: context.signal });
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") setOpen(false);
