@@ -55,10 +55,12 @@ function createMenuItem(
     renderIcon: IconRenderer,
     onClick: () => void,
     count?: number,
+    active = false,
 ): HTMLButtonElement {
     const button = createButton("", "edf-popup-account-menu-item");
     const text = document.createElement("span");
 
+    button.dataset.active = String(active);
     text.textContent = label;
     button.append(createSvgIcon(renderIcon), text);
     if (count !== undefined) {
@@ -152,6 +154,7 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
         replaceWithPopupSavedSearchIcon,
         () => closeAndNavigate("saved-searches"),
         data.savedSearches.length,
+        activeView === "saved-searches",
     ));
     if (data.account?.status === "signed-in") {
         menu.append(createMenuItem("Shortlist", replaceWithPopupStarIcon, () => {
@@ -165,11 +168,14 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
             replaceWithBinIcon,
             () => closeAndNavigate("blacklist"),
             blacklistCount,
+            activeView === "blacklist",
         ),
         createMenuItem(
             "Preferences",
             replaceWithPopupCogIcon,
             () => closeAndNavigate("preferences"),
+            undefined,
+            activeView === "preferences",
         ),
     );
 

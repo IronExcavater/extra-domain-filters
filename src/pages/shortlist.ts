@@ -41,6 +41,12 @@ function configureNoteActions(card: HTMLElement, reconcileCards: ReconcileCards)
         );
     if (!save) {
         card.classList.remove("edf-listing-card-notes-editing");
+        card.querySelectorAll<HTMLElement>(
+            ".edf-listing-card-notes-field, .edf-listing-card-notes-container",
+        ).forEach(element => element.classList.remove(
+            "edf-listing-card-notes-field",
+            "edf-listing-card-notes-container",
+        ));
         card.querySelectorAll<HTMLElement>(".edf-listing-card-notes-default")
             .forEach(element => element.classList.remove("edf-listing-card-notes-default"));
         textarea?.classList.add("edf-listing-card-notes-default");
@@ -232,11 +238,12 @@ function installSortControl(container: HTMLElement, signal: AbortSignal): () => 
 
 const mountShortlistPage: PageMount = async (context) => {
     enableStickyHeader(context);
-    bindListingCards(context, { showBlacklistedView: false });
+    const refreshListingCards = bindListingCards(context, { showBlacklistedView: false });
     const container = findUserListingsContainer();
     if (container) {
         let frame: number | undefined;
         let reconcileTimer: number | undefined;
+        const recoveryTimers = new Set<number>();
         const reconcileCards = (): void => {
             if (reconcileTimer !== undefined) {
                 window.clearTimeout(reconcileTimer);
@@ -249,6 +256,20 @@ const mountShortlistPage: PageMount = async (context) => {
         const schedule = (): void => {
             if (reconcileTimer !== undefined) window.clearTimeout(reconcileTimer);
             reconcileTimer = window.setTimeout(reconcileCards, 120);
+        };
+        const recoverCard = (): void => {
+            refreshListingCards();
+            schedule();
+        };
+        const scheduleCardRecovery = (): void => {
+            recoverCard();
+            for (const delay of [120, 280]) {
+                const timer = window.setTimeout(() => {
+                    recoveryTimers.delete(timer);
+                    recoverCard();
+                }, delay);
+                recoveryTimers.add(timer);
+            }
         };
         await renderControls(container);
         configureCards(container, schedule);
@@ -275,6 +296,13 @@ const mountShortlistPage: PageMount = async (context) => {
             if (hasDomainAddition) scheduleControls();
         });
         observer.observe(container, { childList: true, subtree: true });
+        container.addEventListener("click", event => {
+            const button = (event.target as Element | null)?.closest<HTMLButtonElement>("button");
+            const label = button?.textContent?.trim().toLowerCase();
+            if (label === "view notes" || label === "view details" || label === "edit notes") {
+                scheduleCardRecovery();
+            }
+        }, { capture: true, signal: context.signal });
         scheduleControls();
         context.signal.addEventListener("abort", () => {
             observer.disconnect();
@@ -282,6 +310,7 @@ const mountShortlistPage: PageMount = async (context) => {
             restoreSort();
             if (frame !== undefined) cancelAnimationFrame(frame);
             if (reconcileTimer !== undefined) window.clearTimeout(reconcileTimer);
+            recoveryTimers.forEach(timer => window.clearTimeout(timer));
         }, { once: true });
     }
 };

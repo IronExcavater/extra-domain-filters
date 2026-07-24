@@ -95,6 +95,8 @@
 }
 
 .edf-listing-card-notes-field {
+    align-self: stretch;
+    flex-direction: column;
     min-height: 0;
 }
 

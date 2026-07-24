@@ -81,6 +81,7 @@ function renderCards(
             search.updatedAt,
             search.notificationFrequency,
             search.filterParams,
+            selectedSearchIds.has(search.id),
         ]),
     });
     if (list.dataset.edfSignature === signature) return;
@@ -132,10 +133,10 @@ const mountSavedSearchesPage: PageMount = context => {
             onClear: ids => void removeSelected(ids, currentSearches),
             onSelectionChange: ids => {
                 replaceSelection(selectedSearchIds, ids);
-                if (list) syncSelectionCheckboxes(list);
-                requestAnimationFrame(() => {
-                    if (list?.isConnected) syncSelectionCheckboxes(list);
-                });
+                if (list) {
+                    renderCards(list, visibleSearches(), sort, context.signal, renderControls);
+                    syncSelectionCheckboxes(list);
+                }
                 renderControls();
             },
             selectedIds: [...selectedSearchIds],

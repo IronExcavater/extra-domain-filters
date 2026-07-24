@@ -57,7 +57,9 @@ export function injectAccountMenu(logger: Logger): Promise<void> {
 }
 
 async function performAccountMenuInjection(logger: Logger): Promise<void> {
-    const blacklistActive = new URL(window.location.href).searchParams.get('blacklist') === '1';
+    const currentUrl = new URL(window.location.href);
+    const blacklistActive = currentUrl.searchParams.get('blacklist') === '1';
+    const shortlistActive = currentUrl.pathname === '/user/shortlist' && !blacklistActive;
     const shortlistLinks = [...document.querySelectorAll<HTMLAnchorElement>("a")]
         .filter(link =>
             !link.closest('[data-testid="account-menu__blacklist-item"]') &&
@@ -113,6 +115,7 @@ async function performAccountMenuInjection(logger: Logger): Promise<void> {
             existingItem: existing,
             inactivePeer: inactiveItem instanceof HTMLLIElement ? inactiveItem : undefined,
             badge: { storageKey: 'blacklist' },
+            sourceActive: shortlistActive,
         });
 
         if (!existing) {
