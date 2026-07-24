@@ -159,16 +159,16 @@ export async function cloneMenuItem(
     const applyState = config.onStateChange ?? setMenuItemActiveState;
     const active = config.active ?? isBlacklistRoute(new URL(window.location.href));
 
-    resetMenuItemState(item);
-    if (config.sourceActive !== undefined) applyState(source, config.sourceActive, activeClasses);
-    applyState(item, active, activeClasses);
-
     if (config.badge) {
         badge.setAttribute("data-testid", "account-menu__blacklist-count");
         await bindBadge(config.badge.storageKey, badge);
     } else {
         badge.remove();
     }
+
+    resetMenuItemState(item);
+    if (config.sourceActive !== undefined) applyState(source, config.sourceActive, activeClasses);
+    applyState(item, active, activeClasses);
 
     return markOwned(item, "account-menu-item");
 }

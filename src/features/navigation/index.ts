@@ -4,52 +4,57 @@ import type { PageContext } from "../../shared/platform/router";
 const chevronControls = new WeakSet<HTMLElement>();
 
 function bindAccountChevron(button: HTMLButtonElement, context: PageContext): void {
-    if (chevronControls.has(button)) return;
-    chevronControls.add(button);
+    const carrier = button.closest<HTMLElement>('[data-testid="header-member__dropdown"]') ?? button;
+    if (chevronControls.has(carrier)) return;
+    chevronControls.add(carrier);
 
     const setOpen = (open: boolean): void => {
-        button.dataset.edfNavigationOpen = String(open);
+        carrier.dataset.edfNavigationOpen = String(open);
     };
+    const trigger = (): HTMLButtonElement | null => carrier.querySelector('button[aria-label="User profile"]');
 
-    button.addEventListener("pointerdown", () => {
-        setOpen(button.dataset.edfNavigationOpen !== "true");
+    carrier.addEventListener("pointerdown", event => {
+        if (!trigger()?.contains(event.target as Node)) return;
+        setOpen(carrier.dataset.edfNavigationOpen !== "true");
     }, { capture: true, signal: context.signal });
-    button.addEventListener("keydown", event => {
+    carrier.addEventListener("keydown", event => {
         if (event.key === "Enter" || event.key === " ") {
-            setOpen(button.dataset.edfNavigationOpen !== "true");
+            setOpen(carrier.dataset.edfNavigationOpen !== "true");
         }
     }, { signal: context.signal });
     document.addEventListener("pointerdown", event => {
-        if (!button.contains(event.target as Node)) setOpen(false);
+        if (!carrier.contains(event.target as Node)) setOpen(false);
     }, { capture: true, signal: context.signal });
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") setOpen(false);
     }, { signal: context.signal });
-    context.scope.add(() => delete button.dataset.edfNavigationOpen);
+    context.scope.add(() => delete carrier.dataset.edfNavigationOpen);
 }
 
 function bindMenuChevron(control: HTMLElement, context: PageContext): void {
-    if (chevronControls.has(control)) return;
-    chevronControls.add(control);
+    const menuItem = control.closest<HTMLElement>('[data-testid="header-menu-desktop-option"]');
+    if (!menuItem || chevronControls.has(menuItem)) return;
+    chevronControls.add(menuItem);
 
+    const trigger = (): HTMLElement | null => menuItem.querySelector(":scope > a");
     const sync = (): void => {
-        const expanded = control.getAttribute("aria-expanded");
-        if (expanded !== null) control.dataset.edfNavigationOpen = expanded;
+        const expanded = trigger()?.getAttribute("aria-expanded");
+        if (expanded !== null) menuItem.dataset.edfNavigationOpen = expanded;
     };
     const setOpen = (open: boolean): void => {
-        control.dataset.edfNavigationOpen = String(open);
+        menuItem.dataset.edfNavigationOpen = String(open);
     };
-    const menuItem = control.closest<HTMLElement>('[data-testid="header-menu-desktop-option"]') ?? control;
 
     const observer = new MutationObserver(sync);
 
     sync();
-    control.addEventListener("pointerdown", () => {
-        setOpen(control.dataset.edfNavigationOpen !== "true");
+    menuItem.addEventListener("pointerdown", event => {
+        if (!trigger()?.contains(event.target as Node)) return;
+        setOpen(menuItem.dataset.edfNavigationOpen !== "true");
     }, { capture: true, signal: context.signal });
-    control.addEventListener("keydown", event => {
+    menuItem.addEventListener("keydown", event => {
         if (event.key === "Enter" || event.key === " ") {
-            setOpen(control.dataset.edfNavigationOpen !== "true");
+            setOpen(menuItem.dataset.edfNavigationOpen !== "true");
         }
     }, { signal: context.signal });
     document.addEventListener("pointerdown", event => {
@@ -58,10 +63,15 @@ function bindMenuChevron(control: HTMLElement, context: PageContext): void {
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") setOpen(false);
     }, { signal: context.signal });
-    observer.observe(control, { attributes: true, attributeFilter: ["aria-expanded"] });
+    observer.observe(menuItem, {
+        attributes: true,
+        attributeFilter: ["aria-expanded"],
+        childList: true,
+        subtree: true,
+    });
     context.scope.add(() => {
         observer.disconnect();
-        delete control.dataset.edfNavigationOpen;
+        delete menuItem.dataset.edfNavigationOpen;
     });
 }
 

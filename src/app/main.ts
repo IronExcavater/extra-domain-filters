@@ -64,6 +64,7 @@ void (async () => {
 
 appScope.add(onStorageChange<Settings>("settings", (next, previous) => {
     if (!next || !previous || next.flags.enableExtension === previous.flags.enableExtension) return;
+    document.documentElement.dataset.edfExtensionReload = "true";
     window.location.reload();
 }));
 

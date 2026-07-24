@@ -209,7 +209,12 @@ const mountSavedSearchesPage: PageMount = context => {
     observer.observe(document.body, { childList: true, subtree: true });
     context.scope.add(() => observer.disconnect());
     context.scope.add(onStorageChange("savedSearches", reconcile.schedule));
-    context.scope.add(restoreDomainSavedSearches);
+    context.scope.add(() => {
+        if (document.documentElement.dataset.edfExtensionReload === "true") return;
+        restoreDomainSavedSearches();
+        list?.remove();
+        toolbar?.remove();
+    });
     reconcile.schedule();
 };
 
