@@ -1,5 +1,7 @@
 import { createStorageRepository } from "../../shared/platform/repository";
+import { isPlainObject } from "../../shared/utils/types";
 import type { ListingSnapshot } from "../matching";
+import { parseListingSnapshot } from "./snapshot";
 import { normalizeListingUrl } from "./url";
 
 export interface ListingCacheEntry {
@@ -10,13 +12,33 @@ export interface ListingCacheEntry {
 const CACHE_KEY = "listingCache";
 const MAX_CACHE_ENTRIES = 250;
 const memoryCache = new Map<string, ListingCacheEntry>();
+
+function parseCacheEntry(value: unknown): ListingCacheEntry | undefined {
+    if (!isPlainObject(value)) return undefined;
+
+    const cachedAt = value.cachedAt;
+    const listing = parseListingSnapshot(value.listing);
+    if (typeof cachedAt !== "number" || !Number.isFinite(cachedAt) || !listing) return undefined;
+
+    return { cachedAt, listing };
+}
+
+function parseCache(value: unknown): Record<string, ListingCacheEntry> {
+    if (!isPlainObject(value)) return {};
+
+    return Object.fromEntries(
+        Object.entries(value).flatMap(([url, entry]) => {
+            const parsed = parseCacheEntry(entry);
+            return parsed ? [[url, parsed]] : [];
+        }),
+    );
+}
+
 const cacheRepository = createStorageRepository<Record<string, ListingCacheEntry>>({
     key: CACHE_KEY,
     version: 1,
     createDefault: () => ({}),
-    normalize: value => value !== null && typeof value === "object" && !Array.isArray(value)
-        ? value as Record<string, ListingCacheEntry>
-        : {},
+    normalize: parseCache,
 });
 
 export async function clearListingCache(): Promise<void> {

@@ -1,5 +1,10 @@
 import type { Disposer } from "./lifecycle";
-import { isExtensionContextUnavailable, onStorageChange } from "./storage";
+import {
+    onStorageChange,
+    readLocalStorage,
+    removeLocalStorage,
+    writeLocalStorage,
+} from "./storage";
 
 export interface StorageRepositoryOptions<T> {
     key: string;
@@ -30,13 +35,7 @@ export function createStorageRepository<T>(
     let updateQueue = Promise.resolve();
 
     const read = async (): Promise<T> => {
-        let stored: Record<string, unknown>;
-        try {
-            stored = await chrome.storage.local.get([options.key, versionKey]);
-        } catch (error) {
-            if (isExtensionContextUnavailable(error)) return options.createDefault();
-            throw error;
-        }
+        const stored = await readLocalStorage([options.key, versionKey]);
         if (!(options.key in stored)) return options.createDefault();
 
         const fromVersion = typeof stored[versionKey] === "number"
@@ -47,28 +46,20 @@ export function createStorageRepository<T>(
             : (options.migrate ?? options.normalize)(stored[options.key], fromVersion);
 
         if (fromVersion !== options.version) {
-            try {
-                await chrome.storage.local.set({
-                    [options.key]: clone(value),
-                    [versionKey]: options.version,
-                });
-            } catch (error) {
-                if (!isExtensionContextUnavailable(error)) throw error;
-            }
+            await writeLocalStorage({
+                [options.key]: clone(value),
+                [versionKey]: options.version,
+            });
         }
 
         return value;
     };
 
     const write = async (value: T): Promise<void> => {
-        try {
-            await chrome.storage.local.set({
-                [options.key]: clone(options.normalize(value)),
-                [versionKey]: options.version,
-            });
-        } catch (error) {
-            if (!isExtensionContextUnavailable(error)) throw error;
-        }
+        await writeLocalStorage({
+            [options.key]: clone(options.normalize(value)),
+            [versionKey]: options.version,
+        });
     };
 
     const enqueue = <R>(operation: () => Promise<R>): Promise<R> => {
@@ -90,11 +81,7 @@ export function createStorageRepository<T>(
         update,
         async clear() {
             await enqueue(async () => {
-                try {
-                    await chrome.storage.local.remove([options.key, versionKey]);
-                } catch (error) {
-                    if (!isExtensionContextUnavailable(error)) throw error;
-                }
+                await removeLocalStorage([options.key, versionKey]);
             });
         },
         observe(handler) {
