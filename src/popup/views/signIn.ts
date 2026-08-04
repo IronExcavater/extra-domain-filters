@@ -1,5 +1,7 @@
 import wordmarkUrl from "../../../public/icons/brand/wordmark.svg?url";
 import { signIn } from "../../domain/account/client";
+import { createSvgIcon } from "../../shared/ui/elements";
+import { replaceWithChevronIcon } from "../../shared/ui/icons";
 
 interface SignInViewOptions {
     onComplete(): void;
@@ -25,6 +27,8 @@ function createWordmark(): HTMLImageElement {
 export function createSignInView(options: SignInViewOptions): HTMLElement {
     const view = document.createElement("section");
     const panel = document.createElement("div");
+    const header = document.createElement("header");
+    const content = document.createElement("div");
     const brand = createWordmark();
     const back = document.createElement("button");
     const title = document.createElement("h1");
@@ -34,10 +38,13 @@ export function createSignInView(options: SignInViewOptions): HTMLElement {
 
     view.className = "edf-popup-sign-in";
     panel.className = "edf-popup-sign-in-panel";
+    header.className = "edf-popup-sign-in-header";
+    content.className = "edf-popup-sign-in-content";
     brand.className = "edf-popup-sign-in-brand";
     back.className = "edf-popup-sign-in-back";
     back.type = "button";
-    back.textContent = "Back";
+    back.ariaLabel = "Back";
+    back.append(createSvgIcon(replaceWithChevronIcon), document.createTextNode("Back"));
     back.addEventListener("click", options.onBack);
     title.textContent = "Sign in to sync";
     google.className = "edf-popup-auth-provider";
@@ -59,7 +66,9 @@ export function createSignInView(options: SignInViewOptions): HTMLElement {
     });
     image.className = "edf-popup-sign-in-image";
     image.setAttribute("aria-label", "Contemporary Australian home interior");
-    panel.append(brand, back, title, google, error);
+    header.append(back, brand);
+    content.append(title, google, error);
+    panel.append(header, content);
     view.append(panel, image);
     return view;
 }

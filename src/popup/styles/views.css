@@ -93,43 +93,61 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    padding: 42px 38px;
+    justify-content: space-between;
+    padding: 24px 28px 30px;
     width: 100%;
+}
+
+.edf-popup-sign-in-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
 }
 
 .edf-popup-sign-in-brand {
     display: block;
     height: auto;
-    margin: 0 0 42px;
-    max-width: 248px;
-    width: 100%;
+    margin: 0;
+    max-width: 190px;
+    width: 52%;
 }
 
 .edf-popup-sign-in-back {
+    align-items: center;
     background: transparent;
     border: 0;
     color: var(--edf-color-green);
     cursor: pointer;
+    display: inline-flex;
     font: inherit;
     font-size: 15px;
+    gap: 3px;
     line-height: 22px;
     padding: 0;
     text-align: left;
 }
 
-.edf-popup-sign-in-panel h1 {
-    color: var(--edf-color-heading);
-    font-size: 30px;
-    line-height: 38px;
-    margin: 24px 0 10px;
+.edf-popup-sign-in-back svg {
+    height: 18px;
+    transform: rotate(90deg);
+    width: 18px;
 }
 
-.edf-popup-sign-in-panel p {
-    color: var(--edf-color-muted);
-    font-size: 15px;
-    line-height: 22px;
+.edf-popup-sign-in-back:hover {
+    color: var(--edf-color-green-hover);
+}
+
+.edf-popup-sign-in-content {
+    margin: auto 0;
+    max-width: 300px;
+    padding: 36px 0;
+}
+
+.edf-popup-sign-in-panel h1 {
+    color: var(--edf-color-heading);
     margin: 0;
+    font-size: 28px;
+    line-height: 36px;
 }
 
 .edf-popup-auth-provider {
@@ -145,7 +163,7 @@
     font-weight: 700;
     gap: 12px;
     justify-content: center;
-    margin-top: 28px;
+    margin-top: 20px;
     min-height: 46px;
     padding: 10px 16px;
     transition: background-color 150ms ease, border-color 150ms ease;
@@ -198,7 +216,7 @@
     }
 
     .edf-popup-sign-in-panel {
-        padding: 32px 28px;
+        padding: 24px;
     }
 }
 
