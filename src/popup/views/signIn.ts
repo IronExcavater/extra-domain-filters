@@ -2,6 +2,7 @@ import wordmarkUrl from "../../../public/icons/brand/wordmark.svg?url";
 import { signIn } from "../../domain/account/client";
 import { createSvgIcon } from "../../shared/ui/elements";
 import { replaceWithChevronIcon } from "../../shared/ui/icons";
+import { showPopupToast } from "../toast";
 
 interface SignInViewOptions {
     onComplete(): void;
@@ -33,7 +34,6 @@ export function createSignInView(options: SignInViewOptions): HTMLElement {
     const back = document.createElement("button");
     const title = document.createElement("h1");
     const google = document.createElement("button");
-    const error = document.createElement("p");
     const image = document.createElement("aside");
 
     view.className = "edf-popup-sign-in";
@@ -50,24 +50,22 @@ export function createSignInView(options: SignInViewOptions): HTMLElement {
     google.className = "edf-popup-auth-provider";
     google.type = "button";
     google.append(createGoogleMark(), document.createTextNode("Continue with Google"));
-    error.className = "edf-popup-auth-error";
-    error.hidden = true;
     google.addEventListener("click", async () => {
         google.disabled = true;
-        error.hidden = true;
         try {
             await signIn();
+            showPopupToast("Signed in successfully");
             options.onComplete();
         } catch (reason) {
-            error.textContent = reason instanceof Error ? reason.message : "Unable to sign in.";
-            error.hidden = false;
+            showPopupToast(reason instanceof Error ? reason.message : "Unable to sign in.");
+        } finally {
             google.disabled = false;
         }
     });
     image.className = "edf-popup-sign-in-image";
     image.setAttribute("aria-label", "Contemporary Australian home interior");
     header.append(back, brand);
-    content.append(title, google, error);
+    content.append(title, google);
     panel.append(header, content);
     view.append(panel, image);
     return view;

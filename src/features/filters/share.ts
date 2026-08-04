@@ -74,7 +74,6 @@ function createShareButton(
     button.name = "extra-domain-share";
     button.dataset.testid = "extra-domain-share";
     button.ariaLabel = "Copy filtered search link";
-    button.title = "Share";
     button.classList.add("edf-search-share-button");
     button.addEventListener("click", async event => {
         event.preventDefault();

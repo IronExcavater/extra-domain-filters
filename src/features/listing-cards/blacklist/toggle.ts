@@ -1,5 +1,5 @@
 import { addOrReplaceBlacklistEntry, getBlacklist, toggleBlacklistListing } from "../../../domain/blacklist/store";
-import { resolveListingSnapshot } from "../../../domain/listings/cache";
+import { resolveListingSnapshot } from "../../../domain/listings/detail";
 import { isBlacklisted, type ListingSnapshot } from "../../../domain/matching";
 import { trackTelemetry } from "../../../domain/telemetry/client";
 import { PageContext } from "../../../shared/platform/router";

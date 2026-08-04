@@ -11,6 +11,7 @@ import {
     replaceWithPopupStarIcon,
 } from "../../shared/ui/icons";
 import type { PopupData, PopupView } from "../model";
+import { showPopupToast } from "../toast";
 
 interface NavigationOptions {
     activeView: PopupView;
@@ -140,11 +141,9 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
         summary.append(label);
     }
     const chevron = document.createElement("span");
-    const indicator = document.createElement("span");
     chevron.className = "edf-popup-chevron";
-    indicator.className = "edf-popup-account-indicator";
     chevron.append(createSvgIcon(replaceWithChevronIcon));
-    summary.append(chevron, indicator);
+    summary.append(chevron);
 
     menu.className = "edf-popup-account-menu";
     const identity = data.account ? createIdentity(data.account) : undefined;
@@ -190,7 +189,10 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
         try {
             await signOut();
             account.open = false;
+            showPopupToast("Signed out");
             onSessionChange();
+        } catch (error) {
+            showPopupToast(error instanceof Error ? error.message : "Unable to sign out.");
         } finally {
             session.disabled = false;
         }

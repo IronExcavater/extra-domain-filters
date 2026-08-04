@@ -1,6 +1,7 @@
 import { removeBlacklistUrls } from "../../../domain/blacklist/store";
 import { type ExclusionReason } from "../../../domain/matching";
 import { replaceWithEyeIcon, replaceWithEyeOffIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
+import { setTooltipText } from "../../../shared/ui/tooltip";
 import { getBlacklistCardKind, getPropertyCount, getTitle, type BlacklistCardKind } from "../dom/card";
 import { isRevealed, reveal, unreveal } from "./reveal";
 
@@ -92,7 +93,7 @@ export function updateExclusionRow(
     if (button) {
         const label = reason === "blacklisted" ? "Unblacklist" : "Show anyway";
         if (button.ariaLabel !== label) button.ariaLabel = label;
-        if (button.title !== label) button.title = label;
+        setTooltipText(button, label);
         button.onclick = async event => {
             event.preventDefault();
             event.stopPropagation();
@@ -130,7 +131,7 @@ export function ensureHideAgainAffordance(card: Element, url: string): void {
     button.className = "edf-hide-again-button";
     button.setAttribute("data-testid", "listing-card-hide-again");
     button.ariaLabel = "Hide this listing again";
-    button.title = "Hide this listing again";
+    setTooltipText(button, "Hide this listing again");
 
     icon.setAttribute("aria-hidden", "true");
     icon.setAttribute("width", "16");

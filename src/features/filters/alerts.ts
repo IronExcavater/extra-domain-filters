@@ -147,7 +147,6 @@ function appendDeleteAlertButton(
     button.dataset.testid = "extra-domain-filters-remove-alert";
     setButtonText(button, "Delete alert");
     button.ariaLabel = "Delete alert";
-    button.title = "Delete alert";
     button.addEventListener("click", event => {
         event.preventDefault();
         event.stopPropagation();

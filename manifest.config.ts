@@ -62,6 +62,7 @@ export default defineManifest(({ mode }) => {
                     'src/shared/ui/collection.css',
                     'src/shared/ui/sort.css',
                     'src/shared/ui/toast.css',
+                    'src/shared/ui/tooltip.css',
                     'src/features/filters/styles.css',
                     'src/features/blacklist/styles.css',
                     'src/features/saved-searches/card/card.css',

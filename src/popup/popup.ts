@@ -6,6 +6,7 @@ import "../shared/ui/collection.css";
 import "../shared/ui/domainControls.css";
 import "../shared/ui/sort.css";
 import "../shared/ui/toast.css";
+import "../shared/ui/tooltip.css";
 import "./popup.css";
 
 import { getAccountState } from "../domain/account/client";
@@ -42,6 +43,7 @@ async function createPreferencesView(): Promise<HTMLElement> {
         includeIntroduction: false,
         sectionHeading: "h2",
         titleHeading: "h1",
+        toastScope: "popup",
     }));
 
     return content;

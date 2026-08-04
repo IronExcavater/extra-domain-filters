@@ -1,5 +1,5 @@
 import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
-import { resolveListingSnapshot } from "../domain/listings/cache";
+import { resolveListingSnapshot } from "../domain/listings/detail";
 import { matchListing, type BlacklistEntry } from "../domain/matching";
 import {
     cloneBlacklistButton,

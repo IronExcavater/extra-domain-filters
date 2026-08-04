@@ -1,5 +1,6 @@
 import { type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
+import { setTooltipText } from "../../../shared/ui/tooltip";
 import { getBlacklistedBundleUrls, toggleBundleBlacklist } from "../blacklist/bundle";
 import {
     cloneFeaturedActionButton,
@@ -92,7 +93,7 @@ function bindCarouselPauseControl(
         setPauseIcon(button, state.paused);
         const label = state.paused ? "Play featured carousel" : "Pause featured carousel";
         button.ariaLabel = label;
-        button.title = label;
+        setTooltipText(button, label);
     }, { signal });
     state.observer.observe(track, { attributes: true, attributeFilter: ["style"] });
     signal.addEventListener("abort", () => {
@@ -248,7 +249,7 @@ export function bindCarouselCard(
     button.setAttribute("data-testid", "listing-card-blacklist");
     button.dataset.blacklistScope = "carousel";
     button.ariaLabel = "Blacklist featured properties";
-    button.title = "Blacklist featured properties";
+    setTooltipText(button, "Blacklist featured properties");
     if (controls) {
         if (!controls.sourceButton) {
             button.classList.add("edf-featured-blacklist-button");

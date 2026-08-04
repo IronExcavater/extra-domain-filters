@@ -34,8 +34,9 @@ export function createIconButton(
     const button = createButton("", className);
 
     button.ariaLabel = label;
-    button.title = label;
     button.append(createSvgIcon(renderIcon));
+    attachTooltip(button, label);
 
     return button;
 }
+import { attachTooltip } from "./tooltip";

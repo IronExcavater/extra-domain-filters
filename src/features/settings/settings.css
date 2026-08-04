@@ -106,6 +106,18 @@
     flex: 0 0 auto;
 }
 
+.edf-settings-section-description {
+    color: var(--edf-settings-muted);
+    font-size: 15px;
+    line-height: 21px;
+    margin: 0 0 8px;
+}
+
+.edf-settings-choice {
+    flex: 0 1 220px;
+    max-width: 48%;
+}
+
 .edf-settings-support-version {
     color: var(--edf-settings-muted);
     font-size: 12px;

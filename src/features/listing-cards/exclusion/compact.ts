@@ -1,5 +1,6 @@
 import type { ExclusionReason } from "../../../domain/matching";
 import { replaceWithChevronIcon, replaceWithEyeIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
+import { setTooltipText } from "../../../shared/ui/tooltip";
 import { getBlacklistCardKind, getTitle, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 import { resolveExclusionAction } from "./row";
 
@@ -55,7 +56,7 @@ function setExpanded(group: HTMLElement, expanded: boolean): void {
     body.style.maxHeight = expanded ? `${body.scrollHeight}px` : "0px";
     const label = expanded ? "Collapse blacklisted listings" : "Expand blacklisted listings";
     button.ariaLabel = label;
-    button.title = label;
+    setTooltipText(button, label);
 }
 
 function createGroupItem(item: ExcludedCard): HTMLElement {
@@ -82,7 +83,7 @@ function createGroupItem(item: ExcludedCard): HTMLElement {
     restoreButton.type = "button";
     restoreButton.className = "edf-exclusion-row-button";
     restoreButton.ariaLabel = item.reason === "blacklisted" ? "Unblacklist" : "Show anyway";
-    restoreButton.title = restoreButton.ariaLabel;
+    setTooltipText(restoreButton, restoreButton.ariaLabel ?? "Restore listing");
     restoreButton.append(restoreIcon);
     restoreButton.addEventListener("click", async event => {
         event.preventDefault();

@@ -39,15 +39,14 @@ export interface FilterFeatureSettings {
 }
 
 export interface QueueSettings {
-    concurrency: number;
-    minSpacingMs: number;
-    timeoutMs: number;
-    maxRetries: number;
+    enrichmentPace: EnrichmentPace;
 }
 
 export interface CacheSettings {
     ttlMs: number;
 }
+
+export type EnrichmentPace = "efficient" | "balanced" | "fast";
 
 export interface SavedSearchSettings {
     enableNeverFrequency: boolean;
@@ -86,10 +85,7 @@ export const DEFAULT_SETTINGS: Settings = {
         enableCarouselControls: true,
     },
     queue: {
-        concurrency: 3,
-        minSpacingMs: 300,
-        timeoutMs: 8000,
-        maxRetries: 2,
+        enrichmentPace: "efficient",
     },
     cache: {
         ttlMs: 7 * 24 * 60 * 60 * 1000,

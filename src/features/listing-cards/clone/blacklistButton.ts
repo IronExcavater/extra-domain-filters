@@ -1,5 +1,6 @@
 import { markOwned } from "../../../shared/dom/ownership";
 import { replaceWithBinIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
+import { setTooltipText } from "../../../shared/ui/tooltip";
 
 const BUTTON_CONTAINER_CLASS = "edf-listing-card-button-container";
 const INACTIVE_SHORTLIST_CLASS_KEY = "edfInactiveShortlistClass";
@@ -178,7 +179,7 @@ export function setBlacklistButtonState(button: HTMLButtonElement, active: boole
 
     if (button.dataset.active !== nextActive) button.dataset.active = nextActive;
     if (button.ariaLabel !== nextLabel) button.ariaLabel = nextLabel;
-    if (button.title !== nextLabel) button.title = nextLabel;
+    setTooltipText(button, nextLabel);
     if (button.getAttribute("aria-pressed") !== nextActive) {
         button.setAttribute("aria-pressed", nextActive);
     }
@@ -281,7 +282,7 @@ export function cloneFeaturedActionButton(
     button.removeAttribute("aria-disabled");
     button.setAttribute("data-testid", testId);
     button.ariaLabel = label;
-    button.title = label;
+    setTooltipText(button, label);
 
     return markOwned(button, "featured-carousel-action");
 }

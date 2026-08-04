@@ -3,7 +3,7 @@
     background: var(--edf-color-surface);
     border-bottom: 1px solid var(--edf-color-border);
     display: grid;
-    gap: clamp(10px, 2vw, 16px);
+    column-gap: 24px;
     grid-template-columns: max-content minmax(0, 1fr) max-content;
     padding: 0 clamp(12px, 3vw, 22px);
 }
@@ -38,6 +38,7 @@
 
 .edf-popup-navigation-button,
 .edf-popup-navigation-item {
+    align-items: center;
     background: transparent;
     border: 0;
     color: var(--edf-color-text);
@@ -64,7 +65,10 @@
 }
 
 .edf-popup-navigation-button:hover::after,
-.edf-popup-navigation-button[data-active="true"]::after {
+.edf-popup-navigation-button[data-active="true"]::after,
+.edf-popup-account-summary:hover::after,
+.edf-popup-account-summary:focus-visible::after,
+.edf-popup-account[open] > .edf-popup-account-summary::after {
     transform: scaleX(1);
 }
 
@@ -89,25 +93,6 @@
 
 .edf-popup-account-summary::-webkit-details-marker {
     display: none;
-}
-
-.edf-popup-account-indicator {
-    background: #0aa600;
-    bottom: -7px;
-    height: 2.5px;
-    left: 0;
-    pointer-events: none;
-    position: absolute;
-    right: 0;
-    transform: scaleX(0);
-    transform-origin: center;
-    transition: transform 180ms ease;
-}
-
-.edf-popup-account-summary:hover .edf-popup-account-indicator,
-.edf-popup-account-summary:focus-visible .edf-popup-account-indicator,
-.edf-popup-account[open] > .edf-popup-account-summary .edf-popup-account-indicator {
-    transform: scaleX(1);
 }
 
 .edf-popup-chevron {

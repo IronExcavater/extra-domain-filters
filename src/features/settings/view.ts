@@ -12,7 +12,9 @@ import {
     replaceWithItchioIcon,
     replaceWithLinkedInIcon,
 } from "../../shared/ui/icons";
-import type { SettingDefinition } from "./definitions";
+import { createDropdownControl } from "../../shared/ui/sort";
+import { showToast, type ToastScope } from "../../shared/ui/toast";
+import type { ChoiceSettingDefinition, SettingDefinition, SettingsControlDefinition } from "./definitions";
 import { SETTINGS_SECTIONS } from "./definitions";
 
 type HeadingTag = "h1" | "h2" | "h3";
@@ -21,6 +23,7 @@ interface SettingsViewOptions {
     includeIntroduction?: boolean;
     sectionHeading: HeadingTag;
     titleHeading: HeadingTag;
+    toastScope?: ToastScope;
 }
 
 interface MaintenanceAction {
@@ -114,7 +117,7 @@ function createToggle(definition: SettingDefinition, settings: Settings): HTMLLa
     input.className = "edf-settings-toggle-input";
     input.type = "checkbox";
     input.id = id;
-    input.checked = definition.read(settings);
+    input.checked = definition.read(settings) === true;
     input.ariaLabel = definition.title;
     indicator.className = "edf-settings-toggle-indicator";
     stateLabel.className = "edf-settings-toggle-label";
@@ -133,7 +136,22 @@ function createToggle(definition: SettingDefinition, settings: Settings): HTMLLa
     return toggle;
 }
 
-function createRow(definition: SettingDefinition, settings: Settings): HTMLElement {
+function createChoice(definition: ChoiceSettingDefinition, settings: Settings): HTMLElement {
+    const control = createDropdownControl({
+        ariaLabel: definition.title,
+        onChange: value => {
+            void updateSettings(definition.write(value));
+            void trackTelemetry({ name: "feature_used", feature: "settings" });
+        },
+        options: definition.options.map(option => [option.value, option.label] as const),
+        value: definition.read(settings),
+    });
+
+    control.element.classList.add("edf-settings-choice");
+    return control.element;
+}
+
+function createRow(definition: SettingsControlDefinition, settings: Settings): HTMLElement {
     const row = document.createElement("div");
     const copy = document.createElement("div");
     const title = document.createElement("p");
@@ -146,11 +164,13 @@ function createRow(definition: SettingDefinition, settings: Settings): HTMLEleme
     title.textContent = definition.title;
     description.textContent = definition.description;
     copy.append(title, description);
-    row.append(copy, createToggle(definition, settings));
+    row.append(copy, definition.kind === "choice"
+        ? createChoice(definition, settings)
+        : createToggle(definition, settings));
     return row;
 }
 
-function createActionRow(action: MaintenanceAction): HTMLElement {
+function createActionRow(action: MaintenanceAction, toastScope: ToastScope): HTMLElement {
     const row = document.createElement("div");
     const copy = document.createElement("div");
     const title = document.createElement("p");
@@ -168,8 +188,12 @@ function createActionRow(action: MaintenanceAction): HTMLElement {
     button.textContent = action.label;
     button.addEventListener("click", async () => {
         button.disabled = true;
-        await action.run();
-        button.textContent = "Cleared";
+        try {
+            await action.run();
+            showToast(`${action.title} cleared`, toastScope);
+        } finally {
+            button.disabled = false;
+        }
     });
     copy.append(title, description);
     row.append(copy, button);
@@ -195,7 +219,6 @@ function createSupportLink(link: SupportLink): HTMLElement {
     row.rel = "noreferrer";
     row.target = "_blank";
     row.ariaLabel = `${link.title} (opens in a new tab)`;
-    row.title = link.title;
     row.addEventListener("click", () => {
         void trackTelemetry({ name: "feature_used", feature: "support_link" });
     });
@@ -232,7 +255,7 @@ function createSupportGroup(group: SupportGroup): HTMLElement {
     return section;
 }
 
-function createAccountSection(sectionHeading: HeadingTag): HTMLElement {
+function createAccountSection(sectionHeading: HeadingTag, toastScope: ToastScope): HTMLElement {
     const section = document.createElement("section");
     const row = document.createElement("div");
     const copy = document.createElement("div");
@@ -264,16 +287,15 @@ function createAccountSection(sectionHeading: HeadingTag): HTMLElement {
 
     button.addEventListener("click", async () => {
         button.disabled = true;
-        description.textContent = "Updating account...";
 
         try {
             const current = await getAccountState();
             render(current.status === "signed-in" ? await signOut() : await signIn());
+            showToast(current.status === "signed-in" ? "Signed out" : "Signed in", toastScope);
         } catch (error) {
+            showToast(error instanceof Error ? error.message : "Unable to update the account.", toastScope);
+        } finally {
             button.disabled = false;
-            description.textContent = error instanceof Error
-                ? error.message
-                : "Unable to update the account.";
         }
     });
 
@@ -295,6 +317,7 @@ function createAccountSection(sectionHeading: HeadingTag): HTMLElement {
 
 export function createSettingsContent(settings: Settings, options: SettingsViewOptions): DocumentFragment {
     const content = document.createDocumentFragment();
+    const toastScope = options.toastScope ?? "page";
     if (options.includeIntroduction !== false) {
         const introduction = document.createElement("div");
         const description = document.createElement("p");
@@ -309,13 +332,19 @@ export function createSettingsContent(settings: Settings, options: SettingsViewO
         content.append(introduction);
     }
 
-    content.append(createAccountSection(options.sectionHeading));
+    content.append(createAccountSection(options.sectionHeading, toastScope));
 
     for (const section of SETTINGS_SECTIONS) {
         const card = document.createElement("section");
+        const description = section.description ? document.createElement("p") : undefined;
         card.className = "edf-settings-section";
+        if (description) {
+            description.className = "edf-settings-section-description";
+            description.textContent = section.description ?? "";
+        }
         card.append(
             createHeading(options.sectionHeading, "edf-settings-section-title", section.title),
+            ...(description ? [description] : []),
             ...section.settings.map(definition => createRow(definition, settings)),
         );
         content.append(card);
@@ -325,7 +354,7 @@ export function createSettingsContent(settings: Settings, options: SettingsViewO
     maintenance.className = "edf-settings-section";
     maintenance.append(
         createHeading(options.sectionHeading, "edf-settings-section-title", "Maintenance"),
-        ...MAINTENANCE_ACTIONS.map(createActionRow),
+        ...MAINTENANCE_ACTIONS.map(action => createActionRow(action, toastScope)),
     );
     content.append(maintenance);
 

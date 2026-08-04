@@ -1,0 +1,15 @@
+.edf-tooltip {
+    background: #3c475b;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgb(19 18 18 / 18%);
+    color: #fff;
+    font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    max-width: 240px;
+    padding: 6px 8px;
+    pointer-events: none;
+    position: fixed;
+    text-align: center;
+    z-index: 2147483647;
+}

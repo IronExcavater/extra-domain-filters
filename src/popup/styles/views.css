@@ -192,11 +192,6 @@
     margin-top: 14px !important;
 }
 
-.edf-popup-auth-error {
-    color: var(--edf-color-danger) !important;
-    margin-top: 16px !important;
-}
-
 .edf-popup-sign-in-image {
     background-color: #edf1e9;
     background-image: url("/public/images/sign-in-property.png");
