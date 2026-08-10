@@ -193,65 +193,6 @@
     }
 }
 
-.edf-popup-content .edf-saved-search-card {
-    grid-template-rows: minmax(106px, auto) 42px;
-}
-
-.edf-popup-content .edf-saved-search-card-main {
-    padding: 12px 44px 10px 12px;
-}
-
-.edf-popup-content .edf-saved-search-category {
-    font-size: 13px;
-    line-height: 20px;
-    margin-bottom: 3px;
-}
-
-.edf-popup-content .edf-saved-search-title {
-    font-size: 16px;
-    line-height: 22px;
-}
-
-.edf-popup-content .edf-saved-search-description {
-    font-size: 13px;
-    line-height: 18px;
-    margin-top: 5px;
-}
-
-.edf-popup-content .edf-saved-search-features {
-    gap: 6px;
-}
-
-.edf-popup-content .edf-saved-search-feature {
-    font-size: 14px;
-    gap: 3px;
-}
-
-.edf-popup-content .edf-saved-search-feature svg {
-    height: 18px;
-    width: 18px;
-}
-
-.edf-popup-content .edf-saved-search-card-actions {
-    gap: 14px;
-    padding: 0 12px;
-}
-
-.edf-popup-content .edf-saved-search-action {
-    font-size: 15px;
-    line-height: 22px;
-}
-
-.edf-popup-content .edf-saved-search-notification {
-    right: 36px;
-    top: 10px;
-}
-
-.edf-popup-content .edf-saved-search-delete {
-    right: 10px;
-    top: 10px;
-}
-
 .edf-popup-content .edf-blacklist-card-media {
     aspect-ratio: 16 / 9;
 }

@@ -67,7 +67,7 @@ export default defineManifest(({ mode }) => {
                     'src/features/filters/styles.css',
                     'src/features/blacklist/styles.css',
                     'src/features/saved-searches/card/card.css',
-                    'src/features/saved-searches/card/modal.css',
+                    'src/features/saved-searches/alertPopover.css',
                     'src/features/listing-cards/styles.css',
                     'src/features/listing-cards/exclusion/styles.css',
                     'src/features/listing-cards/carousel.css',

@@ -156,3 +156,7 @@ export function replaceWithSavedSearchKebabIcon(target: SVGElement): void {
 export function replaceWithSavedSearchTrashIcon(target: SVGElement): void {
     setSvgIcon(target, trashSvg);
 }
+
+export function replaceWithSavedSearchShareIcon(target: SVGElement): void {
+    setSvgIcon(target, shareSvg);
+}

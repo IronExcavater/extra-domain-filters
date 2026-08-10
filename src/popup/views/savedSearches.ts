@@ -86,7 +86,7 @@ export function createSavedSearchesView(
             visibleIds: visible.map(search => search.id),
         });
         frame.replaceCards(visible.map(search => createSavedSearchCard(search, {
-            compactAlertModal: true,
+            density: "compact",
             openLinksInNewTab: true,
             onNotify: showPopupToast,
             onSelectionChange: selected => {
