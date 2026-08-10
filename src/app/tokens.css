@@ -10,11 +10,25 @@
     --edf-color-green-hover: #006d00;
     --edf-color-green-tint: #f7fcf1;
     --edf-color-danger: #dc2626;
+    --edf-color-danger-hover: #b91c1c;
+    --edf-color-focus: rgb(0 138 8 / 24%);
+    --edf-color-overlay: rgb(19 18 18 / 12%);
     --edf-radius-control: 8px;
     --edf-radius-card: 3px;
     --edf-radius-dialog: 12px;
+    --edf-space-1: 4px;
+    --edf-space-2: 8px;
+    --edf-space-3: 12px;
+    --edf-space-4: 16px;
+    --edf-space-6: 24px;
+    --edf-control-height-sm: 36px;
+    --edf-control-height-md: 40px;
+    --edf-control-height-lg: 44px;
+    --edf-focus-ring: 0 0 0 3px var(--edf-color-focus);
+    --edf-motion-fast: 150ms;
+    --edf-motion-base: 220ms;
     --edf-shadow-card: 0 1px 3px 0 #d0d3d9;
-    --edf-shadow-popover: 0 2px 8px 0 #d0d3d9;
+    --edf-shadow-popover: 0 12px 32px rgb(19 18 18 / 18%), 0 2px 8px rgb(19 18 18 / 10%);
     --edf-color-blacklist-inactive: rgb(100 100 99);
     --edf-color-shortlist-hover: rgb(255 204 0);
     --edf-color-shortlist-inactive: rgb(100 100 99 / 30%);
@@ -23,4 +37,11 @@
 .edf-theme-2026 {
     --edf-radius-control: 12px;
     --edf-color-heading: #131212;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --edf-motion-fast: 0ms;
+        --edf-motion-base: 0ms;
+    }
 }

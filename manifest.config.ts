@@ -59,6 +59,7 @@ export default defineManifest(({ mode }) => {
                 css: [
                     'src/app/tokens.css',
                     'src/shared/ui/domainControls.css',
+                    'src/shared/ui/popover.css',
                     'src/shared/ui/collection.css',
                     'src/shared/ui/sort.css',
                     'src/shared/ui/toast.css',

@@ -4,6 +4,7 @@ import "../features/saved-searches/styles.css";
 import "../features/settings/settings.css";
 import "../shared/ui/collection.css";
 import "../shared/ui/domainControls.css";
+import "../shared/ui/popover.css";
 import "../shared/ui/sort.css";
 import "../shared/ui/toast.css";
 import "../shared/ui/tooltip.css";

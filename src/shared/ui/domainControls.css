@@ -11,6 +11,88 @@
     min-height: 40px;
 }
 
+.edf-ui-button {
+    align-items: center;
+    appearance: none;
+    background: var(--edf-color-surface);
+    border: 1px solid transparent;
+    border-radius: var(--edf-radius-control);
+    box-sizing: border-box;
+    color: var(--edf-color-text);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    gap: var(--edf-space-2);
+    justify-content: center;
+    min-height: var(--edf-control-height-md);
+    padding: 0 var(--edf-space-4);
+    transition:
+        background-color var(--edf-motion-fast) ease,
+        border-color var(--edf-motion-fast) ease,
+        color var(--edf-motion-fast) ease,
+        box-shadow var(--edf-motion-fast) ease;
+}
+
+.edf-ui-button:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+    outline: 0;
+}
+
+.edf-ui-button:disabled,
+.edf-ui-button[aria-busy="true"] {
+    cursor: default;
+    opacity: 0.58;
+}
+
+.edf-ui-button-primary {
+    background: var(--edf-color-green);
+    border-color: var(--edf-color-green);
+    color: #fff;
+}
+
+.edf-ui-button-primary:hover:not(:disabled) {
+    background: var(--edf-color-green-hover);
+    border-color: var(--edf-color-green-hover);
+}
+
+.edf-ui-button-secondary {
+    border-color: var(--edf-color-border);
+}
+
+.edf-ui-button-secondary:hover:not(:disabled),
+.edf-ui-button-quiet:hover:not(:disabled) {
+    background: var(--edf-color-surface-muted);
+}
+
+.edf-ui-button-danger {
+    border-color: var(--edf-color-danger);
+    color: var(--edf-color-danger);
+}
+
+.edf-ui-button-danger:hover:not(:disabled) {
+    background: var(--edf-color-danger);
+    color: #fff;
+}
+
+.edf-ui-button-icon {
+    flex: 0 0 var(--edf-control-height-sm);
+    height: var(--edf-control-height-sm);
+    min-height: var(--edf-control-height-sm);
+    padding: 0;
+    width: var(--edf-control-height-sm);
+}
+
+.edf-ui-button-icon:hover:not(:disabled) {
+    background: var(--edf-color-surface-muted);
+}
+
+.edf-ui-button-icon-svg {
+    height: 20px;
+    width: 20px;
+}
+
 .edf-domain-button {
     cursor: pointer;
     padding: 8px 16px;

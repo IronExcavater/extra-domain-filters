@@ -1,0 +1,32 @@
+.edf-popover {
+    animation: edf-popover-enter var(--edf-motion-fast) ease both;
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: var(--edf-radius-dialog);
+    box-shadow: var(--edf-shadow-popover);
+    box-sizing: border-box;
+    color: var(--edf-color-text);
+    max-height: calc(100vh - 16px);
+    max-width: calc(100vw - 16px);
+    overflow: auto;
+    position: fixed;
+    z-index: 2147483646;
+}
+
+@keyframes edf-popover-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edf-popover {
+        animation: none;
+    }
+}
