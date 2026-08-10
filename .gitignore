@@ -1,6 +1,8 @@
 node_modules
 dist
 release
+hosting
+.playwright-cli
 .env
 .env.*
 !.env.example

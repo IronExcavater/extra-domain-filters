@@ -36,7 +36,7 @@ function normalizeSharedSearch(id: string, value: unknown): SharedSearch | undef
 export async function createSharedSearch(params: string): Promise<SharedSearch> {
     const services = await getFirebaseServices();
     const user = services?.auth.currentUser;
-    if (!services || !user) throw new Error("Sign in to create a hosted share link.");
+    if (!services || !user) throw new Error("Log in to create a hosted share link.");
 
     const reference = doc(collection(
         services.firestore,

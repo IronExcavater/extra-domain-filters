@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from 'node:url';
 import { crx } from '@crxjs/vite-plugin';
 import { defineConfig, type PluginOption } from 'vite';
 import zip from 'vite-plugin-zip-pack';
@@ -20,6 +21,13 @@ export default defineConfig(({ command }) => {
     }
 
     return {
+        build: {
+            rollupOptions: {
+                input: {
+                    offscreen: fileURLToPath(new URL('./src/offscreen/offscreen.html', import.meta.url)),
+                },
+            },
+        },
         define: {
             __BUNDLED_DEV__: "false",
             __SERVER_FORWARD_CONSOLE__: "false",

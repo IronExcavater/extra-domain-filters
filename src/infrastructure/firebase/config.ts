@@ -13,3 +13,21 @@ export function readFirebaseConfig(): FirebaseOptions | undefined {
 
     return config.apiKey && config.appId && config.projectId ? config : undefined;
 }
+
+export function readFederatedAuthHelperUrl(): string | undefined {
+    const value = import.meta.env.VITE_FIREBASE_AUTH_HELPER_URL?.trim();
+    if (!value) return undefined;
+    try {
+        const url = new URL(value);
+        return url.protocol === "https:" ? url.href : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+export function isFederatedProviderEnabled(provider: "apple" | "facebook"): boolean {
+    const value = provider === "apple"
+        ? import.meta.env.VITE_APPLE_AUTH_ENABLED
+        : import.meta.env.VITE_FACEBOOK_AUTH_ENABLED;
+    return value?.trim().toLowerCase() === "true";
+}

@@ -1,4 +1,4 @@
-import { getAccountState, signIn, signOut } from "../../domain/account/client";
+import { getAccountState, loginWithProvider, signOut } from "../../domain/account/client";
 import type { AccountState } from "../../domain/account/model";
 import { setBlacklist } from "../../domain/blacklist/store";
 import { clearListingCache } from "../../domain/listings/cache";
@@ -270,19 +270,19 @@ function createAccountSection(sectionHeading: HeadingTag, toastScope: ToastScope
     description.className = "edf-settings-row-description";
     button.className = "edf-settings-action edf-domain-button";
     button.type = "button";
-    title.textContent = "Google account";
+    title.textContent = "Account";
     description.textContent = "Checking account status...";
     button.disabled = true;
-    button.textContent = "Sign in";
+    button.textContent = "Log in";
 
     const render = (state: AccountState): void => {
-        button.disabled = state.status === "unavailable";
-        button.textContent = state.status === "signed-in" ? "Sign out" : "Sign in";
+        button.disabled = state.status === "unavailable" || state.status === "signed-out" && !state.capabilities.google;
+        button.textContent = state.status === "signed-in" ? "Log out" : "Log in with Google";
         description.textContent = state.status === "signed-in"
-            ? `Syncing as ${state.profile?.email ?? state.profile?.displayName ?? "Google user"}.`
+            ? `Syncing as ${state.profile?.email ?? state.profile?.displayName ?? "extension user"}.`
             : state.status === "unavailable"
                 ? "Account sync is not configured in this build."
-                : "Sign in to sync your extension data across devices.";
+                : "Log in to sync your extension data across devices.";
     };
 
     button.addEventListener("click", async () => {
@@ -290,8 +290,8 @@ function createAccountSection(sectionHeading: HeadingTag, toastScope: ToastScope
 
         try {
             const current = await getAccountState();
-            render(current.status === "signed-in" ? await signOut() : await signIn());
-            showToast(current.status === "signed-in" ? "Signed out" : "Signed in", toastScope);
+            render(current.status === "signed-in" ? await signOut() : await loginWithProvider("google"));
+            showToast(current.status === "signed-in" ? "Logged out" : "Logged in", toastScope);
         } catch (error) {
             showToast(error instanceof Error ? error.message : "Unable to update the account.", toastScope);
         } finally {

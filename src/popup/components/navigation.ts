@@ -179,17 +179,17 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
     );
 
     const signedIn = data.account?.status === "signed-in";
-    const sessionLabel = signedIn ? "Sign out" : "Sign in";
+    const sessionLabel = signedIn ? "Log out" : "Log in";
     const session = createMenuItem(sessionLabel, replaceWithPopupDoorIcon, async () => {
         if (!signedIn) {
-            closeAndNavigate("sign-in");
+            closeAndNavigate("login");
             return;
         }
         session.disabled = true;
         try {
             await signOut();
             account.open = false;
-            showPopupToast("Signed out");
+            showPopupToast("Logged out");
             onSessionChange();
         } catch (error) {
             showPopupToast(error instanceof Error ? error.message : "Unable to sign out.");

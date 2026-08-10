@@ -3,7 +3,14 @@ import {
     type ExtensionRequest,
     type ExtensionResponse,
 } from "../shared/platform/messages";
-import { getAccountState, signIn, signOut } from "./account";
+import {
+    getAccountState,
+    loginWithProvider,
+    resetPassword,
+    signInWithEmail,
+    signOut,
+    signUpWithEmail,
+} from "./account";
 import { startBlacklistSync } from "./blacklistSync";
 import { enqueueListingEnrichment, startListingEnrichment } from "./listingEnrichment";
 import { startSavedSearchSync } from "./savedSearchSync";
@@ -20,7 +27,10 @@ startTelemetry();
 async function handleRequest(request: ExtensionRequest): Promise<unknown> {
     switch (request.type) {
         case "account:get": return getAccountState();
-        case "account:sign-in": return signIn();
+        case "account:create-email": return signUpWithEmail(request.email, request.password, request.displayName);
+        case "account:login-email": return signInWithEmail(request.email, request.password);
+        case "account:login-provider": return loginWithProvider(request.provider);
+        case "account:reset-password": return resetPassword(request.email);
         case "account:sign-out": return signOut();
         case "shared-search:create": return createSharedSearch(request.params);
         case "shared-search:get": return getSharedSearch(request.id);

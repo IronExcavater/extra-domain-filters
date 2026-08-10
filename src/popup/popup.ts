@@ -19,12 +19,13 @@ import { getSettings } from "../shared/state/settings";
 import { createNavigation } from "./components/navigation";
 import type { PopupData, PopupView } from "./model";
 import { createBlacklistView } from "./views/blacklist";
+import { createLoginView } from "./views/login";
 import { createSavedSearchesView } from "./views/savedSearches";
-import { createSignInView } from "./views/signIn";
 
 const selectedBlacklistUrls = new Set<string>();
 const selectedSavedSearchIds = new Set<string>();
 let activeView: PopupView = "saved-searches";
+let loginReturnView: Exclude<PopupView, "login"> = "saved-searches";
 let renderController: AbortController | undefined;
 const root = document.querySelector<HTMLElement>("#app");
 const shell = document.createElement("main");
@@ -70,17 +71,21 @@ async function render(animate = true): Promise<void> {
     if (signal.aborted) return;
 
     const navigate = (view: PopupView): void => {
+        if (view === "login" && activeView !== "login") {
+            loginReturnView = activeView;
+        }
         activeView = view;
         void render();
     };
 
-    shell.classList.toggle("edf-popup-auth-shell", activeView === "sign-in");
-    navigationHost.hidden = activeView === "sign-in";
+    shell.classList.toggle("edf-popup-auth-shell", activeView === "login");
+    navigationHost.hidden = activeView === "login";
     let view: HTMLElement;
-    if (activeView === "sign-in") {
-        view = createSignInView({
-            onBack: () => navigate("saved-searches"),
-            onComplete: () => navigate("saved-searches"),
+    if (activeView === "login") {
+        view = createLoginView({
+            account: data.account,
+            onBack: () => navigate(loginReturnView),
+            onComplete: () => navigate(loginReturnView),
         });
     } else if (activeView === "preferences") {
         view = await createPreferencesView();
@@ -94,7 +99,7 @@ async function render(animate = true): Promise<void> {
     } else {
         view = createSavedSearchesView(data.savedSearches, selectedSavedSearchIds, signal, animate);
     }
-    if (activeView !== "sign-in") {
+    if (activeView !== "login") {
         navigationHost.replaceChildren(createNavigation({
             activeView,
             data,

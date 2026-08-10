@@ -1,4 +1,10 @@
 {
+  "hosting": {
+    "public": "hosting",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "**/*.map"],
+    "cleanUrls": true,
+    "rewrites": [{ "source": "/auth/**", "destination": "/auth/index.html" }]
+  },
   "firestore": {
     "rules": "firebase/firestore.rules",
     "indexes": "firebase/firestore.indexes.json"

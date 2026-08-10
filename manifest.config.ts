@@ -5,13 +5,27 @@ import pkg from './package.json';
 export default defineManifest(({ mode }) => {
     const env = loadEnv(mode, '.', 'VITE_');
     const oauthClientId = env.VITE_GOOGLE_OAUTH_CLIENT_ID?.trim();
+    const authHelperUrl = env.VITE_FIREBASE_AUTH_HELPER_URL?.trim();
+    let authHelperOrigin: string | undefined;
+    if (authHelperUrl) {
+        let parsed: URL;
+        try {
+            parsed = new URL(authHelperUrl);
+        } catch {
+            throw new Error('VITE_FIREBASE_AUTH_HELPER_URL must be a valid HTTPS URL.');
+        }
+        if (parsed.protocol !== 'https:') {
+            throw new Error('VITE_FIREBASE_AUTH_HELPER_URL must use HTTPS.');
+        }
+        authHelperOrigin = parsed.origin;
+    }
 
     return {
         manifest_version: 3,
         name: pkg.name,
         version: pkg.version,
         description: pkg.description,
-        minimum_chrome_version: '105',
+        minimum_chrome_version: '116',
         icons: {
             16: 'public/icons/brand/icon-16.png',
             32: 'public/icons/brand/icon-32.png',
@@ -30,13 +44,17 @@ export default defineManifest(({ mode }) => {
             service_worker: 'src/background/background.ts',
             type: 'module',
         },
-        permissions: ['storage', 'alarms', 'unlimitedStorage', 'identity', 'activeTab'],
+        permissions: ['storage', 'alarms', 'unlimitedStorage', 'identity', 'activeTab', 'offscreen'],
+        content_security_policy: {
+            extension_pages: `script-src 'self'; object-src 'self'${authHelperOrigin ? `; frame-src ${authHelperOrigin}` : ''}`,
+        },
         host_permissions: [
             '*://domain.com.au/*',
             '*://www.domain.com.au/*',
             'https://firestore.googleapis.com/*',
             'https://identitytoolkit.googleapis.com/*',
             'https://securetoken.googleapis.com/*',
+            ...(authHelperOrigin ? [`${authHelperOrigin}/*`] : []),
         ],
         oauth2: oauthClientId
             ? {
@@ -49,7 +67,7 @@ export default defineManifest(({ mode }) => {
             }
             : undefined,
         web_accessible_resources: [{
-            resources: ['public/fonts/F37Bolton-VF.ttf'],
+            resources: ['public/fonts/F37Bolton-VF.ttf', 'src/offscreen/offscreen.html'],
             matches: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
         }],
         content_scripts: [

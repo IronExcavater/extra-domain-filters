@@ -1,4 +1,4 @@
-import type { AccountState } from "../../domain/account/model";
+import type { AccountProvider, AccountState } from "../../domain/account/model";
 import type { ListingSnapshot } from "../../domain/matching";
 import {
     isCreateSharedSearchInput,
@@ -11,7 +11,10 @@ import { isExtensionContextUnavailable } from "./storage";
 
 export type ExtensionRequest =
     | { type: "account:get" }
-    | { type: "account:sign-in" }
+    | { displayName?: string; email: string; password: string; type: "account:create-email" }
+    | { provider: AccountProvider; type: "account:login-provider" }
+    | { email: string; password: string; type: "account:login-email" }
+    | { email: string; type: "account:reset-password" }
     | { type: "account:sign-out" }
     | { type: "shared-search:create"; params: string }
     | { type: "shared-search:get"; id: string }
@@ -24,7 +27,10 @@ export type ExtensionResponse<T> =
 
 export interface ExtensionResponseMap {
     "account:get": AccountState;
-    "account:sign-in": AccountState;
+    "account:create-email": AccountState;
+    "account:login-email": AccountState;
+    "account:login-provider": AccountState;
+    "account:reset-password": undefined;
     "account:sign-out": AccountState;
     "shared-search:create": SharedSearch;
     "shared-search:get": SharedSearch | undefined;
@@ -36,7 +42,13 @@ type RequestValidator = (value: Record<string, unknown>) => boolean;
 
 const REQUEST_VALIDATORS = {
     "account:get": () => true,
-    "account:sign-in": () => true,
+    "account:create-email": value => isEmail(value.email) && isPassword(value.password)
+        && (value.displayName === undefined || typeof value.displayName === "string" && value.displayName.length <= 100),
+    "account:login-email": value => isEmail(value.email) && isPassword(value.password),
+    "account:login-provider": value => value.provider === "apple"
+        || value.provider === "facebook"
+        || value.provider === "google",
+    "account:reset-password": value => isEmail(value.email),
     "account:sign-out": () => true,
     "shared-search:create": isCreateSharedSearchInput,
     "shared-search:get": value => isSharedSearchId(value.id),
@@ -45,6 +57,14 @@ const REQUEST_VALIDATORS = {
             typeof listing.title === "string" && typeof listing.text === "string"),
     "telemetry:track": value => isTelemetryEventInput(value.event),
 } satisfies Record<ExtensionRequest["type"], RequestValidator>;
+
+function isEmail(value: unknown): boolean {
+    return typeof value === "string" && value.length > 2 && value.length <= 320;
+}
+
+function isPassword(value: unknown): boolean {
+    return typeof value === "string" && value.length > 0 && value.length <= 4096;
+}
 
 function isExtensionRequestType(value: unknown): value is ExtensionRequest["type"] {
     return typeof value === "string" && value in REQUEST_VALIDATORS;
