@@ -3,15 +3,19 @@ import { trackTelemetry } from "../../domain/telemetry/client";
 import { createClaimTracker } from "../../shared/dom/claim";
 import { markOwned, OWNED_ELEMENT_ATTRIBUTE } from "../../shared/dom/ownership";
 import { bindLazyTrigger } from "../../shared/dom/trigger";
+import { findDomainFilterHosts, readExcludedPropertyTypes } from "../../shared/domain/filters";
 import { observeUrlChanges, PageContext } from "../../shared/platform/router";
 import { onStorageChange } from "../../shared/platform/storage";
 import { Property } from "../../shared/state/property";
 import { getSettings, toggleListId, updateSettings, type Settings } from "../../shared/state/settings";
 import { snapPrice } from "../../shared/utils/number";
 import { createDraftProperty } from "./bindings/draft";
-import { cloneCheckboxInput } from "./clone/checkbox";
-import { cloneSliderInput } from "./clone/slider";
-import { cloneTextInput } from "./clone/text";
+import {
+    createCheckboxControl,
+    createFilterSection,
+    createRangeControl,
+    createTextControl,
+} from "./controls";
 import { isRentMode, observeModeChanges } from "./mode";
 import { syncSharedFilterParams } from "./searchParams";
 
@@ -20,7 +24,7 @@ function reportAsyncError(context: PageContext, action: string): (error: unknown
 }
 
 function refreshPriceTitles(url: URL): void {
-    for (const priceDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__price-range"]')) {
+    for (const priceDiv of findDomainFilterHosts().priceSections) {
         const priceTitle = priceDiv.querySelector('h3');
         if (priceTitle) priceTitle.textContent = isRentMode(url) ? 'Price (Weekly)' : 'Price';
     }
@@ -66,24 +70,20 @@ export async function injectFilters(context: PageContext, url = context.url) {
     const settings = await getSettings();
     if (context.signal.aborted) return;
 
-    for (const mustHaveDiv of document.querySelectorAll<HTMLElement>('[data-testid="dynamic-search-filters__feature-options"]')) {
+    const hosts = findDomainFilterHosts();
+    for (const mustHaveDiv of hosts.featureSections) {
         if (!claim(mustHaveDiv)) continue;
         if (!settings.filters.enabled.couldHaves) continue;
 
-        const mustHaveTitle = mustHaveDiv.children[0];
-
-        const couldHaveDiv = mustHaveDiv.cloneNode(true) as HTMLElement;
-        const couldHaveTitle = couldHaveDiv.children[0];
-
-        couldHaveDiv.setAttribute('data-testid', 'dynamic-search-filters__preference-options');
-
-        mustHaveTitle.textContent = 'Must-Haves';
-        couldHaveTitle.textContent = 'Could-Haves';
-
-        const checkboxDiv = couldHaveDiv.children[1] as HTMLDivElement;
-        for (let i = couldHaveDiv.children.length - 1; i > 0; i--) {
-            couldHaveDiv.removeChild(couldHaveDiv.children[i]);
-        }
+        const mustHaveTitle = mustHaveDiv.querySelector("h2, h3");
+        const couldHaveDiv = createFilterSection(
+            "Could-Haves",
+            "dynamic-search-filters__preference-options",
+        );
+        const checkboxGrid = document.createElement("div");
+        checkboxGrid.className = "edf-filter-checkbox-grid";
+        couldHaveDiv.append(checkboxGrid);
+        if (mustHaveTitle) mustHaveTitle.textContent = "Must-Haves";
 
         for (const preference of PREFERENCES) {
             const settingsProperty = Property.from('boolean', {
@@ -106,8 +106,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
                 context.scope,
             );
 
-            couldHaveDiv.appendChild(await cloneCheckboxInput(
-                checkboxDiv,
+            checkboxGrid.appendChild(await createCheckboxControl(
                 draftProperty,
                 {
                     id: preference.id,
@@ -122,7 +121,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
         logger.info('Appended preferences filter');
     }
 
-    for (const includeDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__keywords"]')) {
+    for (const includeDiv of hosts.keywordSections) {
         if (!claim(includeDiv)) continue;
         if (!settings.filters.enabled.excludeKeywords) continue;
 
@@ -152,17 +151,16 @@ export async function injectFilters(context: PageContext, url = context.url) {
             context.scope,
         );
 
-        const excludeDiv = await cloneTextInput(
-            includeDiv,
+        const excludeDiv = await createTextControl(
             draftProperty,
             {
                 id: 'exclude',
                 label: 'Exclude Keywords',
                 placeholder: 'e.g. studio, granny flat',
                 ariaLabel: 'Exclude keywords (example: studio, granny flat)',
+                testId: 'dynamic-search-filters__preferences',
             },
         );
-        excludeDiv.setAttribute('data-testid', 'dynamic-search-filters__preferences');
 
         if (context.signal.aborted) return;
         appendCustomFilter(includeDiv, excludeDiv);
@@ -172,7 +170,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
 
     refreshPriceTitles(url);
 
-    for (const priceDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__price-range"]')) {
+    for (const priceDiv of hosts.priceSections) {
         if (!claim(priceDiv)) continue;
         if (!settings.filters.enabled.strataFees) continue;
 
@@ -193,17 +191,16 @@ export async function injectFilters(context: PageContext, url = context.url) {
             context.scope,
         );
 
-        const strataFeesDiv = await cloneSliderInput(
-            priceDiv,
+        const strataFeesDiv = await createRangeControl(
             draftProperty,
             {
                 id: 'strataFees',
                 label: 'Strata Fees (Quarterly)',
                 max: STRATA_MAX,
                 snap: snapPrice,
+                testId: 'dynamic-search-filters__strata-fees',
             },
         );
-        strataFeesDiv.setAttribute('data-testid', 'dynamic-search-filters__strata-fees');
 
         if (context.signal.aborted) return;
         appendCustomFilter(priceDiv, strataFeesDiv);
@@ -215,30 +212,12 @@ export async function injectFilters(context: PageContext, url = context.url) {
         if (!context.signal.aborted) refreshPriceTitles(url);
     });
 
-    for (const propertyTypesDiv of document.querySelectorAll<HTMLDivElement>('[data-testid="dynamic-search-filters__property-types"]')) {
+    for (const propertyTypesDiv of hosts.propertyTypeSections) {
         if (!claim(propertyTypesDiv)) continue;
         if (!settings.filters.enabled.propertyTypes) continue;
 
         const updatePropertyExclusions = async (track = false): Promise<void> => {
-            const checkboxes = [...propertyTypesDiv.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
-            const anyChecked = checkboxes.some(checkbox => checkbox.checked);
-
-            const checkedParentNames = new Set(
-                checkboxes
-                    .filter(checkbox => checkbox.value === '' && checkbox.checked)
-                    .map(checkbox => checkbox.name),
-            );
-
-            const excludePropertyKeywords = anyChecked
-                ? checkboxes
-                    .filter(checkbox => !checkbox.checked && !checkedParentNames.has(checkbox.name))
-                    .map(checkbox =>
-                        checkbox.closest('label')
-                            ?.querySelector('div[class*="domain-checkbox__label"]')
-                            ?.textContent?.split(':')[0]?.trim().toLowerCase()
-                    )
-                    .filter((label): label is string => Boolean(label))
-                : [];
+            const excludePropertyKeywords = readExcludedPropertyTypes(propertyTypesDiv);
 
             await updateSettings({ filters: { excludePropertyKeywords } });
             if (track) void trackTelemetry({ name: "feature_used", feature: "property_type_exclusions" });

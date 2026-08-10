@@ -7,12 +7,15 @@ import {
 import { onBodyMutations } from "../../shared/dom/bodyMutations";
 import { markOwned } from "../../shared/dom/ownership";
 import { observeUrlChanges, type PageContext } from "../../shared/platform/router";
+import { createUiButton } from "../../shared/ui/elements";
 import { bindPropertyAlertModal, setPropertyAlertSearchContext } from "./alerts";
 
 const RECENT_SEARCH_SELECTOR = 'a[data-testid="recent-search-item"]';
 
 function getSearchTitle(link: HTMLAnchorElement): string {
-    return link.querySelector(".css-d3a0h7")?.textContent?.trim() ?? "Recent search";
+    return link.closest("article")?.querySelector("h2, h3")?.textContent?.trim() ??
+        link.textContent?.trim() ??
+        "Recent search";
 }
 
 function describeFilters(search: ExtensionRecentSearch): string {
@@ -58,31 +61,48 @@ function bindRecentAlert(
 }
 
 function createRecentSearchCard(
-    source: HTMLElement,
     sourceLink: HTMLAnchorElement,
     search: ExtensionRecentSearch,
+    sourceAlert?: HTMLButtonElement,
 ): HTMLElement {
-    const card = source.cloneNode(true) as HTMLElement;
-    const link = card.querySelector<HTMLAnchorElement>(RECENT_SEARCH_SELECTOR);
-    const description = card.querySelector<HTMLElement>('[data-testid="recent-search-description"]');
-    const alert = card.querySelector<HTMLButtonElement>(
-        '[data-testid="create-alert-frequency-button"], #changeAlertFrequencyButton',
-    );
-    const sourceAlert = source.querySelector<HTMLButtonElement>(
-        '[data-testid="create-alert-frequency-button"], #changeAlertFrequencyButton',
-    );
+    const card = document.createElement("article");
+    const link = document.createElement("a");
+    const content = document.createElement("span");
+    const titleElement = document.createElement("h3");
+    const description = document.createElement("span");
     const title = search.title || getSearchTitle(sourceLink);
+    const alert = createUiButton({
+        ariaLabel: "Create alert",
+        label: "Create alert",
+        variant: "secondary",
+    });
 
+    card.className = "edf-recent-search-card";
     card.dataset.edfRecentSearch = search.url;
-    if (link) link.href = search.url;
-    if (description) description.textContent = describeFilters(search);
-    if (alert) bindRecentAlert(alert, search.url, title, sourceAlert ?? undefined);
+    link.className = "edf-recent-search-link";
+    link.dataset.testid = "edf-recent-search-item";
+    link.href = search.url;
+    content.className = "edf-recent-search-content";
+    titleElement.textContent = title;
+    description.className = "edf-recent-search-description";
+    description.textContent = describeFilters(search);
+    alert.classList.add("edf-recent-search-alert");
+    alert.dataset.testid = "edf-recent-search-alert";
+    alert.hidden = !sourceAlert;
+    content.append(titleElement, description);
+    link.append(content);
+    card.append(link, alert);
+    bindRecentAlert(alert, search.url, title, sourceAlert);
 
     return markOwned(card, "recent-search");
 }
 
 async function renderRecentSearches(): Promise<void> {
     const searches = await getRecentSearches();
+    const activeUrls = new Set(searches.map(search => search.url));
+    document.querySelectorAll<HTMLElement>("[data-edf-recent-search]").forEach(card => {
+        if (!activeUrls.has(card.dataset.edfRecentSearch ?? "")) card.remove();
+    });
     const existing = new Set(
         [...document.querySelectorAll<HTMLElement>("[data-edf-recent-search]")]
             .map(card => card.dataset.edfRecentSearch)
@@ -114,9 +134,12 @@ async function renderRecentSearches(): Promise<void> {
             return sourceUrl.href === getRecentSearchBaseUrl(search);
         });
         const sourceCard = sourceLink?.closest<HTMLElement>("article");
+        const sourceAlert = sourceCard?.querySelector<HTMLButtonElement>(
+            '[data-testid="create-alert-frequency-button"], #changeAlertFrequencyButton',
+        );
         if (!sourceCard || !sourceLink) continue;
 
-        sourceCard.after(createRecentSearchCard(sourceCard, sourceLink, search));
+        sourceCard.after(createRecentSearchCard(sourceLink, search, sourceAlert ?? undefined));
     }
 }
 

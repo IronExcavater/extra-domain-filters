@@ -1,18 +1,155 @@
 .edf-filter-actions {
     align-items: center;
     display: inline-flex;
-    gap: 8px;
+    margin-left: 8px;
 }
 
 .edf-search-share-button {
     min-width: auto;
 }
 
-.edf-filter-actions > button svg {
-    height: 22px !important;
-    width: 22px !important;
+.edf-filter-section {
+    color: var(--edf-color-text);
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
 }
 
-.edf-search-share-button > span:last-of-type {
-    padding-left: 10px !important;
+.edf-filter-heading {
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.edf-filter-checkbox-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.edf-filter-checkbox {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 20px minmax(0, 1fr);
+    min-height: 32px;
+    position: relative;
+}
+
+.edf-filter-checkbox input {
+    appearance: none;
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: 4px;
+    grid-column: 1;
+    height: 20px;
+    margin: 0;
+    width: 20px;
+}
+
+.edf-filter-checkbox input:checked {
+    background: var(--edf-color-green);
+    border-color: var(--edf-color-green);
+}
+
+.edf-filter-checkbox-indicator {
+    color: #fff;
+    font-size: 13px;
+    grid-column: 1;
+    grid-row: 1;
+    opacity: 0;
+    pointer-events: none;
+    text-align: center;
+}
+
+.edf-filter-checkbox input:checked + .edf-filter-checkbox-indicator {
+    opacity: 1;
+}
+
+.edf-filter-checkbox > span:last-child {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.edf-filter-text {
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: var(--edf-radius-control);
+    box-sizing: border-box;
+    color: var(--edf-color-text);
+    font: inherit;
+    min-height: var(--edf-control-height-lg);
+    padding: 0 14px;
+    width: 100%;
+}
+
+.edf-filter-field,
+.edf-filter-range-field {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+
+.edf-filter-clear {
+    flex: 0 0 auto;
+}
+
+.edf-filter-range-value {
+    color: var(--edf-color-muted);
+    font-size: 14px;
+}
+
+.edf-filter-range {
+    accent-color: var(--edf-color-green);
+    cursor: pointer;
+    width: 100%;
+}
+
+.edf-filter-checkbox input:focus-visible,
+.edf-filter-text:focus-visible,
+.edf-filter-range:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+    outline: 0;
+}
+
+.edf-recent-search-card {
+    align-items: center;
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: var(--edf-radius-card);
+    box-shadow: var(--edf-shadow-card);
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding: 16px;
+}
+
+.edf-recent-search-link {
+    color: inherit;
+    flex: 1 1 auto;
+    min-width: 0;
+    text-decoration: none;
+}
+
+.edf-recent-search-content {
+    display: grid;
+    gap: 4px;
+}
+
+.edf-recent-search-content h3 {
+    color: var(--edf-color-heading);
+    font-size: 16px;
+    margin: 0;
+}
+
+.edf-recent-search-description {
+    color: var(--edf-color-muted);
+    font-size: 14px;
+}
+
+.edf-recent-search-alert {
+    flex: 0 0 auto;
 }
