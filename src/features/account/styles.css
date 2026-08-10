@@ -1,24 +1,74 @@
-[data-edf-account-menu-state] > a {
-    color: #3c475b !important;
-    transition: color 150ms ease;
+.edf-account-menu-item {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
-[data-edf-account-menu-state="active"] > a {
-    color: #0ea800 !important;
+.edf-account-menu-item > a {
+    align-items: center;
+    color: var(--edf-color-heading);
+    display: grid;
+    font: inherit;
+    gap: 12px;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    min-height: 44px;
+    padding: 0 16px;
+    text-decoration: none;
+    transition:
+        background-color var(--edf-motion-fast) ease,
+        color var(--edf-motion-fast) ease;
 }
 
-[data-edf-account-menu-state] > a:hover {
-    color: #0ea800 !important;
+.edf-account-menu-item > a:hover,
+.edf-account-menu-item[data-edf-account-menu-state="active"] > a {
+    background: var(--edf-color-green-tint);
+    color: var(--edf-color-green);
 }
 
-[data-edf-account-menu-state] > a > :is(svg, span) {
-    transition: color 150ms ease;
+.edf-account-menu-icon {
+    height: 20px;
+    width: 20px;
 }
 
-[data-edf-account-menu-state="active"] > a > :is(svg, span) {
-    color: #0ea800;
+.edf-account-menu-label {
+    font-weight: 600;
 }
 
-[data-edf-account-menu-state] > a:hover > :is(svg, span) {
-    color: #0ea800;
+.edf-account-menu-badge {
+    align-items: center;
+    background: var(--edf-color-surface-muted);
+    border-radius: 999px;
+    color: var(--edf-color-muted);
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 700;
+    justify-content: center;
+    min-height: 22px;
+    min-width: 22px;
+    padding: 0 6px;
+}
+
+.edf-profile-settings-tab {
+    list-style: none;
+}
+
+.edf-profile-settings-tab > button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-left: 3px solid transparent;
+    color: var(--edf-color-heading);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    width: 100%;
+}
+
+.edf-profile-settings-tab > button:hover,
+.edf-profile-settings-tab[data-selected="true"] > button {
+    background: var(--edf-color-green-tint);
+    border-left-color: var(--edf-color-green);
+    color: var(--edf-color-green);
 }

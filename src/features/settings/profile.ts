@@ -1,138 +1,102 @@
 import { markOwned } from "../../shared/dom/ownership";
+import { createReplacementSlot } from "../../shared/dom/replacement";
 import { waitForElement } from "../../shared/dom/wait";
+import { findDomainProfileHosts } from "../../shared/domain/profile";
 import { observeUrlChanges, type PageContext } from "../../shared/platform/router";
 import { getSettings } from "../../shared/state/settings";
 import { createSettingsContent } from "./view";
 
 const SETTINGS_QUERY = "extra-domain-filters";
 const SETTINGS_VALUE = "settings";
+const TAB_SELECTOR = '[data-extra-domain-filters-settings-tab="true"]';
 
 function isSettingsView(url = new URL(window.location.href)): boolean {
     return url.searchParams.get(SETTINGS_QUERY) === SETTINGS_VALUE;
 }
 
-function findProfileShell(): HTMLElement | undefined {
-    const nav = [...document.querySelectorAll<HTMLElement>("nav ul")]
-        .find(candidate => /my details|account security/i.test(candidate.textContent ?? ""));
-    return nav?.closest<HTMLElement>(".css-1nlilx1") ??
-        nav?.parentElement?.parentElement ??
-        undefined;
-}
+function createSettingsTab(context: PageContext): HTMLLIElement {
+    const item = markOwned(document.createElement("li"), "profile-settings-tab");
+    const button = document.createElement("button");
 
-function waitForProfileShell(signal: AbortSignal): Promise<HTMLElement> {
-    return waitForElement(findProfileShell, signal);
-}
-
-function createPanel(shell: HTMLElement): HTMLElement | undefined {
-    const nav = shell.querySelector("nav");
-    const content = shell.querySelector<HTMLElement>(".css-1jo5qpx > div:last-child") ??
-        (nav?.nextElementSibling instanceof HTMLElement ? nav.nextElementSibling : undefined);
-    if (!content) return undefined;
-
-    const panel = document.createElement("div");
-    panel.className = "edf-settings-panel";
-    panel.dataset.extraDomainFiltersSettings = "true";
-    content.append(markOwned(panel, "profile-settings"));
-    return panel;
-}
-
-function bindSettingsTab(shell: HTMLElement, panel: HTMLElement, signal: AbortSignal): void {
-    const list = shell.querySelector<HTMLUListElement>("nav ul");
-    const source = list?.querySelector<HTMLLIElement>("li");
-    const sourceButton = source?.querySelector<HTMLButtonElement>("button");
-    if (!list || !source || !sourceButton) return;
-
-    const nativeButtons = [...list.querySelectorAll<HTMLButtonElement>(":scope > li > button")];
-    const classCounts = new Map<string, number>();
-    nativeButtons.forEach(nativeButton => {
-        classCounts.set(nativeButton.className, (classCounts.get(nativeButton.className) ?? 0) + 1);
-    });
-    const inactiveClass = [...classCounts.entries()]
-        .sort((first, second) => second[1] - first[1])[0]?.[0] ?? sourceButton.className;
-    const activeClass = nativeButtons
-        .find(nativeButton => nativeButton.className !== inactiveClass)
-        ?.className ?? sourceButton.className;
-
-    const item = source.cloneNode(true) as HTMLLIElement;
-    const button = item.querySelector<HTMLButtonElement>("button");
-    if (!button) return;
-
+    item.className = "edf-profile-settings-tab";
     item.dataset.extraDomainFiltersSettingsTab = "true";
-    markOwned(item, "profile-settings-tab");
+    button.type = "button";
     button.textContent = "Extension preferences";
     button.addEventListener("click", () => {
         const url = new URL(window.location.href);
         url.searchParams.set(SETTINGS_QUERY, SETTINGS_VALUE);
         history.pushState({}, "", url);
-    });
-    list.append(item);
+    }, { signal: context.signal });
+    item.append(button);
+    return item;
+}
 
-    const setNativeTabsInactive = (): void => {
-        nativeButtons.forEach(nativeButton => { nativeButton.className = inactiveClass; });
-    };
+function updateTabState(): void {
+    const tab = document.querySelector<HTMLElement>(TAB_SELECTOR);
+    const button = tab?.querySelector("button");
+    const active = isSettingsView();
+    if (!tab || !button) return;
 
-    const updateView = (): void => {
-        const active = isSettingsView();
-        panel.hidden = !active;
-        [...panel.parentElement!.children].forEach(child => {
-            if (child === panel || child.closest("nav")) return;
-            (child as HTMLElement).hidden = active;
-        });
-        if (active) {
-            setNativeTabsInactive();
-            button.className = activeClass;
-        } else {
-            button.className = inactiveClass;
-        }
-    };
+    tab.dataset.selected = String(active);
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+}
 
-    list.addEventListener("click", event => {
+function injectSettingsTab(context: PageContext): void {
+    const hosts = findDomainProfileHosts();
+    if (!hosts || hosts.navigationList.querySelector(TAB_SELECTOR)) {
+        updateTabState();
+        return;
+    }
+
+    const tab = createSettingsTab(context);
+    hosts.navigationList.append(tab);
+    hosts.navigationList.addEventListener("click", event => {
         const target = event.target;
-        if (!(target instanceof Element) || target.closest('[data-extra-domain-filters-settings-tab="true"]')) return;
-        const selectedButton = target.closest<HTMLButtonElement>("button");
-        if (!selectedButton) return;
+        if (!(target instanceof Element) || target.closest(TAB_SELECTOR)) return;
         const url = new URL(window.location.href);
         if (!url.searchParams.has(SETTINGS_QUERY)) return;
         url.searchParams.delete(SETTINGS_QUERY);
         history.pushState({}, "", url);
-        setNativeTabsInactive();
-        selectedButton.className = activeClass;
-    });
-    updateView();
-    window.addEventListener("extra-domain-filters:url-change", updateView, { signal });
+    }, { signal: context.signal });
+    updateTabState();
 }
 
 export async function mountProfileSettings(context: PageContext): Promise<void> {
-    await waitForProfileShell(context.signal);
+    await waitForElement(() => findDomainProfileHosts()?.navigationList, context.signal);
+    injectSettingsTab(context);
 
-    let frame: number | undefined;
-    const inject = async (): Promise<void> => {
-        const shell = findProfileShell();
-        if (!shell || shell.querySelector('[data-extra-domain-filters-settings="true"]')) return;
+    const slot = createReplacementSlot(context.scope, {
+        mount: (target, root) => {
+            root.className = "edf-settings-panel";
+            root.dataset.extraDomainFiltersSettings = "true";
+            target.native?.after(root);
+        },
+        onError: error => context.logger.warn("Could not render extension preferences", error),
+        owner: "profile-settings",
+        render: async root => {
+            if (root.childElementCount > 0) return;
+            root.append(createSettingsContent(await getSettings(), {
+                sectionHeading: "h3",
+                titleHeading: "h2",
+            }));
+        },
+        resolve: () => {
+            if (!isSettingsView()) return undefined;
+            const hosts = findDomainProfileHosts();
+            return hosts
+                ? { host: hosts.contentHost, native: hosts.nativeContent }
+                : undefined;
+        },
+    });
 
-        const panel = createPanel(shell);
-        if (!panel) return;
+    observeUrlChanges(() => {
+        injectSettingsTab(context);
+        updateTabState();
+        slot.schedule();
+    }, context.signal);
 
-        panel.append(createSettingsContent(await getSettings(), {
-            sectionHeading: "h3",
-            titleHeading: "h2",
-        }));
-        bindSettingsTab(shell, panel, context.signal);
-    };
-    const schedule = (): void => {
-        if (frame !== undefined || context.signal.aborted) return;
-        frame = requestAnimationFrame(() => {
-            frame = undefined;
-            void inject();
-        });
-    };
-    const observer = new MutationObserver(schedule);
+    const observer = new MutationObserver(() => injectSettingsTab(context));
     observer.observe(document.body, { childList: true, subtree: true });
-    await inject();
-
-    context.signal.addEventListener("abort", () => {
-        observer.disconnect();
-        if (frame !== undefined) cancelAnimationFrame(frame);
-    }, { once: true });
-    observeUrlChanges(() => undefined, context.signal);
+    context.scope.add(() => observer.disconnect());
 }
