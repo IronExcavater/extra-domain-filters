@@ -1,19 +1,22 @@
-import { getSavedSearches, removeSavedSearch, saveSearch, type SavedSearch } from "../../domain/searches/savedSearches";
+import {
+    getSavedSearches,
+    removeSavedSearch,
+    saveSearch,
+    type SavedSearch,
+    type SearchNotificationFrequency,
+} from "../../domain/searches/savedSearches";
 import { onBodyMutations } from "../../shared/dom/bodyMutations";
-import { markOwned } from "../../shared/dom/ownership";
+import { domainAlertBridge } from "../../shared/domain/alerts";
+import { removeDomainSavedSearch } from "../../shared/domain/savedSearches";
 import type { PageContext } from "../../shared/platform/router";
 import { onStorageChange } from "../../shared/platform/storage";
-import { getSettings } from "../../shared/state/settings";
 import { showToast } from "../../shared/ui/toast";
-import { cloneActionButton, setActionButtonSelected } from "./clone/action";
+import { openSavedSearchAlertPopover } from "../saved-searches/alertPopover";
 import { extractSharedFilterParams } from "./searchParams";
 
-const ALERT_MODAL_SELECTOR = '[role="dialog"][aria-label="modal window"], [role="tooltip"]';
-const ALERT_FREQUENCY_LABEL = "Email Frequency";
-const ALERT_UPDATE_PROMPT = "How often would you like to receive alerts?";
-const NEVER_FREQUENCY = "none";
-const boundAlertSignals = new WeakSet<AbortSignal>();
 const PAGE_NUMBER_PARAMS = ["page", "pageNumber"];
+const boundButtons = new WeakMap<HTMLButtonElement, AbortSignal>();
+const boundSignals = new WeakSet<AbortSignal>();
 
 export interface PropertyAlertSearchContext {
     title: string;
@@ -26,380 +29,184 @@ export function setPropertyAlertSearchContext(context: PropertyAlertSearchContex
     propertyAlertSearchContext = context;
 }
 
-function getSearchTitle(): string {
-    return document.title.replace(/\s*\|\s*Domain$/, "") || "Saved search";
-}
-
 function normalizeSearchUrl(value: string): string {
     const url = new URL(value, window.location.origin);
-    for (const key of PAGE_NUMBER_PARAMS) url.searchParams.delete(key);
+    PAGE_NUMBER_PARAMS.forEach(key => url.searchParams.delete(key));
+    url.searchParams.delete("lastsearchdate");
     url.hash = "";
+    url.searchParams.sort();
     return url.href;
 }
 
-function isCurrentExtensionAlert(search: SavedSearch, url = window.location.href): boolean {
-    return !search.domainId &&
-        normalizeSearchUrl(search.url) === normalizeSearchUrl(url);
+function isCurrentSearch(search: SavedSearch, url: string): boolean {
+    return normalizeSearchUrl(search.url) === normalizeSearchUrl(url);
 }
 
-async function getCurrentExtensionAlert(url = window.location.href): Promise<SavedSearch | undefined> {
-    const searches = await getSavedSearches();
-    return searches.find(search => isCurrentExtensionAlert(search, url));
+async function getCurrentSearch(url: string): Promise<SavedSearch | undefined> {
+    return (await getSavedSearches()).find(search => isCurrentSearch(search, url));
 }
 
-function getAlertModal(): HTMLElement | undefined {
-    return [...document.querySelectorAll<HTMLElement>(ALERT_MODAL_SELECTOR)]
-        .find(modal =>
-            modal.textContent?.includes("Create a Property Alert") ||
-            modal.textContent?.includes("Edit Property Alert") ||
-            modal.textContent?.includes(ALERT_UPDATE_PROMPT)
-        );
+function getButtonContext(button: HTMLButtonElement): PropertyAlertSearchContext {
+    const card = button.closest<HTMLElement>("article");
+    const cardLink = card?.querySelector<HTMLAnchorElement>("a[href]");
+    const cardTitle = card?.querySelector<HTMLElement>("h2, h3, [data-testid*='title']")?.textContent?.trim();
+    return {
+        title: button.dataset.edfAlertSearchTitle
+            ?? cardTitle
+            ?? propertyAlertSearchContext?.title
+            ?? document.title.replace(/\s*\|\s*Domain$/, "")
+            ?? "Saved search",
+        url: button.dataset.edfAlertSearchUrl
+            ?? cardLink?.href
+            ?? propertyAlertSearchContext?.url
+            ?? window.location.href,
+    };
 }
 
-function getFrequencyGroup(modal: HTMLElement): HTMLElement | undefined {
-    const button = [...modal.querySelectorAll<HTMLElement>("div")]
-        .find(element => element.textContent?.trim() === ALERT_FREQUENCY_LABEL)
-        ?.parentElement
-        ?.querySelector<HTMLButtonElement>("button[data-selected]");
-    const radio = modal.querySelector<HTMLInputElement>('input[name="alert-frequency"]');
-    return button?.parentElement ??
-        modal.querySelector<HTMLButtonElement>("button[data-selected]")?.parentElement ??
-        radio?.parentElement?.parentElement ??
-        getDropdownControl(modal)?.parentElement?.parentElement ??
-        undefined;
-}
-
-function getDropdownControl(modal: HTMLElement): HTMLButtonElement | undefined {
-    return modal.querySelector<HTMLButtonElement>('button[role="combobox"]') ?? undefined;
-}
-
-function getFrequencyControls(group: HTMLElement): Array<HTMLButtonElement | HTMLInputElement> {
-    const buttons = [...group.querySelectorAll<HTMLButtonElement>("button[data-selected]")];
-    if (buttons.length > 0) return buttons;
-
-    const radios = [...group.querySelectorAll<HTMLInputElement>('input[name="alert-frequency"]')];
-    if (radios.length > 0) return radios;
-
-    const dropdown = group.querySelector<HTMLButtonElement>('button[role="combobox"]');
-    return dropdown ? [dropdown] : [];
-}
-
-function isNeverSelected(modal: HTMLElement): boolean {
-    return [...modal.querySelectorAll<HTMLButtonElement>('[data-edf-alert-frequency="none"], button[data-selected]')]
-        .some(button => button.dataset.selected === "true" && button.textContent?.trim() === "Never") ||
-        [...modal.querySelectorAll<HTMLInputElement>('input[name="alert-frequency"]')]
-            .some(input => input.checked && input.dataset.edfAlertFrequency === NEVER_FREQUENCY);
-}
-
-function isNeverDropdownSelected(modal: HTMLElement): boolean {
-    const control = getDropdownControl(modal);
-    const value = control?.parentElement?.querySelector<HTMLInputElement>("input")?.value;
-    const text = control?.textContent?.trim().toLowerCase();
-
-    return text === "never" || text === "i don't want alerts anymore" ||
-        value === NEVER_FREQUENCY || value === "DELETE";
-}
-
-function closeAlertModal(modal: HTMLElement): void {
-    const closeButton = modal.querySelector<HTMLButtonElement>('[data-testid^="modal-controls"]') ??
-        modal.querySelector<HTMLButtonElement>("button[type=\"button\"]");
-
-    closeButton?.click();
-    if (modal.isConnected) {
-        document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-        document.body.click();
-    }
-}
-
-function schedulePropertyAlertButtonRefresh(): void {
-    window.setTimeout(() => {
-        void updatePropertyAlertButtons();
-    }, 150);
-}
-
-function selectFrequency(
-    modal: HTMLElement,
-    selected: HTMLButtonElement | HTMLInputElement,
-): void {
-    for (const button of modal.querySelectorAll<HTMLButtonElement>("[data-edf-alert-frequency], button[data-selected]")) {
-        button.dataset.selected = String(button === selected);
-    }
-    for (const input of modal.querySelectorAll<HTMLInputElement>('input[name="alert-frequency"]')) {
-        input.checked = input === selected;
-    }
-}
-
-function appendDeleteAlertButton(
-    form: HTMLFormElement,
-    signal: AbortSignal,
-    searchContext: PropertyAlertSearchContext,
-): void {
-    if (form.querySelector('[data-testid="extra-domain-filters-remove-alert"]')) return;
-
-    const source = form.querySelector<HTMLButtonElement>('button[type="submit"]') ??
-        form.querySelector<HTMLButtonElement>("button");
-    const button = source
-        ? cloneActionButton(source, { label: "Delete", selected: false })
-        : document.createElement("button");
-
-    button.type = "button";
-    button.className = source?.className.includes("css-1iniab3") ? source.className : "css-1iniab3";
-    button.dataset.testid = "extra-domain-filters-remove-alert";
-    setButtonText(button, "Delete alert");
-    button.ariaLabel = "Delete alert";
-    button.addEventListener("click", event => {
-        event.preventDefault();
-        event.stopPropagation();
-        void removeCurrentExtensionAlert(searchContext.url).then(() => {
-            showToast("Property alert deleted");
-            const modal = form.closest<HTMLElement>(ALERT_MODAL_SELECTOR);
-            if (modal) closeAlertModal(modal);
-        });
-    }, { signal });
-    form.append(markOwned(button, "alert-frequency-remove"));
-}
-
-function setExtensionAlertModalMode(modal: HTMLElement, form: HTMLFormElement): void {
-    const title = [...modal.querySelectorAll<HTMLElement>("div")]
-        .find(element => element.textContent?.trim() === "Create a Property Alert");
-    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-    const body = modal.querySelector<HTMLElement>(".css-19fbufk");
-
-    if (title) title.textContent = "Edit Property Alert";
-    if (body) body.textContent = ALERT_UPDATE_PROMPT;
-    if (submit) {
-        setButtonText(submit, "Update");
-        submit.ariaLabel = "Update alert";
-    }
-}
-
-function normalizeDropdownAlert(modal: HTMLElement, form: HTMLFormElement): void {
-    for (const option of modal.querySelectorAll<HTMLElement>('[role="option"]')) {
-        if (option.textContent?.trim().toLowerCase() === "i don't want alerts anymore") {
-            option.textContent = "Never";
-        }
-    }
-
-    if (!isNeverDropdownSelected(modal)) return;
-
-    const control = getDropdownControl(modal);
-    const input = control?.parentElement?.querySelector<HTMLInputElement>("input");
-    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-
-    if (control) control.textContent = "Never";
-    if (input) input.value = NEVER_FREQUENCY;
-    if (submit) {
-        setButtonText(submit, "Update");
-        submit.ariaLabel = "Update alert";
-    }
-}
-
-function enhanceDropdownAlert(
-    modal: HTMLElement,
-    form: HTMLFormElement,
-    searchContext: PropertyAlertSearchContext,
-    signal: AbortSignal,
-): void {
-    const normalize = (): void => normalizeDropdownAlert(modal, form);
-    const control = getDropdownControl(modal);
-
-    normalize();
-    control?.addEventListener("click", () => window.setTimeout(normalize), { signal });
-    const observer = new MutationObserver(normalize);
-    observer.observe(modal, { childList: true, characterData: true, subtree: true });
-    signal.addEventListener("abort", () => observer.disconnect(), { once: true });
-
-    void getCurrentExtensionAlert(searchContext.url).then(alert => {
-        if (!alert || signal.aborted) return;
-        modal.dataset.edfHasExtensionAlert = "true";
-        appendDeleteAlertButton(form, signal, searchContext);
-    });
-
-    form.addEventListener("submit", event => {
-        if (!isNeverDropdownSelected(modal)) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        void saveCurrentSearchFromAlert(modal, searchContext);
-    }, { capture: true, signal });
-}
-
-function setCreateAlertModalMode(modal: HTMLElement, form: HTMLFormElement): void {
-    if (!modal.textContent?.includes("Create a Property Alert")) return;
-
-    const title = [...modal.querySelectorAll<HTMLElement>("div")]
-        .find(element => element.textContent?.trim() === "Edit Property Alert");
-    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-    const body = modal.querySelector<HTMLElement>(".css-19fbufk");
-
-    if (title) title.textContent = "Create a Property Alert";
-    if (body) {
-        body.textContent = "We'll keep a look out and let you know about properties that match your search, including off-market ones.";
-    }
-    if (submit) {
-        setButtonText(submit, "Create alert");
-        submit.ariaLabel = "Create alert";
-    }
-}
-
-async function saveCurrentSearchFromAlert(
-    modal: HTMLElement,
-    searchContext: PropertyAlertSearchContext,
-): Promise<void> {
-    const url = new URL(searchContext.url, window.location.origin);
-    const existing = await getCurrentExtensionAlert(url.href);
-    await saveSearch({
-        filterParams: extractSharedFilterParams(url.searchParams).toString(),
-        id: existing?.id,
-        notificationFrequency: NEVER_FREQUENCY,
-        title: searchContext.title,
-        url: url.href,
-    });
-    await updatePropertyAlertButtons();
-    closeAlertModal(modal);
-    showToast("Property alert set to never");
-}
-
-async function removeCurrentExtensionAlert(url = window.location.href): Promise<void> {
-    const existing = await getCurrentExtensionAlert(url);
-    if (existing) await removeSavedSearch(existing.id);
-    await updatePropertyAlertButtons();
+function readNativeActive(button: HTMLButtonElement): boolean {
+    if (button.dataset.edfNativeAlertSelected) return button.dataset.edfNativeAlertSelected === "true";
+    const active = button.dataset.selected === "true"
+        || /(?:change|edit).*(?:property )?alert/i.test(`${button.textContent} ${button.ariaLabel}`);
+    button.dataset.edfNativeAlertSelected = String(active);
+    return active;
 }
 
 function setButtonText(button: HTMLButtonElement, value: string): void {
-    const label = [...button.querySelectorAll<HTMLElement>("span")]
-        .find(span => !span.querySelector("svg"));
+    const label = [...button.querySelectorAll<HTMLElement>("span")].find(span => !span.querySelector("svg"));
     if (label) label.textContent = value;
     else button.textContent = value;
 }
 
-export async function updatePropertyAlertButtons(): Promise<void> {
-    const hasExtensionAlert = await getCurrentExtensionAlert(window.location.href) !== undefined;
-    for (const button of document.querySelectorAll<HTMLButtonElement>('button[name="property-alert"]')) {
-        const extensionManaged = button.dataset.edfExtensionAlertActive === "true";
-        if (!extensionManaged) {
-            button.dataset.edfNativeAlertSelected = String(
-                button.dataset.selected === "true" ||
-                /^edit alert$/i.test(button.textContent?.trim() ?? ""),
-            );
-        }
-        const nativeActive = button.dataset.edfNativeAlertSelected === "true";
-        const active = hasExtensionAlert || nativeActive;
+function createDraftSearch(
+    context: PropertyAlertSearchContext,
+    current?: SavedSearch,
+): SavedSearch {
+    const url = new URL(context.url, window.location.origin);
+    const now = Date.now();
+    return current ?? {
+        createdAt: now,
+        filterParams: extractSharedFilterParams(url.searchParams).toString(),
+        id: `alert:${normalizeSearchUrl(url.href)}`,
+        notificationFrequency: "weekly",
+        title: context.title,
+        updatedAt: now,
+        url: url.href,
+    };
+}
 
-        button.dataset.edfExtensionAlertActive = String(hasExtensionAlert);
-        setActionButtonSelected(button, active);
+async function applyNativeFrequency(
+    trigger: HTMLButtonElement,
+    frequency: SearchNotificationFrequency,
+    signal: AbortSignal,
+): Promise<void> {
+    const result = await domainAlertBridge.apply({ frequency, signal, trigger });
+    if (!result.ok) throw new Error(result.message);
+}
+
+async function saveAlert(
+    trigger: HTMLButtonElement,
+    context: PropertyAlertSearchContext,
+    current: SavedSearch | undefined,
+    frequency: SearchNotificationFrequency,
+    signal: AbortSignal,
+): Promise<void> {
+    const nativeActive = readNativeActive(trigger);
+    if (frequency !== "none" || nativeActive) {
+        await applyNativeFrequency(trigger, frequency, signal);
+    }
+    const url = new URL(context.url, window.location.origin);
+    await saveSearch({
+        domainId: current?.domainId,
+        filterParams: extractSharedFilterParams(url.searchParams).toString(),
+        id: current?.id,
+        newListingCount: current?.newListingCount,
+        notificationFrequency: frequency,
+        title: context.title,
+        url: url.href,
+    });
+    trigger.dataset.edfNativeAlertSelected = String(frequency !== "none");
+    await updatePropertyAlertButtons();
+    showToast(frequency === "none" ? "Email alerts disabled" : "Property alert updated");
+}
+
+async function deleteAlert(
+    trigger: HTMLButtonElement,
+    current: SavedSearch | undefined,
+    signal: AbortSignal,
+): Promise<void> {
+    if (current?.domainId) await removeDomainSavedSearch(current.domainId);
+    else if (readNativeActive(trigger)) await applyNativeFrequency(trigger, "none", signal);
+    if (current) await removeSavedSearch(current.id);
+    trigger.dataset.edfNativeAlertSelected = "false";
+    await updatePropertyAlertButtons();
+    showToast("Saved search deleted");
+}
+
+async function openAlertEditor(button: HTMLButtonElement, signal: AbortSignal): Promise<void> {
+    const searchContext = getButtonContext(button);
+    const current = await getCurrentSearch(searchContext.url);
+    const editing = Boolean(current || readNativeActive(button));
+    await openSavedSearchAlertPopover({
+        anchor: button,
+        mode: editing ? "edit" : "create",
+        onDelete: editing ? () => deleteAlert(button, current, signal) : undefined,
+        onSave: frequency => saveAlert(button, searchContext, current, frequency, signal),
+        search: createDraftSearch(searchContext, current),
+        signal,
+    });
+}
+
+function bindButton(button: HTMLButtonElement, context: PageContext): void {
+    const existing = boundButtons.get(button);
+    if (existing && !existing.aborted) return;
+    boundButtons.set(button, context.signal);
+    button.classList.add("edf-property-alert-trigger");
+    button.addEventListener("click", event => {
+        if (button.dataset.edfNativeAlertBridge === "true") return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        void openAlertEditor(button, context.signal).catch(error => {
+            context.logger.warn("Could not open property alert editor", error);
+            showToast(error instanceof Error ? error.message : "Could not open property alert editor");
+        });
+    }, { capture: true, signal: context.signal });
+    context.scope.add(() => {
+        if (boundButtons.get(button) === context.signal) boundButtons.delete(button);
+        button.classList.remove("edf-property-alert-trigger");
+    });
+}
+
+function findAlertButtons(): HTMLButtonElement[] {
+    return [...document.querySelectorAll<HTMLButtonElement>(
+        'button[name="property-alert"], [data-testid="create-alert-frequency-button"], #changeAlertFrequencyButton',
+    )];
+}
+
+export async function updatePropertyAlertButtons(): Promise<void> {
+    const searches = await getSavedSearches();
+    for (const button of findAlertButtons()) {
+        const context = getButtonContext(button);
+        const extensionActive = searches.some(search => isCurrentSearch(search, context.url));
+        const active = extensionActive || readNativeActive(button);
+        button.dataset.edfExtensionAlertActive = String(extensionActive);
+        button.dataset.edfAlertActive = String(active);
         setButtonText(button, active ? "Edit alert" : "Create alert");
         button.ariaLabel = active ? "Edit alert" : "Create alert";
     }
 }
 
-async function enhanceAlertModal(modal: HTMLElement, signal: AbortSignal): Promise<void> {
-    if (modal.dataset.edfAlertEnhanced === "true") return;
-    const settings = await getSettings();
-    if (!settings.savedSearches.enableNeverFrequency || signal.aborted) return;
-
-    const group = getFrequencyGroup(modal);
-    const daily = group && getFrequencyControls(group)[0];
-    const form = modal.querySelector<HTMLFormElement>("form");
-    if (!group || !daily || !form) return;
-
-    const searchContext = propertyAlertSearchContext ?? {
-        title: getSearchTitle(),
-        url: window.location.href,
-    };
-
-    modal.dataset.edfAlertEnhanced = "true";
-    if (getDropdownControl(modal)) {
-        enhanceDropdownAlert(modal, form, searchContext, signal);
-        return;
-    }
-
-    const nativeNever = getFrequencyControls(group)
-        .find(control => control.dataset.edfAlertFrequency === NEVER_FREQUENCY ||
-            control.closest("label")?.textContent?.trim() === "Never" ||
-            control.textContent?.trim() === "Never");
-    let never = nativeNever ?? (daily.cloneNode(true) as typeof daily);
-    if (!nativeNever) {
-        if (never instanceof HTMLButtonElement) {
-            setButtonText(never, "Never");
-            never.dataset.selected = "false";
-            group.append(markOwned(never, "alert-frequency-never"));
-        } else {
-            const tile = daily.closest("label")?.cloneNode(true) as HTMLLabelElement | undefined;
-            const input = tile?.querySelector<HTMLInputElement>('input[name="alert-frequency"]');
-            const label = tile?.querySelector<HTMLElement>("span");
-            if (!tile || !input || !label) return;
-            input.checked = false;
-            input.value = NEVER_FREQUENCY;
-            label.textContent = "Never";
-            input.dataset.edfAlertFrequency = NEVER_FREQUENCY;
-            group.append(markOwned(tile, "alert-frequency-never"));
-            never = input;
-        }
-    }
-    never.dataset.edfAlertFrequency = NEVER_FREQUENCY;
-    never.dataset.edfInjectedFrequency = String(!nativeNever);
-    if (never instanceof HTMLButtonElement) never.type = "button";
-
-    for (const control of getFrequencyControls(group)) {
-        control.addEventListener("click", event => {
-            if (control === never && control instanceof HTMLButtonElement) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            selectFrequency(modal, control);
-        }, { signal });
-    }
-
-    void getCurrentExtensionAlert(searchContext.url).then(alert => {
-        if (signal.aborted) return;
-        modal.dataset.edfHasExtensionAlert = String(alert !== undefined);
-        if (alert) {
-            selectFrequency(modal, never);
-            setExtensionAlertModalMode(modal, form);
-            appendDeleteAlertButton(form, signal, searchContext);
-        } else {
-            setCreateAlertModalMode(modal, form);
-        }
-    });
-    form.addEventListener("submit", event => {
-        if (isNeverSelected(modal)) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            void saveCurrentSearchFromAlert(modal, searchContext);
-            return;
-        }
-        if (modal.dataset.edfHasExtensionAlert === "true") {
-            window.setTimeout(() => {
-                void removeCurrentExtensionAlert(searchContext.url).then(() => {
-                    showToast("Property alert updated");
-                });
-            }, 300);
-        }
-    }, { capture: true, signal });
-
-    for (const close of modal.querySelectorAll<HTMLButtonElement>('[data-testid^="modal-controls"]')) {
-        close.addEventListener("click", schedulePropertyAlertButtonRefresh, { signal });
-    }
-    modal.addEventListener("focusout", schedulePropertyAlertButtonRefresh, { signal });
-}
-
-export function bindPropertyAlertModal(context: PageContext): void {
-    if (boundAlertSignals.has(context.signal)) return;
-    boundAlertSignals.add(context.signal);
-
+export function bindPropertyAlertControls(context: PageContext): void {
+    if (boundSignals.has(context.signal)) return;
+    boundSignals.add(context.signal);
     const reconcile = (): void => {
-        const modal = getAlertModal();
-        if (modal) void enhanceAlertModal(modal, context.signal);
-        else void updatePropertyAlertButtons().catch(error =>
-            context.logger.warn("Failed to update property alert state", error)
-        );
+        findAlertButtons().forEach(button => bindButton(button, context));
+        void updatePropertyAlertButtons().catch(error =>
+            context.logger.warn("Failed to update property alert state", error));
     };
-
     reconcile();
     onBodyMutations(reconcile, context.signal);
-    context.scope.add(onStorageChange("savedSearches", () => {
-        void updatePropertyAlertButtons().catch(error =>
-            context.logger.warn("Failed to update property alert state", error)
-        );
-    }));
+    context.scope.add(onStorageChange("savedSearches", reconcile));
 }
+
+export const bindPropertyAlertModal = bindPropertyAlertControls;

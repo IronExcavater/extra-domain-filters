@@ -183,11 +183,7 @@
     min-height: 48px;
 }
 
-.edf-saved-search-page-toolbar {
-    align-items: center;
-    display: flex;
-    gap: var(--edf-space-3);
-    justify-content: space-between;
+.edf-saved-search-page-collection {
     margin: 0 0 20px;
 }
 
@@ -198,17 +194,6 @@
     line-height: 38px;
     margin: 0;
     padding: 32px 0 0;
-}
-
-.edf-saved-search-page-toolbar .edf-sort-actions {
-    align-items: center;
-    display: inline-flex;
-    gap: var(--edf-space-4);
-    margin-left: auto;
-}
-
-.edf-saved-search-page-toolbar .edf-page-actions {
-    margin-left: 0;
 }
 
 .edf-saved-search-list {

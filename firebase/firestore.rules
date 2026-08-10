@@ -49,6 +49,7 @@ service cloud.firestore {
           'domainId',
           'filterParams',
           'id',
+          'newListingCount',
           'notificationFrequency',
           'title',
           'updatedAt',
@@ -61,6 +62,13 @@ service cloud.firestore {
         && request.resource.data.value.title is string
         && request.resource.data.value.updatedAt is int
         && request.resource.data.value.url is string
+        && (
+          !request.resource.data.value.keys().hasAny(['newListingCount']) ||
+          (
+            request.resource.data.value.newListingCount is int &&
+            request.resource.data.value.newListingCount >= 0
+          )
+        )
         && (
           !request.resource.data.value.keys().hasAny(['domainId']) ||
           request.resource.data.value.domainId is string
