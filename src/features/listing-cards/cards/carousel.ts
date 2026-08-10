@@ -1,15 +1,21 @@
-import { type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
+import { type ExclusionReason, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
 import { createUiButton } from "../../../shared/ui/elements";
 import { setTooltipText } from "../../../shared/ui/tooltip";
 import { createBlacklistAction, setBlacklistActionState } from "../actions/blacklistAction";
-import { getBlacklistedBundleUrls, toggleBundleBlacklist } from "../blacklist/bundle";
+import { toggleBundleBlacklist } from "../blacklist/bundle";
 import {
     CAROUSEL_CHILD_SELECTOR,
     getChildListingUrl,
     getListingSnapshot,
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "../dom/card";
+
+export interface CarouselListingDecision {
+    exclusionReason: ExclusionReason;
+    snapshot: ListingSnapshot;
+    url: string;
+}
 
 interface PausedCarousel {
     observer: MutationObserver;
@@ -163,7 +169,7 @@ export function getCarouselMembers(carouselCard: HTMLElement): { url: string; sn
         })
         .filter((entry): entry is { url: string; snapshot: ListingSnapshot } => entry !== undefined);
 
-    return childMembers.length > 0
+    const members = childMembers.length > 0
         ? childMembers
         : findCarouselListingAnchors(carouselCard).map(anchor => {
             const url = new URL(anchor.href, window.location.origin).href;
@@ -173,34 +179,75 @@ export function getCarouselMembers(carouselCard: HTMLElement): { url: string; sn
                 snapshot: getListingSnapshot(getAnchorListingElement(anchor), url),
             };
         });
+    const seen = new Set<string>();
+
+    return members.filter(({ url }) => {
+        const normalized = url.replace(/\/+$/, "");
+        if (seen.has(normalized)) return false;
+        seen.add(normalized);
+        return true;
+    });
 }
 
-export function updateCarouselCard(carouselCard: HTMLElement, blacklist: BlacklistEntry[]): void {
-    const members = getCarouselMembers(carouselCard);
-    const blacklistedUrls = getBlacklistedBundleUrls(members, blacklist);
+function setCarouselChildDecision(
+    child: HTMLElement,
+    decision: CarouselListingDecision | undefined,
+): void {
+    const excluded = decision !== undefined && decision.exclusionReason !== "none";
+    const slide = child.closest<HTMLElement>(".slick-slide");
+
+    for (const element of [child, slide]) {
+        if (!element) continue;
+        element.classList.toggle("edf-carousel-child-blacklisted", excluded);
+        if (excluded) element.dataset.exclusionReason = decision.exclusionReason;
+        else delete element.dataset.exclusionReason;
+    }
+}
+
+export function updateCarouselCard(
+    carouselCard: HTMLElement,
+    decisions: readonly CarouselListingDecision[],
+): void {
+    const blacklistedUrls = decisions
+        .filter(decision => decision.exclusionReason === "blacklisted")
+        .map(decision => decision.url);
+    const decisionsByUrl = new Map(
+        decisions.map(decision => [decision.url.replace(/\/+$/, ""), decision]),
+    );
     const button = carouselCard.querySelector<HTMLButtonElement>('.edf-featured-blacklist-button');
 
     if (button) {
-        button.hidden = members.length <= 1;
+        button.hidden = decisions.length <= 1;
         setBlacklistActionState(button, {
             active: blacklistedUrls.length > 0,
             label: "Blacklist featured properties",
         });
     }
 
+    const currentSlide = carouselCard.querySelector<HTMLElement>(".slick-slide.slick-current");
+    let currentExcluded = false;
     for (const child of findChildSlides(carouselCard)) {
         const url = getChildListingUrl(child);
-        const blacklisted = Boolean(url && blacklistedUrls.includes(url));
         const slide = child.closest<HTMLElement>(".slick-slide");
+        const decision = url ? decisionsByUrl.get(url.replace(/\/+$/, "")) : undefined;
 
-        child.classList.toggle("edf-carousel-child-blacklisted", blacklisted);
-        slide?.classList.toggle("edf-carousel-child-blacklisted", blacklisted);
-        if (blacklisted && slide?.classList.contains("slick-current")) {
-            carouselCard.querySelector<HTMLButtonElement>('button[aria-label="Next"]')?.click();
+        setCarouselChildDecision(child, decision);
+        if (slide === currentSlide && decision && decision.exclusionReason !== "none") {
+            currentExcluded = true;
         }
     }
 
-    carouselCard.hidden = false;
+    const allExcluded = decisions.length > 0 &&
+        decisions.every(decision => decision.exclusionReason !== "none");
+    carouselCard.hidden = allExcluded;
+
+    if (currentExcluded && !allExcluded) {
+        carouselCard.querySelector<HTMLButtonElement>(
+            'button[aria-label="Next"], button[aria-label="Next property"]',
+        )?.click();
+    }
+
+    window.dispatchEvent(new Event("resize"));
 }
 
 export function bindCarouselCard(

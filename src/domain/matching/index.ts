@@ -71,7 +71,12 @@ export type ExclusionReason = "none" | "blacklisted" | "filtered";
 
 export interface ListingMatch {
     exclusionReason: ExclusionReason;
+    filterMatched: boolean;
     matchedPreferences: PreferenceRule[];
+}
+
+export interface ListingMatchPolicy {
+    isFilteredListingRevealed?(url: string): boolean;
 }
 
 const STRATA_PATTERN =
@@ -203,6 +208,7 @@ export function matchListing(
     listing: ListingSnapshot,
     settings: Settings,
     blacklist: readonly BlacklistEntry[],
+    policy: ListingMatchPolicy = {},
 ): ListingMatch {
     const text = `${listing.title}\n${listing.text}`;
     const filters = settings.filters;
@@ -215,17 +221,19 @@ export function matchListing(
     const excludesCouldHaveMismatch = filters.excludeWhenNoCouldHaveMatch &&
         filters.couldHaveRuleIds.length > 0 &&
         matchedPreferences.length === 0;
+    const filterMatched = includesAny(text, filters.excludeKeywords) ||
+        exceedsStrataMax(text, filters.strataMaxDollars) ||
+        matchesExcludedPropertyType(listing.propertyType, filters.excludePropertyKeywords) ||
+        excludesCouldHaveMismatch;
     const exclusionReason: ExclusionReason = isBlacklisted(blacklist, listing.url)
         ? "blacklisted"
-        : includesAny(text, filters.excludeKeywords) ||
-            exceedsStrataMax(text, filters.strataMaxDollars) ||
-            matchesExcludedPropertyType(listing.propertyType, filters.excludePropertyKeywords) ||
-            excludesCouldHaveMismatch
+        : filterMatched && !policy.isFilteredListingRevealed?.(listing.url)
             ? "filtered"
             : "none";
 
     return {
         exclusionReason,
+        filterMatched,
         matchedPreferences,
     };
 }

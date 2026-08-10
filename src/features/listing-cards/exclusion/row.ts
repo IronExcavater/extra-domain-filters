@@ -3,7 +3,7 @@ import { type ExclusionReason } from "../../../domain/matching";
 import { replaceWithEyeIcon, replaceWithEyeOffIcon, replaceWithUnbinIcon } from "../../../shared/ui/icons";
 import { setTooltipText } from "../../../shared/ui/tooltip";
 import { getBlacklistCardKind, getPropertyCount, getTitle, type BlacklistCardKind } from "../dom/card";
-import { isRevealed, reveal, unreveal } from "./reveal";
+import { reveal, unreveal } from "./reveal";
 
 const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
 const KIND_CLASSES = [
@@ -151,5 +151,3 @@ export function ensureHideAgainAffordance(card: Element, url: string): void {
 export function removeHideAgainAffordance(card: Element): void {
     card.querySelector(EYE_OFF_SELECTOR)?.remove();
 }
-
-export { isRevealed };

@@ -3,7 +3,11 @@ import { requestListingEnrichment } from "../../domain/listings/enrichment";
 import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
 import { type Settings } from "../../shared/state/settings";
 import { setBlacklistActionState } from "./actions/blacklistAction";
-import { updateCarouselCard } from "./cards/carousel";
+import {
+    getCarouselMembers,
+    updateCarouselCard,
+    type CarouselListingDecision,
+} from "./cards/carousel";
 import { updateProjectBlacklistSummary } from "./cards/project";
 import {
     BLACKLIST_BUTTON_SELECTOR,
@@ -14,24 +18,17 @@ import {
     getListingUrl,
     PROJECT_CARD_SELECTOR,
     PROJECT_MARKER_SELECTOR,
-    TOP_LEVEL_CARD_SELECTOR,
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "./dom/card";
 import { compactExcludedListingCards } from "./exclusion/compact";
+import { isRevealed } from "./exclusion/reveal";
 import {
     applyExclusionState,
     ensureHideAgainAffordance,
-    isRevealed,
     removeHideAgainAffordance,
     updateExclusionRow,
 } from "./exclusion/row";
 import { updatePreferenceTags } from "./render/preferenceTags";
-
-const layoutAnimations = new WeakMap<HTMLElement, Animation>();
-
-function resolveVisibleReason(rawReason: ExclusionReason, url: string): ExclusionReason {
-    return rawReason === "filtered" && isRevealed(url) ? "none" : rawReason;
-}
 
 function isProjectChild(card: Element): boolean {
     return card.matches(CAROUSEL_CHILD_SELECTOR) &&
@@ -52,11 +49,11 @@ export async function updateListingCards(
     blacklist: BlacklistEntry[],
     showBlacklistedView: boolean,
 ): Promise<void> {
-    const layoutBefore = new Map(
-        [...document.querySelectorAll<HTMLElement>(TOP_LEVEL_CARD_SELECTOR)]
-            .map(card => [card, card.getBoundingClientRect()] as const),
-    );
     const wholeProjectReasons = new Map<Element, ExclusionReason>();
+    const carouselCards = [...document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)];
+    const carouselListings = carouselCards.flatMap(carouselCard =>
+        getCarouselMembers(carouselCard).map(member => ({ carouselCard, ...member })),
+    );
     const cards = [...document.querySelectorAll<HTMLButtonElement>(BLACKLIST_BUTTON_SELECTOR)]
         .flatMap(button => {
             if (button.dataset.blacklistScope === "carousel") return [];
@@ -67,24 +64,35 @@ export async function updateListingCards(
 
             return [{ button, card, snapshot: getListingSnapshot(card, url, { includeThumbnail: false }), url }];
         });
-    const cachedListings = await getCachedListings(cards.map(({ url }) => url));
+    const cachedListings = await getCachedListings([
+        ...cards.map(({ url }) => url),
+        ...carouselListings.map(({ url }) => url),
+    ]);
 
     if (settings.filters.enrichListingDetails) {
-        requestListingEnrichment(cards.map(({ snapshot }) => snapshot));
+        requestListingEnrichment([
+            ...cards.map(({ snapshot }) => snapshot),
+            ...carouselListings.map(({ snapshot }) => snapshot),
+        ]);
     }
 
-    cards.forEach(({ button, card, snapshot, url }) => {
-            const cached = cachedListings.get(url.replace(/\/$/, ""));
-            const listing = cached && cached.text.length > snapshot.text.length
-                ? { ...snapshot, ...cached, text: cached.text }
-                : snapshot;
+    const getBestSnapshot = (snapshot: CarouselListingDecision["snapshot"], url: string) => {
+        const cached = cachedListings.get(url.replace(/\/$/, ""));
+        return cached && cached.text.length > snapshot.text.length
+            ? { ...snapshot, ...cached, text: cached.text }
+            : snapshot;
+    };
 
-            const rawMatch = matchListing(
+    cards.forEach(({ button, card, snapshot, url }) => {
+            const listing = getBestSnapshot(snapshot, url);
+
+            const match = matchListing(
                 listing,
                 settings,
                 blacklist,
+                { isFilteredListingRevealed: isRevealed },
             );
-            const reason = resolveVisibleReason(rawMatch.exclusionReason, url);
+            const reason = match.exclusionReason;
 
             setBlacklistActionState(button, {
                 active: reason === "blacklisted",
@@ -100,7 +108,7 @@ export async function updateListingCards(
             if (showBlacklistedView) {
                 applyExclusionState(card, button, reason);
 
-                if (reason === "none" && rawMatch.exclusionReason === "filtered") {
+                if (reason === "none" && match.filterMatched) {
                     ensureHideAgainAffordance(card, url);
                 } else {
                     removeHideAgainAffordance(card);
@@ -119,7 +127,7 @@ export async function updateListingCards(
 
             updatePreferenceTags(
                 card,
-                reason === "none" ? rawMatch.matchedPreferences : [],
+                reason === "none" ? match.matchedPreferences : [],
             );
         });
 
@@ -131,43 +139,28 @@ export async function updateListingCards(
         updateProjectBlacklistSummary(projectCard, projectHeader, blacklist, projectExcluded);
     }
 
-    for (const carouselCard of document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)) {
-        updateCarouselCard(carouselCard, blacklist);
+    const carouselDecisions = new Map<HTMLElement, CarouselListingDecision[]>();
+    for (const { carouselCard, snapshot, url } of carouselListings) {
+        const listing = getBestSnapshot(snapshot, url);
+        const decision: CarouselListingDecision = {
+            exclusionReason: matchListing(
+                listing,
+                settings,
+                blacklist,
+                { isFilteredListingRevealed: isRevealed },
+            ).exclusionReason,
+            snapshot: listing,
+            url,
+        };
+        const entries = carouselDecisions.get(carouselCard) ?? [];
+        entries.push(decision);
+        carouselDecisions.set(carouselCard, entries);
+    }
+
+    for (const carouselCard of carouselCards) {
+        updateCarouselCard(carouselCard, carouselDecisions.get(carouselCard) ?? []);
     }
 
     if (showBlacklistedView) compactExcludedListingCards();
 
-    for (const [card, before] of layoutBefore) {
-        const after = card.getBoundingClientRect();
-        const x = before.left - after.left;
-        const y = before.top - after.top;
-        const expandedBy = after.height - before.height;
-        if (x === 0 && y === 0 && expandedBy === 0) continue;
-
-        layoutAnimations.get(card)?.cancel();
-        const animation = card.animate(
-            [
-                {
-                    clipPath: expandedBy > 0
-                        ? `inset(0 0 ${expandedBy}px 0 round ${getComputedStyle(card).borderRadius})`
-                        : "inset(0)",
-                    opacity: 0.72,
-                    transform: `translate(${x}px, ${y}px) scale(0.985)`,
-                },
-                {
-                    clipPath: "inset(0)",
-                    opacity: 1,
-                    transform: "translate(0, 0) scale(1)",
-                },
-            ],
-            { duration: 280, easing: "cubic-bezier(0.2, 0, 0, 1)" },
-        );
-        layoutAnimations.set(card, animation);
-        animation.addEventListener("finish", () => {
-            if (layoutAnimations.get(card) === animation) layoutAnimations.delete(card);
-        }, { once: true });
-        animation.addEventListener("cancel", () => {
-            if (layoutAnimations.get(card) === animation) layoutAnimations.delete(card);
-        }, { once: true });
-    }
 }
