@@ -5,18 +5,20 @@ import {
 import { getBlacklistListing, type BlacklistEntry } from "../../domain/matching";
 import { createBlacklistCard } from "../../features/blacklist/card";
 import {
-    sortBlacklistEntries,
     filterBlacklistEntries,
+    sortBlacklistEntries,
     type BlacklistFilter,
     type BlacklistSort,
 } from "../../features/blacklist/sort";
+import { createCollectionController } from "../../shared/collections/controller";
 import { createEmptyState } from "../../shared/ui/collection";
-import { createButton } from "../../shared/ui/elements";
-import { setSelectionCheckboxState } from "../../shared/ui/selection";
+import { createCollectionFrame } from "../../shared/ui/collectionView";
+import { renderSelectionControls, replaceSelection } from "../../shared/ui/selection";
 import { createSortControl } from "../../shared/ui/sort";
 import { createTabs } from "../../shared/ui/tabs";
 
 interface BlacklistViewOptions {
+    animate?: boolean;
     entries: readonly BlacklistEntry[];
     selectedUrls: Set<string>;
     signal: AbortSignal;
@@ -30,18 +32,28 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
     const activeUrls = new Set(active.map(entry => getBlacklistListing(entry).url));
     const retained = [...retainedUnblacklistedEntries.values()]
         .filter(entry => !activeUrls.has(getBlacklistListing(entry).url));
-    const sessionEntries = [...active, ...retained];
-    const content = document.createElement("section");
-    const toolbar = document.createElement("div");
-    const grid = document.createElement("div");
+    const items = [...active, ...retained];
+    let animateNext = options.animate ?? true;
     const controls = document.createElement("div");
-    const select = createButton("", "edf-selection-action");
-    const restore = createButton("Restore selected", "edf-selection-action");
-    let filter: BlacklistFilter = "all";
-    let renderCards = (): void => undefined;
+    const frame = createCollectionFrame({
+        cardsClassName: "edf-popup-blacklist-grid edf-blacklist-card-grid",
+        className: "edf-popup-content",
+    });
+    const controller = createCollectionController<BlacklistFilter, BlacklistEntry, BlacklistSort>({
+        filter: (entry, filter) => filterBlacklistEntries([entry], filter).length > 0,
+        getId: entry => getBlacklistListing(entry).url,
+        initialFilter: "all",
+        initialItems: items,
+        initialSelection: [...selectedUrls],
+        initialSort: "newest",
+        sort: sortBlacklistEntries,
+    });
     const sort = createSortControl({
         ariaLabel: "Sort blacklisted properties",
-        onChange: () => renderCards(),
+        onChange: () => {
+            animateNext = true;
+            controller.setSort(sort.value() as BlacklistSort);
+        },
         options: [
             ["newest", "Newest"],
             ["oldest", "Oldest"],
@@ -49,94 +61,11 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
         ],
         signal,
     });
-
-    for (const url of selectedUrls) {
-        if (!sessionEntries.some(entry => getBlacklistListing(entry).url === url)) selectedUrls.delete(url);
-    }
-    content.className = "edf-popup-content";
-    if (sessionEntries.length === 0) {
-        content.append(createEmptyState(
-            "No blacklisted properties",
-            "Properties hidden from Domain results will appear here.",
-        ));
-        return content;
-    }
-
-    toolbar.className = "edf-collection-toolbar";
-    controls.className = "edf-page-actions";
-    grid.className = "edf-popup-blacklist-grid edf-blacklist-card-grid";
-    const visibleEntries = (): BlacklistEntry[] => filterBlacklistEntries(sessionEntries, filter);
-    const syncCheckboxes = (): void => {
-        for (const card of grid.querySelectorAll<HTMLElement>("[data-blacklist-url]")) {
-            const input = card.querySelector<HTMLInputElement>(".edf-selection-checkbox input");
-            if (input) setSelectionCheckboxState(input, selectedUrls.has(card.dataset.blacklistUrl ?? ""));
-        }
-    };
-    const renderControls = (): void => {
-        const visible = visibleEntries();
-        const allSelected = visible.every(entry =>
-            selectedUrls.has(getBlacklistListing(entry).url)
-        );
-        select.textContent = allSelected ? "Deselect all" : "Select all";
-        restore.hidden = selectedUrls.size === 0;
-    };
-    renderCards = () => {
-        grid.replaceChildren(...sortBlacklistEntries(visibleEntries(), sort.value() as BlacklistSort).map(entry => {
-            const url = getBlacklistListing(entry).url;
-            const retained = retainedUnblacklistedEntries.has(url);
-            return createBlacklistCard(entry, {
-                active: !retained,
-                onSelectionChange: selected => {
-                    if (selected) selectedUrls.add(url);
-                    else selectedUrls.delete(url);
-                    renderControls();
-                },
-                onToggle: async () => {
-                    if (retained) {
-                        retainedUnblacklistedEntries.delete(url);
-                        await addOrReplaceBlacklistEntry(getBlacklistListing(entry));
-                    } else {
-                        retainedUnblacklistedEntries.set(url, entry);
-                        await removeBlacklistUrls(url);
-                    }
-                    renderCards();
-                    renderControls();
-                },
-                openLinksInNewTab: true,
-                selected: selectedUrls.has(url),
-            });
-        }));
-    };
-    select.addEventListener("click", () => {
-        const visible = visibleEntries();
-        const allSelected = visible.every(entry =>
-            selectedUrls.has(getBlacklistListing(entry).url)
-        );
-        selectedUrls.clear();
-        if (!allSelected) {
-            visible.forEach(entry => selectedUrls.add(getBlacklistListing(entry).url));
-        }
-        syncCheckboxes();
-        renderControls();
-    });
-    restore.addEventListener("click", async () => {
-        await removeBlacklistUrls([...selectedUrls]);
-        selectedUrls.forEach(url => {
-            const entry = sessionEntries.find(candidate => getBlacklistListing(candidate).url === url);
-            if (entry) retainedUnblacklistedEntries.set(url, entry);
-        });
-        selectedUrls.clear();
-        renderCards();
-        renderControls();
-    });
-
-    controls.append(select, restore);
-    toolbar.append(createTabs({
-        active: filter,
-        onChange: next => {
-            filter = next;
-            renderCards();
-            renderControls();
+    const tabs = createTabs<BlacklistFilter>({
+        active: "all",
+        onChange: filter => {
+            animateNext = true;
+            controller.setFilter(filter);
         },
         options: [
             { label: "All", value: "all" },
@@ -144,10 +73,63 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
             { label: "Rent", value: "rent" },
         ],
         signal,
-    }), controls, sort.element);
-    content.append(toolbar, grid);
-    renderCards();
-    renderControls();
+    });
+    const render = (): void => {
+        const visible = controller.getVisibleItems();
+        const selection = controller.getSelection();
 
-    return content;
+        replaceSelection(selectedUrls, [...selection]);
+        controls.className = "edf-page-actions";
+        renderSelectionControls({
+            buttonClassName: "edf-selection-action",
+            clearLabel: "Restore selected",
+            controls,
+            onClear: ids => {
+                void removeBlacklistUrls(ids).then(() => {
+                    ids.forEach(url => {
+                        const entry = items.find(candidate => getBlacklistListing(candidate).url === url);
+                        if (entry) retainedUnblacklistedEntries.set(url, entry);
+                    });
+                    controller.clearSelection();
+                });
+            },
+            onSelectionChange: ids => controller.replaceSelection(ids),
+            selectedIds: [...selection],
+            visibleIds: visible.map(entry => getBlacklistListing(entry).url),
+        });
+        frame.replaceCards(visible.map(entry => {
+            const url = getBlacklistListing(entry).url;
+            const retainedEntry = retainedUnblacklistedEntries.has(url);
+            return createBlacklistCard(entry, {
+                active: !retainedEntry,
+                onSelectionChange: selected => {
+                    if (selected !== controller.getSelection().has(url)) controller.toggleSelection(url);
+                },
+                onToggle: async () => {
+                    if (retainedEntry) {
+                        retainedUnblacklistedEntries.delete(url);
+                        await addOrReplaceBlacklistEntry(getBlacklistListing(entry));
+                    } else {
+                        retainedUnblacklistedEntries.set(url, entry);
+                        await removeBlacklistUrls(url);
+                    }
+                    render();
+                },
+                openLinksInNewTab: true,
+                selected: selection.has(url),
+            });
+        }), animateNext);
+        frame.setEmptyState(visible.length === 0 ? createEmptyState(
+            items.length === 0 ? "No blacklisted properties" : "No matching properties",
+            items.length === 0
+                ? "Properties hidden from Domain results will appear here."
+                : "Try another property category.",
+        ) : undefined);
+        animateNext = false;
+    };
+
+    frame.setToolbar([tabs, controls, sort.element]);
+    controller.subscribe(render, signal);
+    render();
+    return frame.element;
 }

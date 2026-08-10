@@ -26,6 +26,16 @@ const selectedBlacklistUrls = new Set<string>();
 const selectedSavedSearchIds = new Set<string>();
 let activeView: PopupView = "saved-searches";
 let renderController: AbortController | undefined;
+const root = document.querySelector<HTMLElement>("#app");
+const shell = document.createElement("main");
+const navigationHost = document.createElement("div");
+const viewHost = document.createElement("div");
+
+shell.className = "edf-settings-popup";
+navigationHost.className = "edf-popup-navigation-host";
+viewHost.className = "edf-popup-view-host";
+shell.append(navigationHost, viewHost);
+root?.replaceChildren(shell);
 
 async function loadData(): Promise<PopupData> {
     const [blacklist, savedSearches, account] = await Promise.all([
@@ -51,7 +61,6 @@ async function createPreferencesView(): Promise<HTMLElement> {
 }
 
 async function render(animate = true): Promise<void> {
-    const root = document.querySelector<HTMLElement>("#app");
     if (!root) return;
 
     renderController?.abort();
@@ -60,14 +69,13 @@ async function render(animate = true): Promise<void> {
     const data = await loadData();
     if (signal.aborted) return;
 
-    const shell = document.createElement("main");
     const navigate = (view: PopupView): void => {
         activeView = view;
         void render();
     };
 
-    shell.className = "edf-settings-popup";
     shell.classList.toggle("edf-popup-auth-shell", activeView === "sign-in");
+    navigationHost.hidden = activeView === "sign-in";
     let view: HTMLElement;
     if (activeView === "sign-in") {
         view = createSignInView({
@@ -78,26 +86,27 @@ async function render(animate = true): Promise<void> {
         view = await createPreferencesView();
     } else if (activeView === "blacklist") {
         view = createBlacklistView({
+            animate,
             entries: data.blacklist,
             selectedUrls: selectedBlacklistUrls,
             signal,
         });
     } else {
-        view = createSavedSearchesView(data.savedSearches, selectedSavedSearchIds, signal);
+        view = createSavedSearchesView(data.savedSearches, selectedSavedSearchIds, signal, animate);
     }
-    if (animate) view.classList.add("edf-popup-view");
     if (activeView !== "sign-in") {
-        shell.append(createNavigation({
+        navigationHost.replaceChildren(createNavigation({
             activeView,
             data,
             onNavigate: navigate,
             onSessionChange: () => void render(),
             signal,
         }));
+    } else {
+        navigationHost.replaceChildren();
     }
-    shell.append(view);
 
-    if (!signal.aborted) root.replaceChildren(shell);
+    if (!signal.aborted) viewHost.replaceChildren(view);
 }
 
 onStorageChange("blacklist", () => void render(false));

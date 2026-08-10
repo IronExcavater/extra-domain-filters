@@ -35,6 +35,18 @@ body {
     grid-template-rows: minmax(0, 1fr);
 }
 
+.edf-popup-navigation-host,
+.edf-popup-view-host {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.edf-popup-navigation-host > .edf-popup-navigation,
+.edf-popup-view-host > * {
+    box-sizing: border-box;
+    height: 100%;
+}
+
 .edf-popup-content {
     background: rgb(253 252 251);
     box-sizing: border-box;

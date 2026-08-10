@@ -4,10 +4,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.edf-popup-view {
-    animation: edf-popup-view-enter 150ms ease-out both;
-}
-
 .edf-popup-content .edf-collection-toolbar {
     gap: 8px;
     margin-bottom: 14px;
@@ -60,24 +56,6 @@
 
 .edf-popup-content .edf-selection-checkbox-indicator {
     font-size: 11px;
-}
-
-@keyframes edf-popup-view-enter {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .edf-popup-view {
-        animation: none;
-    }
 }
 
 .edf-popup-sign-in {
