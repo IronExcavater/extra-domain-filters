@@ -1,15 +1,52 @@
 .edf-tooltip {
-    background: #3c475b;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgb(19 18 18 / 18%);
+    animation: edf-tooltip-enter var(--edf-motion-fast) ease both;
+    background: var(--edf-color-tooltip);
+    border-radius: 6px;
+    box-shadow: var(--edf-shadow-popover);
     color: #fff;
     font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
-    font-size: 13px;
-    line-height: 18px;
+    font-size: 12px;
+    line-height: 16px;
     max-width: 240px;
     padding: 6px 8px;
     pointer-events: none;
     position: fixed;
     text-align: center;
     z-index: 2147483647;
+}
+
+.edf-tooltip::after {
+    border: 6px solid transparent;
+    content: "";
+    left: 50%;
+    position: absolute;
+    transform: translateX(-50%);
+}
+
+.edf-tooltip[data-placement="top"]::after {
+    border-top-color: var(--edf-color-tooltip);
+    top: 100%;
+}
+
+.edf-tooltip[data-placement="bottom"]::after {
+    border-bottom-color: var(--edf-color-tooltip);
+    bottom: 100%;
+}
+
+@keyframes edf-tooltip-enter {
+    from {
+        opacity: 0;
+        transform: translateY(2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edf-tooltip {
+        animation: none;
+    }
 }

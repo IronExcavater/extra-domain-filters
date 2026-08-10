@@ -56,10 +56,7 @@ export function createUiButton(options: UiButtonOptions): HTMLButtonElement {
         button.append(label);
     }
 
-    const tooltip = options.tooltip
-        ? attachTooltip(button, options.tooltip)
-        : undefined;
-    options.signal?.addEventListener("abort", () => tooltip?.destroy(), { once: true });
+    if (options.tooltip) attachTooltip(button, options.tooltip, { signal: options.signal });
 
     return button;
 }

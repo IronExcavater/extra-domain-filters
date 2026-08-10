@@ -80,8 +80,9 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
     document.addEventListener("keydown", onDocumentKeyDown, true);
     window.addEventListener("resize", place, { passive: true });
     window.addEventListener("scroll", place, { capture: true, passive: true });
-    options.signal?.addEventListener("abort", close, { once: true });
     place();
+    if (options.signal?.aborted) close();
+    else options.signal?.addEventListener("abort", close, { once: true });
 
     return handle;
 }
