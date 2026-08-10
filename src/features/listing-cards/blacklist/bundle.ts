@@ -1,6 +1,6 @@
 import { toggleBlacklistListings } from "../../../domain/blacklist/store";
 import { isBlacklisted, type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
-import { isShortlisted, removeFromShortlist } from "../clone/blacklistButton";
+import { isShortlisted, removeFromShortlist } from "../../../shared/domain/shortlist";
 import { getCard, getListingUrl, SHORTLIST_BUTTON_SELECTOR } from "../dom/card";
 
 export interface BundleMember {

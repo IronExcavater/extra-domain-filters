@@ -2,9 +2,9 @@ import { getCachedListings } from "../../domain/listings/cache";
 import { requestListingEnrichment } from "../../domain/listings/enrichment";
 import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
 import { type Settings } from "../../shared/state/settings";
+import { setBlacklistActionState } from "./actions/blacklistAction";
 import { updateCarouselCard } from "./cards/carousel";
 import { updateProjectBlacklistSummary } from "./cards/project";
-import { updateButton } from "./clone/blacklistButton";
 import {
     BLACKLIST_BUTTON_SELECTOR,
     CAROUSEL_CHILD_SELECTOR,
@@ -86,11 +86,10 @@ export async function updateListingCards(
             );
             const reason = resolveVisibleReason(rawMatch.exclusionReason, url);
 
-            updateButton(
-                button,
-                reason === "blacklisted",
-                button.dataset.blacklistScope === "project" ? "Blacklist project" : undefined,
-            );
+            setBlacklistActionState(button, {
+                active: reason === "blacklisted",
+                label: button.dataset.blacklistScope === "project" ? "Blacklist project" : undefined,
+            });
 
             if (button.dataset.blacklistScope === "project") {
                 wholeProjectReasons.set(card, reason);

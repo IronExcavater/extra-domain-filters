@@ -1,15 +1,11 @@
 import { getBlacklist, removeBlacklistUrls } from "../../domain/blacklist/store";
+import { isShortlisted } from "../../shared/domain/shortlist";
 import { PageContext } from "../../shared/platform/router";
 import { getSettings } from "../../shared/state/settings";
+import { createBlacklistAction } from "./actions/blacklistAction";
 import { toggleBlacklist } from "./blacklist/toggle";
 import { bindCarouselCard, disposeDetachedCarouselControls } from "./cards/carousel";
 import { bindProjectCard } from "./cards/project";
-import {
-    cloneBlacklistButton,
-    insertBlacklistButton,
-    isShortlisted,
-    SHORTLIST_CARD_BUTTON_SKIN,
-} from "./clone/blacklistButton";
 import {
     getCard,
     getBlacklistCardKind,
@@ -31,23 +27,19 @@ function bindBlacklistButton(
 
     const url = getListingUrl(shortlistButton, card);
     if (!url) return;
-    if (shortlistButton.parentElement?.querySelector(".edf-blacklist-button")) return;
+    if (shortlistButton.parentElement?.querySelector(".edf-blacklist-action")) return;
 
-    const button = cloneBlacklistButton(shortlistButton, {
-        appearance: shortlistButton.closest("#shortlist") ? "shortlist" : "native",
-        skin: shortlistButton.closest("#shortlist")
-            ? SHORTLIST_CARD_BUTTON_SKIN
-            : undefined,
+    const button = createBlacklistAction({
+        active: false,
+        appearance: shortlistButton.closest("#shortlist") ? "shortlist" : "card",
+        onToggle: async action => {
+            await toggleBlacklist(card, url, context, shortlistButton, action);
+        },
+        signal: context.signal,
     });
     if (kind === "carousel-child") button.dataset.blacklistScope = "carousel-child";
-    insertBlacklistButton(shortlistButton, button);
-
-    button.addEventListener("click", async event => {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        await toggleBlacklist(card, url, context, shortlistButton, button);
-    }, { capture: true, signal: context.signal });
+    shortlistButton.parentElement?.classList.add("edf-listing-card-button-container");
+    shortlistButton.after(button);
 
     shortlistButton.addEventListener("click", () => {
         requestAnimationFrame(async () => {

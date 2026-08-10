@@ -21,8 +21,7 @@
 }
 
 .edf-listing-card-button-container > button,
-.edf-listing-card-button-container > [data-testid^="listing-card-shortlist"],
-.edf-listing-card-button-container > .edf-blacklist-button {
+.edf-listing-card-button-container > [data-testid^="listing-card-shortlist"] {
     flex: 0 0 auto;
     inset: auto !important;
     margin: 0 !important;
@@ -34,18 +33,93 @@
     margin-left: auto !important;
 }
 
-.edf-listing-card-button-container > .edf-blacklist-button {
-    background: none;
-    border: 0;
-    color: inherit;
+.edf-blacklist-action {
+    all: unset;
+    align-items: center;
+    background: var(--edf-color-surface);
+    border: 1px solid transparent;
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: var(--edf-color-muted);
     cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
-    margin: 3px !important;
+    display: inline-flex;
+    flex: 0 0 var(--edf-control-height-sm);
+    font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
+    height: var(--edf-control-height-sm);
+    justify-content: center;
+    margin: 0;
     padding: 0;
-    position: relative !important;
-    text-align: inherit;
+    position: relative;
+    transition:
+        background-color var(--edf-motion-fast) ease,
+        border-color var(--edf-motion-fast) ease,
+        box-shadow var(--edf-motion-fast) ease,
+        color var(--edf-motion-fast) ease;
+    width: var(--edf-control-height-sm);
     z-index: 3;
+}
+
+.edf-blacklist-action:disabled,
+.edf-blacklist-action[aria-busy="true"] {
+    cursor: default;
+    opacity: 0.58;
+}
+
+.edf-blacklist-action:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+    outline: 0;
+}
+
+.edf-blacklist-action:hover:not(:disabled) {
+    background: var(--edf-color-surface-muted);
+    border-color: var(--edf-color-border);
+    color: var(--edf-color-text);
+}
+
+.edf-blacklist-action[data-active="true"] {
+    background: var(--edf-color-green-tint);
+    color: var(--edf-color-green);
+}
+
+.edf-blacklist-action svg {
+    display: block;
+    height: 20px;
+    pointer-events: none;
+    width: 20px;
+}
+
+.edf-blacklist-action-listing-detail {
+    background: var(--edf-color-surface);
+    border: 1px solid #d0d3d9;
+    border-radius: var(--edf-radius-control);
+    color: var(--edf-color-text);
+    flex-basis: auto;
+    font-size: 16px;
+    font-weight: 700;
+    gap: var(--edf-space-2);
+    height: var(--edf-control-height-lg);
+    line-height: 22px;
+    min-width: 132px;
+    padding: 0 var(--edf-space-4);
+    width: auto;
+}
+
+.edf-blacklist-action-listing-detail[data-active="true"] {
+    border-color: var(--edf-color-green);
+}
+
+.edf-blacklist-action-project {
+    background: transparent;
+    color: var(--edf-project-foreground, var(--edf-color-text));
+}
+
+.edf-blacklist-action-shortlist[data-active="false"] {
+    color: var(--edf-color-shortlist-inactive);
+}
+
+.edf-blacklist-action-shortlist[data-active="false"]:hover,
+.edf-blacklist-action-shortlist[data-active="false"]:focus-visible {
+    color: var(--edf-color-shortlist-hover);
 }
 
 .edf-listing-card-button-container > .edf-selection-checkbox {
@@ -111,7 +185,7 @@
     min-height: 0 !important;
 }
 
-.edf-blacklist-row-list [data-edf-blacklist-row="true"] .edf-blacklist-button {
+.edf-blacklist-row-list [data-edf-blacklist-row="true"] .edf-blacklist-action {
     margin: 0 !important;
     position: static !important;
 }
@@ -153,35 +227,4 @@
 .edf-preference-match-tag > span {
     background: var(--color-neutral-heavy-default, #3c475b);
     color: var(--color-neutral-surface-default, #fff);
-}
-
-.edf-blacklist-button[data-edf-ready="false"] > svg {
-    transition: none !important;
-}
-
-.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"] > svg,
-.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="true"] > svg {
-    transition: color 0.2s ease-in-out, fill 0.2s ease-in-out;
-}
-
-.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="false"],
-.edf-blacklist-button[data-edf-button-skin="shortlist"][data-active="true"] {
-    cursor: pointer !important;
-    pointer-events: auto !important;
-    position: relative;
-    z-index: 4;
-}
-
-#shortlist .edf-blacklist-button[data-active="false"] {
-    color: var(--edf-color-shortlist-inactive) !important;
-    transition: color 160ms ease;
-}
-
-#shortlist .edf-blacklist-button[data-active="false"]:hover,
-#shortlist .edf-blacklist-button[data-active="false"]:focus-visible {
-    color: var(--edf-color-shortlist-hover) !important;
-}
-
-.edf-project-blacklist-button[data-active="false"]:not(:hover, :focus-visible) > svg {
-    color: var(--edf-project-foreground, currentColor) !important;
 }

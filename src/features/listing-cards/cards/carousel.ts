@@ -1,13 +1,9 @@
 import { type BlacklistEntry, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
+import { createUiButton } from "../../../shared/ui/elements";
 import { setTooltipText } from "../../../shared/ui/tooltip";
+import { createBlacklistAction, setBlacklistActionState } from "../actions/blacklistAction";
 import { getBlacklistedBundleUrls, toggleBundleBlacklist } from "../blacklist/bundle";
-import {
-    cloneFeaturedActionButton,
-    cloneBlacklistButton,
-    cloneFeaturedControlButton,
-    updateButton,
-} from "../clone/blacklistButton";
 import {
     CAROUSEL_CHILD_SELECTOR,
     getChildListingUrl,
@@ -37,10 +33,7 @@ export function disposeCarouselControls(): void {
     pausedCarousels.clear();
 }
 
-function setPauseIcon(button: HTMLButtonElement, paused: boolean): void {
-    const icon = button.querySelector<SVGSVGElement>("svg");
-    if (!icon) return;
-
+function renderPauseIcon(icon: SVGElement, paused: boolean): void {
     icon.setAttribute("viewBox", "0 0 24 24");
     icon.replaceChildren();
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -49,24 +42,34 @@ function setPauseIcon(button: HTMLButtonElement, paused: boolean): void {
         ? "M8 5v14l11-7z"
         : "M7 5h4v14H7zm6 0h4v14h-4z");
     icon.append(path);
+}
+
+function setPauseIcon(button: HTMLButtonElement, paused: boolean): void {
+    const icon = button.querySelector<SVGSVGElement>("svg");
+    if (!icon) return;
+
+    renderPauseIcon(icon, paused);
     button.dataset.paused = String(paused);
 }
 
 function bindCarouselPauseControl(
     carouselCard: HTMLElement,
     controls: HTMLElement,
-    sourceButton: HTMLButtonElement,
     memberCount: number,
     signal: AbortSignal,
 ): void {
     const existing = controls.querySelector<HTMLButtonElement>('[data-testid="listing-card-carousel-pause"]');
-    const button = existing ?? cloneFeaturedActionButton(
-        sourceButton,
-        "listing-card-carousel-pause",
-        "Pause featured carousel",
-    );
+    const button = existing ?? createUiButton({
+        ariaLabel: "Pause featured carousel",
+        className: "edf-featured-carousel-action",
+        icon: icon => renderPauseIcon(icon, false),
+        signal,
+        tooltip: "Pause featured carousel",
+        variant: "icon",
+    });
     const track = carouselCard.querySelector<HTMLElement>(".slick-track");
 
+    button.dataset.testid = "listing-card-carousel-pause";
     button.hidden = memberCount <= 1 || !track;
     if (!existing) controls.append(button);
     if (!track || pausedCarousels.has(carouselCard)) return;
@@ -179,7 +182,10 @@ export function updateCarouselCard(carouselCard: HTMLElement, blacklist: Blackli
 
     if (button) {
         button.hidden = members.length <= 1;
-        updateButton(button, blacklistedUrls.length > 0, "Blacklist featured properties");
+        setBlacklistActionState(button, {
+            active: blacklistedUrls.length > 0,
+            label: "Blacklist featured properties",
+        });
     }
 
     for (const child of findChildSlides(carouselCard)) {
@@ -214,7 +220,6 @@ export function bindCarouselCard(
             bindCarouselPauseControl(
                 carouselCard,
                 controls.controls,
-                controls.sourceButton,
                 getCarouselMembers(carouselCard).length,
                 context.signal,
             );
@@ -231,7 +236,6 @@ export function bindCarouselCard(
             bindCarouselPauseControl(
                 carouselCard,
                 controls.controls,
-                controls.sourceButton,
                 memberCount,
                 context.signal,
             );
@@ -239,42 +243,24 @@ export function bindCarouselCard(
         return;
     }
 
-    const button = controls?.sourceButton
-        ? cloneFeaturedControlButton(controls.sourceButton)
-        : cloneBlacklistButton(sourceButton);
-
-    button.type = "button";
-    button.disabled = false;
-    button.removeAttribute("aria-disabled");
-    button.setAttribute("data-testid", "listing-card-blacklist");
-    button.dataset.blacklistScope = "carousel";
-    button.ariaLabel = "Blacklist featured properties";
-    setTooltipText(button, "Blacklist featured properties");
+    const button = createBlacklistAction({
+        active: false,
+        appearance: "carousel",
+        label: "Blacklist featured properties",
+        onToggle: () => toggleBundleBlacklist(getCarouselMembers(carouselCard)),
+        signal: context.signal,
+    });
+    button.classList.add("edf-featured-blacklist-button");
     if (controls) {
-        if (!controls.sourceButton) {
-            button.classList.add("edf-featured-blacklist-button");
-        }
         controls.controls.append(button);
         bindCarouselPauseControl(
             carouselCard,
             controls.controls,
-            controls.sourceButton ?? button,
             getCarouselMembers(carouselCard).length,
             context.signal,
         );
     } else {
-        button.classList.add("edf-featured-blacklist-button");
         carouselCard.prepend(button);
     }
     button.hidden = getCarouselMembers(carouselCard).length <= 1;
-
-    button.addEventListener("click", async event => {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-
-        const members = getCarouselMembers(carouselCard);
-
-        await toggleBundleBlacklist(members);
-    }, { capture: true, signal: context.signal });
 }

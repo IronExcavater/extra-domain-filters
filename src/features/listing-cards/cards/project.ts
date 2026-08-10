@@ -1,7 +1,7 @@
 import { isBlacklisted, type BlacklistEntry } from "../../../domain/matching";
 import { PageContext } from "../../../shared/platform/router";
+import { createBlacklistAction, setBlacklistActionState } from "../actions/blacklistAction";
 import { getBlacklistedBundleUrls, toggleBundleBlacklist, type BundleMember } from "../blacklist/bundle";
-import { cloneBlacklistButton, updateButton } from "../clone/blacklistButton";
 import {
     getChildListingUrl,
     getListingSnapshot,
@@ -91,11 +91,10 @@ export function updateProjectBlacklistSummary(
         if (bulkButton.style.getPropertyValue("--edf-project-foreground") !== color) {
             bulkButton.style.setProperty("--edf-project-foreground", color);
         }
-        updateButton(
-            bulkButton,
-            blacklistedUrls.length > 0,
-            "Blacklist project",
-        );
+        setBlacklistActionState(bulkButton, {
+            active: blacklistedUrls.length > 0,
+            label: "Blacklist project",
+        });
     }
 
     if (projectExcluded) return;
@@ -136,22 +135,18 @@ function insertProjectBlacklistButton(details: HTMLElement, button: HTMLButtonEl
 
 export function bindProjectCard(projectCard: HTMLElement, context: PageContext): void {
     if (!projectCard.querySelector(PROJECT_MARKER_SELECTOR)) return;
-    void context;
-
     const sourceButton = projectCard.querySelector<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR);
     const details = projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR);
     if (!sourceButton || !details || !getProjectUrl(projectCard)) return;
     if (projectCard.querySelector(".edf-project-blacklist-button")) return;
 
-    const button = cloneBlacklistButton(sourceButton, { appearance: "native" });
-    button.dataset.blacklistScope = "project";
+    const button = createBlacklistAction({
+        active: false,
+        appearance: "project",
+        label: "Blacklist project",
+        onToggle: () => toggleBundleBlacklist(getProjectMembers(projectCard)),
+        signal: context.signal,
+    });
     button.classList.add("edf-project-blacklist-button");
     insertProjectBlacklistButton(details, button);
-
-    button.addEventListener("click", async event => {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        await toggleBundleBlacklist(getProjectMembers(projectCard));
-    }, { capture: true, signal: context.signal });
 }

@@ -14,9 +14,19 @@
 }
 
 .edf-featured-blacklist-button,
-.edf-featured-blacklist-button[data-active="true"],
-.edf-featured-blacklist-button[aria-pressed="true"] {
-    color: rgb(19 18 18);
+.edf-featured-carousel-action {
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: 50%;
+    color: var(--edf-color-text);
+    height: var(--edf-control-height-sm);
+    margin: 0 2px;
+    padding: 0;
+    width: var(--edf-control-height-sm);
+}
+
+.edf-featured-carousel-action:hover:not(:disabled) {
+    background: var(--edf-color-surface-muted);
 }
 
 .slick-slide.edf-carousel-child-blacklisted,

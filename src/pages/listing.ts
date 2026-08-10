@@ -2,20 +2,17 @@ import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../do
 import { resolveListingSnapshot } from "../domain/listings/detail";
 import { matchListing, type BlacklistEntry } from "../domain/matching";
 import {
-    cloneBlacklistButton,
-    isShortlisted,
-    removeFromShortlist,
-    setBlacklistButtonState,
-} from "../features/listing-cards/clone/blacklistButton";
+    createBlacklistAction,
+    setBlacklistActionState,
+} from "../features/listing-cards/actions/blacklistAction";
 import { enableStickyHeader } from "../features/navigation";
+import { isShortlisted, removeFromShortlist } from "../shared/domain/shortlist";
 import { PageMount } from "../shared/platform/router";
 import { onStorageChange } from "../shared/platform/storage";
 import { getSettings } from "../shared/state/settings";
 
 const CTA_SELECTOR = '[data-testid="listing-details__address-cta-buttons"], [data-testid*="cta-buttons"]';
 const SHORTLIST_SELECTOR = '[data-testid^="listing-details__address-cta-button-shortlist"], button[aria-label*="shortlist" i]';
-const SHARE_SELECTOR = '[data-testid="listing-details__address-cta-button-share"]';
-const ACTIVE_SHORTLIST_CLASS = "css-11t19a7";
 
 function getAddress(): string {
     return document.querySelector("h1, [data-testid*='title-name']")?.textContent?.trim() || document.title;
@@ -36,71 +33,48 @@ async function isListingBlacklisted(url: string): Promise<boolean> {
 }
 
 async function syncButton(button: HTMLButtonElement, url: string): Promise<void> {
-    setBlacklistButtonState(button, await isListingBlacklisted(url), "Add to blacklist");
+    setBlacklistActionState(button, {
+        active: await isListingBlacklisted(url),
+        label: "Blacklist",
+    });
 }
 
 function findShortlistButton(): HTMLButtonElement | undefined {
     return document.querySelector<HTMLButtonElement>(SHORTLIST_SELECTOR) ?? undefined;
 }
 
-function insertButton(): { button: HTMLButtonElement; shortlistButton?: HTMLButtonElement } {
-    const existing = document.querySelector<HTMLButtonElement>('[data-testid="listing-details__blacklist-button"]');
-    if (existing) return { button: existing, shortlistButton: findShortlistButton() };
-
-    const cta = document.querySelector<HTMLElement>(CTA_SELECTOR);
-    const shortlistButton = findShortlistButton();
-    const shareButton = document.querySelector<HTMLButtonElement>(SHARE_SELECTOR);
-    const button = shortlistButton
-        ? cloneBlacklistButton(shortlistButton, {
-            skin: {
-                active: ACTIVE_SHORTLIST_CLASS,
-                inactive: shareButton?.className ?? shortlistButton.className,
-            },
-        })
-        : document.createElement("button");
-
-    button.type = "button";
-    button.setAttribute("data-testid", "listing-details__blacklist-button");
-    button.dataset.blacklistScope = "listing-details";
-
-    if (!shortlistButton && shareButton) {
-        button.dataset.edfInactiveClass = shareButton.className;
-        button.dataset.edfActiveClass = ACTIVE_SHORTLIST_CLASS;
-        button.className = `${shareButton.className} edf-blacklist-button`;
-    }
-
-    if (cta) cta.append(button);
-    else shortlistButton?.parentElement?.append(button);
-
-    return { button, shortlistButton };
-}
-
 const mountListingPage: PageMount = async (context) => {
     enableStickyHeader(context);
     const url = context.url.href;
-    const { button, shortlistButton } = insertButton();
+    const shortlistButton = findShortlistButton();
+    document.querySelector('[data-testid="listing-details__blacklist-button"]')?.remove();
+    const button = createBlacklistAction({
+        active: await isListingBlacklisted(url),
+        appearance: "listing-detail",
+        label: "Blacklist",
+        onToggle: async action => {
+            const active = action.getAttribute("aria-pressed") === "true";
+            const listing = await resolveListingSnapshot(
+                {
+                    url,
+                    title: getAddress(),
+                    text: document.body.textContent ?? "",
+                    displayAddress: getAddress(),
+                    thumbnailUrl: getThumbnailUrl(),
+                },
+                { signal: context.signal, includeDetail: false },
+            );
+
+            await toggleBlacklistListing(listing);
+            if (!active && shortlistButton) removeFromShortlist(shortlistButton);
+        },
+        signal: context.signal,
+    });
+    button.dataset.testid = "listing-details__blacklist-button";
+    const cta = document.querySelector<HTMLElement>(CTA_SELECTOR);
+    if (cta) cta.append(button);
+    else shortlistButton?.parentElement?.append(button);
     if (!button.isConnected) return;
-
-    button.addEventListener("click", async event => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const active = await isListingBlacklisted(url);
-        const listing = await resolveListingSnapshot(
-            {
-                url,
-                title: getAddress(),
-                text: document.body.textContent ?? "",
-                displayAddress: getAddress(),
-                thumbnailUrl: getThumbnailUrl(),
-            },
-            { signal: context.signal, includeDetail: false },
-        );
-
-        await toggleBlacklistListing(listing);
-        if (!active && shortlistButton) removeFromShortlist(shortlistButton);
-        await syncButton(button, url);
-    }, { signal: context.signal });
 
     shortlistButton?.addEventListener("click", () => {
         requestAnimationFrame(async () => {

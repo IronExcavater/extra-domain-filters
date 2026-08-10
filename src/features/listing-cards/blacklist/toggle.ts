@@ -2,8 +2,9 @@ import { addOrReplaceBlacklistEntry, getBlacklist, toggleBlacklistListing } from
 import { resolveListingSnapshot } from "../../../domain/listings/detail";
 import { isBlacklisted, type ListingSnapshot } from "../../../domain/matching";
 import { trackTelemetry } from "../../../domain/telemetry/client";
+import { removeFromShortlist } from "../../../shared/domain/shortlist";
 import { PageContext } from "../../../shared/platform/router";
-import { removeFromShortlist, updateButton } from "../clone/blacklistButton";
+import { setBlacklistActionState } from "../actions/blacklistAction";
 import { getListingSnapshot } from "../dom/card";
 
 async function refreshBlacklistSnapshot(
@@ -36,7 +37,7 @@ export async function toggleBlacklist(
     await toggleBlacklistListing(listing);
     void trackTelemetry({ name: "feature_used", feature: "blacklist" });
     if (adding && shortlistButton) removeFromShortlist(shortlistButton);
-    if (button) updateButton(button, !active);
+    if (button) setBlacklistActionState(button, { active: !active });
 
     if (adding) {
         void refreshBlacklistSnapshot(listing, context).catch(error =>
