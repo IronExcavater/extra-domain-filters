@@ -1,94 +1,32 @@
 import { onBodyMutations } from "../../shared/dom/bodyMutations";
+import { findNavigationMenus, observeNavigationMenu } from "../../shared/domain/navigation";
 import type { PageContext } from "../../shared/platform/router";
 
-const chevronControls = new WeakSet<HTMLElement>();
-let openDesktopMenu: string | undefined;
-let accountMenuOpen = false;
-
-function getMenuKey(menuItem: HTMLElement): string {
-    return menuItem.querySelector(":scope > a")?.textContent?.trim() ?? "";
-}
-
-function syncDesktopMenuStates(): void {
-    for (const menuItem of document.querySelectorAll<HTMLElement>(
-        'header.header[role="banner"] [data-testid="header-menu-desktop-option"]',
-    )) {
-        menuItem.dataset.edfNavigationOpen = String(getMenuKey(menuItem) === openDesktopMenu);
-    }
-}
-
-function bindAccountChevron(button: HTMLButtonElement, context: PageContext): void {
-    const carrier = button.closest<HTMLElement>('[data-testid="header-member__dropdown"]') ?? button;
-    if (chevronControls.has(carrier)) return;
-    chevronControls.add(carrier);
-
-    const setOpen = (open: boolean): void => {
-        accountMenuOpen = open;
-        carrier.dataset.edfNavigationOpen = String(accountMenuOpen);
-    };
-    const trigger = (): HTMLButtonElement | null => carrier.querySelector('button[aria-label="User profile"]');
-
-    carrier.addEventListener("pointerdown", event => {
-        if (!trigger()?.contains(event.target as Node)) return;
-        setOpen(!accountMenuOpen);
-    }, { capture: true, signal: context.signal });
-    carrier.addEventListener("keydown", event => {
-        if (event.key === "Enter" || event.key === " ") {
-            setOpen(carrier.dataset.edfNavigationOpen !== "true");
-        }
-    }, { signal: context.signal });
-    document.addEventListener("pointerdown", event => {
-        if (!carrier.contains(event.target as Node)) setOpen(false);
-    }, { capture: true, signal: context.signal });
-    document.addEventListener("keydown", event => {
-        if (event.key === "Escape") setOpen(false);
-    }, { signal: context.signal });
-    context.scope.add(() => delete carrier.dataset.edfNavigationOpen);
-}
-
-function bindMenuChevron(control: HTMLElement, context: PageContext): void {
-    const menuItem = control.closest<HTMLElement>('[data-testid="header-menu-desktop-option"]');
-    if (!menuItem || chevronControls.has(menuItem)) return;
-    chevronControls.add(menuItem);
-
-    const trigger = (): HTMLElement | null => menuItem.querySelector(":scope > a");
-    const key = getMenuKey(menuItem);
-    const setOpen = (open: boolean): void => {
-        openDesktopMenu = open ? key : undefined;
-        syncDesktopMenuStates();
-    };
-    menuItem.dataset.edfNavigationOpen = String(openDesktopMenu === key);
-    menuItem.addEventListener("pointerdown", event => {
-        if (!trigger()?.contains(event.target as Node)) return;
-        setOpen(openDesktopMenu !== key);
-    }, { capture: true, signal: context.signal });
-    menuItem.addEventListener("keydown", event => {
-        if (event.key === "Enter" || event.key === " ") {
-            setOpen(menuItem.dataset.edfNavigationOpen !== "true");
-        }
-    }, { signal: context.signal });
-    document.addEventListener("pointerdown", event => {
-        if (!menuItem.contains(event.target as Node)) setOpen(false);
-    }, { capture: true, signal: context.signal });
-    document.addEventListener("keydown", event => {
-        if (event.key === "Escape") setOpen(false);
-    }, { signal: context.signal });
-    context.scope.add(() => {
-        delete menuItem.dataset.edfNavigationOpen;
-    });
-}
+const boundMenus = new WeakMap<HTMLElement, AbortSignal>();
 
 export function enableNavigationChevronAnimation(context: PageContext): void {
     const bind = (): void => {
-        for (const button of document.querySelectorAll<HTMLButtonElement>(
-            'header.header[role="banner"] button[aria-label="User profile"]',
-        )) {
-            bindAccountChevron(button, context);
-        }
-        for (const control of document.querySelectorAll<HTMLElement>(
-            'header.header[role="banner"] [data-testid="header-menu-desktop-option"] > a:has(.css-1ohxmtf)',
-        )) {
-            bindMenuChevron(control, context);
+        for (const binding of findNavigationMenus()) {
+            const existingSignal = boundMenus.get(binding.carrier);
+            if (existingSignal && !existingSignal.aborted) continue;
+            boundMenus.set(binding.carrier, context.signal);
+            binding.chevron.dataset.edfNavigationChevron = "true";
+            observeNavigationMenu(binding, open => {
+                binding.carrier.dataset.edfNavigationOpen = String(open);
+                if (binding.carrier.dataset.edfNavigationReady !== "true") {
+                    requestAnimationFrame(() => {
+                        if (!context.signal.aborted) binding.carrier.dataset.edfNavigationReady = "true";
+                    });
+                }
+            }, context.signal);
+            context.scope.add(() => {
+                if (boundMenus.get(binding.carrier) === context.signal) {
+                    boundMenus.delete(binding.carrier);
+                }
+                delete binding.carrier.dataset.edfNavigationOpen;
+                delete binding.carrier.dataset.edfNavigationReady;
+                delete binding.chevron.dataset.edfNavigationChevron;
+            });
         }
     };
 

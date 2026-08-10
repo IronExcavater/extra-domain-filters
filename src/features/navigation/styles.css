@@ -22,18 +22,22 @@ header.header[role="banner"] > section.css-a5sdz5 + div[data-edf-stuck="true"] {
         0 2px 8px rgb(7 6 7 / 4%);
 }
 
-header.header[role="banner"] button[aria-label="User profile"] > svg {
-    transition: transform 160ms ease;
+[data-edf-navigation-chevron="true"] {
+    transform: rotate(0deg);
+    transform-origin: center;
+    transition: none;
 }
 
-header.header[role="banner"] [data-testid="header-menu-desktop-option"] > a .css-1ohxmtf svg {
-    transition: transform 160ms ease;
+[data-edf-navigation-ready="true"] [data-edf-navigation-chevron="true"] {
+    transition: transform var(--edf-motion-fast) ease;
 }
 
-header.header[role="banner"] [data-testid="header-member__dropdown"][data-edf-navigation-open="true"] button[aria-label="User profile"] > svg {
+[data-edf-navigation-open="true"] [data-edf-navigation-chevron="true"] {
     transform: rotate(180deg);
 }
 
-header.header[role="banner"] [data-testid="header-menu-desktop-option"][data-edf-navigation-open="true"] > a .css-1ohxmtf svg {
-    transform: rotate(180deg);
+@media (prefers-reduced-motion: reduce) {
+    [data-edf-navigation-ready="true"] [data-edf-navigation-chevron="true"] {
+        transition: none;
+    }
 }
