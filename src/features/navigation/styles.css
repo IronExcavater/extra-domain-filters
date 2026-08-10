@@ -1,10 +1,10 @@
 html:is([data-edf-sticky-header="true"], [data-edf-sticky-site="true"])
-header.header[role="banner"] {
+[data-edf-sticky-header-root="true"] {
     display: contents;
 }
 
 html:is([data-edf-sticky-header="true"], [data-edf-sticky-site="true"])
-header.header[role="banner"] > section.css-a5sdz5 + div {
+[data-edf-sticky-navigation="true"] {
     background: var(--edf-color-surface, #fff);
     border-bottom: 1px solid #d0d3d9;
     box-shadow: none;
@@ -15,7 +15,7 @@ header.header[role="banner"] > section.css-a5sdz5 + div {
 }
 
 html:is([data-edf-sticky-header="true"], [data-edf-sticky-site="true"])
-header.header[role="banner"] > section.css-a5sdz5 + div[data-edf-stuck="true"] {
+[data-edf-sticky-navigation="true"][data-edf-stuck="true"] {
     border-color: var(--edf-color-surface, #fff);
     box-shadow:
         0 4px 12px rgb(7 6 7 / 3%),

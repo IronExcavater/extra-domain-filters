@@ -3,7 +3,7 @@ import {
     type BlacklistEntry,
 } from "../../domain/matching";
 import { markOwned } from "../../shared/dom/ownership";
-import { createIconButton, createSvgIcon } from "../../shared/ui/elements";
+import { createSvgIcon, createUiButton } from "../../shared/ui/elements";
 import {
     replaceWithBathIcon,
     replaceWithBedIcon,
@@ -59,11 +59,14 @@ export function createBlacklistCard(
     const body = document.createElement("div");
     const heading = document.createElement("div");
     const price = document.createElement("p");
-    const toggle = createIconButton(
-        active ? "Remove from blacklist" : "Add to blacklist",
-        replaceWithBinIcon,
-        "edf-blacklist-card-toggle",
-    );
+    const toggleLabel = active ? "Remove from blacklist" : "Add to blacklist";
+    const toggle = createUiButton({
+        ariaLabel: toggleLabel,
+        className: "edf-blacklist-card-toggle",
+        icon: replaceWithBinIcon,
+        tooltip: toggleLabel,
+        variant: "icon",
+    });
     const address = document.createElement("a");
     const features = document.createElement("div");
 

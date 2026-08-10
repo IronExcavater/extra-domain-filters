@@ -1,3 +1,4 @@
+import { onBodyMutations } from "../../shared/dom/bodyMutations";
 import { markOwned } from "../../shared/dom/ownership";
 import { findDomainAccountMenuHosts, type DomainAccountMenuHost } from "../../shared/domain/profile";
 import { Logger } from "../../shared/platform/logging";
@@ -102,12 +103,10 @@ export function bindAccountMenuTrigger(context: PageContext): void {
             schedule();
         }
     }, { capture: true, signal: context.signal });
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.body, { childList: true, subtree: true });
+    onBodyMutations(schedule, context.signal);
     observeUrlChanges(schedule, context.signal);
     context.scope.add(() => {
         if (frame !== undefined) cancelAnimationFrame(frame);
-        observer.disconnect();
         for (const dispose of subscriptions.values()) dispose();
         subscriptions.clear();
     });

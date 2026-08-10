@@ -6,6 +6,19 @@ export interface NavigationMenuBinding {
     trigger: HTMLElement;
 }
 
+export function findStickyNavigationBar(root: ParentNode = document): HTMLElement | undefined {
+    const header = root.querySelector<HTMLElement>('header[role="banner"]');
+    if (!header) return undefined;
+
+    return [...header.children].find((child): child is HTMLElement =>
+        child instanceof HTMLElement &&
+        child.matches("div") &&
+        child.querySelector(
+            'nav, [data-testid="header-menu-desktop-option"], button[aria-label="User profile"]',
+        ) !== null
+    );
+}
+
 function findControlledMenu(trigger: HTMLElement): HTMLElement | undefined {
     const controlledId = trigger.getAttribute("aria-controls");
     if (controlledId) return document.getElementById(controlledId) ?? undefined;

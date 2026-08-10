@@ -61,17 +61,4 @@ export function createUiButton(options: UiButtonOptions): HTMLButtonElement {
     return button;
 }
 
-export function createIconButton(
-    label: string,
-    renderIcon: IconRenderer,
-    className = "edf-icon-button",
-): HTMLButtonElement {
-    const button = createButton("", className);
-
-    button.ariaLabel = label;
-    button.append(createSvgIcon(renderIcon));
-    attachTooltip(button, label);
-
-    return button;
-}
 import { attachTooltip } from "./tooltip";

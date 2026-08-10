@@ -9,7 +9,8 @@ import {
     createSavedSearchCollection,
     type SavedSearchCollection,
 } from "../features/saved-searches/collection";
-import { isOwnedNode, markOwned } from "../shared/dom/ownership";
+import { onBodyMutations } from "../shared/dom/bodyMutations";
+import { markOwned } from "../shared/dom/ownership";
 import { createFrameReconciler } from "../shared/dom/reconcile";
 import { domainAlertBridge } from "../shared/domain/alerts";
 import {
@@ -71,15 +72,7 @@ const mountSavedSearchesPage: PageMount = context => {
         else host.append(element);
     }, error => context.logger.error("Could not render saved searches", error));
 
-    const observer = new MutationObserver(mutations => {
-        if (mutations.some(mutation =>
-            [...mutation.addedNodes, ...mutation.removedNodes].some(node => !isOwnedNode(node))
-        )) {
-            reconcile.schedule();
-        }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    context.scope.add(() => observer.disconnect());
+    onBodyMutations(reconcile.schedule, context.signal);
     context.scope.add(onStorageChange("savedSearches", reconcile.schedule));
     context.scope.add(() => {
         if (document.documentElement.dataset.edfExtensionReload === "true") return;

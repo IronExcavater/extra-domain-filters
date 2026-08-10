@@ -208,5 +208,3 @@ export function bindPropertyAlertControls(context: PageContext): void {
     onBodyMutations(reconcile, context.signal);
     context.scope.add(onStorageChange("savedSearches", reconcile));
 }
-
-export const bindPropertyAlertModal = bindPropertyAlertControls;

@@ -1,5 +1,9 @@
 import { onBodyMutations } from "../../shared/dom/bodyMutations";
-import { findNavigationMenus, observeNavigationMenu } from "../../shared/domain/navigation";
+import {
+    findNavigationMenus,
+    findStickyNavigationBar,
+    observeNavigationMenu,
+} from "../../shared/domain/navigation";
 import type { PageContext } from "../../shared/platform/router";
 
 const boundMenus = new WeakMap<HTMLElement, AbortSignal>();
@@ -36,13 +40,13 @@ export function enableNavigationChevronAnimation(context: PageContext): void {
 
 export function enableStickyHeader(context: PageContext): void {
     document.documentElement.dataset.edfStickyHeader = "true";
-    const header = document.querySelector<HTMLElement>(
-        'header.header[role="banner"] > section.css-a5sdz5 + div',
-    );
-    const headerRoot = header?.closest<HTMLElement>('header.header[role="banner"]');
+    const header = findStickyNavigationBar();
+    const headerRoot = header?.closest<HTMLElement>('header[role="banner"]');
     const sentinel = document.createElement("span");
 
     if (header && headerRoot) {
+        header.dataset.edfStickyNavigation = "true";
+        headerRoot.dataset.edfStickyHeaderRoot = "true";
         sentinel.ariaHidden = "true";
         sentinel.style.cssText = "display:block;height:1px;margin:0;pointer-events:none;";
         headerRoot.before(sentinel);
@@ -55,6 +59,8 @@ export function enableStickyHeader(context: PageContext): void {
             observer.disconnect();
             sentinel.remove();
             delete header.dataset.edfStuck;
+            delete header.dataset.edfStickyNavigation;
+            delete headerRoot.dataset.edfStickyHeaderRoot;
         });
     }
     context.scope.add(() => {

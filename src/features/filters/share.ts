@@ -10,7 +10,7 @@ import { getSettings } from "../../shared/state/settings";
 import { replaceWithShareIcon } from "../../shared/ui/icons";
 import { showToast } from "../../shared/ui/toast";
 import {
-    bindPropertyAlertModal,
+    bindPropertyAlertControls,
     updatePropertyAlertButtons,
 } from "./alerts";
 import { createFilterAction } from "./controls";
@@ -80,7 +80,7 @@ function injectShareButton(context: PageContext): boolean {
 }
 
 export async function bindSearchShareButton(context: PageContext): Promise<void> {
-    bindPropertyAlertModal(context);
+    bindPropertyAlertControls(context);
     if (boundSignals.has(context.signal)) return;
     boundSignals.add(context.signal);
 

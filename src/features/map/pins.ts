@@ -1,5 +1,6 @@
 import { getBlacklist } from "../../domain/blacklist/store";
 import { matchListing, type BlacklistEntry, type ListingSnapshot } from "../../domain/matching";
+import { onBodyMutations } from "../../shared/dom/bodyMutations";
 import { type PageContext } from "../../shared/platform/router";
 import { onStorageChange } from "../../shared/platform/storage";
 import { getSettings, type Settings } from "../../shared/state/settings";
@@ -206,7 +207,7 @@ export function bindMapPins(context: PageContext): void {
         observeMarker(marker);
     }
 
-    const observer = new MutationObserver(mutations => {
+    onBodyMutations(mutations => {
         const addedElements = mutations.flatMap(mutation =>
             [...mutation.addedNodes].filter((node): node is Element => node instanceof Element),
         );
@@ -219,14 +220,12 @@ export function bindMapPins(context: PageContext): void {
             if (marker instanceof HTMLElement) observeMarker(marker);
         });
         if (markers.length > 0 || addedElements.some(element => element.matches("#__NEXT_DATA__"))) schedule();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    }, scope.signal);
     scope.add(onStorageChange<BlacklistEntry[]>("blacklist", schedule));
     scope.add(onStorageChange("settings", schedule));
     schedule();
 
     scope.add(() => {
-        observer.disconnect();
         resizeObserver.disconnect();
         if (frame !== undefined) cancelAnimationFrame(frame);
         if (timer !== undefined) window.clearTimeout(timer);

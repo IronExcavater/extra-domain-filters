@@ -221,10 +221,11 @@
 }
 
 .edf-preference-match-tag {
-    position: static !important;
-}
-
-.edf-preference-match-tag > span {
-    background: var(--color-neutral-heavy-default, #3c475b);
-    color: var(--color-neutral-surface-default, #fff);
+    background: var(--edf-color-heading);
+    border-radius: 999px;
+    color: var(--edf-color-surface);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 18px;
+    padding: 2px 8px;
 }

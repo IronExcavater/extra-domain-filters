@@ -8,7 +8,7 @@ import { onBodyMutations } from "../../shared/dom/bodyMutations";
 import { markOwned } from "../../shared/dom/ownership";
 import { observeUrlChanges, type PageContext } from "../../shared/platform/router";
 import { createUiButton } from "../../shared/ui/elements";
-import { bindPropertyAlertModal, setPropertyAlertSearchContext } from "./alerts";
+import { bindPropertyAlertControls, setPropertyAlertSearchContext } from "./alerts";
 
 const RECENT_SEARCH_SELECTOR = 'a[data-testid="recent-search-item"]';
 
@@ -163,7 +163,7 @@ export function bindRecentSearches(context: PageContext): void {
     };
 
     onBodyMutations(render, context.signal);
-    bindPropertyAlertModal(context);
+    bindPropertyAlertControls(context);
     context.signal.addEventListener("abort", () => {
         if (frame !== undefined) cancelAnimationFrame(frame);
     }, { once: true });

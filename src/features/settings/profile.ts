@@ -1,3 +1,4 @@
+import { onBodyMutations } from "../../shared/dom/bodyMutations";
 import { markOwned } from "../../shared/dom/ownership";
 import { createReplacementSlot } from "../../shared/dom/replacement";
 import { waitForElement } from "../../shared/dom/wait";
@@ -96,7 +97,5 @@ export async function mountProfileSettings(context: PageContext): Promise<void> 
         slot.schedule();
     }, context.signal);
 
-    const observer = new MutationObserver(() => injectSettingsTab(context));
-    observer.observe(document.body, { childList: true, subtree: true });
-    context.scope.add(() => observer.disconnect());
+    onBodyMutations(() => injectSettingsTab(context), context.signal);
 }

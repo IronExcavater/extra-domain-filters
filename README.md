@@ -4,7 +4,7 @@
 This browser extension supercharges domain.com.au by adding advanced filtering options, making it easier to find your dream property! 🎯
 
 ## ✨ Features
-- 🟡 **Preference Highlighting** – Highlights properties that match your preferences with a yellow tint, intensifying with stronger matches.
+- ✅ **Preference Matches** – Labels listings that contain your optional “Could-Have” features.
 - ❌ **Exclude Keywords** – Automatically hides listings containing unwanted keywords in their descriptions.
 - 🏢 **Studio Property Fix** – Ensures studios are correctly identified based on descriptions, not just tags.
 - 💰 **Strata Fee Filter** – Adds a slider to exclude properties with excessively high strata fees.
@@ -12,7 +12,9 @@ This browser extension supercharges domain.com.au by adding advanced filtering o
 - 🔄 **Persistent Filters** – Saves your filters and preferences across browsing sessions.
 - ⚡ **Real-Time Updates** – Instantly applies changes as filters are adjusted.
 - 🚫 **Blacklist Listings** – Allows you to hide specific listings you don't want to see.
-- 🗑 **Manage Blacklist** – Adds a dedicated page to remove blacklisted listings.
+- 🗑 **Manage Blacklist** – Adds a dedicated page to review and restore blacklisted listings.
+- 🔔 **Saved Search Alerts** – Creates and edits real Domain email alerts with Daily, Weekly, and Never options.
+- 🔐 **Unified Account Login** – Supports email/password and Google, with optional Apple and Facebook providers.
 
 ## 🛠 Installation
 ### 🔹 Chrome Web Store (Recommended)
@@ -38,9 +40,9 @@ Email/password, Google, Apple, and Facebook use the same Firebase account. Apple
 ## 🎯 Usage
 1. Search for properties on **[Domain.com.au](https://www.domain.com.au)**.
 2. Use the new filtering options in the menus to refine your search.
-3. Listings that include **preferences are highlighted** in tint between **green** (20% match) to **gold** (90% match).
-4. Listings that are **blacklisted or include excluded keywords are hidden** automatically from the page.
-4. Manage your **blacklist** through the user profile menu (top-right corner)
+3. Listings that include optional preferences receive concise match labels.
+4. Blacklisted or filtered listings collapse into recoverable rows, so you can unblacklist them or choose **Show anyway** without changing all filters.
+5. Manage your **blacklist** through the user profile menu (top-right corner).
 
 ## 🤝 Contribute
 Want to make this extension even better? 🚀 Feel free to **submit issues** or **open a pull request** with your improvements!
