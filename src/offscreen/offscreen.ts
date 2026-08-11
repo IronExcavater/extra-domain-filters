@@ -1,4 +1,4 @@
-import { getFederatedAuthRuntime } from "../config/authRuntime";
+import { getBundledFederatedAuthRuntime } from "../config/authRuntime";
 import {
     isFederatedAuthResponse,
     isOffscreenAuthRequest,
@@ -6,7 +6,7 @@ import {
     type FederatedAuthResponse,
 } from "../shared/platform/authBridge";
 
-const { bridgeOrigin, bridgeUrl } = getFederatedAuthRuntime(import.meta.env.MODE);
+const { bridgeOrigin, bridgeUrl } = getBundledFederatedAuthRuntime();
 const iframe = document.createElement("iframe");
 const loaded = new Promise<void>((resolve, reject) => {
     iframe.addEventListener("load", () => resolve(), { once: true });

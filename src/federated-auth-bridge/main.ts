@@ -12,7 +12,7 @@ import {
 } from "firebase/auth";
 
 import {
-    getFederatedAuthRuntime,
+    getBundledFederatedAuthRuntime,
     isAllowedExtensionOrigin,
     type FederatedAuthProvider,
 } from "../config/authRuntime";
@@ -23,7 +23,7 @@ import {
     type FederatedAuthResponse,
 } from "../shared/platform/authBridge";
 
-const runtime = getFederatedAuthRuntime(import.meta.env.MODE);
+const runtime = getBundledFederatedAuthRuntime();
 const config = readFirebaseConfig();
 const auth = config ? getAuth(initializeApp(config)) : undefined;
 

@@ -32,6 +32,12 @@ export function getFederatedAuthRuntime(mode: string): FederatedAuthRuntimeConfi
     return { bridgeOrigin: new URL(bridgeUrl).origin, bridgeUrl, mode: resolvedMode };
 }
 
+export function getBundledFederatedAuthRuntime(): FederatedAuthRuntimeConfig {
+    const mode = readMode(__FEDERATED_AUTH_MODE__);
+    const bridgeUrl = __FEDERATED_AUTH_BRIDGE_URL__;
+    return { bridgeOrigin: new URL(bridgeUrl).origin, bridgeUrl, mode };
+}
+
 export function isAllowedExtensionOrigin(origin: string, mode: string): boolean {
     const resolvedMode = readMode(mode);
     return resolvedMode === "development"

@@ -1,11 +1,11 @@
-import { getFederatedAuthRuntime, type FederatedAuthProvider } from "../config/authRuntime";
+import { getBundledFederatedAuthRuntime, type FederatedAuthProvider } from "../config/authRuntime";
 import {
     isFederatedAuthResponse,
     type OffscreenAuthRequest,
 } from "../shared/platform/authBridge";
 
 const OFFSCREEN_PATH = "src/offscreen/offscreen.html";
-const { bridgeUrl } = getFederatedAuthRuntime(import.meta.env.MODE);
+const { bridgeUrl } = getBundledFederatedAuthRuntime();
 let creatingDocument: Promise<void> | undefined;
 let activeFlow: Promise<Record<string, unknown>> | undefined;
 
