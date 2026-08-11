@@ -28,16 +28,19 @@ VITE_GOOGLE_OAUTH_CLIENT_ID=
 
 These values identify registered public applications. Never add a Facebook App Secret, Apple private key, or another OAuth client secret to `.env`; Vite variables are bundled into client code.
 
-Start the local bridge:
-
-```sh
-npm run dev:auth-helper
-```
-
-It binds only to `http://127.0.0.1:5174/auth/` with a strict port. In a second terminal, start the extension:
+Start the extension and local authentication server together:
 
 ```sh
 npm run dev
+```
+
+The auth server binds only to `http://127.0.0.1:5174/auth/` with a strict port. The combined command labels the two log streams `extension` and `auth` and stops the extension server if auth startup fails.
+
+For isolated diagnostics, either process can still be started by itself:
+
+```sh
+npm run dev:extension
+npm run dev:auth
 ```
 
 Load `dist` as an unpacked Chrome extension. Development builds allow only the loopback bridge origin. Production builds allow only `https://extra-domain-filters.web.app`.
@@ -118,11 +121,16 @@ If Firebase's `authDomain` changes, update both the Apple website domain and ret
 
 ## Production deployment
 
-Build and deploy the bridge first:
+Build the auth page without deploying it:
 
 ```sh
-npm run build:auth-helper
-npx firebase-tools deploy --only hosting
+npm run build:auth
+```
+
+Deploy it to Firebase Hosting (the deploy command rebuilds first):
+
+```sh
+npm run deploy:auth
 ```
 
 Open `https://extra-domain-filters.web.app/auth/` and confirm it loads. Then create the production extension package:
@@ -142,7 +150,7 @@ Before publishing, inspect `dist/manifest.json`:
 | Symptom | Check |
 | --- | --- |
 | Provider is supported but not enabled | Enable that provider under Firebase Authentication > Sign-in method. |
-| Local bridge is unavailable | Run `npm run dev:auth-helper` and open `http://127.0.0.1:5174/auth/`. |
+| Local bridge is unavailable | Run `npm run dev:auth` and open `http://127.0.0.1:5174/auth/`. |
 | Popup closes or is blocked | Start login from the provider button and allow the popup; cancellations are safe to retry. |
 | Firebase reports an unauthorized domain | Add the exact unpacked or production `chrome-extension://...` origin to Firebase Authorized domains. |
 | Meta or Apple reports a redirect mismatch | Compare `https://extra-domain-filters.firebaseapp.com/__/auth/handler` character-for-character with the provider console. |

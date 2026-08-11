@@ -26,7 +26,7 @@ This browser extension supercharges domain.com.au by adding advanced filtering o
 2. Run `npm install`.
 3. Run `npm run dev`.
 4. In Chrome's extension developer mode, choose **Load unpacked** and select the generated `dist` directory.
-5. Keep Vite running while developing. CRXJS handles content-script HMR/live reload from the dev server.
+5. Keep the command running while developing. It starts both the extension and local authentication servers; CRXJS handles content-script HMR/live reload.
 
 ### 🔹 Release Build
 1. Run `npm run build`.
