@@ -35,7 +35,7 @@ This browser extension supercharges domain.com.au by adding advanced filtering o
 
 ### 🔐 Authentication providers
 
-Email/password, Google, Apple, and Facebook use the same Firebase account. Apple and Facebook require the included hosted OAuth helper plus provider-console setup. Follow [the authentication setup guide](docs/authentication.md) for the exact Firebase, Meta, Apple, environment, deploy, and verification steps. Provider secrets stay in Firebase/Apple/Meta and must never be added to `.env`.
+Email/password, Google, Apple, and Facebook use the same Firebase account. Apple and Facebook use the included hosted federated-authentication bridge plus provider-console setup. Follow [the authentication setup guide](docs/authentication.md) for the exact Firebase, Meta, Apple, local-development, deployment, and verification steps. Provider secrets stay in Firebase/Apple/Meta and must never be added to `.env`.
 
 ## 🎯 Usage
 1. Search for properties on **[Domain.com.au](https://www.domain.com.au)**.

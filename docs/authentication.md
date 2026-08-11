@@ -1,86 +1,152 @@
 # Authentication setup
 
-The extension uses one Firebase Authentication user for email/password, Google, Apple, and Facebook. Google runs through Chrome Identity. Apple and Facebook run through the shared Firebase-hosted page in `firebase/auth`, proxied by an MV3 offscreen document.
+The extension uses one Firebase Authentication account across every login method. Provider support is owned by application code and no longer depends on enable flags in `.env`.
 
-## 1. Firebase baseline
+| Method | Extension transport |
+| --- | --- |
+| Email/password | Firebase Auth Web Extension SDK |
+| Google | Chrome Identity, converted to a Firebase credential |
+| Apple | Shared offscreen federated-authentication bridge |
+| Facebook | Shared offscreen federated-authentication bridge |
 
-1. In Firebase Console, open **Authentication → Sign-in method**.
-2. Enable **Email/Password**. Leave email-link login off unless it is intentionally added later.
-3. Under **Authentication → Settings → Authorized domains**, add the release extension origin:
+The bridge is not a second account system. It exists because Manifest V3 requires Firebase popup authentication to run on a normal hosted page. The extension receives the provider credential and persists the real session itself.
+
+## Local configuration
+
+Copy `.env.example` to `.env` and fill in only the Firebase public web-app configuration and Google OAuth client ID:
+
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
+VITE_GOOGLE_OAUTH_CLIENT_ID=
+```
+
+These values identify registered public applications. Never add a Facebook App Secret, Apple private key, or another OAuth client secret to `.env`; Vite variables are bundled into client code.
+
+Start the local bridge:
+
+```sh
+npm run dev:auth-helper
+```
+
+It binds only to `http://127.0.0.1:5174/auth/` with a strict port. In a second terminal, start the extension:
+
+```sh
+npm run dev
+```
+
+Load `dist` as an unpacked Chrome extension. Development builds allow only the loopback bridge origin. Production builds allow only `https://extra-domain-filters.web.app`.
+
+## Firebase baseline
+
+1. In Firebase Console, select the `extra-domain-filters` project.
+2. Open **Authentication > Sign-in method** and enable **Email/Password**. Leave email-link authentication off unless it is intentionally implemented later.
+3. Under **Authentication > Settings > Authorized domains**, add the exact origin shown for the unpacked extension on `chrome://extensions`, for example `chrome-extension://<32-character-extension-id>`.
+4. Before release, add the production extension origin:
 
    ```text
    chrome-extension://opblibcobnkicpdjkinngfcbjjnjldkg
    ```
 
-4. Keep the Firebase web-app values and Google OAuth client ID in `.env`, using `.env.example` as the template.
-5. In **Authentication → Settings → Password policy**, set at least eight characters and use enforcement mode. Enable email-enumeration protection before launch.
+5. Configure a password policy of at least eight characters and enable email-enumeration protection before launch.
+6. Customize the verification and password-reset messages under **Authentication > Templates**. Email account creation already sends Firebase's verification email.
 
-Email sign-up automatically sends Firebase's verification email. Customize its sender name, subject, action URL, and template under **Authentication → Templates**.
+Apple and Facebook remain visible when the Firebase app is configured because they are supported application features. If one has not been enabled in Firebase yet, the extension reports that provider-specific setup error instead of hiding the button through a second flag.
 
-## 2. Deploy the hosted OAuth helper
+## Google
 
-Set the release extension ID before building the helper. Add a comma-separated development extension ID as well when testing an unpacked build.
+Google remains on Chrome Identity because this path works without the hosted bridge.
 
-```env
-VITE_EXTENSION_ORIGIN=chrome-extension://opblibcobnkicpdjkinngfcbjjnjldkg
-VITE_FIREBASE_AUTH_HELPER_URL=https://YOUR_PROJECT_ID.web.app/auth/
-VITE_APPLE_AUTH_ENABLED=false
-VITE_FACEBOOK_AUTH_ENABLED=false
-```
+1. In Google Cloud Console, configure the OAuth consent screen for the same project.
+2. Create a Chrome Extension OAuth client using the production extension ID `opblibcobnkicpdjkinngfcbjjnjldkg`.
+3. Put that public client ID in `VITE_GOOGLE_OAUTH_CLIENT_ID`.
+4. Enable Google under **Firebase Authentication > Sign-in method**.
 
-Build and deploy it:
+For an unpacked extension with a different ID, use a development Chrome Extension OAuth client registered to that exact ID.
+
+## Facebook OAuth
+
+Facebook's App Secret is stored in Firebase Console only. It must not be placed in this repository or extension environment.
+
+1. Open [Meta for Developers](https://developers.facebook.com/apps/), create an app for authenticating users, and add **Facebook Login** or the equivalent authentication use case in the current Meta console.
+2. In the app's basic settings, provide its public name, contact email, privacy-policy URL, data-deletion instructions URL, and this app domain where requested:
+
+   ```text
+   extra-domain-filters.firebaseapp.com
+   ```
+
+3. In **Facebook Login > Settings**, enable **Client OAuth Login** and **Web OAuth Login**.
+4. Add this exact **Valid OAuth Redirect URI**:
+
+   ```text
+   https://extra-domain-filters.firebaseapp.com/__/auth/handler
+   ```
+
+5. Copy the Meta App ID and App Secret.
+6. In **Firebase Authentication > Sign-in method > Facebook**, enable the provider and enter those values.
+7. While the Meta app is in development mode, add each Facebook account that will test login under the app's roles/testers and have the person accept the invitation.
+8. Before making the app public, complete the current Meta privacy, data-use, business-verification, review, and live-mode requirements that apply. The extension requests only basic identity and email access.
+
+The hosted `https://extra-domain-filters.web.app/auth/` page is not Meta's OAuth redirect. Firebase owns the `/__/auth/handler` callback above and returns the completed credential to the bridge.
+
+If Firebase's `authDomain` is changed to a verified custom domain, register that domain's exact `/__/auth/handler` URL in Meta as part of the same deployment.
+
+## Apple OAuth
+
+Apple web login uses a Services ID associated with a primary App ID. The Sign in with Apple private key is stored in Firebase Console only.
+
+1. In [Apple Developer Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list), create or select a primary App ID and enable **Sign in with Apple**.
+2. Create a **Services ID**, enable Sign in with Apple for it, and associate it with the primary App ID.
+3. Configure the Services ID website settings with:
+
+   ```text
+   Website domain: extra-domain-filters.firebaseapp.com
+   Return URL: https://extra-domain-filters.firebaseapp.com/__/auth/handler
+   ```
+
+4. Create a Sign in with Apple key for the primary App ID. Securely record the Apple Team ID, Key ID, Services ID, and downloaded private key. Apple allows the key file to be downloaded only once.
+5. In **Firebase Authentication > Sign-in method > Apple**, enable the provider and enter the Services ID, Team ID, Key ID, and private key.
+6. Configure Apple's private email relay for the Firebase sender addresses or domains used by verification, password-reset, account, and alert email before sending to people who choose **Hide My Email**.
+7. Before production release, implement and document account deletion and Apple token revocation. This is a production requirement separate from basic login.
+
+If Firebase's `authDomain` changes, update both the Apple website domain and return URL in the Services ID configuration.
+
+## Production deployment
+
+Build and deploy the bridge first:
 
 ```sh
 npm run build:auth-helper
-npx firebase-tools use YOUR_PROJECT_ID
 npx firebase-tools deploy --only hosting
 ```
 
-Open `https://YOUR_PROJECT_ID.web.app/auth/` once to confirm the helper was deployed. Then run `npm run build` and reload the unpacked extension so its manifest contains the helper origin in `frame-src` and host permissions.
+Open `https://extra-domain-filters.web.app/auth/` and confirm it loads. Then create the production extension package:
 
-Turn each provider flag to `true` only after that provider is enabled and tested in Firebase. Add the unpacked extension's exact `chrome-extension://...` origin instead of the release origin while developing.
+```sh
+npx vite build --mode production
+```
 
-Never put an Apple private key or Facebook App Secret in `.env`; both belong in their provider configuration in Firebase Console.
+Before publishing, inspect `dist/manifest.json`:
 
-## 3. Facebook app
+- `frame-src` must contain `https://extra-domain-filters.web.app` and no loopback address.
+- Host permissions must contain `https://extra-domain-filters.web.app/*` and no loopback address.
+- The OAuth client ID must be registered to the published extension ID.
 
-1. In [Meta for Developers](https://developers.facebook.com/apps/), create an app for authenticating users and add the **Facebook Login** product/use case.
-2. In the app's basic settings, enter the public app name, contact email, privacy-policy URL, data-deletion instructions URL, and your Firebase auth domain (`YOUR_PROJECT_ID.firebaseapp.com`) as an app domain.
-3. In **Facebook Login → Settings**, enable client OAuth login and web OAuth login. Add this exact **Valid OAuth Redirect URI**:
+## Troubleshooting
 
-   ```text
-   https://YOUR_PROJECT_ID.firebaseapp.com/__/auth/handler
-   ```
+| Symptom | Check |
+| --- | --- |
+| Provider is supported but not enabled | Enable that provider under Firebase Authentication > Sign-in method. |
+| Local bridge is unavailable | Run `npm run dev:auth-helper` and open `http://127.0.0.1:5174/auth/`. |
+| Popup closes or is blocked | Start login from the provider button and allow the popup; cancellations are safe to retry. |
+| Firebase reports an unauthorized domain | Add the exact unpacked or production `chrome-extension://...` origin to Firebase Authorized domains. |
+| Meta or Apple reports a redirect mismatch | Compare `https://extra-domain-filters.firebaseapp.com/__/auth/handler` character-for-character with the provider console. |
+| Bridge times out | Confirm the mode-specific bridge is reachable and that the built manifest contains the matching origin. |
+| Google fails while Apple/Facebook work | Check the Chrome Extension OAuth client ID and its registered extension ID; Google does not use the bridge. |
 
-   If `VITE_FIREBASE_AUTH_DOMAIN` is a verified custom auth domain, use `https://YOUR_AUTH_DOMAIN/__/auth/handler` instead.
-4. Copy the Meta **App ID** and **App Secret**. In Firebase Console, enable the **Facebook** provider and paste both values there.
-5. While the Meta app is in development mode, add your Facebook account under **App roles** and test with that account. Users who are not app roles/testers cannot log in until the app is live.
-6. Before switching the Meta app live, complete its required privacy, data-use, business-verification, and data-deletion fields. The exact review requirements depend on the permissions requested; this implementation requests only the standard email scope.
-
-If Facebook reports a redirect mismatch, copy the redirect URI shown by Firebase and compare it character-for-character with Meta's Valid OAuth Redirect URIs. Do not use the Chrome `chromiumapp.org` redirect here—the hosted Firebase handler is the correct Facebook callback.
-
-## 4. Apple
-
-1. In Apple Developer **Certificates, Identifiers & Profiles**, enable Sign in with Apple on a primary App ID.
-2. Create a **Services ID**, enable Sign in with Apple for it, and associate it with that primary App ID.
-3. Configure the website domain as `YOUR_PROJECT_ID.firebaseapp.com` and the return URL as:
-
-   ```text
-   https://YOUR_PROJECT_ID.firebaseapp.com/__/auth/handler
-   ```
-
-4. Create a Sign in with Apple key and record the Team ID, Key ID, Services ID, and downloaded private key.
-5. In Firebase Console, enable **Apple** and enter those four values. The private key is stored only in Firebase's provider configuration.
-6. If Firebase emails users who choose Apple's private relay, register Firebase's sender address with Apple's private email relay service.
-
-Before production, add an account-deletion flow and Apple token revocation as required for services that let users create accounts with Apple.
-
-## 5. Verification checklist
-
-- Build the helper and extension with the same Firebase project values.
-- Confirm Email/Password, Facebook, and Apple are enabled in Firebase.
-- Confirm the extension origin is an authorized Firebase domain.
-- Confirm the helper URL is deployed and present in the built manifest's `frame-src`.
-- Test email create account, verification email, email login, password reset, Google login, Facebook login, Apple login, logout, and cross-device sync.
-
-Reference: [Firebase Chrome extension authentication](https://firebase.google.com/docs/auth/web/chrome-extension), [Firebase Facebook login](https://firebase.google.com/docs/auth/web/facebook-login), [Firebase Apple login](https://firebase.google.com/docs/auth/web/apple), and [Chrome offscreen documents](https://developer.chrome.com/docs/extensions/reference/api/offscreen).
+Primary references: [Firebase Chrome extension authentication](https://firebase.google.com/docs/auth/web/chrome-extension), [Firebase Facebook login](https://firebase.google.com/docs/auth/web/facebook-login), [Firebase Apple login](https://firebase.google.com/docs/auth/web/apple), [Chrome Identity](https://developer.chrome.com/docs/extensions/reference/api/identity), and [Apple web configuration](https://developer.apple.com/help/account/capabilities/configure-sign-in-with-apple-for-the-web/).
