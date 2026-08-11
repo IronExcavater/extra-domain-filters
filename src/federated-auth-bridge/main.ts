@@ -11,28 +11,23 @@ import {
     type OAuthCredential,
 } from "firebase/auth";
 
+import {
+    getFederatedAuthRuntime,
+    isAllowedExtensionOrigin,
+    type FederatedAuthProvider,
+} from "../config/authRuntime";
 import { readFirebaseConfig } from "../infrastructure/firebase/config";
-import type { FederatedAccountProvider, FederatedAuthBridgeResponse } from "../shared/platform/authBridge";
+import {
+    isFederatedAuthPageRequest,
+    type FederatedAuthPageRequest,
+    type FederatedAuthResponse,
+} from "../shared/platform/authBridge";
 
-interface HostedAuthRequest {
-    provider: FederatedAccountProvider;
-    requestId: string;
-    type: "federated-auth:start";
-}
-
-const extensionOrigin = import.meta.env.VITE_EXTENSION_ORIGIN?.trim();
+const runtime = getFederatedAuthRuntime(import.meta.env.MODE);
 const config = readFirebaseConfig();
 const auth = config ? getAuth(initializeApp(config)) : undefined;
 
-function readRequest(value: unknown): HostedAuthRequest | undefined {
-    if (!value || typeof value !== "object") return undefined;
-    const candidate = value as Partial<HostedAuthRequest>;
-    if (candidate.type !== "federated-auth:start" || typeof candidate.requestId !== "string") return undefined;
-    if (candidate.provider !== "apple" && candidate.provider !== "facebook") return undefined;
-    return candidate as HostedAuthRequest;
-}
-
-function createProvider(provider: FederatedAccountProvider): AuthProvider {
+function createProvider(provider: FederatedAuthProvider): AuthProvider {
     if (provider === "facebook") {
         const facebook = new FacebookAuthProvider();
         facebook.addScope("email");
@@ -45,7 +40,7 @@ function createProvider(provider: FederatedAccountProvider): AuthProvider {
 }
 
 function readCredential(
-    provider: FederatedAccountProvider,
+    provider: FederatedAuthProvider,
     result: Awaited<ReturnType<typeof signInWithPopup>>,
 ): OAuthCredential | null {
     return provider === "facebook"
@@ -53,14 +48,14 @@ function readCredential(
         : OAuthProvider.credentialFromResult(result);
 }
 
-function send(target: Window, origin: string, response: FederatedAuthBridgeResponse): void {
+function send(target: Window, origin: string, response: FederatedAuthResponse): void {
     target.postMessage(response, origin);
 }
 
-async function handleAuth(request: HostedAuthRequest, origin: string): Promise<void> {
+async function handleAuth(request: FederatedAuthPageRequest, target: Window, origin: string): Promise<void> {
     if (!auth) {
-        send(window.parent, origin, {
-            message: "Firebase is not configured on the hosted authentication page.",
+        send(target, origin, {
+            message: "Firebase is not configured on the hosted authentication bridge.",
             ok: false,
             requestId: request.requestId,
         });
@@ -71,13 +66,13 @@ async function handleAuth(request: HostedAuthRequest, origin: string): Promise<v
         const result = await signInWithPopup(auth, createProvider(request.provider));
         const credential = readCredential(request.provider, result);
         if (!credential) throw new Error("The provider did not return a reusable credential.");
-        send(window.parent, origin, {
+        send(target, origin, {
             credential: credential.toJSON() as Record<string, unknown>,
             ok: true,
             requestId: request.requestId,
         });
     } catch (error) {
-        send(window.parent, origin, {
+        send(target, origin, {
             code: error && typeof error === "object" && "code" in error && typeof error.code === "string"
                 ? error.code
                 : undefined,
@@ -91,7 +86,8 @@ async function handleAuth(request: HostedAuthRequest, origin: string): Promise<v
 }
 
 window.addEventListener("message", event => {
-    const request = readRequest(event.data);
-    if (!request || event.source !== window.parent || !extensionOrigin || event.origin !== extensionOrigin) return;
-    void handleAuth(request, event.origin);
+    if (event.source !== window.parent
+        || !isAllowedExtensionOrigin(event.origin, runtime.mode)
+        || !isFederatedAuthPageRequest(event.data)) return;
+    void handleAuth(event.data, window.parent, event.origin);
 });

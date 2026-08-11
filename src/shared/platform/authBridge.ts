@@ -1,29 +1,48 @@
-import type { AccountProvider } from "../../domain/account/model";
+import type { FederatedAuthProvider } from "../../config/authRuntime";
 import { isPlainObject } from "../utils/types";
 
-export type FederatedAccountProvider = Exclude<AccountProvider, "google">;
-
-export interface FederatedAuthBridgeRequest {
-    provider: FederatedAccountProvider;
+export interface OffscreenAuthRequest {
+    provider: FederatedAuthProvider;
     requestId: string;
     target: "offscreen-auth";
     type: "federated-auth:start";
 }
 
-export type FederatedAuthBridgeResponse =
+export interface FederatedAuthPageRequest {
+    provider: FederatedAuthProvider;
+    requestId: string;
+    type: "federated-auth:start";
+}
+
+export type FederatedAuthResponse =
     | { credential: Record<string, unknown>; ok: true; requestId: string }
     | { code?: string; message: string; ok: false; requestId: string };
 
-export function isFederatedAuthBridgeRequest(value: unknown): value is FederatedAuthBridgeRequest {
-    return isPlainObject(value)
-        && value.target === "offscreen-auth"
-        && value.type === "federated-auth:start"
-        && typeof value.requestId === "string"
-        && (value.provider === "apple" || value.provider === "facebook");
+export function isFederatedAuthProvider(value: unknown): value is FederatedAuthProvider {
+    return value === "apple" || value === "facebook";
 }
 
-export function isFederatedAuthBridgeResponse(value: unknown): value is FederatedAuthBridgeResponse {
-    if (!isPlainObject(value) || typeof value.ok !== "boolean" || typeof value.requestId !== "string") return false;
+function isRequest(value: unknown): value is FederatedAuthPageRequest {
+    return isPlainObject(value)
+        && value.type === "federated-auth:start"
+        && typeof value.requestId === "string"
+        && value.requestId.length > 0
+        && isFederatedAuthProvider(value.provider);
+}
+
+export function isOffscreenAuthRequest(value: unknown): value is OffscreenAuthRequest {
+    return isRequest(value) && isPlainObject(value) && value.target === "offscreen-auth";
+}
+
+export function isFederatedAuthPageRequest(value: unknown): value is FederatedAuthPageRequest {
+    return isRequest(value) && !("target" in value);
+}
+
+export function isFederatedAuthResponse(value: unknown): value is FederatedAuthResponse {
+    if (!isPlainObject(value)
+        || typeof value.ok !== "boolean"
+        || typeof value.requestId !== "string"
+        || value.requestId.length === 0) return false;
     return value.ok
         ? isPlainObject(value.credential)
         : typeof value.message === "string" && (value.code === undefined || typeof value.code === "string");

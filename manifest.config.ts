@@ -1,24 +1,12 @@
 import { defineManifest } from '@crxjs/vite-plugin';
 import { loadEnv } from 'vite';
 import pkg from './package.json';
+import { getFederatedAuthRuntime } from './src/config/authRuntime';
 
 export default defineManifest(({ mode }) => {
     const env = loadEnv(mode, '.', 'VITE_');
     const oauthClientId = env.VITE_GOOGLE_OAUTH_CLIENT_ID?.trim();
-    const authHelperUrl = env.VITE_FIREBASE_AUTH_HELPER_URL?.trim();
-    let authHelperOrigin: string | undefined;
-    if (authHelperUrl) {
-        let parsed: URL;
-        try {
-            parsed = new URL(authHelperUrl);
-        } catch {
-            throw new Error('VITE_FIREBASE_AUTH_HELPER_URL must be a valid HTTPS URL.');
-        }
-        if (parsed.protocol !== 'https:') {
-            throw new Error('VITE_FIREBASE_AUTH_HELPER_URL must use HTTPS.');
-        }
-        authHelperOrigin = parsed.origin;
-    }
+    const federatedAuth = getFederatedAuthRuntime(mode);
 
     return {
         manifest_version: 3,
@@ -46,7 +34,7 @@ export default defineManifest(({ mode }) => {
         },
         permissions: ['storage', 'alarms', 'unlimitedStorage', 'identity', 'activeTab', 'offscreen'],
         content_security_policy: {
-            extension_pages: `script-src 'self'; object-src 'self'${authHelperOrigin ? `; frame-src ${authHelperOrigin}` : ''}`,
+            extension_pages: `script-src 'self'; object-src 'self'; frame-src ${federatedAuth.bridgeOrigin}`,
         },
         host_permissions: [
             '*://domain.com.au/*',
@@ -54,7 +42,7 @@ export default defineManifest(({ mode }) => {
             'https://firestore.googleapis.com/*',
             'https://identitytoolkit.googleapis.com/*',
             'https://securetoken.googleapis.com/*',
-            ...(authHelperOrigin ? [`${authHelperOrigin}/*`] : []),
+            `${federatedAuth.bridgeOrigin}/*`,
         ],
         oauth2: oauthClientId
             ? {

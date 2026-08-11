@@ -50,7 +50,7 @@
 - Modify: `manifest.config.ts`
 
 **Interfaces:**
-- Produces: `AuthRuntimeMode`, `FederatedAuthRuntimeConfig`, `FEDERATED_AUTH_PROVIDERS`, `ACCOUNT_PROVIDER_TRANSPORTS`, `getFederatedAuthRuntime(mode)`, and `isAllowedExtensionOrigin(origin, mode)`.
+- Produces: `AuthRuntimeMode`, `FederatedAuthRuntimeConfig`, `ACCOUNT_PROVIDER_TRANSPORTS`, `getFederatedAuthRuntime(mode)`, and `isAllowedExtensionOrigin(origin, mode)`.
 - Consumes: Vite's explicit `mode` string and the existing `AccountProvider` union.
 
 - [ ] **Step 1: Add the pure runtime configuration module**
@@ -64,7 +64,6 @@ export type AuthRuntimeMode = "development" | "production";
 export type FederatedAuthProvider = Extract<AccountProvider, "apple" | "facebook">;
 export type ProviderTransport = "chrome-identity" | "federated-bridge";
 
-export const FEDERATED_AUTH_PROVIDERS = ["apple", "facebook"] as const;
 export const ACCOUNT_PROVIDER_TRANSPORTS = {
     apple: "federated-bridge",
     facebook: "federated-bridge",
@@ -134,7 +133,7 @@ Run:
 ```powershell
 npm run typecheck
 npm run eslint
-npm run build -- --mode development
+npx vite build --mode development
 Get-Content -Raw dist\manifest.json | Select-String '127.0.0.1:5174'
 Get-Content -Raw dist\manifest.json | Select-String 'extra-domain-filters.web.app'
 ```
@@ -144,7 +143,7 @@ Expected: typecheck and ESLint pass; the development manifest contains `127.0.0.
 Then run:
 
 ```powershell
-npm run build -- --mode production
+npx vite build --mode production
 Get-Content -Raw dist\manifest.json | Select-String 'extra-domain-filters.web.app'
 Get-Content -Raw dist\manifest.json | Select-String '127.0.0.1:5174'
 ```
@@ -541,7 +540,7 @@ Use this production order:
 ```powershell
 npm run build:auth-helper
 npx firebase-tools deploy --only hosting
-npm run build -- --mode production
+npx vite build --mode production
 ```
 
 Require checking `https://extra-domain-filters.web.app/auth/` before packaging the extension. Add a troubleshooting table for provider disabled, popup closed/blocked, unauthorized domain, bridge timeout, local bridge unavailable, and redirect mismatch.
@@ -579,8 +578,8 @@ If `README.md` was not changed, omit it from the `git add` command.
 ```powershell
 npm run check:all
 npm run build:auth-helper
-npm run build -- --mode development
-npm run build -- --mode production
+npx vite build --mode development
+npx vite build --mode production
 ```
 
 Expected: every command exits successfully.
