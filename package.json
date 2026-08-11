@@ -6,7 +6,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently --kill-others-on-fail --names extension,auth \"npm run dev:extension\" \"npm run dev:auth\"",
+    "dev:extension": "vite",
     "build": "vite build",
     "dev:auth": "vite --config vite.auth.config.ts",
     "build:auth": "vite build --config vite.auth.config.ts",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "concurrently": "^10.0.4",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-unused-imports": "^4.4.1",
