@@ -4,7 +4,7 @@ import { defineConfig, type PluginOption } from 'vite';
 import zip from 'vite-plugin-zip-pack';
 import manifest from './manifest.config.ts';
 import { name, version } from './package.json';
-import { getFederatedAuthRuntime } from './src/config/authRuntime';
+import { getFederatedAuthRuntime } from './src/config/auth';
 
 export default defineConfig(({ command, mode }) => {
     const federatedAuth = getFederatedAuthRuntime(mode);

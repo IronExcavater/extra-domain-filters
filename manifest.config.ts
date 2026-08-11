@@ -1,7 +1,7 @@
 import { defineManifest } from '@crxjs/vite-plugin';
 import { loadEnv } from 'vite';
 import pkg from './package.json';
-import { getFederatedAuthRuntime } from './src/config/authRuntime';
+import { getFederatedAuthRuntime } from './src/config/auth';
 
 export default defineManifest(({ mode }) => {
     const env = loadEnv(mode, '.', 'VITE_');

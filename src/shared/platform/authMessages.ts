@@ -1,4 +1,4 @@
-import type { FederatedAuthProvider } from "../../config/authRuntime";
+import type { FederatedAuthProvider } from "../../config/auth";
 import { isPlainObject } from "../utils/types";
 
 export interface OffscreenAuthRequest {

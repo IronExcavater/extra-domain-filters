@@ -15,13 +15,13 @@ import {
     getBundledFederatedAuthRuntime,
     isAllowedExtensionOrigin,
     type FederatedAuthProvider,
-} from "../config/authRuntime";
+} from "../config/auth";
 import { readFirebaseConfig } from "../infrastructure/firebase/config";
 import {
     isFederatedAuthPageRequest,
     type FederatedAuthPageRequest,
     type FederatedAuthResponse,
-} from "../shared/platform/authBridge";
+} from "../shared/platform/authMessages";
 
 const runtime = getBundledFederatedAuthRuntime();
 const config = readFirebaseConfig();

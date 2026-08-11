@@ -13,8 +13,8 @@ import {
 
 import type { AccountProvider, AccountState } from "../domain/account/model";
 import { getFirebaseServices } from "../infrastructure/firebase/client";
-import { FederatedAuthError } from "./federatedAuthBridge";
-import { getProviderCredential } from "./providerAuth";
+import { FederatedAuthError } from "./authBridge";
+import { getProviderCredential } from "./authProviders";
 
 type LoginProvider = AccountProvider;
 

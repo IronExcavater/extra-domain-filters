@@ -7,9 +7,9 @@ import {
 import {
     ACCOUNT_PROVIDER_TRANSPORTS,
     type ProviderTransport,
-} from "../config/authRuntime";
+} from "../config/auth";
 import type { AccountProvider } from "../domain/account/model";
-import { getFederatedCredential } from "./federatedAuthBridge";
+import { getFederatedCredential } from "./authBridge";
 
 async function getGoogleAccessToken(): Promise<string> {
     const clientId = chrome.runtime.getManifest().oauth2?.client_id;

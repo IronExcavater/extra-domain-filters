@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
-import { getFederatedAuthRuntime } from "./src/config/authRuntime";
+import { getFederatedAuthRuntime } from "./src/config/auth";
 
 const repositoryRoot = fileURLToPath(new URL(".", import.meta.url));
 
@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
             __FEDERATED_AUTH_MODE__: JSON.stringify(federatedAuth.mode),
         },
         envDir: repositoryRoot,
-        root: resolve(repositoryRoot, "src/federated-auth-bridge"),
+        root: resolve(repositoryRoot, "src/auth"),
         server: {
             host: "127.0.0.1",
             port: 5174,
