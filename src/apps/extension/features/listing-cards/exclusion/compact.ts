@@ -2,10 +2,9 @@ import type { ExclusionReason } from "../../../domain/matching";
 import { replaceWithChevronIcon, replaceWithEyeIcon, replaceWithUnbinIcon } from "../../../ui/icons";
 import { setTooltipText } from "../../../ui/tooltip";
 import { getBlacklistCardKind, getTitle, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
-import { resolveExclusionAction } from "./row";
+import { resolveExclusionAction, ROW_SELECTOR } from "./row";
 
 const GROUP_SELECTOR = '[data-testid="listing-card-exclusion-group"]';
-const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
 const GROUPED_CARD_CLASS = "edf-exclusion-group-member";
 const COLLAPSE_DELAY_MS = 180;
 const pinnedGroupUrls = new Set<string>();

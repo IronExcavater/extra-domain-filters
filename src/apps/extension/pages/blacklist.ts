@@ -18,6 +18,8 @@ import {
 import { enableStickyHeader } from "../features/navigation";
 import {
     getPageActions,
+    installSortControl,
+    LISTING_CARD_SELECTOR,
     overridePageTitle,
     replaceUserListingTabs,
     restorePageActions,
@@ -30,7 +32,6 @@ import {
     replaceSelection,
     setSelectionCheckboxState,
 } from "../ui/selection";
-import { createSortControl } from "../ui/sort";
 
 const selectedUrls = new Set<string>();
 const retainedUnblacklistedEntries = new Map<string, BlacklistEntry>();
@@ -44,47 +45,6 @@ function getRowVersion(entry: BlacklistEntry): string {
     });
 }
 
-function installSortControl(
-    container: HTMLElement,
-    renderRows: () => void,
-    signal: AbortSignal,
-): () => void {
-    const nativeSort = container.querySelector<HTMLElement>(
-        '[data-testid="listing-tabs__filters-sort-by"]',
-    );
-    const sortActions = container.querySelector<HTMLElement>(
-        '[data-testid="extra-domain-filters-blacklist-sort-actions"]',
-    );
-    const filterGroup = sortActions?.querySelector<HTMLElement>(".edf-control-group:last-child");
-    const nativeLabel = sortActions?.querySelector<HTMLElement>('[data-edf-sort-label="true"]');
-    if (!filterGroup) return () => undefined;
-
-    const sort = createSortControl({
-        ariaLabel: "Sort blacklisted properties",
-        onChange: () => {
-            listingSort = sort.value() as BlacklistSort;
-            renderRows();
-        },
-        options: [
-            ["newest", "Newest"],
-            ["oldest", "Oldest"],
-            ["price-asc", "Lowest price"],
-            ["price-desc", "Highest price"],
-        ],
-        signal,
-    });
-
-    if (nativeSort) nativeSort.hidden = true;
-    if (nativeLabel) nativeLabel.hidden = true;
-    filterGroup.append(markOwned(sort.element, "blacklist-sort"));
-
-    return () => {
-        if (nativeSort) nativeSort.hidden = false;
-        if (nativeLabel) nativeLabel.hidden = false;
-        sort.element.remove();
-    };
-}
-
 function installList(container: HTMLElement): { list: HTMLElement; restore: () => void } {
     const existing = container.querySelector<HTMLElement>(
         '[data-testid="extra-domain-filters-blacklist-list"]',
@@ -92,7 +52,7 @@ function installList(container: HTMLElement): { list: HTMLElement; restore: () =
     if (existing) return { list: existing, restore: () => undefined };
 
     const nativeList = container
-        .querySelector('[data-testid="listing-card-container"]')
+        .querySelector(LISTING_CARD_SELECTOR)
         ?.parentElement;
     const list = document.createElement("div");
 
@@ -277,7 +237,21 @@ const mountBlacklistPage: PageMount = async context => {
         listingFilter = filter;
         renderRows();
     }, actions);
-    const restoreSort = installSortControl(container, renderRows, context.signal);
+    const restoreSort = installSortControl(container, {
+        actionsTestId: "extra-domain-filters-blacklist-sort-actions",
+        ariaLabel: "Sort blacklisted properties",
+        onChange: value => {
+            listingSort = value as BlacklistSort;
+            renderRows();
+        },
+        options: [
+            ["newest", "Newest"],
+            ["oldest", "Oldest"],
+            ["price-asc", "Lowest price"],
+            ["price-desc", "Highest price"],
+        ],
+        signal: context.signal,
+    });
     const unwatchBlacklist = onStorageChange<BlacklistEntry[]>("blacklist", renderRows);
 
     context.signal.addEventListener("abort", () => {

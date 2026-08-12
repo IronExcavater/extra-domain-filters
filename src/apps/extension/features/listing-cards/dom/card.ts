@@ -8,7 +8,7 @@ export const PROJECT_DETAILS_SELECTOR = '[data-testid="listing-card-project-deta
 export const TOPSPOT_CAROUSEL_SELECTOR =
     'li[data-testid="topspot"], li:has([data-testid="listing-card-child-listing"]):not(:has([data-testid="listing-card-project"]))';
 export const CAROUSEL_CHILD_SELECTOR = '[data-testid="listing-card-child-listing"]';
-const LISTING_CARD_CONTAINER_SELECTOR = '[data-testid="listing-card-container"]';
+export const LISTING_CARD_CONTAINER_SELECTOR = '[data-testid="listing-card-container"]';
 const AGENCY_CARD_SELECTOR = '[data-testid="listings-tabs__card"]';
 
 const CARD_SELECTOR = [

@@ -9,6 +9,7 @@ import {
     getUserListingCards,
     getUserListingUrl,
     getUserListingUrls,
+    installSortControl,
     replaceUserListingTabs,
 } from "../features/user-listings/page";
 import { PageMount } from "../platform/router";
@@ -18,7 +19,6 @@ import {
     replaceSelection,
     setSelectionCheckboxState,
 } from "../ui/selection";
-import { createSortControl } from "../ui/sort";
 
 const ACTION_BUTTON_CLASS = "edf-selection-action";
 
@@ -218,38 +218,6 @@ function chooseNativeSort(nativeSort: HTMLElement, label: string): void {
     });
 }
 
-function installSortControl(container: HTMLElement, signal: AbortSignal): () => void {
-    const nativeSort = container.querySelector<HTMLElement>('[data-testid="listing-tabs__filters-sort-by"]');
-    const actions = container.querySelector<HTMLElement>('[data-testid="extra-domain-filters-shortlist-sort-actions"]');
-    const filterGroup = actions?.querySelector<HTMLElement>(".edf-control-group:last-child");
-    const nativeLabel = actions?.querySelector<HTMLElement>('[data-edf-sort-label="true"]');
-    if (!nativeSort || !filterGroup) return () => undefined;
-
-    const sort = createSortControl({
-        ariaLabel: "Sort shortlisted properties",
-        onChange: () => chooseNativeSort(nativeSort, sort.value()),
-        options: [
-            ["Date shortlisted", "Date shortlisted"],
-            ["Newest", "Newest"],
-            ["Lowest price", "Lowest price"],
-            ["Highest price", "Highest price"],
-            ["Earliest inspection", "Earliest inspection"],
-            ["Suburb", "Suburb"],
-        ],
-        signal,
-    });
-
-    nativeSort.hidden = true;
-    if (nativeLabel) nativeLabel.hidden = true;
-    filterGroup.append(sort.element);
-
-    return () => {
-        nativeSort.hidden = false;
-        if (nativeLabel) nativeLabel.hidden = false;
-        sort.element.remove();
-    };
-}
-
 const mountShortlistPage: PageMount = async (context) => {
     enableStickyHeader(context);
     const refreshListingCards = bindListingCards(context, { showBlacklistedView: false });
@@ -301,7 +269,22 @@ const mountShortlistPage: PageMount = async (context) => {
             '[data-testid="extra-domain-filters-shortlist-sort-actions"]',
         ) ?? undefined;
         const restoreTabs = replaceUserListingTabs(container, context.signal, undefined, actions);
-        const restoreSort = installSortControl(container, context.signal);
+        const restoreSort = installSortControl(container, {
+            actionsTestId: "extra-domain-filters-shortlist-sort-actions",
+            ariaLabel: "Sort shortlisted properties",
+            onChange: (value, nativeSort) => {
+                if (nativeSort) chooseNativeSort(nativeSort, value);
+            },
+            options: [
+                ["Date shortlisted", "Date shortlisted"],
+                ["Newest", "Newest"],
+                ["Lowest price", "Lowest price"],
+                ["Highest price", "Highest price"],
+                ["Earliest inspection", "Earliest inspection"],
+                ["Suburb", "Suburb"],
+            ],
+            signal: context.signal,
+        });
 
         const scheduleControls = (): void => {
             if (frame !== undefined) return;

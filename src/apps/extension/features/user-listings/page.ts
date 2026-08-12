@@ -1,8 +1,10 @@
+import { markOwned } from "../../dom/ownership";
 import { waitForElement } from "../../dom/wait";
+import { createSortControl } from "../../ui/sort";
 
 const SHORTLIST_ROOT_SELECTOR = "#shortlist";
-const LISTING_CARD_SELECTOR = '[data-testid="listing-card-container"]';
-const SORT_SELECTOR = '[data-testid="listing-tabs__filters-sort-by"]';
+export const LISTING_CARD_SELECTOR = '[data-testid="listing-card-container"]';
+export const SORT_SELECTOR = '[data-testid="listing-tabs__filters-sort-by"]';
 
 export function findUserListingsContainer(): HTMLElement | undefined {
     const root = document.querySelector(SHORTLIST_ROOT_SELECTOR);
@@ -190,5 +192,41 @@ export function replaceUserListingTabs(
         toolbar?.remove();
         tabs.remove();
         native.hidden = originalHidden;
+    };
+}
+
+export interface SortControlOptions<TValue extends string> {
+    actionsTestId: string;
+    ariaLabel: string;
+    onChange: (value: TValue, nativeSort: HTMLElement | undefined) => void;
+    options: ReadonlyArray<readonly [TValue, string]>;
+    signal: AbortSignal;
+}
+
+export function installSortControl<TValue extends string>(
+    container: HTMLElement,
+    options: SortControlOptions<TValue>,
+): () => void {
+    const nativeSort = container.querySelector<HTMLElement>(SORT_SELECTOR);
+    const actions = container.querySelector<HTMLElement>(`[data-testid="${options.actionsTestId}"]`);
+    const filterGroup = actions?.querySelector<HTMLElement>(".edf-control-group:last-child");
+    const nativeLabel = actions?.querySelector<HTMLElement>('[data-edf-sort-label="true"]');
+    if (!filterGroup) return () => undefined;
+
+    const sort = createSortControl({
+        ariaLabel: options.ariaLabel,
+        onChange: () => options.onChange(sort.value() as TValue, nativeSort ?? undefined),
+        options: options.options,
+        signal: options.signal,
+    });
+
+    if (nativeSort) nativeSort.hidden = true;
+    if (nativeLabel) nativeLabel.hidden = true;
+    filterGroup.append(markOwned(sort.element, "sort-control"));
+
+    return () => {
+        if (nativeSort) nativeSort.hidden = false;
+        if (nativeLabel) nativeLabel.hidden = false;
+        sort.element.remove();
     };
 }

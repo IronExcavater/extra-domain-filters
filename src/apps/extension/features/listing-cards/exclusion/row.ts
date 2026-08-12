@@ -5,7 +5,7 @@ import { setTooltipText } from "../../../ui/tooltip";
 import { getBlacklistCardKind, getPropertyCount, getTitle, type BlacklistCardKind } from "../dom/card";
 import { reveal, unreveal } from "./reveal";
 
-const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
+export const ROW_SELECTOR = '[data-testid="listing-card-exclusion-row"]';
 const KIND_CLASSES = [
     "edf-exclusion-kind-standard",
     "edf-exclusion-kind-carousel",
