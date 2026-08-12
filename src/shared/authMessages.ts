@@ -13,13 +13,13 @@ export interface OffscreenAuthRequest {
     type: "federated-auth:start";
 }
 
-export interface FederatedAuthPageRequest {
+export interface AuthPageRequest {
     provider: FederatedAuthProvider;
     requestId: string;
     type: "federated-auth:start";
 }
 
-export type FederatedAuthResponse =
+export type AuthResponse =
     | { credential: Record<string, unknown>; ok: true; requestId: string }
     | { code?: string; message: string; ok: false; requestId: string };
 
@@ -27,7 +27,7 @@ export function isFederatedAuthProvider(value: unknown): value is FederatedAuthP
     return value === "apple" || value === "facebook";
 }
 
-function isRequest(value: unknown): value is FederatedAuthPageRequest {
+function isRequest(value: unknown): value is AuthPageRequest {
     return isPlainObject(value)
         && value.type === "federated-auth:start"
         && typeof value.requestId === "string"
@@ -39,11 +39,11 @@ export function isOffscreenAuthRequest(value: unknown): value is OffscreenAuthRe
     return isRequest(value) && (value as OffscreenAuthRequest).target === "offscreen-auth";
 }
 
-export function isFederatedAuthPageRequest(value: unknown): value is FederatedAuthPageRequest {
+export function isAuthPageRequest(value: unknown): value is AuthPageRequest {
     return isRequest(value) && !("target" in value);
 }
 
-export function isFederatedAuthResponse(value: unknown): value is FederatedAuthResponse {
+export function isAuthResponse(value: unknown): value is AuthResponse {
     if (!isPlainObject(value)
         || typeof value.ok !== "boolean"
         || typeof value.requestId !== "string"

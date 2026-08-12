@@ -13,7 +13,7 @@ import {
 
 import type { AccountProvider, AccountState } from "../domain/account/model";
 import { getFirebaseServices } from "../infrastructure/firebase/client";
-import { FederatedAuthError } from "./authBridge";
+import { AuthBridgeError } from "./authBridge";
 import { getProviderCredential } from "./authProviders";
 
 type LoginProvider = AccountProvider;
@@ -78,7 +78,7 @@ function waitForAuth(auth: Auth): Promise<User | null> {
 }
 
 function authError(error: unknown, provider?: AccountProvider): Error {
-    if (!(error instanceof FirebaseError) && !(error instanceof FederatedAuthError)) {
+    if (!(error instanceof FirebaseError) && !(error instanceof AuthBridgeError)) {
         return error instanceof Error ? error : new Error("Login did not complete.");
     }
     if (error.code === "auth/operation-not-allowed") {
@@ -100,7 +100,7 @@ function authError(error: unknown, provider?: AccountProvider): Error {
     };
     const message = error.code ? messages[error.code] : undefined;
     if (message) return new Error(message);
-    return error instanceof FederatedAuthError
+    return error instanceof AuthBridgeError
         ? new Error(error.message)
         : new Error("Login did not complete. Please try again.");
 }

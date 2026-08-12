@@ -1,7 +1,7 @@
 import {
-    isFederatedAuthPageRequest,
-    type FederatedAuthPageRequest,
-    type FederatedAuthResponse,
+    isAuthPageRequest,
+    type AuthPageRequest,
+    type AuthResponse,
 } from "@shared/authMessages";
 import {
     getBundledAuthRuntime,
@@ -47,11 +47,11 @@ function readCredential(
         : OAuthProvider.credentialFromResult(result);
 }
 
-function send(target: Window, origin: string, response: FederatedAuthResponse): void {
+function send(target: Window, origin: string, response: AuthResponse): void {
     target.postMessage(response, origin);
 }
 
-async function handleAuth(request: FederatedAuthPageRequest, target: Window, origin: string): Promise<void> {
+async function handleAuth(request: AuthPageRequest, target: Window, origin: string): Promise<void> {
     if (!auth) {
         send(target, origin, {
             message: "Firebase is not configured on the hosted authentication bridge.",
@@ -87,6 +87,6 @@ async function handleAuth(request: FederatedAuthPageRequest, target: Window, ori
 window.addEventListener("message", event => {
     if (event.source !== window.parent
         || !isAllowedExtensionOrigin(event.origin, runtime.mode)
-        || !isFederatedAuthPageRequest(event.data)) return;
+        || !isAuthPageRequest(event.data)) return;
     void handleAuth(event.data, window.parent, event.origin);
 });

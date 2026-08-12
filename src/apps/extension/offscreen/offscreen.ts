@@ -1,8 +1,8 @@
 import {
-    isFederatedAuthResponse,
+    isAuthResponse,
     isOffscreenAuthRequest,
-    type FederatedAuthPageRequest,
-    type FederatedAuthResponse,
+    type AuthPageRequest,
+    type AuthResponse,
 } from "@shared/authMessages";
 import { getBundledAuthRuntime } from "@shared/config/auth";
 
@@ -29,7 +29,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
         window.clearTimeout(timeout);
         window.removeEventListener("message", onMessage);
     };
-    const respond = (response: FederatedAuthResponse): void => {
+    const respond = (response: AuthResponse): void => {
         if (settled) return;
         settled = true;
         cleanup();
@@ -38,7 +38,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
     const onMessage = (event: MessageEvent<unknown>): void => {
         if (event.origin !== bridgeOrigin
             || event.source !== iframe.contentWindow
-            || !isFederatedAuthResponse(event.data)
+            || !isAuthResponse(event.data)
             || event.data.requestId !== message.requestId) return;
         respond(event.data);
     };
@@ -49,7 +49,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
     }), LOGIN_TIMEOUT_MS);
     window.addEventListener("message", onMessage);
     void loaded.then(() => {
-        const request: FederatedAuthPageRequest = {
+        const request: AuthPageRequest = {
             provider: message.provider,
             requestId: message.requestId,
             type: "federated-auth:start",

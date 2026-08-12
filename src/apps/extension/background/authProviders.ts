@@ -9,7 +9,7 @@ import {
     type AccountProvider,
     type ProviderTransport,
 } from "../domain/account/model";
-import { getFederatedCredential } from "./authBridge";
+import { getAuthBridgeCredential } from "./authBridge";
 
 async function getGoogleAccessToken(): Promise<string> {
     const clientId = chrome.runtime.getManifest().oauth2?.client_id;
@@ -41,7 +41,7 @@ async function getGoogleCredential(): Promise<AuthCredential> {
 }
 
 async function getBridgeCredential(provider: "apple" | "facebook"): Promise<AuthCredential> {
-    const credential = OAuthCredential.fromJSON(await getFederatedCredential(provider));
+    const credential = OAuthCredential.fromJSON(await getAuthBridgeCredential(provider));
     if (!credential || credential.providerId !== `${provider}.com`) {
         throw new Error("The login provider returned the wrong credential type.");
     }

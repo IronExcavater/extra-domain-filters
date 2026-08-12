@@ -1,5 +1,5 @@
 import {
-    isFederatedAuthResponse,
+    isAuthResponse,
     type OffscreenAuthRequest,
 } from "@shared/authMessages";
 import { getBundledAuthRuntime, type FederatedAuthProvider } from "@shared/config/auth";
@@ -9,10 +9,10 @@ const { bridgeUrl } = getBundledAuthRuntime();
 let creatingDocument: Promise<void> | undefined;
 let activeFlow: Promise<Record<string, unknown>> | undefined;
 
-export class FederatedAuthError extends Error {
+export class AuthBridgeError extends Error {
     constructor(message: string, readonly code?: string) {
         super(message);
-        this.name = "FederatedAuthError";
+        this.name = "AuthBridgeError";
     }
 }
 
@@ -51,17 +51,17 @@ async function runFlow(provider: FederatedAuthProvider): Promise<Record<string, 
     };
     try {
         const response: unknown = await chrome.runtime.sendMessage(request);
-        if (!isFederatedAuthResponse(response) || response.requestId !== request.requestId) {
+        if (!isAuthResponse(response) || response.requestId !== request.requestId) {
             throw new Error("The hosted authentication page returned an invalid response.");
         }
-        if (!response.ok) throw new FederatedAuthError(response.message, response.code);
+        if (!response.ok) throw new AuthBridgeError(response.message, response.code);
         return response.credential;
     } finally {
         await closeOffscreenDocument().catch(() => undefined);
     }
 }
 
-export function getFederatedCredential(provider: FederatedAuthProvider): Promise<Record<string, unknown>> {
+export function getAuthBridgeCredential(provider: FederatedAuthProvider): Promise<Record<string, unknown>> {
     if (activeFlow) throw new Error("Another login is already in progress.");
     activeFlow = runFlow(provider).finally(() => {
         activeFlow = undefined;
