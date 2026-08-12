@@ -26,7 +26,7 @@ export default defineConfig(({ command, mode }) => {
         build: {
             rollupOptions: {
                 input: {
-                    offscreen: fileURLToPath(new URL('./src/offscreen/offscreen.html', import.meta.url)),
+                    offscreen: fileURLToPath(new URL('./src/apps/extension/offscreen/offscreen.html', import.meta.url)),
                 },
             },
         },
