@@ -1,4 +1,5 @@
 import { DOMAIN_SETTLE_DELAY_MS } from "../dom/bodyMutations";
+import { isOwnedNode } from "../dom/ownership";
 import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
 import { isBlacklisted } from "../domain/matching";
 import { bindListingCards } from "../features/listing-cards";
@@ -298,7 +299,7 @@ const mountShortlistPage: PageMount = async (context) => {
         const observer = new MutationObserver(mutations => {
             const hasDomainAddition = mutations.some(mutation =>
                 [...mutation.addedNodes].some(node =>
-                    node instanceof Element && !node.closest('[class*="edf-"]'),
+                    node instanceof Element && !isOwnedNode(node),
                 ),
             );
             if (hasDomainAddition) scheduleControls();
