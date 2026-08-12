@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
                 '@shared': resolve(repositoryRoot, 'src/shared'),
             },
         },
-        root: resolve(repositoryRoot, "src/auth"),
+        root: resolve(repositoryRoot, "src/apps/auth"),
         server: {
             host: "127.0.0.1",
             port: 5174,

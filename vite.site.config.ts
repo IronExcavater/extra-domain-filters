@@ -10,7 +10,7 @@ export default defineConfig({
             '@shared': resolve(repositoryRoot, 'src/shared'),
         },
     },
-    root: resolve(repositoryRoot, "src/site"),
+    root: resolve(repositoryRoot, "src/apps/site"),
     publicDir: resolve(repositoryRoot, "public"),
     server: {
         host: "127.0.0.1",
