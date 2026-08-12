@@ -1,3 +1,4 @@
+import { CHROME_WEB_STORE_URL, GITHUB_URL } from "../../config/links";
 import { getAccountState, loginWithProvider, signOut } from "../../domain/account/client";
 import type { AccountState } from "../../domain/account/model";
 import { setBlacklist } from "../../domain/blacklist/store";
@@ -65,17 +66,17 @@ const SUPPORT_GROUPS: readonly SupportGroup[] = [
         links: [
             {
                 title: "Source code",
-                href: "https://github.com/IronExcavater/extra-domain-filters",
+                href: GITHUB_URL,
                 icon: "github",
             },
             {
                 title: "Chrome Web Store",
-                href: "https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg",
+                href: CHROME_WEB_STORE_URL,
                 icon: "chrome-web-store",
             },
             {
                 title: "Feedback and issues",
-                href: "https://github.com/IronExcavater/extra-domain-filters/issues/new/choose",
+                href: `${GITHUB_URL}/issues/new/choose`,
                 icon: "github",
             },
         ],

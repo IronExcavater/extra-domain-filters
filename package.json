@@ -6,7 +6,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail --names extension,auth \"npm run dev:extension\" \"npm run dev:auth\"",
+    "dev": "concurrently --kill-others-on-fail --names extension,auth,site \"npm run dev:extension\" \"npm run dev:auth\" \"npm run dev:site\"",
     "dev:extension": "vite",
     "build": "vite build",
     "dev:auth": "vite --config vite.auth.config.ts",
