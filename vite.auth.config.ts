@@ -2,17 +2,17 @@ import { resolve } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
-import { getFederatedAuthRuntime } from "./src/shared/config/auth";
+import { getAuthRuntime } from "./src/shared/config/auth";
 
 const repositoryRoot = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig(({ mode }) => {
-    const federatedAuth = getFederatedAuthRuntime(mode);
+    const authRuntime = getAuthRuntime(mode);
     return {
         base: "/auth/",
         define: {
-            __FEDERATED_AUTH_BRIDGE_URL__: JSON.stringify(federatedAuth.bridgeUrl),
-            __FEDERATED_AUTH_MODE__: JSON.stringify(federatedAuth.mode),
+            __AUTH_BRIDGE_URL__: JSON.stringify(authRuntime.bridgeUrl),
+            __AUTH_BRIDGE_MODE__: JSON.stringify(authRuntime.mode),
         },
         envDir: repositoryRoot,
         resolve: {

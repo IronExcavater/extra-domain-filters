@@ -15,5 +15,5 @@ interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
 
-declare const __FEDERATED_AUTH_BRIDGE_URL__: string;
-declare const __FEDERATED_AUTH_MODE__: "development" | "production";
+declare const __AUTH_BRIDGE_URL__: string;
+declare const __AUTH_BRIDGE_MODE__: "development" | "production";

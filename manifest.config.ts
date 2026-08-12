@@ -1,12 +1,12 @@
 import { defineManifest } from '@crxjs/vite-plugin';
 import { loadEnv } from 'vite';
 import pkg from './package.json';
-import { getFederatedAuthRuntime } from './src/shared/config/auth';
+import { getAuthRuntime } from './src/shared/config/auth';
 
 export default defineManifest(({ mode }) => {
     const env = loadEnv(mode, '.', 'VITE_');
     const oauthClientId = env.VITE_GOOGLE_OAUTH_CLIENT_ID?.trim();
-    const federatedAuth = getFederatedAuthRuntime(mode);
+    const authRuntime = getAuthRuntime(mode);
 
     return {
         manifest_version: 3,
@@ -34,7 +34,7 @@ export default defineManifest(({ mode }) => {
         },
         permissions: ['storage', 'alarms', 'unlimitedStorage', 'identity', 'activeTab', 'offscreen'],
         content_security_policy: {
-            extension_pages: `script-src 'self'; object-src 'self'; frame-src ${federatedAuth.bridgeOrigin}`,
+            extension_pages: `script-src 'self'; object-src 'self'; frame-src ${authRuntime.bridgeOrigin}`,
         },
         host_permissions: [
             '*://domain.com.au/*',
@@ -42,7 +42,7 @@ export default defineManifest(({ mode }) => {
             'https://firestore.googleapis.com/*',
             'https://identitytoolkit.googleapis.com/*',
             'https://securetoken.googleapis.com/*',
-            `${federatedAuth.bridgeOrigin}/*`,
+            `${authRuntime.bridgeOrigin}/*`,
         ],
         oauth2: oauthClientId
             ? {

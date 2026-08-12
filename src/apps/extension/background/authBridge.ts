@@ -2,10 +2,10 @@ import {
     isFederatedAuthResponse,
     type OffscreenAuthRequest,
 } from "@shared/authMessages";
-import { getBundledFederatedAuthRuntime, type FederatedAuthProvider } from "@shared/config/auth";
+import { getBundledAuthRuntime, type FederatedAuthProvider } from "@shared/config/auth";
 
 const OFFSCREEN_PATH = "src/apps/extension/offscreen/offscreen.html";
-const { bridgeUrl } = getBundledFederatedAuthRuntime();
+const { bridgeUrl } = getBundledAuthRuntime();
 let creatingDocument: Promise<void> | undefined;
 let activeFlow: Promise<Record<string, unknown>> | undefined;
 

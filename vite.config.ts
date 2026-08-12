@@ -4,10 +4,10 @@ import { defineConfig, type PluginOption } from 'vite';
 import zip from 'vite-plugin-zip-pack';
 import manifest from './manifest.config.ts';
 import { name, version } from './package.json';
-import { getFederatedAuthRuntime } from './src/shared/config/auth';
+import { getAuthRuntime } from './src/shared/config/auth';
 
 export default defineConfig(({ command, mode }) => {
-    const federatedAuth = getFederatedAuthRuntime(mode);
+    const authRuntime = getAuthRuntime(mode);
     const plugins: PluginOption[] = [
         crx({
             manifest,
@@ -32,8 +32,8 @@ export default defineConfig(({ command, mode }) => {
         },
         define: {
             __BUNDLED_DEV__: "false",
-            __FEDERATED_AUTH_BRIDGE_URL__: JSON.stringify(federatedAuth.bridgeUrl),
-            __FEDERATED_AUTH_MODE__: JSON.stringify(federatedAuth.mode),
+            __AUTH_BRIDGE_URL__: JSON.stringify(authRuntime.bridgeUrl),
+            __AUTH_BRIDGE_MODE__: JSON.stringify(authRuntime.mode),
             __SERVER_FORWARD_CONSOLE__: "false",
         },
         plugins,

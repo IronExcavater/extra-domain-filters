@@ -4,9 +4,9 @@ import {
     type FederatedAuthPageRequest,
     type FederatedAuthResponse,
 } from "@shared/authMessages";
-import { getBundledFederatedAuthRuntime } from "@shared/config/auth";
+import { getBundledAuthRuntime } from "@shared/config/auth";
 
-const { bridgeOrigin, bridgeUrl } = getBundledFederatedAuthRuntime();
+const { bridgeOrigin, bridgeUrl } = getBundledAuthRuntime();
 const iframe = document.createElement("iframe");
 const loaded = new Promise<void>((resolve, reject) => {
     iframe.addEventListener("load", () => resolve(), { once: true });
