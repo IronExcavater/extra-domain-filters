@@ -73,7 +73,7 @@ function formatRoomValue(value: string | undefined): string {
     return rawMin || "Any";
 }
 
-function toTitleCase(value: string): string {
+function slugToTitleCase(value: string): string {
     return value
         .replace(/[+/_-]+/g, " ")
         .split(/\s+/)
@@ -90,7 +90,7 @@ function getListParams(params: URLSearchParams, keys: readonly string[]): string
 }
 
 function formatList(values: readonly string[], maxVisible = 5): string | undefined {
-    const unique = [...new Set(values.map(toTitleCase))];
+    const unique = [...new Set(values.map(slugToTitleCase))];
 
     if (unique.length === 0) return undefined;
     if (unique.length <= maxVisible) return unique.join(", ");

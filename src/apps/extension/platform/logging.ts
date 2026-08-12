@@ -1,3 +1,5 @@
+import { toTitleCase } from "../utils/string";
+
 export type LogLevel = 'silent' | 'error' | 'warn' | 'info' | 'debug';
 
 export type ErrorHandler = (error: unknown) => void;
@@ -60,7 +62,7 @@ export interface Logger {
 }
 
 export const createLogger = (scope: string) => {
-    const prefix = `[${scope.toTitleCase()}]`;
+    const prefix = `[${toTitleCase(scope)}]`;
 
     const log = (
         level: LogLevel): LogFn => (

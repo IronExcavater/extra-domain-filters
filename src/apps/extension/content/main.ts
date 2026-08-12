@@ -1,6 +1,3 @@
-import "../utils/string.extensions";
-import "../utils/math.extensions";
-
 import { trackTelemetry } from "../domain/telemetry/client";
 import { bindAccountMenuTrigger } from "../features/account";
 import { enableNavigationChevronAnimation } from "../features/navigation";
