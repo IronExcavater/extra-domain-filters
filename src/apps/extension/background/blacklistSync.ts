@@ -1,3 +1,5 @@
+import PQueue from "p-queue";
+
 import { getBlacklist, setBlacklist } from "../domain/blacklist/store";
 import type { BlacklistEntry } from "../domain/matching";
 import {
@@ -21,6 +23,7 @@ import {
     readSyncCollection,
     writeSyncCollection,
 } from "../infrastructure/firebase/syncCollection";
+import { createLogger } from "../platform/logging";
 import { createStorageRepository } from "../platform/repository";
 import { onStorageChange } from "../platform/storage";
 import { getSettings } from "../state/settings";
@@ -40,8 +43,9 @@ const syncRepository = createStorageRepository<BlacklistSyncState>({
     normalize: value => normalizeSyncRecordState(value, normalizeRecord),
 });
 
+const logger = createLogger("Blacklist Sync");
 let ignoredBlacklist = "";
-let syncQueue = Promise.resolve();
+const syncQueue = new PQueue({ concurrency: 1 });
 
 function normalizeUrl(url: string): string {
     return url.replace(/\/+$/, "");
@@ -197,9 +201,7 @@ async function synchronize(): Promise<void> {
 }
 
 export function requestBlacklistSync(): Promise<void> {
-    const operation = syncQueue.then(synchronize);
-    syncQueue = operation.catch(() => undefined);
-    return operation;
+    return syncQueue.add(() => synchronize());
 }
 
 export function startBlacklistSync(): void {
@@ -212,7 +214,7 @@ export function startBlacklistSync(): void {
 
         void recordLocalChange(next, previous ?? [])
             .then(requestBlacklistSync)
-            .catch(error => console.warn("[Extra Domain Filters] Blacklist sync failed", error));
+            .catch(error => logger.warn("Blacklist sync failed", error));
     });
 
     void getFirebaseServices().then(services => {

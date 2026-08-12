@@ -3,6 +3,7 @@ import {
     Timestamp,
     writeBatch,
 } from "firebase/firestore/lite";
+import PQueue from "p-queue";
 
 import { getDeviceId } from "../domain/sync/device";
 import type { TelemetryEvent, TelemetryEventInput } from "../domain/telemetry/model";
@@ -20,7 +21,7 @@ const telemetryRepository = createStorageRepository<TelemetryEvent[]>({
     normalize: value => Array.isArray(value) ? value as TelemetryEvent[] : [],
 });
 
-let flushQueue = Promise.resolve();
+const flushQueue = new PQueue({ concurrency: 1 });
 
 function isEnabled(event: TelemetryEventInput, settings: Settings): boolean {
     return event.name === "diagnostic"
@@ -72,9 +73,7 @@ async function flush(): Promise<void> {
 }
 
 export function requestTelemetryFlush(): Promise<void> {
-    const operation = flushQueue.then(flush);
-    flushQueue = operation.catch(() => undefined);
-    return operation;
+    return flushQueue.add(() => flush());
 }
 
 export function startTelemetry(): void {

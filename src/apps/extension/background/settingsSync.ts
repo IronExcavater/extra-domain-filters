@@ -3,6 +3,7 @@ import {
     getDoc,
     setDoc,
 } from "firebase/firestore/lite";
+import PQueue from "p-queue";
 
 import { nextLogicalClock, observeLogicalClocks } from "../domain/sync/device";
 import {
@@ -16,6 +17,7 @@ import {
     recordSettingsChanges,
 } from "../domain/sync/settings";
 import { getFirebaseServices } from "../infrastructure/firebase/client";
+import { createLogger } from "../platform/logging";
 import { createStorageRepository } from "../platform/repository";
 import { onStorageChange } from "../platform/storage";
 import {
@@ -46,8 +48,9 @@ const syncRepository = createStorageRepository<SettingsSyncState>({
     },
 });
 
+const logger = createLogger("Settings Sync");
 let ignoredSettings = "";
-let syncQueue = Promise.resolve();
+const syncQueue = new PQueue({ concurrency: 1 });
 
 function fingerprint(settings: Settings): string {
     return JSON.stringify(settings);
@@ -120,9 +123,7 @@ async function synchronize(): Promise<void> {
 }
 
 export function requestSettingsSync(): Promise<void> {
-    const operation = syncQueue.then(synchronize);
-    syncQueue = operation.catch(() => undefined);
-    return operation;
+    return syncQueue.add(() => synchronize());
 }
 
 export function startSettingsSync(): void {
@@ -135,7 +136,7 @@ export function startSettingsSync(): void {
 
         void recordLocalChange(next, previous ?? DEFAULT_SETTINGS)
             .then(requestSettingsSync)
-            .catch(error => console.warn("[Extra Domain Filters] Settings sync failed", error));
+            .catch(error => logger.warn("Settings sync failed", error));
     });
 
     void getFirebaseServices().then(services => {

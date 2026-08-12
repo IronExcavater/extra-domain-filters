@@ -1,3 +1,5 @@
+import PQueue from "p-queue";
+
 import {
     getSavedSearches,
     normalizeSavedSearch,
@@ -25,6 +27,7 @@ import {
     readSyncCollection,
     writeSyncCollection,
 } from "../infrastructure/firebase/syncCollection";
+import { createLogger } from "../platform/logging";
 import { createStorageRepository } from "../platform/repository";
 import { onStorageChange } from "../platform/storage";
 import { getSettings } from "../state/settings";
@@ -38,8 +41,9 @@ const syncRepository = createStorageRepository<SavedSearchSyncState>({
     normalize: value => normalizeSyncRecordState(value, normalizeRecord),
 });
 
+const logger = createLogger("Saved Search Sync");
 let ignoredSearches = "";
-let syncQueue = Promise.resolve();
+const syncQueue = new PQueue({ concurrency: 1 });
 
 function fingerprint(searches: readonly SavedSearch[]): string {
     return JSON.stringify([...searches]
@@ -132,9 +136,7 @@ async function synchronize(): Promise<void> {
 }
 
 export function requestSavedSearchSync(): Promise<void> {
-    const operation = syncQueue.then(synchronize);
-    syncQueue = operation.catch(() => undefined);
-    return operation;
+    return syncQueue.add(() => synchronize());
 }
 
 export function startSavedSearchSync(): void {
@@ -146,7 +148,7 @@ export function startSavedSearchSync(): void {
         }
         void recordLocalChange(next, previous ?? [])
             .then(requestSavedSearchSync)
-            .catch(error => console.warn("[Extra Domain Filters] Saved search sync failed", error));
+            .catch(error => logger.warn("Saved search sync failed", error));
     });
 
     void getFirebaseServices().then(services => {
