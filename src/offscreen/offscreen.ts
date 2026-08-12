@@ -1,10 +1,10 @@
-import { getBundledFederatedAuthRuntime } from "../config/auth";
 import {
     isFederatedAuthResponse,
     isOffscreenAuthRequest,
     type FederatedAuthPageRequest,
     type FederatedAuthResponse,
-} from "../shared/platform/authMessages";
+} from "@shared/authMessages";
+import { getBundledFederatedAuthRuntime } from "@shared/config/auth";
 
 const { bridgeOrigin, bridgeUrl } = getBundledFederatedAuthRuntime();
 const iframe = document.createElement("iframe");

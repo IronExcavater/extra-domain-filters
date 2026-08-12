@@ -6,9 +6,9 @@ import {
 
 import {
     ACCOUNT_PROVIDER_TRANSPORTS,
+    type AccountProvider,
     type ProviderTransport,
-} from "../config/auth";
-import type { AccountProvider } from "../domain/account/model";
+} from "../domain/account/model";
 import { getFederatedCredential } from "./authBridge";
 
 async function getGoogleAccessToken(): Promise<string> {

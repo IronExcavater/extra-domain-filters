@@ -1,14 +1,5 @@
-import type { AccountProvider } from "../domain/account/model";
-
 export type AuthRuntimeMode = "development" | "production";
-export type FederatedAuthProvider = Extract<AccountProvider, "apple" | "facebook">;
-export type ProviderTransport = "chrome-identity" | "federated-bridge";
-
-export const ACCOUNT_PROVIDER_TRANSPORTS = {
-    apple: "federated-bridge",
-    facebook: "federated-bridge",
-    google: "chrome-identity",
-} as const satisfies Record<AccountProvider, ProviderTransport>;
+export type FederatedAuthProvider = "apple" | "facebook";
 
 const DEVELOPMENT_BRIDGE_URL = "http://127.0.0.1:5174/auth/";
 const PRODUCTION_BRIDGE_URL = "https://extra-domain-filters.web.app/auth/";

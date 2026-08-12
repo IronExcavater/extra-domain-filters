@@ -1,3 +1,4 @@
+import { readFirebaseConfig } from "@shared/config/firebase";
 import {
     getApp,
     getApps,
@@ -15,8 +16,6 @@ import {
     getFirestore,
     type Firestore,
 } from "firebase/firestore/lite";
-
-import { readFirebaseConfig } from "./config";
 
 export interface FirebaseServices {
     app: FirebaseApp;

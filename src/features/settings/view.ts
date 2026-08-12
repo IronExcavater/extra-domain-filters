@@ -1,4 +1,4 @@
-import { CHROME_WEB_STORE_URL, GITHUB_URL } from "../../config/links";
+import { CHROME_WEB_STORE_URL, GITHUB_URL } from "@shared/config/links";
 import { getAccountState, loginWithProvider, signOut } from "../../domain/account/client";
 import type { AccountState } from "../../domain/account/model";
 import { setBlacklist } from "../../domain/blacklist/store";

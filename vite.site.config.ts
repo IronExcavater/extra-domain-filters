@@ -5,6 +5,11 @@ import { defineConfig } from "vite";
 const repositoryRoot = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
+    resolve: {
+        alias: {
+            '@shared': resolve(repositoryRoot, 'src/shared'),
+        },
+    },
     root: resolve(repositoryRoot, "src/site"),
     publicDir: resolve(repositoryRoot, "public"),
     server: {

@@ -1,5 +1,10 @@
-import type { FederatedAuthProvider } from "../../config/auth";
-import { isPlainObject } from "../utils/types";
+import type { FederatedAuthProvider } from "./config/auth";
+
+// Local copy of utils/types.ts's isPlainObject — kept here rather than imported
+// so this cross-app file has no dependency on extension-only code.
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 export interface OffscreenAuthRequest {
     provider: FederatedAuthProvider;

@@ -1,4 +1,4 @@
-export { CHROME_WEB_STORE_URL, GITHUB_URL, SUPPORT_EMAIL } from "../config/links";
+export { CHROME_WEB_STORE_URL, GITHUB_URL, SUPPORT_EMAIL } from "@shared/config/links";
 
 export type SiteRoute = "/" | "/privacy/" | "/terms/" | "/data-deletion/";
 

@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
-import { getFederatedAuthRuntime } from "./src/config/auth";
+import { getFederatedAuthRuntime } from "./src/shared/config/auth";
 
 const repositoryRoot = fileURLToPath(new URL(".", import.meta.url));
 
@@ -15,6 +15,11 @@ export default defineConfig(({ mode }) => {
             __FEDERATED_AUTH_MODE__: JSON.stringify(federatedAuth.mode),
         },
         envDir: repositoryRoot,
+        resolve: {
+            alias: {
+                '@shared': resolve(repositoryRoot, 'src/shared'),
+            },
+        },
         root: resolve(repositoryRoot, "src/auth"),
         server: {
             host: "127.0.0.1",

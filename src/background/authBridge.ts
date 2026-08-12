@@ -1,8 +1,8 @@
-import { getBundledFederatedAuthRuntime, type FederatedAuthProvider } from "../config/auth";
 import {
     isFederatedAuthResponse,
     type OffscreenAuthRequest,
-} from "../shared/platform/authMessages";
+} from "@shared/authMessages";
+import { getBundledFederatedAuthRuntime, type FederatedAuthProvider } from "@shared/config/auth";
 
 const OFFSCREEN_PATH = "src/offscreen/offscreen.html";
 const { bridgeUrl } = getBundledFederatedAuthRuntime();

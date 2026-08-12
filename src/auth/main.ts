@@ -1,3 +1,14 @@
+import {
+    isFederatedAuthPageRequest,
+    type FederatedAuthPageRequest,
+    type FederatedAuthResponse,
+} from "@shared/authMessages";
+import {
+    getBundledFederatedAuthRuntime,
+    isAllowedExtensionOrigin,
+    type FederatedAuthProvider,
+} from "@shared/config/auth";
+import { readFirebaseConfig } from "@shared/config/firebase";
 import { initializeApp } from "firebase/app";
 import {
     FacebookAuthProvider,
@@ -10,18 +21,6 @@ import {
     type AuthProvider,
     type OAuthCredential,
 } from "firebase/auth";
-
-import {
-    getBundledFederatedAuthRuntime,
-    isAllowedExtensionOrigin,
-    type FederatedAuthProvider,
-} from "../config/auth";
-import { readFirebaseConfig } from "../infrastructure/firebase/config";
-import {
-    isFederatedAuthPageRequest,
-    type FederatedAuthPageRequest,
-    type FederatedAuthResponse,
-} from "../shared/platform/authMessages";
 
 const runtime = getBundledFederatedAuthRuntime();
 const config = readFirebaseConfig();

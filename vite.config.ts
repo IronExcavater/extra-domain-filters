@@ -4,7 +4,7 @@ import { defineConfig, type PluginOption } from 'vite';
 import zip from 'vite-plugin-zip-pack';
 import manifest from './manifest.config.ts';
 import { name, version } from './package.json';
-import { getFederatedAuthRuntime } from './src/config/auth';
+import { getFederatedAuthRuntime } from './src/shared/config/auth';
 
 export default defineConfig(({ command, mode }) => {
     const federatedAuth = getFederatedAuthRuntime(mode);
@@ -39,7 +39,7 @@ export default defineConfig(({ command, mode }) => {
         plugins,
         resolve: {
             alias: {
-                '@': '/src',
+                '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),
             },
         },
     };
