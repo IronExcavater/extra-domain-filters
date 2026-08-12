@@ -70,7 +70,7 @@ export function getPageActions(options: PageActionsOptions): HTMLDivElement {
     const existing = options.container.querySelector<HTMLDivElement>(`[data-testid="${controlsTestId}"]`);
     if (existing) return existing;
 
-    const controls = document.createElement("div");
+    const controls = markOwned(document.createElement("div"), "page-actions");
     controls.className = "edf-page-actions";
     controls.setAttribute("data-testid", controlsTestId);
 
@@ -80,7 +80,7 @@ export function getPageActions(options: PageActionsOptions): HTMLDivElement {
         return controls;
     }
 
-    const actions = document.createElement("div");
+    const actions = markOwned(document.createElement("div"), "sort-actions");
     const selectionGroup = document.createElement("div");
     const filterGroup = document.createElement("div");
     const label = document.createElement("span");
@@ -121,7 +121,7 @@ export function replaceUserListingTabs(
     const nativeTabs = [...(native?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [])];
     if (!native || nativeTabs.length === 0) return () => undefined;
 
-    const tabs = document.createElement("div");
+    const tabs = markOwned(document.createElement("div"), "listing-tabs");
     const originalHidden = native.hidden;
     const sync = (): void => {
         const selected = nativeTabs.find(tab => tab.ariaSelected === "true")?.textContent?.trim().toLowerCase();
@@ -153,7 +153,7 @@ export function replaceUserListingTabs(
     const actionsParent = actions?.parentNode;
     const actionsNextSibling = actions?.nextSibling;
     const toolbar = actions
-        ? document.createElement("div")
+        ? markOwned(document.createElement("div"), "listing-toolbar")
         : undefined;
     if (toolbar && actions) {
         toolbar.className = "edf-listing-page-toolbar";
