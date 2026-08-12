@@ -1,8 +1,22 @@
-export function waitForElement<T extends Element>(
+export interface WaitForElementOptions {
+    observe?: MutationObserverInit;
+    root?: Node;
+    timeoutMessage?: string;
+    timeoutMs?: number;
+}
+
+export function waitForElement<T>(
     find: () => T | undefined,
     signal: AbortSignal,
-    root: Node = document.body,
+    options: WaitForElementOptions = {},
 ): Promise<T> {
+    const {
+        observe = { childList: true, subtree: true },
+        root = document.body,
+        timeoutMessage,
+        timeoutMs,
+    } = options;
+
     if (signal.aborted) {
         return Promise.reject(new DOMException("Unmounted", "AbortError"));
     }
@@ -14,6 +28,7 @@ export function waitForElement<T extends Element>(
         let settled = false;
         const cleanup = (): void => {
             observer.disconnect();
+            if (timeout !== undefined) window.clearTimeout(timeout);
             signal.removeEventListener("abort", onAbort);
         };
         const onAbort = (): void => {
@@ -29,7 +44,15 @@ export function waitForElement<T extends Element>(
             cleanup();
             resolve(element);
         });
-        observer.observe(root, { childList: true, subtree: true });
+        const timeout = timeoutMs !== undefined
+            ? window.setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                reject(timeoutMessage ? new Error(timeoutMessage) : new DOMException("Timed out", "TimeoutError"));
+            }, timeoutMs)
+            : undefined;
+        observer.observe(root, observe);
         signal.addEventListener("abort", onAbort, { once: true });
     });
 }

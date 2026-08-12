@@ -1,3 +1,4 @@
+import { waitForElement } from "../dom/wait";
 import type { DomainPageFailure, DomainPageResult } from "./action";
 
 export type DomainAlertFrequency = "daily" | "none" | "weekly";
@@ -37,6 +38,12 @@ interface ElementState {
 }
 
 const FORM_TIMEOUT_MS = 4_000;
+const ALERT_OBSERVE_OPTIONS: MutationObserverInit = {
+    attributes: true,
+    characterData: true,
+    childList: true,
+    subtree: true,
+};
 
 function findAlertForm(): HTMLFormElement | undefined {
     return [...document.querySelectorAll<HTMLFormElement>(
@@ -45,44 +52,6 @@ function findAlertForm(): HTMLFormElement | undefined {
         form.querySelector('[role="combobox"], input[name*="frequency" i]') !== null
         || /receive alerts|email frequency|property alert/i.test(form.textContent ?? ""),
     );
-}
-
-function waitFor<T>(
-    find: () => T | undefined,
-    signal: AbortSignal,
-    timeoutMs = FORM_TIMEOUT_MS,
-): Promise<T> {
-    if (signal.aborted) return Promise.reject(new DOMException("Cancelled", "AbortError"));
-    const existing = find();
-    if (existing) return Promise.resolve(existing);
-    return new Promise((resolve, reject) => {
-        const observer = new MutationObserver(() => {
-            const value = find();
-            if (!value) return;
-            cleanup();
-            resolve(value);
-        });
-        const timeout = window.setTimeout(() => {
-            cleanup();
-            reject(new DOMException("Timed out", "TimeoutError"));
-        }, timeoutMs);
-        const onAbort = (): void => {
-            cleanup();
-            reject(new DOMException("Cancelled", "AbortError"));
-        };
-        const cleanup = (): void => {
-            observer.disconnect();
-            window.clearTimeout(timeout);
-            signal.removeEventListener("abort", onAbort);
-        };
-        observer.observe(document.body, {
-            attributes: true,
-            characterData: true,
-            childList: true,
-            subtree: true,
-        });
-        signal.addEventListener("abort", onAbort, { once: true });
-    });
 }
 
 function conceal(element: HTMLElement): ElementState {
@@ -126,9 +95,10 @@ async function chooseFrequency(
     const combobox = form.querySelector<HTMLButtonElement>('[role="combobox"]');
     if (!combobox) return false;
     combobox.click();
-    const option = await waitFor(() =>
+    const option = await waitForElement(() =>
         [...document.querySelectorAll<HTMLElement>('[role="option"]')]
-            .find(candidate => pattern.test(candidate.textContent?.trim() ?? "")), signal);
+            .find(candidate => pattern.test(candidate.textContent?.trim() ?? "")), signal,
+        { observe: ALERT_OBSERVE_OPTIONS, timeoutMs: FORM_TIMEOUT_MS });
     option.click();
     return true;
 }
@@ -158,7 +128,8 @@ export const domainAlertBridge: DomainAlertBridge = {
             request.trigger.dataset.edfNativeAlertBridge = "true";
             request.trigger.click();
             delete request.trigger.dataset.edfNativeAlertBridge;
-            const form = await waitFor(findAlertForm, request.signal);
+            const form = await waitForElement(findAlertForm, request.signal,
+                { observe: ALERT_OBSERVE_OPTIONS, timeoutMs: FORM_TIMEOUT_MS });
             const surface = form.closest<HTMLElement>('[role="dialog"], [role="tooltip"]') ?? form;
             state = conceal(surface);
             if (!await chooseFrequency(form, request.frequency, request.signal)) {
@@ -178,7 +149,8 @@ export const domainAlertBridge: DomainAlertBridge = {
                 };
             }
             submit.click();
-            await waitFor(() => form.isConnected ? undefined : true, request.signal);
+            await waitForElement(() => form.isConnected ? undefined : true, request.signal,
+                { observe: ALERT_OBSERVE_OPTIONS, timeoutMs: FORM_TIMEOUT_MS });
             return { frequency: request.frequency, ok: true };
         } catch (error) {
             return mapFailure(error);
