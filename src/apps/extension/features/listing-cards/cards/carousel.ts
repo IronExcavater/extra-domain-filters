@@ -23,6 +23,11 @@ interface PausedCarousel {
     transform: string;
 }
 
+// This targets the Slick carousel library's own DOM structure (.slick-track, .slick-slide,
+// .slick-current) and English-language aria-label text ("Previous"/"Next" property), since
+// Domain doesn't expose a stable data-testid for carousel navigation. If Domain swaps carousel
+// libraries, changes button copy, or serves a non-English locale, this feature silently stops
+// working rather than erroring — there's no reliable way to detect that from here.
 const pausedCarousels = new Map<HTMLElement, PausedCarousel>();
 
 export function disposeDetachedCarouselControls(): void {

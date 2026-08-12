@@ -11,6 +11,9 @@ type DraftEntry = {
 const draftsByScope = new WeakMap<Element, Set<DraftEntry>>();
 const claimScope = createClaimTracker<Element>();
 
+// The `pill-clear-button` substring matches Domain's generated CSS-module class name
+// (e.g. "PillClearButton-abc123") — brittle if Domain's build tooling changes its class
+// naming scheme, but there's no stable data-testid/aria-label alternative for this button today.
 const clearSelector = [
     'button[aria-label="Clear all filter selections"]',
     'button[class*="pill-clear-button"]',

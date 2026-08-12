@@ -1,9 +1,12 @@
 import { createSharedSearch } from "../../domain/searches/client";
+import { createLogger } from "../../platform/logging";
 import {
     HOSTED_SHARE_PARAM,
     LEGACY_HOSTED_SHARE_PARAM,
     removeSharedFilterParams,
 } from "./searchParams";
+
+const logger = createLogger("Share Link");
 
 export async function createSearchShareUrl(
     baseUrl: string,
@@ -21,7 +24,8 @@ export async function createSearchShareUrl(
         removeSharedFilterParams(hostedUrl.searchParams);
         hostedUrl.searchParams.set(HOSTED_SHARE_PARAM, hosted.id);
         return hostedUrl.href;
-    } catch {
+    } catch (error) {
+        logger.warn("Could not create a hosted share link, falling back to a self-contained URL", error);
         return selfContained.href;
     }
 }

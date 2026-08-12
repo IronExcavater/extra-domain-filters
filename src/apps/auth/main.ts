@@ -80,7 +80,7 @@ async function handleAuth(request: AuthPageRequest, target: Window, origin: stri
             requestId: request.requestId,
         });
     } finally {
-        await signOut(auth).catch(() => undefined);
+        await signOut(auth).catch(error => console.warn("Auth bridge sign-out cleanup failed", error));
     }
 }
 

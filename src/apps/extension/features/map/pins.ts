@@ -115,6 +115,10 @@ function updatePin(pin: MapPin, listing: MapListing, settings: Settings, blackli
 
     const color = match.matchedPreferences.length > 0 ? "#e7bc4f" : "#0b6500";
     for (const rect of pin.element.querySelectorAll<SVGRectElement>("rect")) {
+        // rgb(124, 124, 123) is Domain's current default marker grey — this only skips
+        // recoloring pins that are still that exact color. If Domain changes their marker
+        // theme, this stops matching and every pin gets recolored (harmless, just loses
+        // the "already colored" skip-optimization).
         if (getComputedStyle(rect).fill === "rgb(124, 124, 123)") continue;
         if (rect.style.fill !== color) rect.style.fill = color;
     }
