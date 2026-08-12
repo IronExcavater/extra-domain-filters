@@ -36,7 +36,7 @@ function isRequest(value: unknown): value is FederatedAuthPageRequest {
 }
 
 export function isOffscreenAuthRequest(value: unknown): value is OffscreenAuthRequest {
-    return isRequest(value) && isPlainObject(value) && value.target === "offscreen-auth";
+    return isRequest(value) && (value as OffscreenAuthRequest).target === "offscreen-auth";
 }
 
 export function isFederatedAuthPageRequest(value: unknown): value is FederatedAuthPageRequest {

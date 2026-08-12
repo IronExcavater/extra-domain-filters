@@ -1,7 +1,6 @@
 import type { MaybePromise } from "../utils/types";
 
 export type Disposer = () => void;
-export type Unbind = Disposer;
 
 const noop: Disposer = () => {};
 
@@ -43,10 +42,7 @@ export interface PropertyAdapter<T> {
     dispose?(): void;
 }
 
-type LinkMode = 'one-way' | 'two-way';
-
 type PropertyLink = {
-    readonly mode: LinkMode;
     readonly source: object;
     readonly target: object;
     readonly unbind: Disposer;
@@ -107,26 +103,12 @@ export class Property<K extends PropertyKind> {
         return once(() => this.observers.delete(observer));
     }
 
-    async bind(target: Property<K>): Promise<Unbind> {
-        this.assertActive();
-        target.assertActive();
-
-        this.unbind(target);
-        this.unbindTwoWay(target);
-        await target.set(await this.get());
-
-        const stop = this.observe(({ newValue }) => target.set(newValue));
-        return this.link('one-way', target, stop);
-    }
-
-    async bindTwoWay(other: Property<K>): Promise<Unbind> {
+    async bindTwoWay(other: Property<K>): Promise<Disposer> {
         this.assertActive();
         other.assertActive();
 
         if (other === this) return noop;
 
-        this.unbind(other);
-        other.unbind(this);
         this.unbindTwoWay(other);
 
         let syncing = false;
@@ -151,27 +133,14 @@ export class Property<K extends PropertyKind> {
         const stopForward = this.observe(({ newValue }) => sync(other, newValue));
         const stopBackward = other.observe(({ newValue }) => sync(this, newValue));
 
-        return this.link('two-way', other, stopForward, stopBackward);
-    }
-
-    unbind(target: Property<K>): void {
-        for (const link of [...this.links]) {
-            if (
-                link.mode === 'one-way' &&
-                link.source === this &&
-                link.target === target
-            ) {
-                link.unbind();
-            }
-        }
+        return this.link(other, stopForward, stopBackward);
     }
 
     unbindTwoWay(other: Property<K>): void {
         for (const link of [...this.links]) {
             if (
-                link.mode === 'two-way' &&
-                ((link.source === this && link.target === other) ||
-                    (link.source === other && link.target === this))
+                (link.source === this && link.target === other) ||
+                (link.source === other && link.target === this)
             ) {
                 link.unbind();
             }
@@ -225,12 +194,10 @@ export class Property<K extends PropertyKind> {
     }
 
     private link(
-        mode: LinkMode,
         target: Property<K>,
         ...subscriptions: Disposer[]
     ): Disposer {
         const link: PropertyLink = {
-            mode,
             source: this,
             target,
             unbind: once(() => {
