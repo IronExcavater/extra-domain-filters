@@ -1,6 +1,7 @@
 import PQueue from "p-queue";
 
 import { getBlacklist, setBlacklist } from "../domain/blacklist/store";
+import { normalizeListingUrl } from "../domain/listings/url";
 import type { BlacklistEntry } from "../domain/matching";
 import {
     getDeviceId,
@@ -47,13 +48,9 @@ const logger = createLogger("Blacklist Sync");
 let ignoredBlacklist = "";
 const syncQueue = new PQueue({ concurrency: 1 });
 
-function normalizeUrl(url: string): string {
-    return url.replace(/\/+$/, "");
-}
-
 function fingerprint(entries: readonly BlacklistEntry[]): string {
     return JSON.stringify(entries.map(entry => ({
-        url: normalizeUrl(entry.url),
+        url: normalizeListingUrl(entry.url),
         removedAt: entry.removedAt ?? null,
     })));
 }
@@ -66,7 +63,7 @@ function normalizeBlacklistSyncValue(value: unknown): BlacklistSyncValue | undef
     ) return undefined;
 
     return {
-        url: normalizeUrl(value.url),
+        url: normalizeListingUrl(value.url),
         addedAt: value.addedAt,
     };
 }
@@ -76,7 +73,7 @@ function normalizeRecord(value: unknown): SyncRecord<BlacklistSyncValue> | undef
 }
 
 async function getRecordId(url: string): Promise<string> {
-    const bytes = new TextEncoder().encode(normalizeUrl(url));
+    const bytes = new TextEncoder().encode(normalizeListingUrl(url));
     const digest = await crypto.subtle.digest("SHA-256", bytes);
     return [...new Uint8Array(digest)]
         .map(value => value.toString(16).padStart(2, "0"))
@@ -93,7 +90,7 @@ async function seedRecords(
         const id = await getRecordId(entry.url);
         records[id] = {
             id,
-            value: { url: normalizeUrl(entry.url), addedAt: entry.addedAt },
+            value: { url: normalizeListingUrl(entry.url), addedAt: entry.addedAt },
             updated: { counter: 0, deviceId, timestamp: entry.addedAt },
             deleted: entry.removedAt
                 ? { counter: 0, deviceId, timestamp: entry.removedAt }
@@ -109,8 +106,8 @@ async function recordLocalChange(
     previous: readonly BlacklistEntry[],
 ): Promise<void> {
     const deviceId = await getDeviceId();
-    const previousByUrl = new Map(previous.map(entry => [normalizeUrl(entry.url), entry]));
-    const nextByUrl = new Map(next.map(entry => [normalizeUrl(entry.url), entry]));
+    const previousByUrl = new Map(previous.map(entry => [normalizeListingUrl(entry.url), entry]));
+    const nextByUrl = new Map(next.map(entry => [normalizeListingUrl(entry.url), entry]));
 
     await syncRepository.update(async state => {
         const records = Object.keys(state.records).length > 0
@@ -150,7 +147,7 @@ function materializeBlacklist(
     records: Record<string, SyncRecord<BlacklistSyncValue>>,
     current: readonly BlacklistEntry[],
 ): BlacklistEntry[] {
-    const existing = new Map(current.map(entry => [normalizeUrl(entry.url), entry]));
+    const existing = new Map(current.map(entry => [normalizeListingUrl(entry.url), entry]));
 
     return Object.values(records)
         .map(record => {

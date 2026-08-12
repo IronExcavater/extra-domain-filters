@@ -12,7 +12,7 @@ export interface ExtensionRecentSearch {
     url: string;
 }
 
-function normalizeUrl(value: string, includeCustomFilters: boolean): string | undefined {
+function normalizeSearchUrl(value: string, includeCustomFilters: boolean): string | undefined {
     try {
         const url = new URL(value, window.location.origin);
 
@@ -33,7 +33,7 @@ function normalizeRecentSearch(value: unknown): ExtensionRecentSearch | undefine
         typeof value.updatedAt !== "number" ||
         typeof value.url !== "string") return undefined;
 
-    const url = normalizeUrl(value.url, true);
+    const url = normalizeSearchUrl(value.url, true);
     if (!url) return undefined;
 
     return {
@@ -58,12 +58,12 @@ export function getRecentSearches(): Promise<ExtensionRecentSearch[]> {
 }
 
 export function getRecentSearchBaseUrl(search: ExtensionRecentSearch): string {
-    return normalizeUrl(search.url, false) ?? search.url;
+    return normalizeSearchUrl(search.url, false) ?? search.url;
 }
 
 export async function rememberRecentSearch(url: URL, title: string): Promise<void> {
     const filterParams = extractSharedFilterParams(url.searchParams).toString();
-    const normalizedUrl = normalizeUrl(url.href, true);
+    const normalizedUrl = normalizeSearchUrl(url.href, true);
     if (!normalizedUrl || !filterParams) return;
 
     const recent: ExtensionRecentSearch = {

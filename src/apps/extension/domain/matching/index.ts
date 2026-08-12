@@ -3,6 +3,8 @@ import type {
     Settings,
 } from "../../state/settings";
 
+import { normalizeListingUrl } from "../listings/url";
+
 export type { BlacklistEntry } from "../../state/settings";
 
 export interface PreferenceRule {
@@ -82,12 +84,8 @@ export interface ListingMatchPolicy {
 const STRATA_PATTERN =
     /(?:strata|body corporate|owners corporation)[^\d]{0,80}\$?\s*(\d+(?:,\d{3})*(?:\.\d{1,2})?)/i;
 
-function normalizeUrl(url: string): string {
-    return url.replace(/\/+$/, "");
-}
-
 function hasUrl(entry: BlacklistEntry, url: string): boolean {
-    return normalizeUrl(entry.url) === normalizeUrl(url);
+    return normalizeListingUrl(entry.url) === normalizeListingUrl(url);
 }
 
 export function isBlacklisted(
