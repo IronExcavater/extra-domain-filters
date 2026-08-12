@@ -5,6 +5,10 @@ import type { DomainSavedSearchRemoveMessage } from "../site-dom/savedSearches";
 
 const SAVED_SEARCHES_URL = "https://www.domain.com.au/user/saved-searches";
 
+/** ~12s total budget (24 attempts × 500ms) for a background Domain tab to become ready. */
+const MAX_TAB_READY_ATTEMPTS = 24;
+const TAB_READY_POLL_INTERVAL_MS = 500;
+
 function delay(milliseconds: number): Promise<void> {
     return new Promise(resolve => window.setTimeout(resolve, milliseconds));
 }
@@ -18,7 +22,7 @@ async function sendToDomainPage(
 
     try {
         let lastError: unknown;
-        for (let attempt = 0; attempt < 24; attempt++) {
+        for (let attempt = 0; attempt < MAX_TAB_READY_ATTEMPTS; attempt++) {
             try {
                 const result: unknown = await chrome.tabs.sendMessage(tab.id, message);
                 if (!isDomainPageResult(result)) {
@@ -31,7 +35,7 @@ async function sendToDomainPage(
                 if (error instanceof Error && !/receiving end does not exist|message port closed/i.test(error.message)) {
                     throw error;
                 }
-                await delay(500);
+                await delay(TAB_READY_POLL_INTERVAL_MS);
             }
         }
         throw lastError instanceof Error

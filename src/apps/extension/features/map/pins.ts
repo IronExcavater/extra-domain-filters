@@ -1,4 +1,4 @@
-import { onBodyMutations } from "../../dom/bodyMutations";
+import { DOMAIN_SETTLE_DELAY_MS, onBodyMutations } from "../../dom/bodyMutations";
 import { getBlacklist } from "../../domain/blacklist/store";
 import { matchListing, type BlacklistEntry, type ListingSnapshot } from "../../domain/matching";
 import { type PageContext } from "../../platform/router";
@@ -194,7 +194,7 @@ export function bindMapPins(context: PageContext): void {
             timer = window.setTimeout(() => {
                 timer = undefined;
                 void refresh().catch(error => context.logger.warn("Failed to refresh map pins", error));
-            }, 120);
+            }, DOMAIN_SETTLE_DELAY_MS);
         });
     };
 

@@ -6,6 +6,8 @@ import {
 } from "@shared/authMessages";
 import { getBundledAuthRuntime } from "@shared/config/auth";
 
+const LOGIN_TIMEOUT_MS = 90_000;
+
 const { bridgeOrigin, bridgeUrl } = getBundledAuthRuntime();
 const iframe = document.createElement("iframe");
 const loaded = new Promise<void>((resolve, reject) => {
@@ -44,7 +46,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
         message: "Login timed out. Please try again.",
         ok: false,
         requestId: message.requestId,
-    }), 90_000);
+    }), LOGIN_TIMEOUT_MS);
     window.addEventListener("message", onMessage);
     void loaded.then(() => {
         const request: FederatedAuthPageRequest = {

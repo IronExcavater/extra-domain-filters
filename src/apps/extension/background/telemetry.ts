@@ -11,9 +11,12 @@ import { getFirebaseServices } from "../infrastructure/firebase/client";
 import { createStorageRepository } from "../platform/repository";
 import { onStorageChange } from "../platform/storage";
 import { getSettings, type Settings } from "../state/settings";
+import { DAY_MS } from "../utils/time";
 
 const MAX_QUEUED_EVENTS = 250;
-const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const RETENTION_MS = 30 * DAY_MS;
+// Firestore's writeBatch limit is 500 operations; 400 leaves headroom for the batch's own overhead.
+const FIRESTORE_BATCH_SIZE = 400;
 const telemetryRepository = createStorageRepository<TelemetryEvent[]>({
     key: "telemetryQueue",
     version: 1,
@@ -56,9 +59,9 @@ async function flush(): Promise<void> {
     }
 
     const deviceId = await getDeviceId();
-    for (let offset = 0; offset < allowed.length; offset += 400) {
+    for (let offset = 0; offset < allowed.length; offset += FIRESTORE_BATCH_SIZE) {
         const batch = writeBatch(services.firestore);
-        for (const event of allowed.slice(offset, offset + 400)) {
+        for (const event of allowed.slice(offset, offset + FIRESTORE_BATCH_SIZE)) {
             batch.set(doc(services.firestore, "telemetry", event.id), {
                 ...event,
                 deviceId,

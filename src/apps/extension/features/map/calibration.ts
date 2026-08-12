@@ -18,6 +18,15 @@ interface LinearFit {
     residual: number;
 }
 
+/** How many marker/listing pairs to sample for the linear fit (more is diminishing returns). */
+const CALIBRATION_SAMPLE_COUNT = 20;
+/** Below this many samples, a linear fit isn't reliable enough to trust. */
+const MINIMUM_CALIBRATION_SAMPLES = 4;
+/** Reject a calibration whose fit error exceeds 15% of the pixel range — too inaccurate to use. */
+const MAX_RESIDUAL_RATIO = 0.15;
+/** Degrees of lat/lng within which a computed point is considered "at" a candidate listing. */
+const NEAREST_POINT_MATCH_DEGREES = 0.01;
+
 function fitLinear(xs: readonly number[], ys: readonly number[]): LinearFit {
     const meanX = xs.reduce((sum, value) => sum + value, 0) / xs.length;
     const meanY = ys.reduce((sum, value) => sum + value, 0) / ys.length;
@@ -50,8 +59,8 @@ export function calibrateMap(
     markerPixels: readonly PixelPoint[],
     listingCoordinates: readonly GeoPoint[],
 ): Calibration | undefined {
-    const sampleCount = Math.min(20, markerPixels.length, listingCoordinates.length);
-    if (sampleCount < 4) return undefined;
+    const sampleCount = Math.min(CALIBRATION_SAMPLE_COUNT, markerPixels.length, listingCoordinates.length);
+    if (sampleCount < MINIMUM_CALIBRATION_SAMPLES) return undefined;
 
     const xPixels = sampleRange([...markerPixels].sort((a, b) => a.left - b.left), sampleCount)
         .map(point => point.left);
@@ -67,7 +76,7 @@ export function calibrateMap(
     const yRange = Math.max(...yPixels) - Math.min(...yPixels) || 1;
     const residualRatio = (xFit.residual / xRange + yFit.residual / yRange) / 2;
 
-    if (residualRatio > 0.15) return undefined;
+    if (residualRatio > MAX_RESIDUAL_RATIO) return undefined;
 
     return {
         toGeo(point): GeoPoint {
@@ -94,5 +103,5 @@ export function findNearestPoint<T extends GeoPoint>(
         distance = candidateDistance;
     }
 
-    return distance <= 0.01 ? nearest : undefined;
+    return distance <= NEAREST_POINT_MATCH_DEGREES ? nearest : undefined;
 }

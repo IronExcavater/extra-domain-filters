@@ -3,6 +3,8 @@ import { loadEnv } from 'vite';
 import pkg from './package.json';
 import { getAuthRuntime } from './src/shared/config/auth';
 
+const DOMAIN_MATCH_PATTERNS = ['*://domain.com.au/*', '*://www.domain.com.au/*'];
+
 export default defineManifest(({ mode }) => {
     const env = loadEnv(mode, '.', 'VITE_');
     const oauthClientId = env.VITE_GOOGLE_OAUTH_CLIENT_ID?.trim();
@@ -37,8 +39,7 @@ export default defineManifest(({ mode }) => {
             extension_pages: `script-src 'self'; object-src 'self'; frame-src ${authRuntime.bridgeOrigin}`,
         },
         host_permissions: [
-            '*://domain.com.au/*',
-            '*://www.domain.com.au/*',
+            ...DOMAIN_MATCH_PATTERNS,
             'https://firestore.googleapis.com/*',
             'https://identitytoolkit.googleapis.com/*',
             'https://securetoken.googleapis.com/*',
@@ -56,11 +57,11 @@ export default defineManifest(({ mode }) => {
             : undefined,
         web_accessible_resources: [{
             resources: ['public/fonts/F37Bolton-VF.ttf', 'src/apps/extension/offscreen/offscreen.html'],
-            matches: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
+            matches: DOMAIN_MATCH_PATTERNS,
         }],
         content_scripts: [
             {
-                matches: ['*://domain.com.au/*', '*://www.domain.com.au/*'],
+                matches: DOMAIN_MATCH_PATTERNS,
                 js: ['src/apps/extension/content/main.ts'],
                 css: [
                     'src/apps/extension/content/tokens.css',

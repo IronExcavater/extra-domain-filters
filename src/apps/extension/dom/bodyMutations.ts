@@ -2,6 +2,9 @@ import { isOwnedNode } from "./ownership";
 
 export type BodyMutationListener = (mutations: readonly MutationRecord[]) => void;
 
+/** How long to wait after Domain's own DOM stops mutating before re-checking it. */
+export const DOMAIN_SETTLE_DELAY_MS = 120;
+
 let observer: MutationObserver | undefined;
 let frame: number | undefined;
 let pending: MutationRecord[] = [];

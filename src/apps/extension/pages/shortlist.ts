@@ -1,3 +1,4 @@
+import { DOMAIN_SETTLE_DELAY_MS } from "../dom/bodyMutations";
 import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
 import { isBlacklisted } from "../domain/matching";
 import { bindListingCards } from "../features/listing-cards";
@@ -85,7 +86,7 @@ function configureNoteActions(card: HTMLElement, reconcileCards: ReconcileCards)
         cancel.click();
     }, { capture: true });
     save.addEventListener("click", () => {
-        window.setTimeout(reconcileCards, 120);
+        window.setTimeout(reconcileCards, DOMAIN_SETTLE_DELAY_MS);
     });
 }
 
@@ -238,7 +239,7 @@ const mountShortlistPage: PageMount = async (context) => {
         };
         const schedule = (): void => {
             if (reconcileTimer !== undefined) window.clearTimeout(reconcileTimer);
-            reconcileTimer = window.setTimeout(reconcileCards, 120);
+            reconcileTimer = window.setTimeout(reconcileCards, DOMAIN_SETTLE_DELAY_MS);
         };
         const recoverCard = (): void => {
             refreshListingCards();

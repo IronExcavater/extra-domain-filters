@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
-import { getAuthRuntime } from "./src/shared/config/auth";
+import { DEVELOPMENT_BRIDGE_URL, getAuthRuntime } from "./src/shared/config/auth";
 
 const repositoryRoot = fileURLToPath(new URL(".", import.meta.url));
 
@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
         root: resolve(repositoryRoot, "src/apps/auth"),
         server: {
             host: "127.0.0.1",
-            port: 5174,
+            port: Number(new URL(DEVELOPMENT_BRIDGE_URL).port),
             strictPort: true,
         },
         build: {

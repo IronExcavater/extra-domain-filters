@@ -1,7 +1,7 @@
 export type AuthRuntimeMode = "development" | "production";
 export type FederatedAuthProvider = "apple" | "facebook";
 
-const DEVELOPMENT_BRIDGE_URL = "http://127.0.0.1:5174/auth/";
+export const DEVELOPMENT_BRIDGE_URL = "http://127.0.0.1:5174/auth/";
 const PRODUCTION_BRIDGE_URL = "https://extra-domain-filters.web.app/auth/";
 const PRODUCTION_EXTENSION_ORIGIN = "chrome-extension://opblibcobnkicpdjkinngfcbjjnjldkg";
 const DEVELOPMENT_EXTENSION_ORIGIN = /^chrome-extension:\/\/[a-p]{32}$/;

@@ -1,4 +1,4 @@
-import { onBodyMutations } from "../../dom/bodyMutations";
+import { DOMAIN_SETTLE_DELAY_MS, onBodyMutations } from "../../dom/bodyMutations";
 import { isOwnedNode } from "../../dom/ownership";
 import { createFrameReconciler } from "../../dom/reconcile";
 import { type BlacklistEntry } from "../../domain/matching";
@@ -65,7 +65,7 @@ export function bindListingCards(
         quietTimer = window.setTimeout(() => {
             quietTimer = undefined;
             reconciler.schedule();
-        }, 120);
+        }, DOMAIN_SETTLE_DELAY_MS);
     };
 
     const containsListing = (node: Node): boolean =>

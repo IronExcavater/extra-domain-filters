@@ -1,3 +1,5 @@
+import { SUPPORT_EMAIL } from "@shared/config/links";
+
 export { CHROME_WEB_STORE_URL, GITHUB_URL, SUPPORT_EMAIL } from "@shared/config/links";
 
 export type SiteRoute = "/" | "/privacy/" | "/terms/" | "/data-deletion/";
@@ -31,7 +33,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 id: "who-we-are",
                 title: "Who we are",
                 body: [
-                    "Extra Domain Filters is operated by Niclas Rogulski (we, us and our). You can contact us about privacy at niclas.rogulski@gmail.com.",
+                    `Extra Domain Filters is operated by Niclas Rogulski (we, us and our). You can contact us about privacy at ${SUPPORT_EMAIL}.`,
                     "This policy applies to the Extra Domain Filters browser extension and this website. It does not apply to domain.com.au, Chrome, Firebase, Google, Meta, Apple or another third-party service, each of which has its own privacy practices.",
                 ],
             },
@@ -75,7 +77,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 title: "Your choices, access and correction",
                 body: [
                     "You can change many preferences in the extension, disable optional analytics or diagnostics in its settings, and remove local data by uninstalling the extension or using Chrome's extension-data controls.",
-                    "To request access to, correction of or deletion of personal information we hold, email niclas.rogulski@gmail.com. For deletion instructions, see our Data Deletion page. We may need to verify that a request relates to your account before acting on it.",
+                    `To request access to, correction of or deletion of personal information we hold, email ${SUPPORT_EMAIL}. For deletion instructions, see our Data Deletion page. We may need to verify that a request relates to your account before acting on it.`,
                     "If you believe we have mishandled personal information, please contact us first so we can investigate. Privacy rights and complaint options may vary based on where you live.",
                 ],
             },
@@ -97,7 +99,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 id: "contact",
                 title: "Contact",
                 body: [
-                    "For privacy questions, access, correction, complaints or deletion requests, email Niclas Rogulski at niclas.rogulski@gmail.com.",
+                    `For privacy questions, access, correction, complaints or deletion requests, email Niclas Rogulski at ${SUPPORT_EMAIL}.`,
                 ],
             },
         ],
@@ -201,7 +203,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 id: "contact",
                 title: "Contact",
                 body: [
-                    "Questions about these Terms can be sent to Niclas Rogulski at niclas.rogulski@gmail.com.",
+                    `Questions about these Terms can be sent to Niclas Rogulski at ${SUPPORT_EMAIL}.`,
                 ],
             },
         ],
@@ -214,7 +216,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 id: "make-a-request",
                 title: "How to make a request",
                 body: [
-                    "Email niclas.rogulski@gmail.com from the email address used for your Extra Domain Filters account. Use the subject line: Extra Domain Filters data deletion request.",
+                    `Email ${SUPPORT_EMAIL} from the email address used for your Extra Domain Filters account. Use the subject line: Extra Domain Filters data deletion request.`,
                     "Include the account email address and, if relevant, any shared-search links you created. Do not include your password, recovery codes, OAuth tokens or other credentials in an email.",
                 ],
             },
@@ -244,7 +246,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 id: "contact",
                 title: "Contact",
                 body: [
-                    "For questions about a deletion request, contact Niclas Rogulski at niclas.rogulski@gmail.com.",
+                    `For questions about a deletion request, contact Niclas Rogulski at ${SUPPORT_EMAIL}.`,
                 ],
             },
         ],
