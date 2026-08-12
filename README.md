@@ -1,5 +1,7 @@
 # 🏡 [Extra Domain Filters](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg)
 
+Public site: [extra-domain-filters.web.app](https://extra-domain-filters.web.app/) · [Privacy Policy](https://extra-domain-filters.web.app/privacy/) · [Terms of Service](https://extra-domain-filters.web.app/terms/) · [Data deletion](https://extra-domain-filters.web.app/data-deletion/)
+
 ## 🚀 Overview
 This browser extension supercharges domain.com.au by adding advanced filtering options, making it easier to find your dream property! 🎯
 
@@ -36,6 +38,10 @@ This browser extension supercharges domain.com.au by adding advanced filtering o
 ### 🔐 Authentication providers
 
 Email/password, Google, Apple, and Facebook use the same Firebase account. Apple and Facebook use the included hosted federated-authentication bridge plus provider-console setup. Follow [the authentication setup guide](docs/authentication.md) for the exact Firebase, Meta, Apple, local-development, deployment, and verification steps. Provider secrets stay in Firebase/Apple/Meta and must never be added to `.env`.
+
+### 🌐 Public site and legal pages
+
+Run `npm run deploy:hosting` to build and deploy both the public website and authentication bridge to Firebase Hosting. The landing page, privacy policy, terms, and deletion instructions are served from the URLs above; the `/auth/` route remains reserved for federated sign-in.
 
 ## 🎯 Usage
 1. Search for properties on **[Domain.com.au](https://www.domain.com.au)**.
