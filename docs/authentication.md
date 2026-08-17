@@ -121,17 +121,26 @@ If Firebase's `authDomain` changes, update both the Apple website domain and ret
 
 ## Production deployment
 
-Build the auth page without deploying it:
+Build the public website and the auth bridge together without deploying:
 
 ```sh
-npm run build:auth
+npm run build:hosting
 ```
 
-Deploy it to Firebase Hosting (the deploy command rebuilds first):
+Deploy both to Firebase Hosting (the deploy command rebuilds first; `npm run deploy:auth` is a retained alias for the same command):
 
 ```sh
-npm run deploy:auth
+npm run deploy:hosting
 ```
+
+This publishes the production OAuth bridge at `https://extra-domain-filters.web.app/auth/` alongside the public pages:
+
+- `https://extra-domain-filters.web.app/` — product landing page
+- `https://extra-domain-filters.web.app/privacy/` — Privacy Policy
+- `https://extra-domain-filters.web.app/terms/` — Terms of Service
+- `https://extra-domain-filters.web.app/data-deletion/` — data deletion instructions
+
+Only the Firebase handler (`https://extra-domain-filters.firebaseapp.com/__/auth/handler`) is registered as an OAuth callback with Meta and Apple; the `/auth/` bridge page and the public pages above are never registered as OAuth redirects.
 
 Open `https://extra-domain-filters.web.app/auth/` and confirm it loads. Then create the production extension package:
 
