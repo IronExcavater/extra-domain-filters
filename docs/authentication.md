@@ -31,19 +31,19 @@ These values identify registered public applications. Never add a Facebook App S
 Start the extension and local authentication server together:
 
 ```sh
-npm run dev
+pnpm dev
 ```
 
-The auth server binds only to `http://127.0.0.1:5174/auth/` with a strict port. The combined command labels the two log streams `extension` and `auth` and stops the extension server if auth startup fails.
+The auth server binds only to `http://127.0.0.1:5174/auth/` with a strict port. Turborepo runs the extension, auth, and site dev servers together.
 
 For isolated diagnostics, either process can still be started by itself:
 
 ```sh
-npm run dev:extension
-npm run dev:auth
+pnpm --filter @extra-domain-filters/extension dev
+pnpm --filter @extra-domain-filters/auth dev
 ```
 
-Load `dist` as an unpacked Chrome extension. Development builds allow only the loopback bridge origin. Production builds allow only `https://extra-domain-filters.web.app`.
+Load `apps/extension/.output/chrome-mv3` as an unpacked Chrome extension. Development builds allow only the loopback bridge origin. Production builds allow only `https://extra-domain-filters.web.app`.
 
 ## Firebase baseline
 
@@ -124,13 +124,13 @@ If Firebase's `authDomain` changes, update both the Apple website domain and ret
 Build the public website and the auth bridge together without deploying:
 
 ```sh
-npm run build:hosting
+pnpm build:hosting
 ```
 
-Deploy both to Firebase Hosting (the deploy command rebuilds first; `npm run deploy:auth` is a retained alias for the same command):
+Deploy both to Firebase Hosting (the deploy command rebuilds first; `pnpm deploy:auth` is a retained alias for the same command):
 
 ```sh
-npm run deploy:hosting
+pnpm deploy:hosting
 ```
 
 This publishes the production OAuth bridge at `https://extra-domain-filters.web.app/auth/` alongside the public pages:
@@ -145,10 +145,10 @@ Only the Firebase handler (`https://extra-domain-filters.firebaseapp.com/__/auth
 Open `https://extra-domain-filters.web.app/auth/` and confirm it loads. Then create the production extension package:
 
 ```sh
-npx vite build --mode production
+pnpm --filter @extra-domain-filters/extension build
 ```
 
-Before publishing, inspect `dist/manifest.json`:
+Before publishing, inspect `apps/extension/.output/chrome-mv3/manifest.json`:
 
 - `frame-src` must contain `https://extra-domain-filters.web.app` and no loopback address.
 - Host permissions must contain `https://extra-domain-filters.web.app/*` and no loopback address.
@@ -159,7 +159,7 @@ Before publishing, inspect `dist/manifest.json`:
 | Symptom | Check |
 | --- | --- |
 | Provider is supported but not enabled | Enable that provider under Firebase Authentication > Sign-in method. |
-| Local bridge is unavailable | Run `npm run dev:auth` and open `http://127.0.0.1:5174/auth/`. |
+| Local bridge is unavailable | Run `pnpm --filter @extra-domain-filters/auth dev` and open `http://127.0.0.1:5174/auth/`. |
 | Popup closes or is blocked | Start login from the provider button and allow the popup; cancellations are safe to retry. |
 | Firebase reports an unauthorized domain | Add the exact unpacked or production `chrome-extension://...` origin to Firebase Authorized domains. |
 | Meta or Apple reports a redirect mismatch | Compare `https://extra-domain-filters.firebaseapp.com/__/auth/handler` character-for-character with the provider console. |

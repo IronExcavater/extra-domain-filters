@@ -1,0 +1,16 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "unicorn", "oxc", "import"],
+    "categories": {
+        "correctness": "error"
+    },
+    "rules": {
+        "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "import/newline-after-import": ["error", { "count": 1 }],
+        "import/no-duplicates": "error"
+    },
+    "env": {
+        "builtin": true
+    },
+    "ignorePatterns": ["**/dist/**", "**/.output/**", "**/.wxt/**"]
+}

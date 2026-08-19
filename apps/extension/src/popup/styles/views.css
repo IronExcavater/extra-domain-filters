@@ -1,0 +1,390 @@
+.edf-popup-search-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.edf-popup-content .edf-collection-toolbar {
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.edf-popup-content .edf-collection-toolbar .edf-selection-action,
+.edf-popup-content .edf-collection-toolbar .edf-sort-dropdown-button {
+    font-size: 14px;
+    line-height: 20px;
+    min-height: 36px;
+}
+
+.edf-popup-content .edf-collection-toolbar .edf-selection-action {
+    padding: 7px 12px;
+}
+
+.edf-popup-content .edf-collection-toolbar .edf-sort-control {
+    gap: 6px;
+}
+
+.edf-popup-content .edf-collection-toolbar .edf-sort-control-label {
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.edf-popup-content .edf-collection-toolbar .edf-sort-dropdown-button {
+    height: 36px;
+    min-width: 124px;
+    padding: 6px 10px;
+}
+
+.edf-popup-content .edf-collection-toolbar .edf-collection-tabs {
+    gap: 18px;
+}
+
+.edf-popup-content .edf-collection-toolbar .edf-collection-tab {
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.edf-popup-content .edf-selection-checkbox,
+.edf-popup-content .edf-selection-checkbox input {
+    height: 16px;
+    width: 16px;
+}
+
+.edf-popup-content .edf-selection-checkbox {
+    margin-right: 6px;
+}
+
+.edf-popup-content .edf-selection-checkbox-indicator {
+    font-size: 11px;
+}
+
+.edf-popup-login {
+    background: var(--edf-color-surface);
+    display: grid;
+    grid-template-columns: minmax(350px, 47%) minmax(0, 53%);
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.edf-popup-login-panel {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 18px 24px 20px;
+    width: 100%;
+}
+
+.edf-popup-login-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.edf-popup-login-brand {
+    display: block;
+    height: auto;
+    margin: 0;
+    max-width: 190px;
+    width: 50%;
+}
+
+.edf-popup-login-back {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--edf-color-green);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 15px;
+    gap: 3px;
+    line-height: 22px;
+    padding: 0;
+    text-align: left;
+}
+
+.edf-popup-login-back svg {
+    height: 18px;
+    transform: rotate(90deg);
+    width: 18px;
+}
+
+.edf-popup-login-back:hover {
+    color: var(--edf-color-green-hover);
+}
+
+.edf-popup-login-content {
+    margin: auto;
+    max-width: 330px;
+    padding: 16px 0 0;
+    width: 100%;
+}
+
+.edf-popup-login-panel h1 {
+    color: var(--edf-color-heading);
+    font-size: 28px;
+    line-height: 36px;
+    margin: 0;
+}
+
+.edf-popup-login-introduction {
+    color: var(--edf-color-muted);
+    font-size: 14px;
+    line-height: 20px;
+    margin: 2px 0 10px;
+}
+
+.edf-popup-login-modes {
+    border-bottom: 1px solid var(--edf-color-border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 10px;
+}
+
+.edf-popup-login-modes button {
+    background: transparent;
+    border: 0;
+    color: var(--edf-color-muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 20px;
+    padding: 5px 4px 7px;
+    position: relative;
+}
+
+.edf-popup-login-modes button::after {
+    background: var(--edf-color-green);
+    bottom: -1px;
+    content: "";
+    height: 3px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    transform: scaleX(0);
+    transition: transform var(--edf-motion-fast) ease;
+}
+
+.edf-popup-login-modes button[aria-pressed="true"] {
+    color: var(--edf-color-heading);
+}
+
+.edf-popup-login-modes button[aria-pressed="true"]::after {
+    transform: scaleX(1);
+}
+
+.edf-popup-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.edf-popup-login-field {
+    color: var(--edf-color-heading);
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    font-weight: 700;
+    gap: 2px;
+    line-height: 18px;
+}
+
+.edf-popup-login-field[hidden] {
+    display: none;
+}
+
+.edf-popup-login-input {
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: var(--edf-radius-control);
+    box-sizing: border-box;
+    color: var(--edf-color-heading);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 400;
+    height: 36px;
+    padding: 8px 11px;
+    width: 100%;
+}
+
+.edf-popup-login-input:focus-visible {
+    border-color: var(--edf-color-green);
+    box-shadow: var(--edf-focus-ring);
+    outline: 0;
+}
+
+.edf-popup-login-password-control {
+    display: block;
+    position: relative;
+}
+
+.edf-popup-login-password-control .edf-popup-login-input {
+    padding-right: 54px;
+}
+
+.edf-popup-login-password-toggle {
+    background: transparent;
+    border: 0;
+    color: var(--edf-color-green-hover);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px;
+    position: absolute;
+    right: 7px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.edf-popup-login-forgot {
+    align-self: flex-end;
+    background: transparent;
+    border: 0;
+    color: var(--edf-color-green-hover);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    line-height: 18px;
+    margin-top: -2px;
+    padding: 0;
+}
+
+.edf-popup-login-submit {
+    background: var(--edf-color-green);
+    border: 1px solid var(--edf-color-green);
+    border-radius: var(--edf-radius-control);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    min-height: 40px;
+    padding: 9px 16px;
+}
+
+.edf-popup-login-submit:hover:not(:disabled) {
+    background: var(--edf-color-green-hover);
+    border-color: var(--edf-color-green-hover);
+}
+
+.edf-popup-login-status {
+    color: var(--edf-color-muted);
+    font-size: 12px;
+    line-height: 17px;
+    margin: -3px 0 0;
+    min-height: 17px;
+}
+
+.edf-popup-login-status[data-error="true"] {
+    color: var(--edf-color-danger);
+}
+
+.edf-popup-login-divider {
+    align-items: center;
+    color: var(--edf-color-muted);
+    display: flex;
+    font-size: 12px;
+    gap: 10px;
+    line-height: 18px;
+    margin: 6px 0;
+    text-transform: uppercase;
+}
+
+.edf-popup-login-divider::before,
+.edf-popup-login-divider::after {
+    background: var(--edf-color-border);
+    content: "";
+    flex: 1;
+    height: 1px;
+}
+
+.edf-popup-login-providers {
+    display: grid;
+    gap: 7px;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+}
+
+.edf-popup-auth-provider {
+    align-items: center;
+    background: var(--edf-color-surface);
+    border: 1px solid #d0d3d9;
+    border-radius: 6px;
+    color: var(--edf-color-text);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    gap: 6px;
+    justify-content: center;
+    min-height: 38px;
+    padding: 7px 8px;
+    transition: background-color 150ms ease, border-color 150ms ease;
+    width: 100%;
+}
+
+.edf-popup-auth-provider:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+}
+
+.edf-popup-auth-provider:hover:not(:disabled) {
+    background: #f4fbee;
+    border-color: var(--edf-color-green);
+}
+
+.edf-popup-auth-provider svg {
+    height: 18px;
+    width: 18px;
+}
+
+.edf-popup-login-image {
+    background-color: #edf1e9;
+    background-image: url("/images/sign-in-property.png");
+    background-position: center right;
+    background-repeat: no-repeat;
+    background-size: cover;
+    min-width: 0;
+}
+
+@media (width <= 600px) {
+    .edf-popup-login {
+        grid-template-columns: 1fr;
+    }
+
+    .edf-popup-login-image {
+        display: none;
+    }
+
+    .edf-popup-login-panel {
+        padding: 24px;
+    }
+}
+
+.edf-popup-content .edf-blacklist-card-media {
+    aspect-ratio: 16 / 9;
+}
+
+.edf-popup-content .edf-blacklist-card-body {
+    padding: 10px 12px 12px;
+}
+
+.edf-popup-content .edf-blacklist-card-price {
+    font-size: 16px;
+    line-height: 22px;
+}
+
+.edf-popup-content .edf-blacklist-card-address {
+    font-size: 15px;
+    line-height: 21px;
+    margin-top: 4px;
+}
+
+.edf-popup-content .edf-blacklist-card-features {
+    gap: 8px;
+    margin-top: 5px;
+}

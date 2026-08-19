@@ -25,15 +25,15 @@ This browser extension supercharges domain.com.au by adding advanced filtering o
 
 ### 🔹 Manual Installation (Developer)
 1. **Download or clone** this repository.
-2. Run `npm install`.
-3. Run `npm run dev`.
-4. In Chrome's extension developer mode, choose **Load unpacked** and select the generated `dist` directory.
-5. Keep the command running while developing. It starts both the extension and local authentication servers; CRXJS handles content-script HMR/live reload.
+2. Run `pnpm install`.
+3. Run `pnpm dev`.
+4. In Chrome's extension developer mode, choose **Load unpacked** and select the generated `apps/extension/.output/chrome-mv3` directory.
+5. Keep the command running while developing. It starts the extension (via [WXT](https://wxt.dev)) and the local authentication/site dev servers together through Turborepo, with content-script HMR/live reload.
 
 ### 🔹 Release Build
-1. Run `npm run build`.
-2. The build output is `dist`.
-3. The packaged zip is written to `release`.
+1. Run `pnpm build`.
+2. The extension build output is `apps/extension/.output/chrome-mv3`.
+3. The packaged zip is produced by `pnpm --filter @extra-domain-filters/extension zip` and written to `apps/extension/.output`.
 
 ### 🔐 Authentication providers
 

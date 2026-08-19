@@ -1,0 +1,70 @@
+import {
+    isAuthResponse,
+    type OffscreenAuthRequest,
+} from "@extra-domain-filters/shared/authMessages";
+import { getBundledAuthRuntime, type FederatedAuthProvider } from "@extra-domain-filters/shared/config/auth";
+
+const OFFSCREEN_PATH = "offscreen.html";
+const { bridgeUrl } = getBundledAuthRuntime();
+let creatingDocument: Promise<void> | undefined;
+let activeFlow: Promise<Record<string, unknown>> | undefined;
+
+export class AuthBridgeError extends Error {
+    constructor(message: string, readonly code?: string) {
+        super(message);
+        this.name = "AuthBridgeError";
+    }
+}
+
+async function hasOffscreenDocument(): Promise<boolean> {
+    const url = chrome.runtime.getURL(OFFSCREEN_PATH);
+    const contexts = await chrome.runtime.getContexts({
+        contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+        documentUrls: [url],
+    });
+    return contexts.length > 0;
+}
+
+async function ensureOffscreenDocument(): Promise<void> {
+    if (await hasOffscreenDocument()) return;
+    creatingDocument ??= chrome.offscreen.createDocument({
+        justification: `Complete Apple or Facebook authentication through ${new URL(bridgeUrl).host}.`,
+        reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING],
+        url: OFFSCREEN_PATH,
+    }).finally(() => {
+        creatingDocument = undefined;
+    });
+    await creatingDocument;
+}
+
+async function closeOffscreenDocument(): Promise<void> {
+    if (await hasOffscreenDocument()) await chrome.offscreen.closeDocument();
+}
+
+async function runFlow(provider: FederatedAuthProvider): Promise<Record<string, unknown>> {
+    await ensureOffscreenDocument();
+    const request: OffscreenAuthRequest = {
+        provider,
+        requestId: crypto.randomUUID(),
+        target: "offscreen-auth",
+        type: "federated-auth:start",
+    };
+    try {
+        const response: unknown = await chrome.runtime.sendMessage(request);
+        if (!isAuthResponse(response) || response.requestId !== request.requestId) {
+            throw new Error("The hosted authentication page returned an invalid response.");
+        }
+        if (!response.ok) throw new AuthBridgeError(response.message, response.code);
+        return response.credential;
+    } finally {
+        await closeOffscreenDocument().catch(() => undefined);
+    }
+}
+
+export function getAuthBridgeCredential(provider: FederatedAuthProvider): Promise<Record<string, unknown>> {
+    if (activeFlow) throw new Error("Another login is already in progress.");
+    activeFlow = runFlow(provider).finally(() => {
+        activeFlow = undefined;
+    });
+    return activeFlow;
+}

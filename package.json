@@ -1,49 +1,32 @@
 {
-  "name": "Extra Domain Filters",
+  "name": "extra-domain-filters",
   "version": "1.0.0",
   "description": "Enhance domain.com.au with extra filters to empower your search.",
   "author": "Niclas Rogulski",
   "type": "module",
   "private": true,
+  "packageManager": "pnpm@11.22.0",
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail --names extension,auth,site \"npm run dev:extension\" \"npm run dev:auth\" \"npm run dev:site\"",
-    "dev:extension": "vite",
-    "build": "vite build",
-    "dev:auth": "vite --config vite.auth.config.ts",
-    "dev:site": "vite --config vite.site.config.ts",
-    "build:auth": "vite build --config vite.auth.config.ts",
-    "build:site": "vite build --config vite.site.config.ts",
-    "build:hosting": "npm run build:site && npm run build:auth",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "build:hosting": "turbo run build --filter=@extra-domain-filters/auth --filter=@extra-domain-filters/site",
     "deploy:hosting": "npm run build:hosting && npx firebase-tools deploy --only hosting",
     "deploy:auth": "npm run deploy:hosting",
     "prepare": "husky",
-    "typecheck": "tsc --noEmit",
-    "eslint": "eslint src manifest.config.ts vite.config.ts vite.auth.config.ts vite.site.config.ts eslint.config.js lint-staged.config.js",
-    "eslint:fix": "eslint src manifest.config.ts vite.config.ts vite.auth.config.ts vite.site.config.ts eslint.config.js lint-staged.config.js --fix",
-    "stylelint": "stylelint \"src/**/*.css\" --allow-empty-input",
-    "stylelint:fix": "stylelint \"src/**/*.css\" --allow-empty-input --fix",
-    "check:all": "npm run typecheck && npm run eslint && npm run stylelint",
-    "fix:all": "npm run eslint:fix && npm run stylelint:fix"
-  },
-  "dependencies": {
-    "@crxjs/vite-plugin": "^2.7.1",
-    "@types/chrome": "^0.2.2",
-    "@types/node": "^26.1.0",
-    "firebase": "^12.16.0",
-    "p-queue": "^9.3.3",
-    "vite": "^8.1.3"
+    "typecheck": "turbo run typecheck",
+    "lint": "oxlint apps packages *.config.js",
+    "lint:fix": "oxlint apps packages *.config.js --fix",
+    "stylelint": "stylelint \"apps/**/*.css\" \"packages/**/*.css\" --allow-empty-input",
+    "stylelint:fix": "stylelint \"apps/**/*.css\" \"packages/**/*.css\" --allow-empty-input --fix",
+    "check:all": "npm run typecheck && npm run lint && npm run stylelint",
+    "fix:all": "npm run lint:fix && npm run stylelint:fix"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "concurrently": "^10.0.4",
-    "eslint": "^9.39.4",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-unused-imports": "^4.4.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
+    "oxlint": "^1.78.0",
     "stylelint": "^17.14.0",
     "stylelint-config-standard": "^40.0.0",
-    "typescript-eslint": "^8.63.0",
-    "vite-plugin-zip-pack": "^1.2.4"
+    "turbo": "^2.5.4"
   }
 }

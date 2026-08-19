@@ -1,0 +1,26 @@
+{
+    "name": "@extra-domain-filters/extension",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "wxt",
+        "build": "wxt build",
+        "zip": "wxt zip",
+        "typecheck": "tsc --noEmit",
+        "postinstall": "wxt prepare"
+    },
+    "dependencies": {
+        "@extra-domain-filters/shared": "workspace:*",
+        "@webext-core/messaging": "^4.0.0",
+        "firebase": "^12.16.0",
+        "p-queue": "^9.3.3"
+    },
+    "devDependencies": {
+        "@types/chrome": "^0.2.2",
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3",
+        "vite": "^8.1.3",
+        "wxt": "^0.21.1"
+    }
+}

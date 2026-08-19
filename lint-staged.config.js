@@ -1,4 +1,4 @@
 export default {
-    '*.ts': ['eslint --fix'],
+    '*.ts': ['oxlint --fix'],
     '*.css': ['stylelint --fix'],
 };

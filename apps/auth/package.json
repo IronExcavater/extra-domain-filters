@@ -1,0 +1,20 @@
+{
+    "name": "@extra-domain-filters/auth",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite --configLoader runner",
+        "build": "vite build --configLoader runner",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@extra-domain-filters/shared": "workspace:*",
+        "firebase": "^12.16.0"
+    },
+    "devDependencies": {
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3",
+        "vite": "^8.1.3"
+    }
+}
