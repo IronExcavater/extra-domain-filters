@@ -1,14 +1,14 @@
 import type { ExclusionReason } from "../../../domain/matching";
-import { replaceWithChevronIcon, replaceWithEyeIcon, replaceWithUnbinIcon } from "../../../ui/icons";
-import { removeTooltip, setTooltipText } from "../../../ui/tooltip";
+import { replaceWithChevronIcon, replaceWithEyeOffIcon, replaceWithFilledBinIcon } from "../../../ui/icons";
+import { removeTooltip } from "../../../ui/tooltip";
 import { getBlacklistCardKind, getTitle, PROJECT_MARKER_SELECTOR, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
-import { resolveExclusionAction, ROW_SELECTOR } from "./row";
+import { createHiddenRow, resolveExclusionAction, ROW_SELECTOR, setHiddenRowState } from "./row";
 
 const GROUP_SELECTOR = '[data-testid="listing-card-exclusion-group"]';
 const GROUPED_CARD_CLASS = "edf-exclusion-group-member";
-const COLLAPSE_DELAY_MS = 180;
 const pinnedGroupUrls = new Set<string>();
 let previousSignature = "";
+let renderedGroups: HTMLElement[] = [];
 
 type ActiveReason = Exclude<ExclusionReason, "none">;
 
@@ -46,6 +46,7 @@ function getExcludedCard(element: Element): ExcludedCard | undefined {
 }
 
 function unwrapGroups(): void {
+    renderedGroups = [];
     document.querySelectorAll<HTMLElement>(GROUP_SELECTOR).forEach(group => {
         group.querySelectorAll<HTMLElement>("[aria-describedby]").forEach(removeTooltip);
         group.remove();
@@ -54,96 +55,87 @@ function unwrapGroups(): void {
         .forEach(card => card.classList.remove(GROUPED_CARD_CLASS));
 }
 
-function setExpanded(group: HTMLElement, expanded: boolean): void {
-    const body = group.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-group-body"]');
-    const button = group.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-group-toggle"]');
-    if (!body || !button) return;
+export const groupMembers = new WeakMap<HTMLElement, HTMLElement[]>();
 
+function setExpanded(group: HTMLElement, expanded: boolean, animate = true): void {
+    const body = group.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-group-body"]');
+    const header = group.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-group-toggle"]');
+    if (!body || !header) return;
+
+    const from = body.getBoundingClientRect().height;
     group.dataset.expanded = String(expanded);
-    body.style.maxHeight = expanded ? `${body.scrollHeight}px` : "0px";
-    body.setAttribute("aria-hidden", String(!expanded));
-    const label = expanded ? "Collapse hidden listings" : "Expand hidden listings";
-    button.ariaLabel = label;
-    button.setAttribute("aria-expanded", String(expanded));
-    setTooltipText(button, label);
+    body.hidden = !expanded;
+    header.setAttribute("aria-expanded", String(expanded));
+    if (!animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const to = expanded ? body.getBoundingClientRect().height : 0;
+    if (!expanded) body.hidden = false;
+    const animation = body.animate(
+        [{ height: `${from}px`, opacity: expanded ? 0 : 1 }, { height: `${to}px`, opacity: expanded ? 1 : 0 }],
+        { duration: 220, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+    );
+    if (!expanded) animation.addEventListener("finish", () => {
+        if (group.dataset.expanded === "false") body.hidden = true;
+    });
 }
 
-// A grouped item is always a flat row — icon, title (with its reason as inline context), and
-// a single always-visible action button. Earlier this also had its own per-item expand/collapse
-// panel nested inside the group's own expand/collapse, which produced an accordion-in-an-
-// accordion that made no sense: there's nothing here worth hiding a second time.
 function createGroupItem(item: ExcludedCard): HTMLElement {
-    const row = document.createElement("div");
-    const reasonIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    const summary = document.createElement("span");
-    const title = document.createElement("span");
-    const reason = document.createElement("span");
-    const action = document.createElement("button");
-
-    row.className = "edf-exclusion-group-item";
-    summary.className = "edf-exclusion-group-item-text";
-    title.textContent = item.urls.length > 1
-        ? `${getTitle(item.card)} (${item.urls.length} properties)`
-        : getTitle(item.card);
-    reason.className = "edf-exclusion-group-item-reason";
-    reason.textContent = item.reason === "blacklisted" ? "Blacklisted" : "Filtered by your preferences";
-    summary.append(title, reason);
-
-    reasonIcon.setAttribute("aria-hidden", "true");
-    reasonIcon.setAttribute("width", "16");
-    reasonIcon.setAttribute("height", "16");
-    (item.reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(reasonIcon);
-
-    action.type = "button";
-    action.className = "edf-exclusion-group-item-action";
-    action.textContent = item.reason === "blacklisted" ? "Unblacklist" : "Show anyway";
-    action.addEventListener("click", async event => {
-        event.preventDefault();
-        event.stopPropagation();
-        await resolveExclusionAction(item.urls, item.reason);
+    const row = createHiddenRow();
+    row.classList.add("edf-exclusion-group-item");
+    setHiddenRowState(row, {
+        onAction: () => resolveExclusionAction(item.urls, item.reason),
+        reason: item.reason,
+        title: item.urls.length > 1
+            ? `${getTitle(item.card)} (${item.urls.length} properties)`
+            : getTitle(item.card),
+        urls: item.urls,
     });
-
-    row.append(reasonIcon, summary, action);
     return row;
 }
 
 function createGroup(group: ExcludedCard[]): HTMLElement {
     const section = document.createElement("section");
-    const header = document.createElement("div");
-    const text = document.createElement("span");
-    const button = document.createElement("button");
+    const header = document.createElement("button");
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const text = document.createElement("span");
+    const title = document.createElement("span");
+    const reason = document.createElement("span");
+    const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const body = document.createElement("div");
     const urls = group.flatMap(item => item.urls);
     const expanded = urls.some(url => pinnedGroupUrls.has(url));
-    let collapseTimer: number | undefined;
+    const reasons = new Set(group.map(item => item.reason));
 
     section.className = "edf-exclusion-group";
     section.setAttribute("data-testid", "listing-card-exclusion-group");
-    header.className = "edf-exclusion-group-header";
-    text.className = "edf-exclusion-group-text";
-    const reasons = new Set(group.map(item => item.reason));
-    const reasonText = reasons.size > 1
-        ? "Blacklisted and filtered"
-        : reasons.has("blacklisted") ? "Blacklisted" : "Filtered";
-    text.textContent = `${group.length} listings hidden · ${reasonText}`;
-
-    button.type = "button";
-    button.className = "edf-exclusion-row-button";
-    button.setAttribute("data-testid", "listing-card-exclusion-group-toggle");
+    section.dataset.exclusionReason = reasons.size > 1 ? "mixed" : [...reasons][0];
+    header.type = "button";
+    header.className = "edf-exclusion-row edf-exclusion-group-header";
+    header.setAttribute("data-testid", "listing-card-exclusion-group-toggle");
+    header.setAttribute("aria-label", `${group.length} hidden listings`);
+    icon.classList.add("edf-exclusion-row-icon");
     icon.setAttribute("aria-hidden", "true");
     icon.setAttribute("width", "18");
     icon.setAttribute("height", "18");
-    replaceWithChevronIcon(icon);
-    button.append(icon);
+    (reasons.has("blacklisted") ? replaceWithFilledBinIcon : replaceWithEyeOffIcon)(icon);
+    text.className = "edf-exclusion-row-text";
+    title.className = "edf-exclusion-row-title";
+    title.textContent = `${group.length} hidden listings`;
+    reason.className = "edf-exclusion-row-reason";
+    reason.textContent = [...reasons].map(value => value === "blacklisted" ? "Blacklisted" : "Filtered").join(" · ");
+    text.append(title, reason);
+    chevron.classList.add("edf-exclusion-group-chevron");
+    chevron.setAttribute("aria-hidden", "true");
+    chevron.setAttribute("width", "18");
+    chevron.setAttribute("height", "18");
+    replaceWithChevronIcon(chevron);
+    header.append(icon, text, chevron);
 
     body.className = "edf-exclusion-group-body";
     body.setAttribute("data-testid", "listing-card-exclusion-group-body");
     body.append(...group.map(createGroupItem));
-    header.append(text, button);
     section.append(header, body);
 
-    button.addEventListener("click", event => {
+    header.addEventListener("click", event => {
         event.preventDefault();
         event.stopPropagation();
         const nextExpanded = section.dataset.expanded !== "true";
@@ -153,29 +145,8 @@ function createGroup(group: ExcludedCard[]): HTMLElement {
         }
         setExpanded(section, nextExpanded);
     });
-    section.addEventListener("mouseenter", () => {
-        if (collapseTimer !== undefined) window.clearTimeout(collapseTimer);
-        setExpanded(section, true);
-    });
-    section.addEventListener("mouseleave", () => {
-        collapseTimer = window.setTimeout(() => {
-            if (!urls.some(url => pinnedGroupUrls.has(url))) setExpanded(section, false);
-        }, COLLAPSE_DELAY_MS);
-    });
-    section.addEventListener("focusin", () => {
-        if (collapseTimer !== undefined) window.clearTimeout(collapseTimer);
-        setExpanded(section, true);
-    });
-    section.addEventListener("focusout", () => {
-        collapseTimer = window.setTimeout(() => {
-            if (!section.matches(":focus-within") && !urls.some(url => pinnedGroupUrls.has(url))) {
-                setExpanded(section, false);
-            }
-        }, COLLAPSE_DELAY_MS);
-    });
 
-    section.dataset.expanded = String(expanded);
-    if (!expanded) setExpanded(section, false);
+    setExpanded(section, expanded, false);
     return section;
 }
 
@@ -183,10 +154,16 @@ function groupRun(run: ExcludedCard[]): void {
     if (run.length < 2) return;
     for (const item of run) item.card.classList.add(GROUPED_CARD_CLASS);
     const section = createGroup(run);
+    groupMembers.set(section, run.map(item => item.card));
+    renderedGroups.push(section);
     run[0].card.before(section);
-    if (section.dataset.expanded === "true") {
-        requestAnimationFrame(() => setExpanded(section, true));
-    }
+}
+
+/** Ad slots and other empty siblings must not split a run of hidden listings. */
+function isInvisibleSpacer(element: Element): boolean {
+    return element instanceof HTMLElement &&
+        !element.matches(TOP_LEVEL_CARD_SELECTOR) &&
+        element.getBoundingClientRect().height < 1;
 }
 
 function getCompactionSignature(): string {
@@ -213,7 +190,12 @@ function getCompactionSignature(): string {
 
 export function compactExcludedListingCards(): void {
     const signature = getCompactionSignature();
-    if (signature === previousSignature) return;
+    // Domain re-renders the result list (hydration, pagination) and drops our group nodes and
+    // member classes; an unchanged signature only means "nothing to do" while they survive.
+    const intact = renderedGroups.every(group =>
+        group.isConnected &&
+        (groupMembers.get(group) ?? []).every(member => member.classList.contains(GROUPED_CARD_CLASS)));
+    if (signature === previousSignature && intact) return;
     previousSignature = signature;
 
     unwrapGroups();
@@ -234,6 +216,7 @@ export function compactExcludedListingCards(): void {
                 continue;
             }
 
+            if (isInvisibleSpacer(child)) continue;
             groupRun(run);
             run = [];
         }

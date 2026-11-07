@@ -52,7 +52,11 @@ async function loadData(): Promise<PopupData> {
     const [blacklist, savedSearches, account] = await Promise.all([
         getBlacklist(),
         getSavedSearches(),
-        getAccountState().catch(() => undefined),
+        // A stalled background worker must not leave the popup blank; render without account.
+        Promise.race([
+            getAccountState().catch(() => undefined),
+            new Promise<undefined>(resolve => setTimeout(resolve, 2500)),
+        ]),
     ]);
 
     return { account, blacklist, domainSession: domainSessionState, savedSearches };

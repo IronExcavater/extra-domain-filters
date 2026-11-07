@@ -51,7 +51,9 @@ function findControlledMenu(trigger: HTMLElement): HTMLElement | undefined {
 
 function findLocalMenu(carrier: HTMLElement, trigger: HTMLElement): HTMLElement | undefined {
     return findControlledMenu(trigger)
-        ?? carrier.querySelector<HTMLElement>('[role="menu"], [role="listbox"], [data-testid*="menu" i], :scope > ul')
+        ?? carrier.querySelector<HTMLElement>(
+            '[role="menu"], [role="listbox"], [data-testid*="menu" i]:not([data-extra-domain-filters-owner]), :scope > ul',
+        )
         ?? [...carrier.children].find((child): child is HTMLElement =>
             child instanceof HTMLElement && child !== trigger && child.querySelector("a, button") !== null,
         );

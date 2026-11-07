@@ -75,7 +75,7 @@ export const DEFAULT_SETTINGS: Settings = {
             propertyTypes: true,
         },
         excludeWhenNoCouldHaveMatch: false,
-        enrichListingDetails: false,
+        enrichListingDetails: true,
     },
     flags: {
         enableExtension: true,
@@ -104,11 +104,17 @@ export const DEFAULT_SETTINGS: Settings = {
 
 const settingsRepository = createStorageRepository<Settings>({
     key: "settings",
-    version: 2,
+    version: 3,
     createDefault: () => structuredClone(DEFAULT_SETTINGS),
     normalize: value => applyPatch(
         DEFAULT_SETTINGS,
         isPlainObject(value) ? value as DeepPartial<Settings> : {},
+    ),
+    // v3: detail enrichment became on-by-default (it only runs while a text filter is set);
+    // the stored `false` from earlier versions was the old default, not a user choice.
+    migrate: value => applyPatch(
+        applyPatch(DEFAULT_SETTINGS, isPlainObject(value) ? value as DeepPartial<Settings> : {}),
+        { filters: { enrichListingDetails: true } },
     ),
 });
 

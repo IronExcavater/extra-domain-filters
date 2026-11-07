@@ -195,6 +195,14 @@ interface ListingSnapshotOptions {
     includeThumbnail?: boolean;
 }
 
+/** Card text without anything the extension injected (pills, hidden rows, tooltips). */
+function getOwnText(card: Element): string {
+    if (!card.querySelector("[data-extra-domain-filters-owner], [class*='edf-']")) return card.textContent ?? "";
+    const clone = card.cloneNode(true) as Element;
+    clone.querySelectorAll("[data-extra-domain-filters-owner], [class*='edf-']").forEach(node => node.remove());
+    return clone.textContent ?? "";
+}
+
 export function getListingSnapshot(
     card: Element,
     url: string,
@@ -206,7 +214,7 @@ export function getListingSnapshot(
     return {
         url,
         title,
-        text: card.textContent ?? "",
+        text: getOwnText(card),
         displayAddress: title,
         features: {
             bathrooms: getFeature(card, /^(\d+)\s*Bath/i),

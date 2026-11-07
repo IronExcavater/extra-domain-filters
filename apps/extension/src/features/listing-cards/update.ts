@@ -1,6 +1,8 @@
 import { getCachedListings } from "../../domain/listings/cache";
 import { requestListingEnrichment } from "../../domain/listings/enrichment";
-import { matchListing, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
+import { getSearchListings, mergeSearchSnapshot } from "../../domain/listings/searchData";
+import { normalizeListingUrl } from "../../domain/listings/url";
+import { matchListing, STRATA_MAX, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
 import { type Settings } from "../../state/settings";
 import { setBlacklistActionState } from "./actions/blacklistAction";
 import {
@@ -21,6 +23,7 @@ import {
     TOPSPOT_CAROUSEL_SELECTOR,
 } from "./dom/card";
 import { compactExcludedListingCards } from "./exclusion/compact";
+import { animateListingLayout } from "./exclusion/motion";
 import { isRevealed } from "./exclusion/reveal";
 import {
     applyExclusionState,
@@ -68,12 +71,17 @@ export async function updateListingCards(
 
             return [{ button, card, snapshot: getListingSnapshot(card, url, { includeThumbnail: false }), url }];
         });
+    const searchIndex = await getSearchListings(cards.map(({ url }) => url));
     const cachedListings = await getCachedListings([
         ...cards.map(({ url }) => url),
         ...carouselListings.map(({ url }) => url),
     ]);
 
-    if (settings.filters.enrichListingDetails) {
+    // Descriptions are only needed by text filters; skip background fetches otherwise.
+    const needsDetail = settings.filters.couldHaveRuleIds.length > 0 ||
+        settings.filters.excludeKeywords.length > 0 ||
+        settings.filters.strataMaxDollars < STRATA_MAX;
+    if (settings.filters.enrichListingDetails && needsDetail) {
         requestListingEnrichment([
             ...cards.map(({ snapshot }) => snapshot),
             ...carouselListings.map(({ snapshot }) => snapshot),
@@ -82,93 +90,96 @@ export async function updateListingCards(
 
     const getBestSnapshot = (snapshot: CarouselListingDecision["snapshot"], url: string) => {
         const cached = cachedListings.get(url.replace(/\/$/, ""));
-        return cached && cached.text.length > snapshot.text.length
+        const base = cached && cached.text.length > snapshot.text.length
             ? { ...snapshot, ...cached, text: cached.text }
             : snapshot;
+        return mergeSearchSnapshot(base, searchIndex.get(normalizeListingUrl(url)));
     };
 
-    cards.forEach(({ button, card, snapshot, url }) => {
-            const listing = getBestSnapshot(snapshot, url);
+    animateListingLayout(() => {
+        cards.forEach(({ button, card, snapshot, url }) => {
+                const listing = getBestSnapshot(snapshot, url);
 
-            const match = matchListing(
-                listing,
-                settings,
-                blacklist,
-                { isFilteredListingRevealed: isRevealed },
-            );
-            const reason = match.exclusionReason;
+                const match = matchListing(
+                    listing,
+                    settings,
+                    blacklist,
+                    { isFilteredListingRevealed: isRevealed },
+                );
+                const reason = match.exclusionReason;
 
-            setBlacklistActionState(button, {
-                active: reason === "blacklisted",
-                label: button.dataset.blacklistScope === "project" ? "Blacklist project" : undefined,
+                setBlacklistActionState(button, {
+                    active: reason === "blacklisted",
+                    label: button.dataset.blacklistScope === "project" ? "Blacklist project" : undefined,
+                });
+
+                if (button.dataset.blacklistScope === "project") {
+                    wholeProjectReasons.set(card, reason);
+                }
+
+                if (isProjectChild(card) || button.dataset.blacklistScope === "carousel-child") return;
+
+                if (showBlacklistedView) {
+                    applyExclusionState(card, button, reason);
+
+                    if (reason === "none" && match.filterMatched) {
+                        ensureHideAgainAffordance(card, url);
+                    } else {
+                        removeHideAgainAffordance(card);
+                    }
+
+                    if (reason !== "none") {
+                        updateExclusionRow(
+                            card,
+                            button.dataset.blacklistScope === "project"
+                                ? getProjectActionUrls(card, url)
+                                : url,
+                            reason,
+                        );
+                    }
+                }
+
+                updatePreferenceTags(
+                    card,
+                    reason === "none" ? match.matchedPreferences : [],
+                );
             });
 
-            if (button.dataset.blacklistScope === "project") {
-                wholeProjectReasons.set(card, reason);
-            }
+        for (const projectCard of document.querySelectorAll<HTMLElement>(PROJECT_CARD_SELECTOR)) {
+            const projectHeader = projectCard.querySelector<HTMLElement>(PROJECT_MARKER_SELECTOR);
+            if (!projectHeader) continue;
 
-            if (isProjectChild(card) || button.dataset.blacklistScope === "carousel-child") return;
+            const projectExcluded = (wholeProjectReasons.get(projectCard) ?? "none") !== "none";
+            updateProjectBlacklistSummary(projectCard, projectHeader, blacklist, projectExcluded);
+        }
 
-            if (showBlacklistedView) {
-                applyExclusionState(card, button, reason);
+        const carouselDecisions = new Map<HTMLElement, CarouselListingDecision[]>();
+        for (const { carouselCard, snapshot, url } of carouselListings) {
+            const listing = getBestSnapshot(snapshot, url);
+            const decision: CarouselListingDecision = {
+                exclusionReason: matchListing(
+                    listing,
+                    settings,
+                    blacklist,
+                    { isFilteredListingRevealed: isRevealed },
+                ).exclusionReason,
+                snapshot: listing,
+                url,
+            };
+            const entries = carouselDecisions.get(carouselCard) ?? [];
+            entries.push(decision);
+            carouselDecisions.set(carouselCard, entries);
+        }
 
-                if (reason === "none" && match.filterMatched) {
-                    ensureHideAgainAffordance(card, url);
-                } else {
-                    removeHideAgainAffordance(card);
-                }
-
-                if (reason !== "none") {
-                    updateExclusionRow(
-                        card,
-                        button.dataset.blacklistScope === "project"
-                            ? getProjectActionUrls(card, url)
-                            : url,
-                        reason,
-                    );
-                }
-            }
-
-            updatePreferenceTags(
-                card,
-                reason === "none" ? match.matchedPreferences : [],
+        for (const carouselCard of carouselCards) {
+            updateCarouselCard(
+                carouselCard,
+                carouselDecisions.get(carouselCard) ?? [],
+                showBlacklistedView,
             );
-        });
+        }
 
-    for (const projectCard of document.querySelectorAll<HTMLElement>(PROJECT_CARD_SELECTOR)) {
-        const projectHeader = projectCard.querySelector<HTMLElement>(PROJECT_MARKER_SELECTOR);
-        if (!projectHeader) continue;
-
-        const projectExcluded = (wholeProjectReasons.get(projectCard) ?? "none") !== "none";
-        updateProjectBlacklistSummary(projectCard, projectHeader, blacklist, projectExcluded);
-    }
-
-    const carouselDecisions = new Map<HTMLElement, CarouselListingDecision[]>();
-    for (const { carouselCard, snapshot, url } of carouselListings) {
-        const listing = getBestSnapshot(snapshot, url);
-        const decision: CarouselListingDecision = {
-            exclusionReason: matchListing(
-                listing,
-                settings,
-                blacklist,
-                { isFilteredListingRevealed: isRevealed },
-            ).exclusionReason,
-            snapshot: listing,
-            url,
-        };
-        const entries = carouselDecisions.get(carouselCard) ?? [];
-        entries.push(decision);
-        carouselDecisions.set(carouselCard, entries);
-    }
-
-    for (const carouselCard of carouselCards) {
-        updateCarouselCard(
-            carouselCard,
-            carouselDecisions.get(carouselCard) ?? [],
-            showBlacklistedView,
-        );
-    }
-
-    if (showBlacklistedView) compactExcludedListingCards();
+        if (showBlacklistedView) compactExcludedListingCards();
+    });
 
 }

@@ -137,10 +137,16 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
     button.classList.add("edf-project-blacklist-button");
     insertProjectBlacklistButton(projectCard, button);
     const syncLayout = (): void => {
+        // Pin the action to the header's top-right corner, centred on its first text line
+        // (the project name / price row), rather than the middle of the whole strip.
         const cardRect = projectCard.getBoundingClientRect();
         const detailsRect = details.getBoundingClientRect();
+        const detailsStyle = getComputedStyle(details);
+        const firstLine = Number.parseFloat(detailsStyle.lineHeight) || 24;
         const buttonHeight = button.getBoundingClientRect().height || 28;
-        button.style.top = `${Math.max(8, detailsRect.top - cardRect.top + (detailsRect.height - buttonHeight) / 2)}px`;
+        const top = detailsRect.top - cardRect.top + (Number.parseFloat(detailsStyle.paddingTop) || 0) +
+            (firstLine - buttonHeight) / 2;
+        button.style.top = `${Math.max(8, top)}px`;
         // The action is absolutely positioned over the project details strip, so
         // inspecting the button's transparent ancestor chain reads the page
         // surface instead of the surface actually behind it.  The details strip

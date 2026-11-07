@@ -10,6 +10,7 @@ import {
     replaceWithPopupStarIcon,
 } from "../../ui/icons";
 import type { PopupData, PopupView } from "../model";
+import { attachTooltip } from "../../ui/tooltip";
 import { showPopupToast } from "../toast";
 
 interface NavigationOptions {
@@ -145,23 +146,31 @@ function createIdentity(account: AccountState): HTMLElement | undefined {
     return card;
 }
 
-function createDomainStatus(data: PopupData): HTMLElement {
-    const status = document.createElement("div");
-    const indicator = document.createElement("span");
-    const copy = document.createElement("span");
-    const signedIn = data.domainSession.status === "signed-in";
+const DOMAIN_SESSION_COPY = {
+    "signed-in": { label: "Domain", title: "Signed in to Domain.com.au — saved searches stay in sync" },
+    "signed-out": { label: "Sign in to Domain", title: "Sign in to Domain.com.au to sync your saved searches" },
+    unavailable: { label: "Domain offline", title: "Domain.com.au could not be reached — open it to refresh" },
+} as const;
 
-    status.className = "edf-popup-domain-status";
-    status.dataset.status = data.domainSession.status;
-    indicator.className = "edf-popup-domain-status-indicator";
-    indicator.ariaHidden = "true";
-    copy.textContent = signedIn
-        ? "Domain.com.au connected"
-        : data.domainSession.status === "signed-out"
-            ? "Domain.com.au signed out"
-            : "Domain.com.au unavailable";
-    status.append(indicator, copy);
-    return status;
+/** One always-visible place for the Domain.com.au session, instead of banners and menu text. */
+function createDomainChip(data: PopupData): HTMLAnchorElement {
+    const chip = document.createElement("a");
+    const dot = document.createElement("span");
+    const label = document.createElement("span");
+    const copy = DOMAIN_SESSION_COPY[data.domainSession.status];
+
+    chip.className = "edf-popup-domain-chip";
+    chip.dataset.status = data.domainSession.status;
+    chip.href = "https://www.domain.com.au/user/saved-searches";
+    chip.target = "_blank";
+    chip.rel = "noopener noreferrer";
+    chip.ariaLabel = copy.title;
+    dot.className = "edf-popup-domain-chip-dot";
+    dot.ariaHidden = "true";
+    label.textContent = copy.label;
+    chip.append(dot, label);
+    attachTooltip(chip, copy.title);
+    return chip;
 }
 
 export function createNavigation(options: NavigationOptions): HTMLElement {
@@ -172,7 +181,8 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
     const navigation = document.createElement("nav");
     const indicator = document.createElement("span");
     const account = document.createElement("div");
-    const summary = createButton("", "edf-popup-account-summary edf-popup-navigation-item");
+    const summary = createButton("", "edf-popup-tab edf-popup-menu-trigger");
+    const actions = document.createElement("div");
     const menu = document.createElement("div");
     const blacklistCount = data.blacklist.filter(entry => !entry.removedAt).length;
     let open = false;
@@ -197,7 +207,7 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
     indicator.className = "edf-popup-navigation-indicator";
     indicator.ariaHidden = "true";
     for (const item of NAV_ITEMS) {
-        const button = createButton(item.label, "edf-popup-navigation-button");
+        const button = createButton(item.label, "edf-popup-tab");
         button.dataset.active = String(item.view === activeView);
         button.dataset.popupView = item.view;
         button.addEventListener("click", () => onNavigate(item.view));
@@ -226,7 +236,6 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
     menu.hidden = true;
     const identity = data.account ? createIdentity(data.account) : undefined;
     if (identity) menu.append(identity);
-    menu.append(createDomainStatus(data));
     menu.append(createMenuItem(
         "My searches",
         replaceWithPopupSavedSearchIcon,
@@ -277,9 +286,13 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
         }
     });
     session.disabled = data.account?.status === "unavailable";
-    menu.append(session);
+    const divider = document.createElement("hr");
+    divider.className = "edf-popup-account-menu-divider";
+    menu.append(divider, session);
     account.append(summary, menu);
-    header.append(brand, navigation, account);
+    actions.className = "edf-popup-navigation-actions";
+    actions.append(createDomainChip(data), account);
+    header.append(brand, navigation, actions);
     setOpen(false);
     requestAnimationFrame(() => {
         if (navigation.isConnected) placePrimaryIndicator(navigation, indicator, activeView);

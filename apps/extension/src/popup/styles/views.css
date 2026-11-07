@@ -6,32 +6,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.edf-popup-domain-session-notice {
-    align-items: center;
-    background: #f4fbee;
-    border: 1px solid #c9e7c2;
-    border-radius: var(--edf-radius-control);
-    color: var(--edf-color-heading);
-    display: flex;
-    font-size: 14px;
-    gap: 12px;
-    justify-content: space-between;
-    line-height: 20px;
-    margin-bottom: 14px;
-    padding: 10px 12px;
-}
-
-.edf-popup-domain-session-notice a {
-    color: var(--edf-color-green-hover);
-    flex: 0 0 auto;
-    font-weight: 700;
-    text-decoration: none;
-}
-
-.edf-popup-domain-session-notice a:hover {
-    text-decoration: underline;
-}
-
 .edf-popup-content .edf-collection-toolbar {
     gap: 8px;
     margin-bottom: 14px;

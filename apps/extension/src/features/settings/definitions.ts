@@ -123,7 +123,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
             {
                 kind: "toggle",
                 title: "Listing detail enrichment",
-                description: "Optionally fetch viewed listing pages in the background to improve text-based matches. It is off until you turn it on.",
+                description: "Read the descriptions of listings you view, one at a time in the background, so could-haves, excluded keywords and strata limits can match. Only runs while one of those filters is set.",
                 read: settings => settings.filters.enrichListingDetails,
                 write: (enrichListingDetails: boolean) => ({ filters: { enrichListingDetails } }),
             },

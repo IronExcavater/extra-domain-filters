@@ -19,7 +19,9 @@ import trashFilledSvg from "../../../../packages/assets/icons/actions/trash-fill
 import bathSvg from "../../../../packages/assets/icons/amenities/bath.svg?raw";
 import bedSvg from "../../../../packages/assets/icons/amenities/bed.svg?raw";
 import parkingSvg from "../../../../packages/assets/icons/amenities/parking.svg?raw";
-import priceFilterSvg from "../../../../packages/assets/icons/filters/price.svg?raw";
+import couldHavesFilterSvg from "../../../../packages/assets/icons/filters/could-haves.svg?raw";
+import excludeKeywordsFilterSvg from "../../../../packages/assets/icons/filters/exclude-keywords.svg?raw";
+import strataFilterSvg from "../../../../packages/assets/icons/filters/strata.svg?raw";
 import chevronSvg from "../../../../packages/assets/icons/navigation/chevron.svg?raw";
 import bellFilledSvg from "../../../../packages/assets/icons/search/bell-filled.svg?raw";
 import bellOutlineSvg from "../../../../packages/assets/icons/search/bell.svg?raw";
@@ -95,8 +97,16 @@ export function replaceWithParkingIcon(target: SVGElement): void {
     setSvgIcon(target, parkingSvg);
 }
 
-export function replaceWithPriceFilterIcon(target: SVGElement): void {
-    setSvgIcon(target, priceFilterSvg);
+export function replaceWithStrataFilterIcon(target: SVGElement): void {
+    setSvgIcon(target, strataFilterSvg);
+}
+
+export function replaceWithCouldHavesFilterIcon(target: SVGElement): void {
+    setSvgIcon(target, couldHavesFilterSvg);
+}
+
+export function replaceWithExcludeKeywordsFilterIcon(target: SVGElement): void {
+    setSvgIcon(target, excludeKeywordsFilterSvg);
 }
 
 export function replaceWithEyeIcon(target: SVGElement): void {

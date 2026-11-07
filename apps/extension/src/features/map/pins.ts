@@ -4,6 +4,9 @@ import { matchListing, type BlacklistEntry, type ListingSnapshot } from "../../d
 import { type PageContext } from "../../platform/router";
 import { onStorageChange } from "../../platform/storage";
 import { getSettings, type Settings } from "../../state/settings";
+import { getCachedListings } from "../../domain/listings/cache";
+import { getSearchListings, mergeSearchSnapshot } from "../../domain/listings/searchData";
+import { normalizeListingUrl } from "../../domain/listings/url";
 import { calibrateMap, findNearestPoint, type GeoPoint, type PixelPoint } from "./calibration";
 
 const MARKER_SELECTOR = '[data-testid="single-marker"]';
@@ -18,72 +21,19 @@ interface MapPin {
     pixel: PixelPoint;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null;
-}
-
-function readString(value: unknown): string | undefined {
-    return typeof value === "string" && value.trim() ? value : undefined;
-}
-
-function readCoordinate(value: unknown): number | undefined {
-    return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
-
-function extractMapListings(): MapListing[] {
-    const source = document.getElementById("__NEXT_DATA__")?.textContent;
-    if (!source) return [];
-
-    let root: unknown;
-    try {
-        root = JSON.parse(source);
-    } catch {
-        return [];
-    }
-
-    const listings = new Map<string, MapListing>();
-    const seen = new WeakSet<object>();
-
-    const visit = (value: unknown): void => {
-        if (!isRecord(value) && !Array.isArray(value)) return;
-        if (seen.has(value)) return;
-        seen.add(value);
-
-        if (isRecord(value)) {
-            const model = isRecord(value.listingModel) ? value.listingModel : value;
-            const address = isRecord(model.address) ? model.address : undefined;
-            const lat = readCoordinate(address?.lat);
-            const lng = readCoordinate(address?.lng);
-            const url = readString(model.url);
-
-            if (lat !== undefined && lng !== undefined && url) {
-                const absoluteUrl = new URL(url, window.location.origin).href;
-                listings.set(absoluteUrl, {
-                    lat,
-                    lng,
-                    snapshot: {
-                        url: absoluteUrl,
-                        title: readString(model.displayAddress) ?? readString(model.address) ?? "Domain listing",
-                        displayAddress: readString(model.displayAddress),
-                        text: [
-                            readString(model.displayAddress),
-                            readString(model.price),
-                            Array.isArray(model.keywords) ? model.keywords.join(" ") : undefined,
-                        ].filter((item): item is string => Boolean(item)).join("\n"),
-                        price: readString(model.price),
-                    },
-                });
-            }
-
-            for (const child of Object.values(value)) visit(child);
-            return;
-        }
-
-        for (const child of value) visit(child);
-    };
-
-    visit(root);
-    return [...listings.values()];
+async function getMapListings(): Promise<MapListing[]> {
+    const renderedUrls = [...document.querySelectorAll<HTMLElement>('li[data-testid^="listing-"]')]
+        .map(card => card.querySelector<HTMLAnchorElement>("a[href]")?.href)
+        .filter((url): url is string => Boolean(url));
+    const index = await getSearchListings(renderedUrls);
+    // Descriptions fetched for the list view sharpen pin matches (could-haves, keywords).
+    const cached = await getCachedListings([...index.values()].map(listing => listing.snapshot.url));
+    return [...index.values()].flatMap(listing => {
+        if (listing.lat === undefined || listing.lng === undefined) return [];
+        const detail = cached.get(normalizeListingUrl(listing.snapshot.url));
+        const snapshot = detail ? mergeSearchSnapshot({ ...listing.snapshot, text: detail.text }, listing) : listing.snapshot;
+        return [{ lat: listing.lat, lng: listing.lng, snapshot }];
+    });
 }
 
 function getMarkerPixel(marker: HTMLElement): PixelPoint | undefined {
@@ -137,8 +87,6 @@ export function bindMapPins(context: PageContext): void {
     let refreshing = false;
     let refreshQueued = false;
     let requestedMapState = false;
-    let cachedSource = "";
-    let cachedListings: MapListing[] = [];
 
     const refresh = async (): Promise<void> => {
         if (refreshing) {
@@ -156,12 +104,8 @@ export function bindMapPins(context: PageContext): void {
                 requestMapQueryState();
             }
 
-            const source = document.getElementById("__NEXT_DATA__")?.textContent ?? "";
-            if (source !== cachedSource) {
-                cachedSource = source;
-                cachedListings = extractMapListings();
-            }
-            if (cachedListings.length < 4) return;
+            const cachedListings = await getMapListings();
+            if (scope.disposed || cachedListings.length < 4) return;
 
             const calibration = calibrateMap(
                 pins.map(pin => pin.pixel),
@@ -223,6 +167,7 @@ export function bindMapPins(context: PageContext): void {
     }, scope.signal);
     scope.add(onStorageChange<BlacklistEntry[]>("blacklist", schedule));
     scope.add(onStorageChange("settings", schedule));
+    scope.add(onStorageChange("listingCache", schedule));
     schedule();
 
     scope.add(() => {

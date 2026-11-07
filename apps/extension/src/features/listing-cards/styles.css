@@ -348,25 +348,27 @@
     opacity: 0.4;
 }
 
+/* Could-have matches, styled as Domain's own listing tag (e.g. "New"). */
 .edf-preference-match-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+    left: 12px;
+    max-width: calc(100% - 80px);
     pointer-events: none;
     position: absolute;
-    right: 8px;
-    top: 8px;
+    top: 12px;
     z-index: 3;
 }
 
 .edf-preference-match-tag {
-    background: var(--edf-color-heading);
-    border-radius: 999px;
-    color: var(--edf-color-surface);
+    background: var(--color-primary-trim-default, #d4f2c7);
+    border-radius: 4px;
+    color: var(--color-interactive-base-pressed, #0f4b19);
     font-size: 12px;
     font-weight: 700;
-    line-height: 18px;
-    padding: 2px 8px;
+    line-height: 16px;
+    padding: 2px 4px;
 }
 
 /* Domain caps the sticky toolbar at 400px for two buttons; a third must not overflow. */

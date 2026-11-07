@@ -3,9 +3,10 @@ import type { PreferenceRule } from "../../../domain/matching";
 
 const TAG_CONTAINER_SELECTOR = '[data-testid="extra-domain-filters-listing-match-tags"]';
 
+// Pills sit on the photo itself (top-left), clear of the agency banner, agent photo and
+// Domain's own bottom-left status tag (e.g. "New").
 function getTagHost(card: Element): HTMLElement | undefined {
-    const carousel = card.querySelector<HTMLElement>('[data-testid="listing-card-carousel"]');
-    return carousel?.parentElement instanceof HTMLElement ? carousel.parentElement : undefined;
+    return card.querySelector<HTMLElement>('[data-testid="listing-card-carousel"]') ?? undefined;
 }
 
 function createTag(label: string): HTMLElement {

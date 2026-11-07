@@ -8,38 +8,40 @@ import {
 } from "../../site-dom/navigation";
 
 const boundMenus = new WeakMap<HTMLElement, AbortSignal>();
-const menuVisualStates = new WeakMap<HTMLElement, { chevron: SVGElement; open: boolean }>();
+// Keyed by menu identity (its label), not element: Domain re-creates the trigger, chevron and
+// sometimes the whole dropdown on open/close, which made every close look like a new menu.
+const menuVisualStates = new Map<string, { chevron: SVGElement; open: boolean }>();
+
+function setData(element: HTMLElement | SVGElement, key: string, value: string): void {
+    if (element.dataset[key] !== value) element.dataset[key] = value;
+}
 
 export function enableNavigationChevronAnimation(context: PageContext): void {
     const syncCarrier = (carrier: HTMLElement): void => {
         const current = findNavigationMenus().find(binding => binding.carrier === carrier);
         if (!current) return;
         const open = current.isOpen();
-        const previous = menuVisualStates.get(carrier);
-        current.chevron.dataset.edfNavigationChevron = "true";
-        if (previous && previous.chevron !== current.chevron) {
-            // React occasionally replaces the SVG at the same time as it closes a
-            // menu. Transfer the old visual angle to that new node for one frame so
-            // the close transition has a real starting point instead of snapping.
+        const previous = menuVisualStates.get(current.identity);
+        setData(current.chevron, "edfNavigationChevron", "true");
+        menuVisualStates.set(current.identity, { chevron: current.chevron, open });
+
+        if (previous && previous.chevron !== current.chevron && previous.open !== open) {
+            // A replacement chevron would first paint at its resting angle. Pin it to the old
+            // angle for one frame, then release it so the transition runs to the new state.
             current.chevron.style.transition = "none";
             current.chevron.style.transform = `rotate(${previous.open ? 180 : 0}deg)`;
             requestAnimationFrame(() => {
-                if (context.signal.aborted || !current.chevron.isConnected) return;
+                if (context.signal.aborted) return;
                 current.chevron.style.removeProperty("transition");
                 current.chevron.style.removeProperty("transform");
-                current.carrier.dataset.edfNavigationOpen = String(open);
+                setData(current.carrier, "edfNavigationOpen", String(open));
             });
-        } else {
-            current.carrier.dataset.edfNavigationOpen = String(open);
+            return;
         }
-        menuVisualStates.set(carrier, { chevron: current.chevron, open });
+        setData(current.carrier, "edfNavigationOpen", String(open));
     };
     const bind = (): void => {
         for (const binding of findNavigationMenus()) {
-            // Domain's React can swap the trigger's inner <svg> (e.g. on hover/focus
-            // state) while keeping the same carrier element. Re-mark and re-sync the
-            // chevron on every pass so a replaced node picks the animation back up,
-            // independent of whether this carrier's listeners are already bound below.
             syncCarrier(binding.carrier);
 
             const existingSignal = boundMenus.get(binding.carrier);
@@ -48,14 +50,14 @@ export function enableNavigationChevronAnimation(context: PageContext): void {
             observeNavigationMenu(binding, () => syncCarrier(binding.carrier), context.signal);
             requestAnimationFrame(() => {
                 if (!context.signal.aborted && binding.carrier.isConnected) {
-                    binding.carrier.dataset.edfNavigationReady = "true";
+                    setData(binding.carrier, "edfNavigationReady", "true");
                 }
             });
             context.scope.add(() => {
                 if (boundMenus.get(binding.carrier) === context.signal) {
                     boundMenus.delete(binding.carrier);
                 }
-                menuVisualStates.delete(binding.carrier);
+                menuVisualStates.delete(binding.identity);
                 delete binding.carrier.dataset.edfNavigationOpen;
                 delete binding.carrier.dataset.edfNavigationReady;
                 binding.carrier.querySelectorAll<SVGElement>(

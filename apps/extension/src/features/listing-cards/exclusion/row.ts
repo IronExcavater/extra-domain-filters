@@ -1,6 +1,6 @@
 import { removeBlacklistUrls } from "../../../domain/blacklist/store";
 import { type ExclusionReason } from "../../../domain/matching";
-import { replaceWithEyeIcon, replaceWithEyeOffIcon, replaceWithUnbinIcon } from "../../../ui/icons";
+import { replaceWithEyeIcon, replaceWithEyeOffIcon, replaceWithFilledBinIcon, replaceWithUnbinIcon } from "../../../ui/icons";
 import { setTooltipText } from "../../../ui/tooltip";
 import { getBlacklistCardKind, getPropertyCount, getTitle, type BlacklistCardKind } from "../dom/card";
 import { reveal, unreveal } from "./reveal";
@@ -17,15 +17,11 @@ const KIND_CLASSES = [
 type ActiveReason = Exclude<ExclusionReason, "none">;
 const ICON_STATE_ATTRIBUTE = "data-edf-icon-state";
 
-export function getExclusionSummaryText(card: Element, reason: ActiveReason): string {
+export function getExclusionSummaryText(card: Element, _reason: ActiveReason): string {
     const count = getPropertyCount(card);
     const title = getTitle(card);
 
-    if (reason === "blacklisted") {
-        return title;
-    }
-
-    return count > 1 ? `${count} properties filtered out` : `Filtered out: ${title}`;
+    return count > 1 ? `${title} (${count} properties)` : title;
 }
 
 export async function resolveExclusionAction(url: string | readonly string[], reason: ActiveReason): Promise<void> {
@@ -37,33 +33,85 @@ export async function resolveExclusionAction(url: string | readonly string[], re
     await removeBlacklistUrls(url);
 }
 
-export function getExclusionRow(card: Element): HTMLElement {
-    const existing = card.querySelector<HTMLElement>(ROW_SELECTOR);
-    if (existing) return existing;
+const REASON_LABELS: Record<ActiveReason, { action: string; reason: string }> = {
+    blacklisted: { action: "Unblacklist", reason: "Blacklisted" },
+    filtered: { action: "Show anyway", reason: "Filtered" },
+};
 
+function createIcon(className: string, size: number): SVGSVGElement {
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.classList.add(className);
+    icon.setAttribute("aria-hidden", "true");
+    icon.setAttribute("width", String(size));
+    icon.setAttribute("height", String(size));
+    return icon;
+}
+
+/**
+ * One hidden-listing row for both reasons, used on its own and inside merged groups:
+ * reason glyph, title + reason label, and a single restore action.
+ */
+export function createHiddenRow(): HTMLElement {
     const row = document.createElement("div");
     const text = document.createElement("span");
+    const title = document.createElement("span");
+    const reason = document.createElement("span");
     const button = document.createElement("button");
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
     row.className = "edf-exclusion-row";
     row.setAttribute("data-testid", "listing-card-exclusion-row");
-
     text.className = "edf-exclusion-row-text";
-    text.setAttribute("data-testid", "listing-card-exclusion-row-text");
-
-    icon.setAttribute("aria-hidden", "true");
-    icon.setAttribute("width", "18");
-    icon.setAttribute("height", "18");
-
+    title.className = "edf-exclusion-row-title";
+    title.setAttribute("data-testid", "listing-card-exclusion-row-text");
+    reason.className = "edf-exclusion-row-reason";
+    text.append(title, reason);
     button.type = "button";
     button.className = "edf-exclusion-row-button";
     button.setAttribute("data-testid", "listing-card-exclusion-restore");
-    button.append(icon);
+    button.append(createIcon("edf-exclusion-row-action-icon", 18));
+    row.append(createIcon("edf-exclusion-row-icon", 18), text, button);
+    return row;
+}
 
-    row.append(text, button);
+export function setHiddenRowState(
+    row: HTMLElement,
+    state: { onAction(): Promise<void> | void; reason: ActiveReason; title: string; urls: readonly string[] },
+): void {
+    const title = row.querySelector<HTMLElement>(".edf-exclusion-row-title");
+    const reason = row.querySelector<HTMLElement>(".edf-exclusion-row-reason");
+    const button = row.querySelector<HTMLButtonElement>(".edf-exclusion-row-button");
+    const icon = row.querySelector<SVGSVGElement>(".edf-exclusion-row-icon");
+    const actionIcon = row.querySelector<SVGSVGElement>(".edf-exclusion-row-action-icon");
+    const labels = REASON_LABELS[state.reason];
+    const nextUrls = JSON.stringify(state.urls);
+
+    if (title && title.textContent !== state.title) title.textContent = state.title;
+    if (reason && reason.textContent !== labels.reason) reason.textContent = labels.reason;
+    if (row.dataset.exclusionReason !== state.reason) row.dataset.exclusionReason = state.reason;
+    if (row.dataset.exclusionUrls !== nextUrls) row.dataset.exclusionUrls = nextUrls;
+    if (icon && actionIcon && icon.getAttribute(ICON_STATE_ATTRIBUTE) !== state.reason) {
+        (state.reason === "blacklisted" ? replaceWithFilledBinIcon : replaceWithEyeOffIcon)(icon);
+        (state.reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(actionIcon);
+        icon.setAttribute(ICON_STATE_ATTRIBUTE, state.reason);
+    }
+    if (button) {
+        if (button.ariaLabel !== labels.action) button.ariaLabel = labels.action;
+        setTooltipText(button, labels.action);
+        button.onclick = async event => {
+            event.preventDefault();
+            event.stopPropagation();
+            await state.onAction();
+        };
+    }
+}
+
+export function getExclusionRow(card: Element): HTMLElement {
+    const existing = card.querySelector<HTMLElement>(`:scope > ${ROW_SELECTOR}`) ??
+        card.querySelector<HTMLElement>(ROW_SELECTOR);
+    if (existing) return existing;
+
+    const row = createHiddenRow();
     card.prepend(row);
-
     return row;
 }
 
@@ -72,34 +120,12 @@ export function updateExclusionRow(
     url: string | readonly string[],
     reason: ActiveReason,
 ): void {
-    const row = getExclusionRow(card);
-    const text = row.querySelector<HTMLElement>('[data-testid="listing-card-exclusion-row-text"]');
-    const button = row.querySelector<HTMLButtonElement>('[data-testid="listing-card-exclusion-restore"]');
-    const icon = button?.querySelector("svg");
-    const urls = [url].flat();
-
-    const nextText = getExclusionSummaryText(card, reason);
-    const nextUrls = JSON.stringify(urls);
-
-    if (text && text.textContent !== nextText) text.textContent = nextText;
-    if (row.dataset.exclusionReason !== reason) row.dataset.exclusionReason = reason;
-    if (row.dataset.exclusionUrls !== nextUrls) row.dataset.exclusionUrls = nextUrls;
-
-    if (icon && icon.getAttribute(ICON_STATE_ATTRIBUTE) !== reason) {
-        (reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(icon);
-        icon.setAttribute(ICON_STATE_ATTRIBUTE, reason);
-    }
-
-    if (button) {
-        const label = reason === "blacklisted" ? "Unblacklist" : "Show anyway";
-        if (button.ariaLabel !== label) button.ariaLabel = label;
-        setTooltipText(button, label);
-        button.onclick = async event => {
-            event.preventDefault();
-            event.stopPropagation();
-            await resolveExclusionAction(url, reason);
-        };
-    }
+    setHiddenRowState(getExclusionRow(card), {
+        onAction: () => resolveExclusionAction(url, reason),
+        reason,
+        title: getExclusionSummaryText(card, reason),
+        urls: [url].flat(),
+    });
 }
 
 export function applyExclusionState(

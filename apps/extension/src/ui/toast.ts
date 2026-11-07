@@ -37,6 +37,21 @@ function createCheckIcon(): SVGSVGElement {
     return svg;
 }
 
+function createUndoIcon(): SVGSVGElement {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    path.setAttribute("d", "M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "currentColor");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+    path.setAttribute("stroke-width", "2");
+    svg.append(path);
+    return svg;
+}
+
 function getToastTray(scope: ToastScope): HTMLElement {
     const existing = document.querySelector<HTMLElement>(
         `[data-testid="messages__toast"][data-edf-toast-scope="${scope}"]`,
@@ -87,7 +102,9 @@ export function showToast(
     if (action && options.action) {
         action.type = "button";
         action.className = "edf-toast-action";
-        action.textContent = options.action.label;
+        const label = document.createElement("span");
+        label.textContent = options.action.label;
+        action.append(createUndoIcon(), label);
     }
     close.type = "button";
     close.className = "edf-toast-close";
@@ -158,7 +175,15 @@ export function showToast(
 
     icon.append(createCheckIcon());
     content.append(icon, text);
-    if (action) content.append(action);
+    if (action) {
+        content.append(action);
+        // A countdown under the toast shows how long Undo remains available; it pauses with
+        // the dismiss timer while the toast is hovered or focused.
+        const progress = document.createElement("span");
+        progress.className = "edf-toast-progress";
+        progress.style.animationDuration = `${duration}ms`;
+        toast.append(progress);
+    }
     content.append(close);
     toast.append(content);
     clip.append(markOwned(toast, "toast-message"));

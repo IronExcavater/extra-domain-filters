@@ -1,5 +1,6 @@
 .edf-toast-tray {
     bottom: 24px;
+    font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
     display: flex;
     flex-direction: column;
     left: 24px;
@@ -44,6 +45,8 @@
 }
 
 .edf-toast {
+    overflow: hidden;
+    position: relative;
     background: var(--edf-color-surface, #fff);
     border: 1px solid var(--edf-color-border, #dfe3e8);
     border-radius: 10px;
@@ -88,24 +91,29 @@
 }
 
 .edf-toast-action {
+    align-items: center;
     appearance: none;
-    background: transparent;
-    border: 0;
-    border-radius: 6px;
-    color: var(--edf-color-green, #0ea800);
+    background: var(--edf-color-surface, #fff);
+    border: 1px solid var(--edf-color-border, #e1e1df);
+    border-radius: 8px;
+    color: var(--edf-color-heading, #131212);
     cursor: pointer;
+    display: inline-flex;
     flex: 0 0 auto;
     font: inherit;
     font-size: 14px;
     font-weight: 700;
+    gap: 6px;
+    height: 34px;
     line-height: 20px;
-    padding: 6px 8px;
-    transition: background-color 150ms ease, color 150ms ease, opacity 150ms ease;
+    padding: 0 12px 0 10px;
+    transition: background-color 0.2s linear, border-color 0.2s linear, color 0.2s linear;
 }
 
-.edf-toast-action:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: 0;
+.edf-toast-action svg {
+    flex: 0 0 16px;
+    height: 16px;
+    width: 16px;
 }
 
 .edf-toast-action:disabled {
@@ -113,9 +121,41 @@
     opacity: 0.55;
 }
 
-.edf-toast-action:hover:not(:disabled) {
-    background: #eef8ec;
+.edf-toast-action:is(:hover, :focus-visible):not(:disabled) {
+    background: #f4fbee;
+    border-color: var(--edf-color-green, #0ea800);
     color: var(--edf-color-green-hover, #087f00);
+    outline: none;
+}
+
+.edf-toast-action:active:not(:disabled) {
+    background: #d6e8ca;
+}
+
+.edf-toast-progress {
+    animation: edf-toast-countdown linear forwards;
+    background: var(--edf-color-green, #0ea800);
+    bottom: 0;
+    height: 3px;
+    left: 0;
+    opacity: 0.55;
+    position: absolute;
+    right: 0;
+    transform-origin: left center;
+}
+
+.edf-toast-transition:is(:hover, :focus-within) .edf-toast-progress {
+    animation-play-state: paused;
+}
+
+@keyframes edf-toast-countdown {
+    from {
+        transform: scaleX(1);
+    }
+
+    to {
+        transform: scaleX(0);
+    }
 }
 
 .edf-toast-close {

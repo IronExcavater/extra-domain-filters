@@ -202,14 +202,19 @@ export async function drainListingEnrichmentQueue(): Promise<void> {
     if (draining) return;
     draining = true;
     try {
-        const { entries, limits, pausedUntil } = await claimReadyEntries();
-        if (pausedUntil) {
-            arm(pausedUntil - Date.now());
-            return;
-        }
-        if (entries.length === 0) return;
+        // Work through the queue at the configured pace while it has ready entries; the alarm
+        // only wakes the worker for retries, pauses, or after the service worker was suspended.
+        for (;;) {
+            const { entries, limits, pausedUntil } = await claimReadyEntries();
+            if (pausedUntil) {
+                arm(pausedUntil - Date.now());
+                return;
+            }
+            if (entries.length === 0) break;
 
-        await Promise.all(entries.map((entry, index) => enrichEntry(entry, index, limits)));
+            await Promise.all(entries.map((entry, index) => enrichEntry(entry, index, limits)));
+            await new Promise(resolve => setTimeout(resolve, limits.minSpacingMs));
+        }
         arm();
     } finally {
         draining = false;

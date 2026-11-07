@@ -17,7 +17,7 @@ export const PREFERENCES = [
     {
         id: "gym",
         label: "Gym",
-        pattern: /gym|fitness.{0,10}cent(er|re)|exercise/i,
+        pattern: /\bgym\b|fitness.{0,10}cent(er|re)/i,
     },
     {
         id: "pool",
@@ -27,7 +27,7 @@ export const PREFERENCES = [
     {
         id: "spa",
         label: "Spa",
-        pattern: /spa|sauna|steam.{0,10}room/i,
+        pattern: /\bspas?\b|sauna|steam.{0,10}room/i,
     },
     {
         id: "dishwasher",

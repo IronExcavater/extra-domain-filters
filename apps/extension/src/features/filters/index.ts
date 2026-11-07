@@ -10,9 +10,9 @@ import { findDomainFilterHosts, readExcludedPropertyTypes } from "../../site-dom
 import { Property } from "../../state/property";
 import { getSettings, toggleListId, updateSettings, type Settings } from "../../state/settings";
 import {
-    replaceWithPopupSavedSearchIcon,
-    replaceWithPopupStarIcon,
-    replaceWithPriceFilterIcon,
+    replaceWithCouldHavesFilterIcon,
+    replaceWithExcludeKeywordsFilterIcon,
+    replaceWithStrataFilterIcon,
 } from "../../ui/icons";
 import { snapPrice } from "../../utils/number";
 import { createDraftProperty } from "./bindings/draft";
@@ -109,7 +109,7 @@ export async function injectFilters(context: PageContext) {
         const couldHaveDiv = createFilterSection(
             "Could-Haves",
             "dynamic-search-filters__preference-options",
-            replaceWithPopupStarIcon,
+            replaceWithCouldHavesFilterIcon,
         );
         const checkboxGrid = document.createElement("div");
         checkboxGrid.className = "edf-filter-checkbox-grid";
@@ -187,7 +187,7 @@ export async function injectFilters(context: PageContext) {
                 label: 'Exclude Keywords',
                 placeholder: 'e.g. studio, granny flat',
                 ariaLabel: 'Exclude keywords (example: studio, granny flat)',
-                icon: replaceWithPopupSavedSearchIcon,
+                icon: replaceWithExcludeKeywordsFilterIcon,
                 testId: 'dynamic-search-filters__preferences',
             },
         );
@@ -227,7 +227,7 @@ export async function injectFilters(context: PageContext) {
             {
                 id: 'strataFees',
                 label: 'Strata Fees (Quarterly)',
-                icon: replaceWithPriceFilterIcon,
+                icon: replaceWithStrataFilterIcon,
                 max: STRATA_MAX,
                 snap: snapPrice,
                 testId: 'dynamic-search-filters__strata-fees',

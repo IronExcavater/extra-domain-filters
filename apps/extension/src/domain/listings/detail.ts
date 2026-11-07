@@ -17,31 +17,50 @@ export interface ListingResolutionOptions {
     signal: AbortSignal;
 }
 
-function parseImageUrls(document: Document): string[] {
-    const urls = new Set<string>();
-    const add = (value: string | null | undefined): void => {
-        if (value && /domainstatic\.com\.au|domain\.com\.au\/image/i.test(value)) urls.add(value);
-    };
+const NEXT_DATA_PATTERN = /<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/;
+const OG_IMAGE_PATTERN = /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/;
 
-    add(document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content);
-    add(document.querySelector<HTMLMetaElement>('meta[name="twitter:image"]')?.content);
-    for (const image of document.querySelectorAll<HTMLImageElement>("img")) {
-        if (!/agency|logo/i.test(`${image.currentSrc || image.src} ${image.alt}`)) {
-            add(image.currentSrc || image.src);
-        }
-    }
-    return [...urls].slice(0, MAX_IMAGE_URLS);
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseListingDetail(html: string): Pick<ListingSnapshot, "imageUrls" | "text" | "thumbnailUrl"> {
-    const document = new DOMParser().parseFromString(html, "text/html");
-    const imageUrls = parseImageUrls(document);
+function strings(value: unknown): string[] {
+    if (typeof value === "string") return [value];
+    if (!Array.isArray(value)) return [];
+    return value.flatMap(item => typeof item === "string"
+        ? [item]
+        : isRecord(item) && typeof item.name === "string" ? [item.name] : []);
+}
 
-    return {
-        imageUrls,
-        text: document.body.textContent ?? "",
-        thumbnailUrl: imageUrls[0],
-    };
+/**
+ * Reads the listing's own description, features and type from Domain's Next.js data. This
+ * runs in the background service worker (no DOMParser) and ignores page chrome such as
+ * navigation and "similar listings", which used to produce false keyword matches.
+ */
+function parseListingDetail(html: string): Pick<ListingSnapshot, "imageUrls" | "text" | "thumbnailUrl"> {
+    const ogImage = html.match(OG_IMAGE_PATTERN)?.[1];
+    let props: Record<string, unknown> = {};
+    try {
+        const data: unknown = JSON.parse(html.match(NEXT_DATA_PATTERN)?.[1] ?? "{}");
+        const componentProps = isRecord(data) && isRecord(data.props) && isRecord(data.props.pageProps)
+            ? data.props.pageProps.componentProps
+            : undefined;
+        if (isRecord(componentProps)) props = componentProps;
+    } catch {
+        props = {};
+    }
+
+    const imageUrls = [...new Set([ogImage, ...strings(props.heroImages)].filter((url): url is string =>
+        Boolean(url) && /domainstatic\.com\.au|domain\.com\.au\/image/i.test(url ?? "")))].slice(0, MAX_IMAGE_URLS);
+    const text = [
+        ...strings(props.headline),
+        ...strings(props.description),
+        ...strings(props.features),
+        ...strings(props.structuredFeatures),
+        ...strings(props.propertyType),
+    ].join("\n");
+
+    return { imageUrls, text, thumbnailUrl: imageUrls[0] };
 }
 
 export async function enrichListingSnapshot(

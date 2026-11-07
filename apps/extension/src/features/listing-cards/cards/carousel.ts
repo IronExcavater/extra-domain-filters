@@ -5,6 +5,9 @@ import { attachTooltip, setTooltipText } from "../../../ui/tooltip";
 import { createBlacklistAction, setBlacklistActionState } from "../actions/blacklistAction";
 import { toggleBundleBlacklist } from "../blacklist/bundle";
 import { toggleBlacklist } from "../blacklist/toggle";
+import { getExclusionRow, setHiddenRowState } from "../exclusion/row";
+import { reveal } from "../exclusion/reveal";
+import { removeBlacklistUrls } from "../../../domain/blacklist/store";
 import {
     CAROUSEL_CHILD_SELECTOR,
     findListingAnchor,
@@ -66,6 +69,9 @@ function removeCarouselHydrationObserver(carouselCard: HTMLElement): void {
 }
 
 export function disposeDetachedCarouselControls(): void {
+    for (const carouselCard of frozenTracks.keys()) {
+        if (!carouselCard.isConnected) freezeCarousel(carouselCard, false);
+    }
     for (const [carouselCard, state] of pausedCarousels) {
         if (carouselCard.isConnected) continue;
 
@@ -84,6 +90,8 @@ export function disposeDetachedCarouselControls(): void {
 }
 
 export function disposeCarouselControls(): void {
+    for (const observer of frozenTracks.values()) observer.disconnect();
+    frozenTracks.clear();
     for (const state of pausedCarousels.values()) state.observer.disconnect();
     pausedCarousels.clear();
     for (const carouselCard of carouselActionHosts.keys()) removeCarouselActionHost(carouselCard);
@@ -488,6 +496,53 @@ function setCarouselChildDecision(
     }
 }
 
+const frozenTracks = new Map<HTMLElement, MutationObserver>();
+
+/** Holds the slick track still while the featured card is hidden, so auto-advance is paused. */
+function freezeCarousel(carouselCard: HTMLElement, frozen: boolean): void {
+    const existing = frozenTracks.get(carouselCard);
+    if (!frozen || !carouselCard.isConnected) {
+        existing?.disconnect();
+        frozenTracks.delete(carouselCard);
+        return;
+    }
+    const track = carouselCard.querySelector<HTMLElement>(".slick-track");
+    if (existing || !track) return;
+
+    const transform = track.style.transform;
+    const observer = new MutationObserver(() => {
+        if (track.style.transform !== transform) track.style.transform = transform;
+    });
+    observer.observe(track, { attributeFilter: ["style"], attributes: true });
+    frozenTracks.set(carouselCard, observer);
+}
+
+function setCarouselCollapsed(
+    carouselCard: HTMLElement,
+    decisions: readonly CarouselListingDecision[] | undefined,
+): void {
+    carouselCard.classList.toggle("edf-listing-card-excluded", decisions !== undefined);
+    if (!decisions) {
+        delete carouselCard.dataset.exclusionReason;
+        return;
+    }
+
+    const blacklisted = decisions.filter(decision => decision.exclusionReason === "blacklisted").map(d => d.url);
+    const filtered = decisions.filter(decision => decision.exclusionReason === "filtered").map(d => d.url);
+    const reason = blacklisted.length > 0 ? "blacklisted" : "filtered";
+    carouselCard.classList.add("edf-exclusion-kind-carousel");
+    carouselCard.dataset.exclusionReason = reason;
+    setHiddenRowState(getExclusionRow(carouselCard), {
+        onAction: async () => {
+            filtered.forEach(reveal);
+            if (blacklisted.length > 0) await removeBlacklistUrls(blacklisted);
+        },
+        reason,
+        title: `Featured properties (${decisions.length} properties)`,
+        urls: decisions.map(decision => decision.url),
+    });
+}
+
 export function updateCarouselCard(
     carouselCard: HTMLElement,
     decisions: readonly CarouselListingDecision[],
@@ -532,9 +587,12 @@ export function updateCarouselCard(
 
     const allExcluded = decisions.length > 0 &&
         decisions.every(decision => decision.exclusionReason !== "none");
-    // In the normal filtered view the empty carousel should disappear. When blacklist rows are
-    // enabled, however, the outer card must remain mounted so the generated row is still visible.
+    // In the normal filtered view the empty carousel disappears. With hidden rows enabled the
+    // whole featured card collapses into one row (which can merge with neighbouring hidden
+    // listings) instead of hiding its slides, which Domain re-renders on every auto-advance.
     carouselCard.hidden = allExcluded && !showBlacklistedView;
+    setCarouselCollapsed(carouselCard, allExcluded && showBlacklistedView ? decisions : undefined);
+    freezeCarousel(carouselCard, allExcluded);
 
     if (currentExcluded && !allExcluded) {
         carouselCard.querySelector<HTMLButtonElement>(
