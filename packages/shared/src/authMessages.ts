@@ -24,7 +24,7 @@ export type AuthResponse =
     | { code?: string; message: string; ok: false; requestId: string };
 
 export function isFederatedAuthProvider(value: unknown): value is FederatedAuthProvider {
-    return value === "apple" || value === "facebook";
+    return value === "apple" || value === "facebook" || value === "google";
 }
 
 function isRequest(value: unknown): value is AuthPageRequest {

@@ -6,6 +6,28 @@ import {
 export type BlacklistFilter = "all" | "buy" | "rent";
 export type BlacklistSort = "address" | "newest" | "oldest" | "price-asc" | "price-desc";
 
+export type StableNewestOrder = Map<string, number>;
+
+export function updateStableNewestOrder(
+    order: StableNewestOrder,
+    entries: readonly BlacklistEntry[],
+): void {
+    if (order.size === 0) {
+        [...entries]
+            .sort((first, second) => second.addedAt - first.addedAt)
+            .forEach((entry, index) => order.set(getBlacklistListing(entry).url, index));
+        return;
+    }
+
+    let next = Math.min(...order.values()) - 1;
+    for (const entry of entries) {
+        const url = getBlacklistListing(entry).url;
+        if (order.has(url)) continue;
+        order.set(url, next);
+        next -= 1;
+    }
+}
+
 export function isRentalEntry(entry: BlacklistEntry): boolean {
     const listing = getBlacklistListing(entry);
 
@@ -34,6 +56,7 @@ function getPrice(entry: BlacklistEntry): number {
 export function sortBlacklistEntries(
     entries: readonly BlacklistEntry[],
     sort: BlacklistSort,
+    newestOrder?: ReadonlyMap<string, number>,
 ): BlacklistEntry[] {
     return [...entries].sort((first, second) => {
         if (sort === "oldest") return first.addedAt - second.addedAt;
@@ -44,6 +67,10 @@ export function sortBlacklistEntries(
                 .localeCompare(getBlacklistListing(second).displayAddress ?? "");
         }
 
+        if (newestOrder) {
+            return (newestOrder.get(getBlacklistListing(first).url) ?? Number.MAX_SAFE_INTEGER)
+                - (newestOrder.get(getBlacklistListing(second).url) ?? Number.MAX_SAFE_INTEGER);
+        }
         return second.addedAt - first.addedAt;
     });
 }

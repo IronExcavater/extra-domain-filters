@@ -1,21 +1,45 @@
 import { onBodyMutations } from "../../dom/bodyMutations";
 import { markOwned } from "../../dom/ownership";
 import {
-    getRecentSearchBaseUrl,
     getRecentSearches,
     rememberRecentSearch,
     type ExtensionRecentSearch,
 } from "../../domain/searches/recentSearches";
 import { observeUrlChanges, type PageContext } from "../../platform/router";
 import { createUiButton } from "../../ui/elements";
-import { bindPropertyAlertControls, setPropertyAlertSearchContext } from "./alerts";
+import { replaceWithSavedSearchBellIcon } from "../../ui/icons";
+import { bindPropertyAlertControls } from "./alerts";
 
 const RECENT_SEARCH_SELECTOR = 'a[data-testid="recent-search-item"]';
+// Domain's home module is a three-card row. Adding a fourth item makes the
+// flex track wider than its section and was the source of the horizontal spill.
+const MAX_VISIBLE_RECENT_SEARCHES = 3;
 
-function getSearchTitle(link: HTMLAnchorElement): string {
-    return link.closest("article")?.querySelector("h2, h3")?.textContent?.trim() ??
-        link.textContent?.trim() ??
-        "Recent search";
+function getSearchTitle(search: ExtensionRecentSearch): string {
+    const searchUrl = new URL(search.url, window.location.origin);
+    const pathParts = searchUrl.pathname
+        .split("/")
+        .filter(Boolean);
+    const locationSlug = pathParts[1];
+    if (locationSlug) {
+        const location = locationSlug
+            .replace(/-(?:nsw|vic|qld|sa|wa|tas|nt|act)-\d{4}$/i, "")
+            .split("-")
+            .filter(Boolean)
+            .map(word => `${word[0]?.toUpperCase() ?? ""}${word.slice(1)}`)
+            .join(" ");
+        if (location) return location;
+    }
+    const title = search.title
+        .replace(/\s*\|\s*Domain.*$/i, "")
+        .replace(/^Real Estate & Property for (?:Sale|Rent) in\s+/i, "")
+        .trim();
+    const looksLikeSerializedData = /^[{[]/.test(title);
+    if (title && !looksLikeSerializedData) return title;
+
+    const searchMode = pathParts[0]?.toLowerCase();
+    if (searchMode === "sale" || searchMode === "rent") return "All Listings";
+    return "Recent search";
 }
 
 function describeFilters(search: ExtensionRecentSearch): string {
@@ -30,51 +54,20 @@ function describeFilters(search: ExtensionRecentSearch): string {
     return labels.join(" · ") || "Custom filters";
 }
 
-function bindRecentAlert(
-    button: HTMLButtonElement,
-    url: string,
-    title: string,
-    source?: HTMLButtonElement,
-): void {
-    if (button.dataset.edfRecentAlertBound === "true") return;
-
-    button.dataset.edfRecentAlertBound = "true";
-    button.addEventListener("click", event => {
-        const searchContext = {
-            title: button.dataset.edfAlertSearchTitle ?? title,
-            url: button.dataset.edfAlertSearchUrl ?? url,
-        };
-        setPropertyAlertSearchContext(searchContext);
-        if (!source) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-        source.dataset.edfAlertSearchUrl = url;
-        source.dataset.edfAlertSearchTitle = title;
-        source.click();
-        requestAnimationFrame(() => {
-            delete source.dataset.edfAlertSearchUrl;
-            delete source.dataset.edfAlertSearchTitle;
-            setPropertyAlertSearchContext(searchContext);
-        });
-    }, { capture: true });
-}
-
 function createRecentSearchCard(
-    sourceLink: HTMLAnchorElement,
     search: ExtensionRecentSearch,
-    sourceAlert?: HTMLButtonElement,
 ): HTMLElement {
     const card = document.createElement("article");
     const link = document.createElement("a");
     const content = document.createElement("span");
     const titleElement = document.createElement("h3");
     const description = document.createElement("span");
-    const title = search.title || getSearchTitle(sourceLink);
+    const title = getSearchTitle(search);
     const alert = createUiButton({
         ariaLabel: "Create alert",
-        label: "Create alert",
-        variant: "secondary",
+        icon: replaceWithSavedSearchBellIcon,
+        tooltip: "Create alert",
+        variant: "icon",
     });
 
     card.className = "edf-recent-search-card";
@@ -88,58 +81,45 @@ function createRecentSearchCard(
     description.textContent = describeFilters(search);
     alert.classList.add("edf-recent-search-alert");
     alert.dataset.testid = "edf-recent-search-alert";
-    alert.hidden = !sourceAlert;
+    alert.dataset.edfAlertIconOnly = "true";
+    alert.dataset.edfAlertSearchUrl = search.url;
+    alert.dataset.edfAlertSearchTitle = title;
     content.append(titleElement, description);
     link.append(content);
     card.append(link, alert);
-    bindRecentAlert(alert, search.url, title, sourceAlert);
-
     return markOwned(card, "recent-search");
 }
 
 async function renderRecentSearches(): Promise<void> {
     const searches = await getRecentSearches();
-    const activeUrls = new Set(searches.map(search => search.url));
+    const sources = [...document.querySelectorAll<HTMLAnchorElement>(RECENT_SEARCH_SELECTOR)];
+    const host = sources[0]?.closest("article")?.parentElement;
+    if (!host) return;
+    host.dataset.edfRecentSearchHost = "true";
+    const nativeUrls = new Set(sources.map(link => {
+        const url = new URL(link.href, window.location.origin);
+        url.searchParams.delete("lastsearchdate");
+        url.searchParams.delete("page");
+        url.searchParams.delete("pageNumber");
+        url.searchParams.sort();
+        return url.href;
+    }));
+    const visibleSearches = searches
+        .filter(search => !nativeUrls.has(search.url))
+        .slice(0, Math.max(0, MAX_VISIBLE_RECENT_SEARCHES - nativeUrls.size));
+    const visibleUrls = new Set(visibleSearches.map(search => search.url));
     document.querySelectorAll<HTMLElement>("[data-edf-recent-search]").forEach(card => {
-        if (!activeUrls.has(card.dataset.edfRecentSearch ?? "")) card.remove();
+        if (!visibleUrls.has(card.dataset.edfRecentSearch ?? "")) card.remove();
     });
     const existing = new Set(
         [...document.querySelectorAll<HTMLElement>("[data-edf-recent-search]")]
             .map(card => card.dataset.edfRecentSearch)
             .filter((url): url is string => Boolean(url)),
     );
-    const sources = [...document.querySelectorAll<HTMLAnchorElement>(RECENT_SEARCH_SELECTOR)];
 
-    for (const sourceLink of sources) {
-        const sourceCard = sourceLink.closest<HTMLElement>("article");
-        const sourceAlert = sourceCard?.querySelector<HTMLButtonElement>(
-            '[data-testid="create-alert-frequency-button"], #changeAlertFrequencyButton',
-        );
-        if (sourceAlert) {
-            const url = sourceAlert.dataset.edfAlertSearchUrl ?? sourceLink.href;
-            const title = sourceAlert.dataset.edfAlertSearchTitle ?? getSearchTitle(sourceLink);
-            bindRecentAlert(sourceAlert, url, title);
-        }
-    }
-
-    for (const search of searches) {
+    for (const search of visibleSearches) {
         if (existing.has(search.url)) continue;
-
-        const sourceLink = sources.find(link => {
-            const sourceUrl = new URL(link.href, window.location.origin);
-            sourceUrl.searchParams.delete("lastsearchdate");
-            sourceUrl.searchParams.delete("page");
-            sourceUrl.searchParams.delete("pageNumber");
-            sourceUrl.searchParams.sort();
-            return sourceUrl.href === getRecentSearchBaseUrl(search);
-        });
-        const sourceCard = sourceLink?.closest<HTMLElement>("article");
-        const sourceAlert = sourceCard?.querySelector<HTMLButtonElement>(
-            '[data-testid="create-alert-frequency-button"], #changeAlertFrequencyButton',
-        );
-        if (!sourceCard || !sourceLink) continue;
-
-        sourceCard.after(createRecentSearchCard(sourceLink, search, sourceAlert ?? undefined));
+        host.append(createRecentSearchCard(search));
     }
 }
 

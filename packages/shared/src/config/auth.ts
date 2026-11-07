@@ -4,7 +4,7 @@ declare global {
 }
 
 export type AuthRuntimeMode = "development" | "production";
-export type FederatedAuthProvider = "apple" | "facebook";
+export type FederatedAuthProvider = "apple" | "facebook" | "google";
 
 export const DEVELOPMENT_BRIDGE_URL = "http://127.0.0.1:5174/auth/";
 const PRODUCTION_BRIDGE_URL = "https://extra-domain-filters.web.app/auth/";

@@ -1,32 +1,77 @@
 [class~="slideControlsIcons"] > span,
 [class~="slideControlsIcons"] svg,
-.slick-arrow:has([data-testid^="carousel-button-"]) > svg {
+.slick-arrow > svg[data-testid^="carousel-button-"] {
     display: block;
-    margin: auto;
+    margin: 0 !important;
 }
 
-.slick-arrow:has([data-testid^="carousel-button-"]) {
+.slick-arrow:has(> svg[data-testid^="carousel-button-"]) {
     align-items: center;
-    display: inline-flex !important;
+    display: flex !important;
     justify-content: center;
     line-height: 0;
     padding: 0 !important;
 }
 
-.edf-featured-blacklist-button,
-.edf-featured-carousel-action {
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: 50%;
-    color: var(--edf-color-text);
-    height: var(--edf-control-height-sm);
-    margin: 0 2px;
-    padding: 0;
-    width: var(--edf-control-height-sm);
+/* Featured carousel controls are plain siblings of Domain's `.slideControlsIcons`
+ * steppers. The wrapper uses `display: contents` so every button is a direct flex
+ * item of Domain's row and inherits its native 4px gap. Colours are derived from
+ * the sibling stepper's computed foreground (`--edf-featured-fg`), so a dark agency
+ * header gets light controls without a hard-coded theme switch. */
+.edf-featured-controls {
+    display: contents;
 }
 
-.edf-featured-carousel-action:hover:not(:disabled) {
-    background: var(--edf-color-surface-muted);
+.edf-featured-controls[hidden],
+.edf-featured-controls > [hidden] {
+    display: none !important;
+}
+
+.edf-featured-controls > button {
+    align-items: center;
+    appearance: none;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-inner, 8px);
+    box-sizing: border-box;
+    color: var(--edf-featured-fg, rgb(19 18 18));
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 14px;
+    justify-content: center;
+    line-height: 18px;
+    margin: 0;
+    min-height: 0;
+    padding: var(--space-xs, 8px);
+    position: relative;
+    transition:
+        background-color 0.2s linear,
+        border-color 0.2s linear,
+        color 0.2s linear;
+    width: auto;
+    z-index: 10;
+}
+
+.edf-featured-controls > button:is(:hover:not(:disabled), :focus-visible) {
+    background: rgb(255 255 255 / 20%);
+    border-color: color-mix(in srgb, var(--edf-featured-fg, rgb(19 18 18)) 20%, transparent);
+    outline: none;
+}
+
+.edf-featured-controls > button:active:not(:disabled) {
+    background: rgb(255 255 255 / 30%);
+    border-color: color-mix(in srgb, var(--edf-featured-fg, rgb(19 18 18)) 40%, transparent);
+}
+
+.edf-featured-controls > button svg {
+    color: currentcolor;
+    display: block;
+    fill: currentcolor;
+    height: 18px;
+    margin: 0;
+    pointer-events: none;
+    width: 18px;
 }
 
 .slick-slide.edf-carousel-child-blacklisted,

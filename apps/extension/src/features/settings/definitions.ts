@@ -130,9 +130,9 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
             {
                 kind: "choice",
                 title: "Background fetching pace",
-                description: "Efficient is recommended: it keeps requests light. Choose a faster pace only when you want new results enriched sooner.",
+                description: "Choose how quickly new listing details are fetched in the background.",
                 options: [
-                    { value: "efficient", label: "Efficient (recommended)" },
+                    { value: "efficient", label: "Efficient" },
                     { value: "balanced", label: "Balanced" },
                     { value: "fast", label: "Fast" },
                 ],

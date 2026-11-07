@@ -1,74 +1,85 @@
+/* Mirrors Domain's header-member dropdown item (li > a > svg + label + badge) using
+ * Domain's own tokens, so it follows their spacing/type scale between breakpoints. */
 .edf-account-menu-item {
     list-style: none;
-    margin: 0;
+    margin: var(--space-xxs, 4px) 0;
     padding: 0;
+    position: relative;
 }
 
-.edf-account-menu-item > a {
+.edf-account-menu-link {
     align-items: center;
-    color: var(--edf-color-heading);
-    display: grid;
+    border-radius: var(--border-radius-inner, 3px);
+    color: var(--color-neutral-heavy-default, #3c475b);
+    cursor: pointer;
+    display: flex;
     font: inherit;
-    gap: 12px;
-    grid-template-columns: 22px minmax(0, 1fr) auto;
-    min-height: 44px;
-    padding: 0 16px;
+    padding: var(--space-s, 12px);
     text-decoration: none;
-    transition:
-        background-color var(--edf-motion-fast) ease,
-        color var(--edf-motion-fast) ease;
+    white-space: nowrap;
 }
 
-.edf-account-menu-item > a:hover,
-.edf-account-menu-item[data-edf-account-menu-state="active"] > a {
-    background: var(--edf-color-green-tint);
-    color: var(--edf-color-green);
+.edf-account-menu-link:is(:hover, :active, :focus, [aria-current="page"]),
+.edf-account-menu-item[data-edf-account-menu-state="active"] > .edf-account-menu-link {
+    color: var(--color-interactive-base-default, #0ea800);
 }
 
 .edf-account-menu-icon {
-    height: 20px;
-    width: 20px;
+    color: currentcolor;
+    flex: 0 0 24px;
+    height: 24px;
+    margin-right: var(--space-xs, 8px);
+    position: relative;
+    width: 24px;
 }
 
-.edf-account-menu-label {
-    font-weight: 600;
+@media (width >= 1021px) {
+    .edf-account-menu-link {
+        padding: var(--space-xs, 8px) var(--space-s, 12px);
+    }
+
+    .edf-account-menu-icon {
+        margin-right: var(--space-s, 12px);
+    }
 }
 
 .edf-account-menu-badge {
     align-items: center;
-    background: var(--edf-color-surface-muted);
-    border-radius: 999px;
-    color: var(--edf-color-muted);
+    background: var(--color-neutral-subdued-default, #fafbfc);
+    border-radius: calc(var(--type-caption-line-height, 20px) / 2);
+    color: currentcolor;
     display: inline-flex;
-    font-size: 12px;
-    font-weight: 700;
+    font-family: var(--type-caption-family, inherit);
+    font-size: var(--type-caption-size, 14px);
+    font-weight: var(--type-caption-weight, 400);
+    height: var(--type-caption-line-height, 20px);
     justify-content: center;
-    min-height: 22px;
-    min-width: 22px;
-    padding: 0 6px;
+    letter-spacing: var(--type-caption-tracking, 0);
+    line-height: var(--type-caption-line-height, 20px);
+    margin-left: auto;
+    margin-top: calc((var(--type-body-line-height, 24px) - var(--type-caption-line-height, 20px)) / 2);
+    min-width: var(--type-caption-line-height, 20px);
+    padding: 0 var(--space-xxs, 4px);
 }
 
 .edf-profile-settings-tab {
     list-style: none;
+    padding: 2px 0;
 }
 
 .edf-profile-settings-tab > button {
     appearance: none;
     background: transparent;
     border: 0;
-    border-left: 3px solid transparent;
-    color: var(--edf-color-heading);
+    border-radius: var(--edf-radius-control);
+    color: var(--edf-color-text);
     cursor: pointer;
     font: inherit;
-    font-weight: 600;
     padding: 12px 16px;
     text-align: left;
     width: 100%;
 }
 
-.edf-profile-settings-tab > button:hover,
 .edf-profile-settings-tab[data-selected="true"] > button {
-    background: var(--edf-color-green-tint);
-    border-left-color: var(--edf-color-green);
-    color: var(--edf-color-green);
+    background: var(--edf-color-surface-muted);
 }

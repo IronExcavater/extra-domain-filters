@@ -1,5 +1,9 @@
 import { onMessage } from "../platform/messaging";
 import {
+    applyDomainAlertFromExtensionPage,
+    removeDomainSavedSearchFromExtensionPage,
+} from "../platform/domainPageClient";
+import {
     getAccountState,
     loginWithProvider,
     resetPassword,
@@ -26,6 +30,10 @@ onMessage("account:login-email", ({ email, password }) => signInWithEmail(email,
 onMessage("account:login-provider", ({ provider }) => loginWithProvider(provider));
 onMessage("account:reset-password", ({ email }) => resetPassword(email));
 onMessage("account:sign-out", () => signOut());
+onMessage("domain-alert:apply", ({ search, frequency }) =>
+    applyDomainAlertFromExtensionPage(search, frequency));
+onMessage("domain-saved-search:remove", ({ domainId }) =>
+    removeDomainSavedSearchFromExtensionPage(domainId));
 onMessage("shared-search:create", ({ params }) => createSharedSearch(params));
 onMessage("shared-search:get", ({ id }) => getSharedSearch(id));
 onMessage("listing:enrich", ({ listings }) => enqueueListingEnrichment(listings));

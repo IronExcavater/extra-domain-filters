@@ -1,125 +1,251 @@
 .edf-search-top-ad-hidden,
 [data-edf-srp-top-ad="true"],
 [data-testid="adb-srp-top"],
+[data-testid="sticky-ad-container"],
 [id^="google_ads_iframe_"][id*="/Top_"][id$="__container__"] {
     display: none !important;
 }
 
+/* stylelint-disable no-descending-specificity -- Domain renders several incompatible card wrappers that need explicit context overrides. */
 .edf-listing-card-button-container {
-    align-items: center;
-    display: flex !important;
-    gap: 6px;
-    justify-content: flex-start;
     min-width: 0;
-    padding-right: 0 !important;
     width: 100%;
 }
 
-.edf-listing-card-button-container > [data-testid="listing-card-price"] {
-    flex: 1 1 auto;
-    min-width: 0;
+.edf-listing-card-button-container:has(> [data-testid="listing-card-price"]):not(:has(> .edf-selection-checkbox)) {
+    padding-right: 54px !important;
+    position: relative;
 }
 
-.edf-listing-card-button-container > button,
-.edf-listing-card-button-container > [data-testid^="listing-card-shortlist"] {
-    flex: 0 0 auto;
+.edf-listing-card-button-container:has(> [data-testid="listing-card-price"]):not(:has(> .edf-selection-checkbox)) > [data-testid^="listing-card-shortlist"] {
+    left: auto !important;
+    margin: 0 !important;
+    position: absolute !important;
+    right: 30px !important;
+    top: 0 !important;
+    transform: none !important;
+}
+
+.edf-listing-card-button-container:has(> [data-testid="listing-card-price"]):not(:has(> .edf-selection-checkbox)) > .edf-blacklist-action {
+    left: auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.edf-listing-card-button-container:has(> .edf-selection-checkbox) {
+    align-items: center;
+    display: grid !important;
+    gap: 8px;
+    grid-template-columns: auto minmax(0, 1fr) 24px 24px;
+    padding-right: 0 !important;
+}
+
+.edf-listing-card-button-container:has(> .edf-selection-checkbox) > [data-testid^="listing-card-shortlist"],
+.edf-listing-card-button-container:has(> .edf-selection-checkbox) > .edf-blacklist-action {
     inset: auto !important;
     margin: 0 !important;
     position: static !important;
     transform: none !important;
 }
 
-.edf-listing-card-button-container > [data-testid^="listing-card-shortlist"] {
-    margin-left: auto !important;
+.edf-listing-card-button-container:not(:has(> [data-testid="listing-card-price"])) {
+    align-items: center;
+    display: inline-flex !important;
+    gap: 8px;
+    width: fit-content;
 }
 
-.edf-blacklist-action {
-    all: unset;
+/* Listing detail toolbars. Each variant mirrors the Domain button it sits beside:
+ * gallery toolbar (under the photos), the agency sticky header, and the photo
+ * lightbox. `--edf-listing-fg` is the sibling Share icon's resolved colour, so dark
+ * agency headers get light foregrounds without a hard-coded theme. */
+.edf-blacklist-action:is(
+    .edf-blacklist-action-listing-gallery,
+    .edf-blacklist-action-listing-lightbox,
+    .edf-blacklist-action-listing-sticky
+) {
     align-items: center;
-    background: var(--edf-color-surface);
     border: 1px solid transparent;
-    border-radius: 50%;
-    box-sizing: border-box;
-    color: var(--edf-color-muted);
-    cursor: pointer;
+    color: var(--edf-listing-fg, var(--color-neutral-heavy-default, #131212));
     display: inline-flex;
-    flex: 0 0 var(--edf-control-height-sm);
-    font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
-    height: var(--edf-control-height-sm);
+    flex: 0 0 auto;
+    font-size: 16px;
+    font-weight: 700;
     justify-content: center;
-    margin: 0;
-    padding: 0;
-    position: relative;
+    line-height: 24px;
+    text-align: center;
     transition:
-        background-color var(--edf-motion-fast) ease,
-        border-color var(--edf-motion-fast) ease,
-        box-shadow var(--edf-motion-fast) ease,
-        color var(--edf-motion-fast) ease;
-    width: var(--edf-control-height-sm);
+        background-color 0.2s linear,
+        border-color 0.2s linear,
+        color 0.2s linear;
+    white-space: nowrap;
+}
+
+.edf-blacklist-action-icon {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: center;
+    min-height: 24px;
+    min-width: 24px;
+}
+
+.edf-blacklist-action-icon svg {
+    display: block;
+    fill: currentcolor;
+    height: 18px;
+    width: 18px;
+}
+
+.edf-blacklist-action-icon + .edf-ui-button-label {
+    padding-left: 10px;
+}
+
+/* Gallery toolbar: white 12px-radius card button; the icon box supplies the gap. */
+.edf-blacklist-action.edf-blacklist-action-listing-gallery {
+    background: var(--color-primary-surface-default, #fff);
+    border-color: var(--color-neutral-trim-default, #e1e1df);
+    border-radius: var(--border-radius-outer, 12px);
+    flex: 0 1 auto;
+    font-size: var(--type-caption-bold-size, 14px);
+    line-height: var(--type-caption-bold-line-height, 20px);
+    max-width: 200px;
+    padding: var(--space-xs, 8px) var(--space-s, 12px);
+    width: 50%;
+}
+
+.edf-blacklist-action-listing-gallery .edf-ui-button-label {
+    padding-left: 0;
+}
+
+.edf-blacklist-action-listing-gallery:is(:hover, :focus-visible):not(:disabled) {
+    background: var(--color-secondary-surface-hover, #fdfcfb);
+    border-color: var(--color-secondary-trim-hover, #e1d0bc);
+}
+
+.edf-blacklist-action-listing-gallery:active:not(:disabled) {
+    background: var(--color-secondary-surface-pressed, #f8f6f1);
+    border-color: var(--color-secondary-trim-pressed, #bca899);
+}
+
+.edf-blacklist-action-listing-gallery[data-active="true"] svg {
+    color: var(--color-accent-four-trim-hover, #ffc463);
+}
+
+/* Agency sticky header: translucent 8px-radius button, 26px side padding. */
+.edf-blacklist-action.edf-blacklist-action-listing-sticky {
+    background: rgb(255 255 255 / 8%);
+    border-color: rgb(0 0 0 / 16%);
+    border-radius: var(--border-radius-inner, 8px);
+    flex: 1 1 0%;
+    max-width: 200px;
+    padding: 8px 26px;
+    width: 100%;
+}
+
+.edf-blacklist-action-listing-sticky:is(:hover, :focus-visible):not(:disabled) {
+    background: rgb(255 255 255 / 30%);
+    border-color: color-mix(in srgb, var(--edf-listing-fg, #131212) 50%, transparent);
+}
+
+.edf-blacklist-action-listing-sticky[data-edf-surface="dark"]:is(:hover, :focus-visible):not(:disabled) {
+    background: rgb(255 255 255 / 20%);
+}
+
+.edf-blacklist-action-listing-sticky:active:not(:disabled) {
+    background: rgb(255 255 255 / 20%);
+    border-color: var(--edf-listing-fg, #131212);
+}
+
+/* Photo lightbox: borderless text button; icon-only below Domain's 1024px breakpoint. */
+.edf-blacklist-action.edf-blacklist-action-listing-lightbox {
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    font-size: 14px;
+    padding: 8px;
+}
+
+.edf-blacklist-action-listing-lightbox:is(:hover, :focus-visible):not(:disabled) {
+    background: rgb(210 210 208 / 30%);
+    color: var(--color-interactive-base-hover, #066414);
+    outline: none;
+}
+
+.edf-blacklist-action-listing-lightbox:active:not(:disabled) {
+    background: rgb(171 172 170 / 30%);
+}
+
+@media (width <= 1023px) {
+    .edf-blacklist-action.edf-blacklist-action-listing-lightbox {
+        height: 24px;
+        padding: 0;
+        width: 24px;
+    }
+
+    .edf-blacklist-action-listing-lightbox .edf-ui-button-label {
+        display: none;
+    }
+}
+
+.edf-blacklist-action:is(
+    .edf-blacklist-action-listing-gallery,
+    .edf-blacklist-action-listing-lightbox,
+    .edf-blacklist-action-listing-sticky
+):focus-visible {
+    outline: none;
+}
+
+.edf-blacklist-action.edf-blacklist-action-project {
+    background: none;
+    border: 0;
+    border-radius: 0;
+    color: var(--color-neutral-medium-default, #626a78);
+    display: block;
+    height: 27.5139px;
+    margin-left: auto;
+    padding: 3.5139px 0 0;
+    width: 24px;
     z-index: 3;
 }
 
-.edf-blacklist-action:disabled,
-.edf-blacklist-action[aria-busy="true"] {
-    cursor: default;
-    opacity: 0.58;
-}
-
-.edf-blacklist-action:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: 0;
-}
-
-.edf-blacklist-action:hover:not(:disabled) {
-    background: var(--edf-color-surface-muted);
-    border-color: var(--edf-color-border);
-    color: var(--edf-color-text);
-}
-
-.edf-blacklist-action[data-active="true"] {
-    background: var(--edf-color-green-tint);
-    color: var(--edf-color-green);
-}
-
-.edf-blacklist-action svg {
+.edf-blacklist-action-project svg {
+    color: currentcolor;
     display: block;
-    height: 20px;
+    fill: currentcolor;
+    height: 24px;
     pointer-events: none;
-    width: 20px;
+    transition: color 200ms ease-in-out, fill 200ms ease-in-out;
+    width: 24px;
 }
 
-.edf-blacklist-action-listing-detail {
-    background: var(--edf-color-surface);
-    border: 1px solid #d0d3d9;
-    border-radius: var(--edf-radius-control);
-    color: var(--edf-color-text);
-    flex-basis: auto;
-    font-size: 16px;
-    font-weight: 700;
-    gap: var(--edf-space-2);
-    height: var(--edf-control-height-lg);
-    line-height: 22px;
-    min-width: 132px;
-    padding: 0 var(--edf-space-4);
-    width: auto;
+.edf-blacklist-action-project:hover:not(:disabled) {
+    color: #ffe976;
 }
 
-.edf-blacklist-action-listing-detail[data-active="true"] {
-    border-color: var(--edf-color-green);
+.edf-blacklist-action-project[data-active="true"] {
+    color: #fc0;
 }
 
-.edf-blacklist-action-project {
-    background: transparent;
-    color: var(--edf-project-foreground, var(--edf-color-text));
+.edf-blacklist-action-project[data-active="true"]:hover:not(:disabled) {
+    color: #ffa200;
 }
 
-.edf-blacklist-action-shortlist[data-active="false"] {
-    color: var(--edf-color-shortlist-inactive);
+.edf-blacklist-action-project[data-contrast="light"] {
+    color: rgb(255 255 255 / 88%);
 }
 
-.edf-blacklist-action-shortlist[data-active="false"]:hover,
-.edf-blacklist-action-shortlist[data-active="false"]:focus-visible {
-    color: var(--edf-color-shortlist-hover);
+.edf-blacklist-action-project[data-contrast="light"]:hover:not(:disabled) {
+    color: #ffe976;
+}
+
+.edf-blacklist-action-project[data-contrast="light"][data-active="true"] {
+    color: #fc0;
+}
+
+.edf-blacklist-action-project[data-contrast="light"][data-active="true"]:hover:not(:disabled) {
+    color: #ffa200;
 }
 
 .edf-listing-card-button-container > .edf-selection-checkbox {
@@ -132,16 +258,12 @@
     position: relative !important;
 }
 
-[data-testid="listing-card-buttons-wrapper"] {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-}
-
+[data-testid="listing-card-buttons-wrapper"],
 .edf-listing-card-notes-editing [data-testid="listing-card-buttons-wrapper"] {
     align-items: center;
     display: flex;
     gap: 8px;
+    margin-top: 12px;
 }
 
 .edf-listing-card-notes-editing textarea {
@@ -149,10 +271,18 @@
     flex: 1 1 auto;
     height: 100% !important;
     max-height: none;
-    min-height: 0;
+    min-height: 180px;
     overflow: auto;
-    resize: none;
+    resize: vertical;
     width: 100%;
+}
+
+/* Domain's detail-page notes editor currently ships with a fixed 75px height,
+ * which leaves only a few lines visible. Keep the native field but give the
+ * writing surface the same practical height as the shortlist editor. */
+[data-testid="listing-details__description-controls"] textarea {
+    min-height: 180px;
+    resize: vertical;
 }
 
 .edf-listing-card-notes-editing {
@@ -171,7 +301,7 @@
 .edf-listing-card-notes-field {
     align-self: stretch;
     flex-direction: column;
-    min-height: 0;
+    min-height: 180px;
 }
 
 .edf-listing-card-notes-default,
@@ -190,20 +320,29 @@
     position: static !important;
 }
 
-.edf-listing-card-button-container:not(:has([data-testid="listing-card-price"])) {
-    width: fit-content;
-}
-
 [data-testid="listing-card-child-listing"] .edf-listing-card-button-container {
-    flex-direction: column;
-    gap: 4px;
     overflow: visible;
 }
 
-.edf-project-blacklist-button {
-    color: var(--edf-project-foreground, currentColor);
+.edf-blacklist-action.edf-project-blacklist-button {
     flex: 0 0 auto;
+    position: absolute;
+    right: 16px;
+    vertical-align: middle;
+    z-index: 7;
 }
+
+.edf-project-has-blacklist-action {
+    position: relative;
+}
+
+.edf-project-has-blacklist-action [data-testid="listing-card-project-details"],
+.edf-project-has-blacklist-action [data-testid="listing-card-project"]:not(
+    :has([data-testid="listing-card-project-details"])
+) {
+    padding-right: 48px;
+}
+/* stylelint-enable no-descending-specificity */
 
 .edf-blacklist-shortlist-placeholder {
     opacity: 0.4;
@@ -228,4 +367,9 @@
     font-weight: 700;
     line-height: 18px;
     padding: 2px 8px;
+}
+
+/* Domain caps the sticky toolbar at 400px for two buttons; a third must not overflow. */
+[data-testid="listing-details__desktop-header"] > :has(> .edf-blacklist-action-listing-sticky) {
+    max-width: none !important;
 }

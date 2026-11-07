@@ -5,73 +5,222 @@
 }
 
 .edf-search-share-button {
+    background: var(--edf-color-surface);
+    border: 0.8px solid var(--edf-color-border);
+    border-radius: 12px;
+    color: var(--edf-color-text);
+    font-size: 16px;
+    font-weight: 700;
+    gap: 0;
+    height: auto;
+    line-height: 24px;
+    min-height: auto;
     min-width: auto;
+    padding: 8px 26px;
+    transition:
+        background-color 200ms linear,
+        border-color 200ms linear,
+        color 200ms linear;
 }
 
+.edf-search-share-button > .edf-ui-button-icon-svg {
+    height: 24px;
+    width: 24px;
+}
+
+.edf-search-share-button:hover:not(:disabled) {
+    background: var(--edf-color-green-tint);
+    border-color: var(--edf-color-green);
+    color: var(--edf-color-green);
+}
+
+.edf-search-share-button:active:not(:disabled) {
+    background: #eef4ec;
+}
+
+/* Search-page sections mirror Domain's `.filter-wrapper`: 32px vertical padding and a
+ * divider; the last section in the panel drops the divider like the native one. */
 .edf-filter-section {
-    color: var(--edf-color-text);
-    display: grid;
-    gap: 12px;
-    margin-top: 20px;
+    border-bottom: 1px solid rgb(208 211 217);
+    color: var(--color-neutral-heavy-default, #131212);
+    display: block;
+    font-family: var(--type-body-family, inherit);
+    font-size: var(--type-body-size, 16px);
+    font-weight: 400;
+    line-height: var(--type-body-line-height, 24px);
+    margin: 0 calc(var(--space-m, 24px) - var(--space-xs, 8px));
+    padding: var(--space-l, 32px) 0;
+}
+
+.edf-filter-section:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
 }
 
 .edf-filter-heading {
+    align-items: center;
+    display: flex;
     font: inherit;
+    margin: 0 0 var(--space-m, 24px);
+    white-space: nowrap;
+}
+
+.edf-filter-heading-icon {
+    display: block;
+    flex: 0 0 24px;
+    height: 24px;
+    margin-right: 8px;
+    width: 24px;
+}
+
+/* Home-page panel mirrors its own native sections (smaller, bold headings). */
+.edf-filter-section-home {
+    border-bottom: 0.8px solid rgb(208 211 217);
+    color: inherit;
+    font-family: inherit;
     font-size: 16px;
+    line-height: 24px;
+    margin: 0 16px 18px;
+    padding: 0 0 16px;
+}
+
+.edf-filter-section-home .edf-filter-heading {
     font-weight: 700;
     margin: 0;
+    padding: 8px 0;
 }
 
+/* Could-haves mirror Domain's Features list: two 50% columns on a 51px row pitch
+ * (Domain's 35px inline-block rows plus their 16px top margin). */
 .edf-filter-checkbox-grid {
+    align-items: start;
     display: grid;
-    gap: 10px;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 23px;
 }
 
+/* Home Features rows: 24px label + 6px margin on a 36.4px inline-block line box. */
+.edf-filter-section-home .edf-filter-checkbox-grid {
+    row-gap: 12.4px;
+}
+
+/* stylelint-disable no-descending-specificity -- home-page sizes override the shared states. */
+
+/* Domain `.domain-checkbox.is-large` (search panel). */
 .edf-filter-checkbox {
-    align-items: center;
+    align-content: center;
     cursor: pointer;
-    display: grid;
-    gap: 10px;
-    grid-template-columns: 20px minmax(0, 1fr);
-    min-height: 32px;
+    display: inline-flex;
     position: relative;
 }
 
-.edf-filter-checkbox input {
-    appearance: none;
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: 4px;
-    grid-column: 1;
-    height: 20px;
-    margin: 0;
-    width: 20px;
+.edf-filter-checkbox-box {
+    display: block;
+    flex: 0 0 auto;
+    margin-right: 10px;
+    width: 24px;
 }
 
-.edf-filter-checkbox input:checked {
-    background: var(--edf-color-green);
-    border-color: var(--edf-color-green);
+.edf-filter-checkbox input {
+    cursor: pointer;
+    height: 100%;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    z-index: 1;
 }
 
 .edf-filter-checkbox-indicator {
-    color: #fff;
-    font-size: 13px;
-    grid-column: 1;
-    grid-row: 1;
-    opacity: 0;
+    background-color: var(--color-neutral-surface-default, #fff);
+    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
+    border-radius: var(--border-radius-mini, 3px);
+    box-sizing: border-box;
+    display: block;
+    height: 24px;
+    margin-top: 2px;
     pointer-events: none;
-    text-align: center;
+    position: relative;
+    transition:
+        background-color 200ms ease-out,
+        border-color 200ms ease-out,
+        box-shadow 200ms ease-out;
+    user-select: none;
+    width: 24px;
 }
 
-.edf-filter-checkbox input:checked + .edf-filter-checkbox-indicator {
+.edf-filter-checkbox:hover input:not(:disabled) + .edf-filter-checkbox-indicator {
+    border-color: var(--color-neutral-trim-hover, #a9afba);
+}
+
+.edf-filter-checkbox input:focus-visible + .edf-filter-checkbox-indicator {
+    border-color: var(--color-interactive-base-default, #0ea800);
+    box-shadow: 0 0 0 2px var(--color-interactive-subdued-pressed, #7fc468);
+}
+
+.edf-filter-checkbox-shade {
+    background-color: var(--color-interactive-base-default, #0ea800);
+    border-radius: var(--border-radius-mini, 3px);
+    inset: -1px;
+    opacity: 0;
+    position: absolute;
+    transition: opacity 200ms cubic-bezier(0.4, 0, 0.23, 1);
+}
+
+.edf-filter-checkbox input:checked + .edf-filter-checkbox-indicator .edf-filter-checkbox-shade {
     opacity: 1;
 }
 
-.edf-filter-checkbox > span:last-child {
-    grid-column: 2;
-    grid-row: 1;
+.edf-filter-checkbox-check {
+    inset: 0;
+    margin: auto;
+    position: absolute;
+    transform: translate(14px, 1px) rotate(-57deg);
 }
+
+.edf-filter-checkbox-check::before,
+.edf-filter-checkbox-check::after {
+    background-color: var(--color-neutral-background-default, #fafbfc);
+    border-radius: 1px;
+    content: "";
+    height: 2px;
+    left: 0;
+    position: absolute;
+    top: 0;
+}
+
+.edf-filter-checkbox-check::before {
+    width: 12px;
+}
+
+.edf-filter-checkbox-check::after {
+    transform: rotate(-78deg);
+    transform-origin: 1px 1px;
+    width: 6px;
+}
+
+.edf-filter-checkbox-label {
+    display: block;
+}
+
+/* Domain's home-page panel uses the regular 18px checkbox with body type. */
+.edf-filter-section-home .edf-filter-checkbox-box {
+    width: 18px;
+}
+
+.edf-filter-section-home .edf-filter-checkbox-indicator {
+    border-width: 0.8px;
+    height: 18px;
+    margin-top: 3px;
+    width: 18px;
+}
+
+.edf-filter-section-home .edf-filter-checkbox-check {
+    transform: translate(7px, 1px) rotate(-57deg) scale(0.7);
+}
+
+/* stylelint-enable no-descending-specificity */
 
 .edf-filter-text {
     background: var(--edf-color-surface);
@@ -85,69 +234,275 @@
     width: 100%;
 }
 
-.edf-filter-field,
-.edf-filter-range-field {
-    align-items: center;
-    display: flex;
-    gap: 8px;
+.edf-filter-search-bar {
+    position: relative;
 }
 
-.edf-filter-clear {
-    flex: 0 0 auto;
+.edf-filter-search-bar .edf-filter-text {
+    padding-right: calc(var(--edf-control-height-sm) + 6px);
+}
+
+/* Home Keywords input: 3px radius, 0.8px trim, 8px padding, ~60% width. */
+.edf-filter-section-home .edf-filter-search-bar {
+    max-width: 378px;
+}
+
+.edf-filter-section-home .edf-filter-text {
+    border: 0.8px solid rgb(208 211 217);
+    border-radius: 3px;
+    color: inherit;
+    min-height: 41.6px;
+    padding: 8px calc(var(--edf-control-height-sm) + 6px) 8px 8px;
+}
+
+.edf-filter-search-bar-clear {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.edf-filter-range-field {
+    display: block;
+    margin: 7.5px 0;
 }
 
 .edf-filter-range-value {
-    color: var(--edf-color-muted);
-    font-size: 14px;
+    display: block;
+    font: inherit;
+    margin-bottom: 8px;
+    user-select: none;
 }
 
+.edf-filter-section-home .edf-filter-range-field {
+    margin: 2.5px 0 5px;
+}
+
+/* Domain's rheostat: 3px grey track, 4px green progress, 28px white thumb. */
 .edf-filter-range {
-    accent-color: var(--edf-color-green);
-    cursor: pointer;
+    --edf-range-green: var(--color-interactive-base-default, #008a08);
+
+    appearance: none;
+    background: transparent;
+    cursor: ew-resize;
+    display: block;
+    height: 28px;
+    margin: 0;
+    padding: 0;
     width: 100%;
 }
 
-.edf-filter-checkbox input:focus-visible,
-.edf-filter-text:focus-visible,
-.edf-filter-range:focus-visible {
+.edf-filter-range::-webkit-slider-runnable-track {
+    background:
+        linear-gradient(var(--edf-range-green) 0 0) 0 0 / var(--edf-range-progress, 100%) 4px no-repeat,
+        linear-gradient(#e6e9ed 0 0) 0 0 / 100% 3px no-repeat;
+    border-radius: 0;
+    height: 4px;
+}
+
+.edf-filter-range::-moz-range-track {
+    background: #e6e9ed;
+    border-radius: 0;
+    height: 3px;
+}
+
+.edf-filter-range::-moz-range-progress {
+    background: var(--edf-range-green);
+    border-radius: 0;
+    height: 4px;
+}
+
+.edf-filter-range::-webkit-slider-thumb {
+    appearance: none;
+    background: #fff;
+    border: 0;
+    border-radius: 50%;
+    box-shadow:
+        rgb(30 41 61 / 20%) 0 1px 2px,
+        rgb(30 41 61 / 10%) 0 2px 3px,
+        rgb(208 211 217) 0 1px 1px inset;
+    height: 28px;
+    margin-top: -12px;
+    transition: box-shadow 0.2s ease-out;
+    width: 28px;
+}
+
+.edf-filter-range::-moz-range-thumb {
+    background: #fff;
+    border: 0;
+    border-radius: 50%;
+    box-shadow:
+        rgb(30 41 61 / 20%) 0 1px 2px,
+        rgb(30 41 61 / 10%) 0 2px 3px,
+        rgb(208 211 217) 0 1px 1px inset;
+    box-sizing: border-box;
+    height: 28px;
+    transition: box-shadow 0.2s ease-out;
+    width: 28px;
+}
+
+.edf-filter-range:is(:hover, :focus-visible)::-webkit-slider-thumb {
+    box-shadow:
+        rgb(30 41 61 / 15%) 0 3px 6px,
+        rgb(30 41 61 / 15%) 0 2px 3px,
+        rgb(208 211 217) 0 1px 1px inset;
+}
+
+.edf-filter-range:is(:hover, :focus-visible)::-moz-range-thumb {
+    box-shadow:
+        rgb(30 41 61 / 15%) 0 3px 6px,
+        rgb(30 41 61 / 15%) 0 2px 3px,
+        rgb(208 211 217) 0 1px 1px inset;
+}
+
+.edf-filter-text:focus-visible {
     box-shadow: var(--edf-focus-ring);
     outline: 0;
 }
 
-.edf-recent-search-card {
-    align-items: center;
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: var(--edf-radius-card);
-    box-shadow: var(--edf-shadow-card);
-    display: flex;
-    gap: 16px;
-    justify-content: space-between;
-    margin-top: 12px;
-    padding: 16px;
+.edf-filter-range:focus-visible {
+    outline: 0;
 }
 
-.edf-recent-search-link {
+.edf-recent-search-card {
+    display: flex;
+    height: 60px;
+    margin: 0;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0;
+    position: relative;
+}
+
+[data-edf-recent-search-host="true"] {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible !important;
+    width: 100%;
+}
+
+article:has(> a[data-testid="recent-search-item"]) {
+    height: 60px !important;
+    min-width: 0;
+    position: relative;
+}
+
+@media (width >= 768px) {
+    [data-edf-recent-search-host="true"] {
+        box-sizing: border-box;
+        display: grid !important;
+        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 100%;
+        min-width: 0;
+        overflow: visible !important;
+        width: 100%;
+    }
+
+    .edf-recent-search-card,
+    article:has(> a[data-testid="recent-search-item"]) {
+        box-sizing: border-box;
+        margin-right: 0 !important;
+        max-width: none !important;
+        min-width: 0;
+        width: 100% !important;
+    }
+}
+
+.edf-recent-search-card > .edf-property-alert-trigger,
+article:has(> a[data-testid="recent-search-item"]) > .edf-property-alert-trigger {
+    background: transparent;
+    border: 0;
+    color: var(--edf-color-green);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    height: auto;
+    inset: 50% 6px auto auto;
+    line-height: 18px;
+    min-height: 30px;
+    padding: 6px 8px;
+    position: absolute;
+    transform: translateY(-50%);
+    width: auto;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+.edf-recent-search-card > .edf-property-alert-trigger[data-edf-alert-icon-only="true"],
+article:has(> a[data-testid="recent-search-item"]) > .edf-property-alert-trigger[data-edf-alert-icon-only="true"] {
+    align-items: center;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    box-shadow: none;
+    display: inline-flex;
+    font-size: 0;
+    height: 32px;
+    justify-content: center;
+    min-height: 32px;
+    min-width: 32px;
+    padding: 0;
+    width: 32px;
+}
+
+.edf-recent-search-card > .edf-property-alert-trigger[data-edf-alert-icon-only="true"] svg,
+article:has(> a[data-testid="recent-search-item"]) > .edf-property-alert-trigger[data-edf-alert-icon-only="true"] svg {
+    display: block;
+    height: 20px;
+    width: 20px;
+}
+
+.edf-recent-search-card > .edf-property-alert-trigger:hover,
+article:has(> a[data-testid="recent-search-item"]) > .edf-property-alert-trigger:hover {
+    background: #f4fbee;
+}
+
+.edf-recent-search-card > .edf-property-alert-trigger[data-edf-alert-icon-only="true"]:hover,
+article:has(> a[data-testid="recent-search-item"]) > .edf-property-alert-trigger[data-edf-alert-icon-only="true"]:hover {
+    border-radius: 50%;
+}
+
+.edf-recent-search-link,
+article:has(> a[data-testid="recent-search-item"]) > a[data-testid="recent-search-item"] {
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: 3px;
+    box-sizing: border-box;
     color: inherit;
     flex: 1 1 auto;
+    height: 60px;
     min-width: 0;
+    padding: 6px 46px 6px 14px;
     text-decoration: none;
+    width: 100%;
 }
 
 .edf-recent-search-content {
     display: grid;
-    gap: 4px;
+    gap: 2px;
 }
 
 .edf-recent-search-content h3 {
-    color: var(--edf-color-heading);
-    font-size: 16px;
+    color: var(--edf-color-green);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 20px;
     margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .edf-recent-search-description {
-    color: var(--edf-color-muted);
+    color: #3c475b;
     font-size: 14px;
+    line-height: 18px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .edf-recent-search-alert {

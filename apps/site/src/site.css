@@ -11,14 +11,14 @@
 
 :root {
     --site-border: #e1e1df;
-    --site-green: #008a08;
-    --site-green-hover: #006d00;
+    --site-green: #0ea800;
+    --site-green-hover: #087f00;
     --site-green-tint: #f7fcf1;
     --site-heading: #131212;
     --site-muted: #646463;
     --site-surface: #fff;
     --site-surface-muted: #f7f7f5;
-    --site-focus: rgb(0 138 8 / 24%);
+    --site-focus: rgb(14 168 0 / 24%);
     --site-shadow: 0 20px 60px rgb(19 18 18 / 10%), 0 3px 12px rgb(19 18 18 / 8%);
 }
 

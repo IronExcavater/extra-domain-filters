@@ -51,7 +51,8 @@ export async function applySharedFilterParams(url: URL): Promise<void> {
     lastAppliedHref = url.href;
 
     const current = await getSettings();
-    const strata = Number(getParam(params, "strataMax"));
+    // A missing param must not read as Number(null) === 0, which would cap strata at $0.
+    const strata = hasParam(params, "strataMax") ? Number(getParam(params, "strataMax")) : Number.NaN;
     await updateSettings({
         filters: {
             couldHaveRuleIds: hasParam(params, "couldHaves")

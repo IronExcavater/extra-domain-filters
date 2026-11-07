@@ -6,11 +6,20 @@ export interface DomainSavedSearchRemoveMessage {
     type: "edf:domain-saved-search:remove";
 }
 
+export interface DomainSavedSearchSyncMessage {
+    type: "edf:domain-saved-search:sync";
+}
+
 export function isDomainSavedSearchRemoveMessage(value: unknown): value is DomainSavedSearchRemoveMessage {
     if (!value || typeof value !== "object") return false;
     const candidate = value as Partial<DomainSavedSearchRemoveMessage>;
     return candidate.type === "edf:domain-saved-search:remove"
         && typeof candidate.domainId === "string";
+}
+
+export function isDomainSavedSearchSyncMessage(value: unknown): value is DomainSavedSearchSyncMessage {
+    return Boolean(value && typeof value === "object" &&
+        (value as Partial<DomainSavedSearchSyncMessage>).type === "edf:domain-saved-search:sync");
 }
 
 const NATIVE_ENTRY_SELECTOR =
@@ -106,9 +115,66 @@ export function restoreDomainSavedSearches(): void {
         .forEach(entry => entry.removeAttribute("data-edf-native-search-hidden"));
 }
 
-export async function removeDomainSavedSearch(domainId: string): Promise<void> {
+function findRemoveConfirmation(): { button: HTMLButtonElement; dialog: HTMLElement } | undefined {
+    for (const dialog of document.querySelectorAll<HTMLElement>('dialog, [role="dialog"]')) {
+        if (!/remove|delete/i.test(dialog.textContent ?? "")) continue;
+        const button = [...dialog.querySelectorAll<HTMLButtonElement>("button")]
+            .find(candidate => /^(remove|delete)( search)?$|^confirm$/i.test(candidate.textContent?.trim() ?? ""));
+        if (button) return { button, dialog };
+    }
+    return undefined;
+}
+
+function waitForRemoval(
+    entry: HTMLElement,
+    signal: AbortSignal | undefined,
+    confirmAutomatically: boolean,
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const startedAt = Date.now();
+        let autoConfirmed = false;
+        let confirmationClosedAt: number | undefined;
+        let sawConfirmation = false;
+        const poll = (): void => {
+            if (signal?.aborted) {
+                reject(signal.reason ?? new DOMException("The operation was aborted.", "AbortError"));
+                return;
+            }
+            if (!entry.isConnected) {
+                resolve();
+                return;
+            }
+            const confirmation = findRemoveConfirmation();
+            if (confirmation) {
+                sawConfirmation = true;
+                confirmationClosedAt = undefined;
+                if (confirmAutomatically && !autoConfirmed && !confirmation.button.disabled) {
+                    autoConfirmed = true;
+                    confirmation.button.click();
+                }
+            } else if (sawConfirmation && confirmationClosedAt === undefined) {
+                confirmationClosedAt = Date.now();
+            } else if (confirmationClosedAt !== undefined && Date.now() - confirmationClosedAt >= 1_000) {
+                reject(new Error("Saved-search removal was cancelled."));
+                return;
+            }
+            if (Date.now() - startedAt >= 30_000) {
+                reject(new Error("Domain did not confirm the saved-search removal."));
+                return;
+            }
+            window.setTimeout(poll, 100);
+        };
+        poll();
+    });
+}
+
+export async function removeDomainSavedSearch(
+    domainId: string,
+    options: { confirmAutomatically?: boolean; signal?: AbortSignal } = {},
+): Promise<void> {
     const entry = findDomainSavedSearchEntry(domainId);
-    const toggle = entry?.querySelector<HTMLButtonElement>('button[aria-label*="menu" i], button[aria-haspopup="menu"]');
+    if (!entry) throw new Error("Domain's saved search entry is unavailable.");
+    const toggle = entry.querySelector<HTMLButtonElement>('button[aria-label*="menu" i], button[aria-haspopup="menu"]');
     if (!toggle) throw new Error("Domain's saved-search menu is unavailable.");
     toggle.click();
     await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -116,4 +182,5 @@ export async function removeDomainSavedSearch(domainId: string): Promise<void> {
         .find(option => /^remove search$/i.test(option.textContent?.trim() ?? ""));
     if (!remove) throw new Error("Domain's remove-search action is unavailable.");
     remove.click();
+    await waitForRemoval(entry, options.signal, options.confirmAutomatically === true);
 }

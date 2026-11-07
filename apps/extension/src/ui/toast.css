@@ -1,110 +1,167 @@
 .edf-toast-tray {
-    bottom: 16px;
+    bottom: 24px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    left: 24px;
+    pointer-events: none;
     position: fixed;
-    right: 16px;
     z-index: 2147483647;
 }
 
+/* Each toast sits in a wrapper whose height animates between 0fr and 1fr, so the
+ * stack reflows smoothly on enter and exit. The 8px gap lives inside the collapsing
+ * area so it shrinks with the toast. */
 .edf-toast-transition {
-    animation: edf-toast-enter 180ms cubic-bezier(0.2, 0, 0, 1);
-    transform-origin: right center;
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    transform-origin: left bottom;
+    transition:
+        grid-template-rows 260ms cubic-bezier(0.2, 0, 0, 1),
+        opacity 200ms ease,
+        transform 260ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-.edf-toast-transition[data-closing="true"] {
+.edf-toast-transition:is([data-state="entering"], [data-state="closing"]) {
+    grid-template-rows: 0fr;
     opacity: 0;
-    transform: translateX(12px);
-    transition:
-        opacity 160ms ease,
-        transform 160ms ease;
+    transform: translateY(8px) scale(0.98);
+}
+
+.edf-toast-transition[data-state="closing"] {
+    pointer-events: none;
+}
+
+.edf-toast-clip {
+    min-height: 0;
+    padding-top: 8px;
+}
+
+.edf-toast-transition:not([data-state="open"]) > .edf-toast-clip {
+    overflow: hidden;
 }
 
 .edf-toast {
-    background: #fff;
-    border: 1px solid #e6e9ed;
-    border-radius: 3px;
-    box-shadow: 0 4px 16px rgb(60 71 91 / 20%);
-    color: #3c475b;
-    max-width: 420px;
-    min-width: 320px;
+    background: var(--edf-color-surface, #fff);
+    border: 1px solid var(--edf-color-border, #dfe3e8);
+    border-radius: 10px;
+    box-sizing: border-box;
+    box-shadow:
+        0 8px 24px rgb(30 41 61 / 16%),
+        0 2px 6px rgb(30 41 61 / 8%);
+    color: var(--edf-color-heading, #131212);
+    width: min(380px, calc(100vw - 48px));
 }
 
 .edf-toast-content {
     align-items: center;
     display: flex;
     gap: 12px;
-    padding: 12px 16px;
+    min-height: 56px;
+    padding: 12px 14px;
 }
 
 .edf-toast-icon {
     align-items: center;
-    color: #0ea800;
+    background: #eef8ec;
+    border-radius: 50%;
+    color: var(--edf-color-green, #0ea800);
     display: inline-flex;
     flex: 0 0 auto;
+    height: 28px;
+    justify-content: center;
+    width: 28px;
 }
 
 .edf-toast-icon svg {
-    height: 20px;
-    width: 20px;
+    height: 16px;
+    width: 16px;
 }
 
 .edf-toast-text {
     flex: 1 1 auto;
     font-size: 16px;
-    line-height: 24px;
+    font-weight: 500;
+    line-height: 22px;
 }
 
-.edf-toast-close {
+.edf-toast-action {
+    appearance: none;
     background: transparent;
     border: 0;
-    color: #0ea800;
+    border-radius: 6px;
+    color: var(--edf-color-green, #0ea800);
     cursor: pointer;
     flex: 0 0 auto;
     font: inherit;
     font-size: 14px;
-    font-weight: 400;
+    font-weight: 700;
+    line-height: 20px;
+    padding: 6px 8px;
+    transition: background-color 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+.edf-toast-action:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+    outline: 0;
+}
+
+.edf-toast-action:disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.edf-toast-action:hover:not(:disabled) {
+    background: #eef8ec;
+    color: var(--edf-color-green-hover, #087f00);
+}
+
+.edf-toast-close {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--edf-color-icon, #626a78);
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 32px;
+    justify-content: center;
     padding: 0;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
+    width: 32px;
 }
 
 .edf-toast-close:hover {
-    color: #1b7b10;
-    text-decoration: underline;
+    background: var(--edf-color-surface-muted, #f6f7f5);
+    color: var(--edf-color-heading, #131212);
+}
+
+.edf-toast-close:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+    outline: 0;
+}
+
+.edf-toast-close-icon {
+    height: 18px;
+    width: 18px;
 }
 
 .edf-toast-tray[data-edf-toast-scope="popup"] {
     bottom: 12px;
-    right: 12px;
+    left: 12px;
 }
 
 .edf-toast-tray[data-edf-toast-scope="popup"] .edf-toast {
-    max-width: 300px;
-    min-width: 0;
+    width: min(380px, calc(100vw - 24px));
 }
 
-.edf-toast-tray[data-edf-toast-scope="popup"] .edf-toast-content {
-    gap: 8px;
-    padding: 9px 12px;
-}
-
-.edf-toast-tray[data-edf-toast-scope="popup"] .edf-toast-text {
-    font-size: 14px;
-    line-height: 20px;
-}
-
-.edf-toast-tray[data-edf-toast-scope="popup"] .edf-toast-close {
-    font-size: 13px;
-}
-
-@keyframes edf-toast-enter {
-    from {
-        opacity: 0;
-        transform: translateX(12px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
+@media (prefers-reduced-motion: reduce) {
+    .edf-toast-transition {
+        transition: none;
     }
 }

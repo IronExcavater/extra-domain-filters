@@ -1,6 +1,5 @@
 html,
-body,
-#app {
+body {
     height: 600px;
     overflow: hidden;
     width: 760px;
@@ -9,6 +8,13 @@ body,
 body {
     background: rgb(253 252 251);
     margin: 0;
+}
+
+#app {
+    display: block;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
 }
 
 .edf-settings-popup {
@@ -35,7 +41,13 @@ body {
     grid-template-rows: minmax(0, 1fr);
 }
 
-.edf-popup-navigation-host,
+.edf-popup-navigation-host {
+    min-height: 0;
+    overflow: visible;
+    position: relative;
+    z-index: 40;
+}
+
 .edf-popup-view-host {
     min-height: 0;
     overflow: hidden;

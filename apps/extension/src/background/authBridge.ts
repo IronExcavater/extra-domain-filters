@@ -28,7 +28,7 @@ async function hasOffscreenDocument(): Promise<boolean> {
 async function ensureOffscreenDocument(): Promise<void> {
     if (await hasOffscreenDocument()) return;
     creatingDocument ??= chrome.offscreen.createDocument({
-        justification: `Complete Apple or Facebook authentication through ${new URL(bridgeUrl).host}.`,
+        justification: `Complete federated authentication through ${new URL(bridgeUrl).host}.`,
         reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING],
         url: OFFSCREEN_PATH,
     }).finally(() => {

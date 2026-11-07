@@ -2,7 +2,8 @@ import type {
     SavedSearch,
     SearchNotificationFrequency,
 } from "../../domain/searches/savedSearches";
-import { createUiButton } from "../../ui/elements";
+import { createSvgIcon, createUiButton } from "../../ui/elements";
+import { replaceWithSavedSearchBellIcon } from "../../ui/icons";
 import { openPopover, type PopoverHandle } from "../../ui/popover";
 import { createDropdownControl } from "../../ui/sort";
 
@@ -25,10 +26,10 @@ export function openSavedSearchAlertPopover(
     return new Promise(resolve => {
         const controller = new AbortController();
         const content = document.createElement("form");
+        const titleRow = document.createElement("div");
         const heading = document.createElement("h2");
         const description = document.createElement("p");
         const field = document.createElement("div");
-        const label = document.createElement("span");
         const error = document.createElement("p");
         const actions = document.createElement("div");
         const cancel = createUiButton({ label: "Cancel", signal: controller.signal, variant: "secondary" });
@@ -78,11 +79,10 @@ export function openSavedSearchAlertPopover(
         };
 
         content.className = "edf-saved-search-alert-popover";
+        titleRow.className = "edf-dialog-title-row";
         heading.textContent = options.mode === "create" ? "Create property alert" : "Edit property alert";
         description.textContent = "How often would you like to receive email alerts for this search?";
         field.className = "edf-saved-search-alert-field";
-        label.className = "edf-saved-search-alert-label";
-        label.textContent = "Email frequency";
         error.className = "edf-saved-search-alert-error";
         error.hidden = true;
         error.role = "alert";
@@ -99,8 +99,9 @@ export function openSavedSearchAlertPopover(
             actions.append(remove);
         }
         actions.append(cancel, submit);
-        field.append(label, dropdown.element);
-        content.append(heading, description, field, error, actions);
+        field.append(dropdown.element);
+        titleRow.append(createSvgIcon(replaceWithSavedSearchBellIcon), heading);
+        content.append(titleRow, description, field, error, actions);
         content.addEventListener("submit", event => {
             event.preventDefault();
             void run(() => options.onSave(frequency));

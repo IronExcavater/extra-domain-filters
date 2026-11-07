@@ -1,4 +1,5 @@
 .edf-blacklist-card-grid {
+    align-items: start;
     display: grid;
     gap: 16px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -59,44 +60,46 @@
     white-space: nowrap;
 }
 
-.edf-blacklist-card-toggle {
-    align-items: center;
-    background: transparent;
+/* stylelint-disable no-descending-specificity -- The popup toggle deliberately overrides shared card and icon primitives. */
+.edf-blacklist-card-toggle.edf-blacklist-action-popup {
+    background: none;
     border: 0;
-    color: #f0bd00;
-    cursor: pointer;
-    display: inline-flex;
-    height: 32px;
-    justify-content: center;
-    padding: 4px;
-    transition: color 150ms ease;
-    width: 32px;
-}
-
-.edf-blacklist-card-toggle:disabled {
-    cursor: default;
-    opacity: 0.55;
-}
-
-.edf-blacklist-card-toggle[data-active="false"] {
+    border-radius: 0;
     color: var(--edf-color-shortlist-inactive);
-}
-
-.edf-blacklist-card-toggle[data-active="false"]:hover:not(:disabled) {
-    color: #f0bd00;
-}
-
-.edf-blacklist-card-toggle:hover:not(:disabled) {
-    color: #ffd000;
-}
-
-.edf-blacklist-card-toggle:active:not(:disabled) {
-    color: #e2ad00;
-}
-
-.edf-blacklist-card-toggle svg {
     display: block;
+    flex: 0 0 24px;
+    height: 27.5139px;
+    padding: 3.5139px 0 0;
+    transition:
+        background-color var(--edf-motion-fast) ease,
+        color 200ms ease-in-out;
+    width: 24px;
+}
+
+.edf-blacklist-card-toggle.edf-blacklist-action-popup:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+    outline: 0;
+}
+
+.edf-blacklist-card-toggle.edf-blacklist-action-popup:hover:not(:disabled) {
+    background: transparent;
+    color: var(--edf-color-shortlist-hover);
+}
+
+.edf-blacklist-card-toggle.edf-blacklist-action-popup[data-active="true"] {
+    color: var(--edf-color-shortlist-selected);
+}
+
+.edf-blacklist-card-toggle.edf-blacklist-action-popup[data-active="true"]:hover:not(:disabled) {
+    color: var(--edf-color-shortlist-active-hover);
+}
+
+.edf-blacklist-card-toggle.edf-blacklist-action-popup svg {
+    color: currentcolor;
+    fill: currentcolor;
     height: 24px;
+    pointer-events: none;
+    transition: color 200ms ease-in-out, fill 200ms ease-in-out;
     width: 24px;
 }
 
@@ -137,6 +140,7 @@
     height: 18px;
     width: 18px;
 }
+/* stylelint-enable no-descending-specificity */
 
 .edf-popup-blacklist-grid.edf-blacklist-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -151,5 +155,25 @@
 @media (width <= 600px) {
     .edf-blacklist-card-grid {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .edf-popup-blacklist-grid .edf-blacklist-card {
+        display: grid;
+        grid-template-columns: 148px minmax(0, 1fr);
+    }
+
+    .edf-popup-blacklist-grid .edf-blacklist-card-media {
+        aspect-ratio: auto;
+        min-height: 124px;
+    }
+
+    .edf-popup-blacklist-grid .edf-blacklist-card-body {
+        padding: 10px 12px 12px;
+    }
+}
+
+@media (width <= 500px) {
+    .edf-popup-blacklist-grid .edf-blacklist-card {
+        grid-template-columns: 128px minmax(0, 1fr);
     }
 }

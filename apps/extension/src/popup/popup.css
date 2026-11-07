@@ -1,3 +1,11 @@
 @import url("./styles/shell.css");
 @import url("./styles/navigation.css");
 @import url("./styles/views.css");
+
+@font-face {
+    font-display: swap;
+    font-family: "F37 Bolton";
+    font-style: normal;
+    font-weight: 100 900;
+    src: url("/fonts/F37Bolton-VF.ttf") format("truetype");
+}

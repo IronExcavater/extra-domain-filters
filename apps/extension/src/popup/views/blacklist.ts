@@ -8,12 +8,18 @@ import { createBlacklistCard } from "../../features/blacklist/card";
 import {
     filterBlacklistEntries,
     sortBlacklistEntries,
+    updateStableNewestOrder,
     type BlacklistFilter,
     type BlacklistSort,
 } from "../../features/blacklist/sort";
 import { createEmptyState } from "../../ui/collection";
 import { createCollectionFrame } from "../../ui/collectionView";
-import { renderSelectionControls, replaceSelection } from "../../ui/selection";
+import { replaceWithBinIcon } from "../../ui/icons";
+import {
+    renderSelectionControls,
+    replaceSelection,
+    setSelectionCheckboxState,
+} from "../../ui/selection";
 import { createSortControl } from "../../ui/sort";
 import { createTabs } from "../../ui/tabs";
 
@@ -25,6 +31,8 @@ interface BlacklistViewOptions {
 }
 
 const retainedUnblacklistedEntries = new Map<string, BlacklistEntry>();
+const stableNewestOrder = new Map<string, number>();
+const SELECTION_TRANSITION_MS = 160;
 
 export function createBlacklistView(options: BlacklistViewOptions): HTMLElement {
     const { entries, selectedUrls, signal } = options;
@@ -33,6 +41,7 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
     const retained = [...retainedUnblacklistedEntries.values()]
         .filter(entry => !activeUrls.has(getBlacklistListing(entry).url));
     const items = [...active, ...retained];
+    updateStableNewestOrder(stableNewestOrder, items);
     let animateNext = options.animate ?? true;
     const controls = document.createElement("div");
     const frame = createCollectionFrame({
@@ -46,7 +55,7 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
         initialItems: items,
         initialSelection: [...selectedUrls],
         initialSort: "newest",
-        sort: sortBlacklistEntries,
+        sort: (candidates, sort) => sortBlacklistEntries(candidates, sort, stableNewestOrder),
     });
     const sort = createSortControl({
         ariaLabel: "Sort blacklisted properties",
@@ -93,7 +102,14 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
                     controller.clearSelection();
                 });
             },
-            onSelectionChange: ids => controller.replaceSelection(ids),
+            onSelectionChange: ids => {
+                const next = new Set(ids);
+                for (const card of frame.cards.querySelectorAll<HTMLElement>("[data-blacklist-url]")) {
+                    const input = card.querySelector<HTMLInputElement>(".edf-selection-checkbox input");
+                    if (input) setSelectionCheckboxState(input, next.has(card.dataset.blacklistUrl ?? ""));
+                }
+                window.setTimeout(() => controller.replaceSelection(ids), SELECTION_TRANSITION_MS);
+            },
             selectedIds: [...selection],
             visibleIds: visible.map(entry => getBlacklistListing(entry).url),
         });
@@ -103,10 +119,14 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
             return createBlacklistCard(entry, {
                 active: !retainedEntry,
                 onSelectionChange: selected => {
-                    if (selected !== controller.getSelection().has(url)) controller.toggleSelection(url);
+                    if (selected === controller.getSelection().has(url)) return;
+                    controller.toggleSelection(url);
                 },
-                onToggle: async () => {
-                    if (retainedEntry) {
+                onToggle: async (_action, nextActive) => {
+                    // Use the requested destination state explicitly. During Undo the original
+                    // button has already been detached by the popup render, so its DOM state is
+                    // not a reliable source of intent.
+                    if (nextActive) {
                         retainedUnblacklistedEntries.delete(url);
                         await addOrReplaceBlacklistEntry(getBlacklistListing(entry));
                     } else {
@@ -117,6 +137,7 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
                 },
                 openLinksInNewTab: true,
                 selected: selection.has(url),
+                signal,
             });
         }), animateNext);
         frame.setEmptyState(visible.length === 0 ? createEmptyState(
@@ -124,6 +145,7 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
             items.length === 0
                 ? "Properties hidden from Domain results will appear here."
                 : "Try another property category.",
+            replaceWithBinIcon,
         ) : undefined);
         animateNext = false;
     };

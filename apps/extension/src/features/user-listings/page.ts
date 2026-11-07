@@ -32,6 +32,35 @@ export function getUserListingUrls(cards: readonly HTMLElement[]): string[] {
         .filter((url): url is string => url !== undefined);
 }
 
+const MESSAGE_WRAPPER_SELECTOR = '[data-testid="shortlist__message_wrapper"]';
+const CUSTOM_MESSAGE_TEST_ID = "extra-domain-filters-shortlist-message";
+const SHORTLIST_TOGETHER_MESSAGE =
+    "Want to Shortlist with someone? Download the Domain app to Shortlist Together.";
+
+export function relocateShortlistTogetherMessage(container: HTMLElement): void {
+    const title = container.querySelector<HTMLElement>('[data-testid="shortlist__title"], h1, h2');
+    if (!title) return;
+
+    // Domain conditionally removes its message when changing All/Buy/Rent. Render an owned,
+    // standalone version so its lifetime does not depend on Domain's current tab subtree.
+    const nativeMessage = container.querySelector<HTMLElement>(MESSAGE_WRAPPER_SELECTOR);
+    if (nativeMessage) nativeMessage.hidden = true;
+
+    const existing = container.querySelector<HTMLElement>(`[data-testid="${CUSTOM_MESSAGE_TEST_ID}"]`);
+    const message = existing ?? markOwned(document.createElement("div"), "shortlist-message");
+    if (!existing) {
+        const text = document.createElement("span");
+        message.dataset.testid = CUSTOM_MESSAGE_TEST_ID;
+        text.textContent = SHORTLIST_TOGETHER_MESSAGE;
+        message.append(text);
+    }
+
+    message.classList.add("edf-relocated-shortlist-message");
+    if (title.nextElementSibling === message) return;
+
+    title.after(message);
+}
+
 export function overridePageTitle(
     container: HTMLElement,
     titleText: string,

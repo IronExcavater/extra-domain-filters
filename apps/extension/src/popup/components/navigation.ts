@@ -4,7 +4,6 @@ import type { AccountState } from "../../domain/account/model";
 import { createButton, createSvgIcon, type IconRenderer } from "../../ui/elements";
 import {
     replaceWithBinIcon,
-    replaceWithChevronIcon,
     replaceWithPopupCogIcon,
     replaceWithPopupDoorIcon,
     replaceWithPopupSavedSearchIcon,
@@ -25,6 +24,57 @@ const NAV_ITEMS = [
     { label: "My Searches", view: "saved-searches" },
     { label: "Blacklist", view: "blacklist" },
 ] satisfies Array<{ label: string; view: PopupView }>;
+let previousPrimaryView: PopupView | undefined;
+
+function placePrimaryIndicator(
+    navigation: HTMLElement,
+    indicator: HTMLElement,
+    activeView: PopupView,
+): void {
+    const buttons = [...navigation.querySelectorAll<HTMLButtonElement>("[data-popup-view]")];
+    const active = buttons.find(button => button.dataset.popupView === activeView);
+    if (!active) {
+        indicator.dataset.visible = "false";
+        return;
+    }
+
+    const previous = buttons.find(button => button.dataset.popupView === previousPrimaryView);
+    const place = (button: HTMLButtonElement): void => {
+        indicator.style.transform = `translateX(${button.offsetLeft}px)`;
+        indicator.style.width = `${button.offsetWidth}px`;
+    };
+
+    indicator.dataset.visible = "true";
+    if (previous && previous !== active) {
+        indicator.dataset.instant = "true";
+        place(previous);
+        void indicator.offsetWidth;
+        delete indicator.dataset.instant;
+        requestAnimationFrame(() => {
+            if (indicator.isConnected) place(active);
+        });
+    } else {
+        indicator.dataset.instant = "true";
+        place(active);
+        requestAnimationFrame(() => delete indicator.dataset.instant);
+    }
+    previousPrimaryView = activeView;
+}
+
+function renderMenuIcon(icon: SVGElement): void {
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("aria-hidden", "true");
+    icon.replaceChildren();
+    for (const y of [6, 12, 18]) {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        line.setAttribute("d", `M4 ${y}h16`);
+        line.setAttribute("fill", "none");
+        line.setAttribute("stroke", "currentColor");
+        line.setAttribute("stroke-linecap", "round");
+        line.setAttribute("stroke-width", "2");
+        icon.append(line);
+    }
+}
 
 function createWordmark(): HTMLImageElement {
     const image = document.createElement("img");
@@ -95,18 +145,45 @@ function createIdentity(account: AccountState): HTMLElement | undefined {
     return card;
 }
 
+function createDomainStatus(data: PopupData): HTMLElement {
+    const status = document.createElement("div");
+    const indicator = document.createElement("span");
+    const copy = document.createElement("span");
+    const signedIn = data.domainSession.status === "signed-in";
+
+    status.className = "edf-popup-domain-status";
+    status.dataset.status = data.domainSession.status;
+    indicator.className = "edf-popup-domain-status-indicator";
+    indicator.ariaHidden = "true";
+    copy.textContent = signedIn
+        ? "Domain.com.au connected"
+        : data.domainSession.status === "signed-out"
+            ? "Domain.com.au signed out"
+            : "Domain.com.au unavailable";
+    status.append(indicator, copy);
+    return status;
+}
+
 export function createNavigation(options: NavigationOptions): HTMLElement {
     const { activeView, data, onNavigate, onSessionChange, signal } = options;
     const header = document.createElement("header");
     const brand = createButton("", "edf-popup-brand");
     const logo = createWordmark();
     const navigation = document.createElement("nav");
-    const account = document.createElement("details");
-    const summary = document.createElement("summary");
+    const indicator = document.createElement("span");
+    const account = document.createElement("div");
+    const summary = createButton("", "edf-popup-account-summary edf-popup-navigation-item");
     const menu = document.createElement("div");
     const blacklistCount = data.blacklist.filter(entry => !entry.removedAt).length;
+    let open = false;
+    const setOpen = (next: boolean): void => {
+        open = next;
+        account.dataset.open = String(open);
+        menu.hidden = !open;
+        summary.setAttribute("aria-expanded", String(open));
+    };
     const closeAndNavigate = (view: PopupView): void => {
-        account.open = false;
+        setOpen(false);
         onNavigate(view);
     };
 
@@ -117,37 +194,39 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
     brand.addEventListener("click", () => onNavigate("saved-searches"));
 
     navigation.className = "edf-popup-primary-navigation";
+    indicator.className = "edf-popup-navigation-indicator";
+    indicator.ariaHidden = "true";
     for (const item of NAV_ITEMS) {
         const button = createButton(item.label, "edf-popup-navigation-button");
         button.dataset.active = String(item.view === activeView);
+        button.dataset.popupView = item.view;
         button.addEventListener("click", () => onNavigate(item.view));
         navigation.append(button);
     }
+    navigation.append(indicator);
 
     account.className = "edf-popup-account";
     document.addEventListener("pointerdown", event => {
-        if (!account.contains(event.target as Node)) account.open = false;
+        if (!account.contains(event.target as Node)) setOpen(false);
     }, { capture: true, signal });
     document.addEventListener("keydown", event => {
-        if (event.key === "Escape") account.open = false;
+        if (event.key === "Escape") setOpen(false);
     }, { signal });
-    summary.className = "edf-popup-account-summary edf-popup-navigation-item";
+    summary.setAttribute("aria-haspopup", "menu");
+    summary.setAttribute("aria-expanded", "false");
+    summary.ariaLabel = "Open menu";
     if (data.account?.status === "signed-in") {
         summary.append(createAvatar(data.account));
     } else {
-        const label = document.createElement("span");
-        label.className = "edf-popup-account-menu-label";
-        label.textContent = "Menu";
-        summary.append(label);
+        summary.append(createSvgIcon(renderMenuIcon, "edf-popup-menu-icon"));
     }
-    const chevron = document.createElement("span");
-    chevron.className = "edf-popup-chevron";
-    chevron.append(createSvgIcon(replaceWithChevronIcon));
-    summary.append(chevron);
+    summary.addEventListener("click", () => setOpen(!open), { signal });
 
     menu.className = "edf-popup-account-menu";
+    menu.hidden = true;
     const identity = data.account ? createIdentity(data.account) : undefined;
     if (identity) menu.append(identity);
+    menu.append(createDomainStatus(data));
     menu.append(createMenuItem(
         "My searches",
         replaceWithPopupSavedSearchIcon,
@@ -158,7 +237,7 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
     if (data.account?.status === "signed-in") {
         menu.append(createMenuItem("Shortlist", replaceWithPopupStarIcon, () => {
             void chrome.tabs.create({ url: "https://www.domain.com.au/user/shortlist" });
-            account.open = false;
+            setOpen(false);
         }));
     }
     menu.append(
@@ -179,7 +258,7 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
     );
 
     const signedIn = data.account?.status === "signed-in";
-    const sessionLabel = signedIn ? "Log out" : "Log in";
+    const sessionLabel = signedIn ? "Log out of sync" : "Sign in to sync";
     const session = createMenuItem(sessionLabel, replaceWithPopupDoorIcon, async () => {
         if (!signedIn) {
             closeAndNavigate("login");
@@ -188,7 +267,7 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
         session.disabled = true;
         try {
             await signOut();
-            account.open = false;
+            setOpen(false);
             showPopupToast("Logged out");
             onSessionChange();
         } catch (error) {
@@ -201,6 +280,10 @@ export function createNavigation(options: NavigationOptions): HTMLElement {
     menu.append(session);
     account.append(summary, menu);
     header.append(brand, navigation, account);
+    setOpen(false);
+    requestAnimationFrame(() => {
+        if (navigation.isConnected) placePrimaryIndicator(navigation, indicator, activeView);
+    });
 
     return header;
 }

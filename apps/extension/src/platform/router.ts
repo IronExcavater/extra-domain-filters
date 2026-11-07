@@ -1,4 +1,5 @@
 import type { MaybePromise } from "../utils/types";
+import { onBodyMutations } from "../dom/bodyMutations";
 import { createLifecycleScope, type Disposer, type LifecycleScope } from "./lifecycle";
 import { Logger } from "./logging";
 
@@ -60,6 +61,10 @@ export function observeUrlChanges(callback: (url: URL) => void, signal: AbortSig
     window.addEventListener("popstate", schedule, { signal });
     window.addEventListener("hashchange", schedule, { signal });
     window.addEventListener(URL_CHANGE_EVENT, schedule, { signal });
+    // Some Domain transitions are committed by its app router without calling the
+    // page-world History methods patched above. The shared body observer is a cheap
+    // fallback: it only compares location once per rendered mutation frame.
+    onBodyMutations(schedule, signal);
 }
 
 export interface Router {
@@ -86,6 +91,9 @@ export function createRouter(
 
     async function run(url = new URL(window.location.href)): Promise<void> {
         const route = routes.find(r => r.test(url));
+        // The matched route id already distinguishes shortlist from blacklist.
+        // Keep search/sort query changes inside the mounted page so editing a
+        // saved search does not tear down and reorder the whole view.
         const nextKey = route ? `${route.id}:${url.pathname}` : undefined;
 
         if (nextKey === activeKey) return;

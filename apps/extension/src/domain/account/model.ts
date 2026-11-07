@@ -23,10 +23,10 @@ export interface AccountState {
     status: "signed-in" | "signed-out" | "unavailable";
 }
 
-export type ProviderTransport = "chrome-identity" | "federated-bridge";
+export type ProviderTransport = "federated-bridge";
 
 export const ACCOUNT_PROVIDER_TRANSPORTS = {
     apple: "federated-bridge",
     facebook: "federated-bridge",
-    google: "chrome-identity",
+    google: "federated-bridge",
 } as const satisfies Record<AccountProvider, ProviderTransport>;

@@ -6,9 +6,9 @@ import {
     getChildListingUrl,
     getListingSnapshot,
     getTitle,
+    PROJECT_CARD_SELECTOR,
     PROJECT_DETAILS_SELECTOR,
     PROJECT_MARKER_SELECTOR,
-    SHORTLIST_BUTTON_SELECTOR,
 } from "../dom/card";
 import { getExclusionRow, updateExclusionRow } from "../exclusion/row";
 
@@ -44,23 +44,6 @@ function getProjectAggregateRow(projectCard: HTMLElement, projectHeader: HTMLEle
     return row;
 }
 
-function getVisibleTextElement(container: HTMLElement): HTMLElement | undefined {
-    return [...container.querySelectorAll<HTMLElement>("h1, h2, h3, a, span, p"), container]
-        .find(element =>
-            !element.classList.contains("edf-project-blacklist-button") &&
-            element.textContent?.trim() &&
-            element.getClientRects().length > 0,
-        );
-}
-
-function getProjectTextColor(projectHeader: HTMLElement, details: HTMLElement | null): string {
-    const textElement = getVisibleTextElement(details ?? projectHeader) ??
-        getVisibleTextElement(projectHeader) ??
-        projectHeader;
-
-    return getComputedStyle(textElement).color;
-}
-
 export function updateProjectBlacklistSummary(
     projectCard: HTMLElement,
     projectHeader: HTMLElement,
@@ -84,13 +67,6 @@ export function updateProjectBlacklistSummary(
 
     const bulkButton = projectCard.querySelector<HTMLButtonElement>('.edf-project-blacklist-button');
     if (bulkButton) {
-        const color = getProjectTextColor(
-            projectHeader,
-            projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR),
-        );
-        if (bulkButton.style.getPropertyValue("--edf-project-foreground") !== color) {
-            bulkButton.style.setProperty("--edf-project-foreground", color);
-        }
         setBlacklistActionState(bulkButton, {
             active: blacklistedUrls.length > 0,
             label: "Blacklist project",
@@ -116,28 +92,39 @@ export function updateProjectBlacklistSummary(
     }
 }
 
-function insertProjectBlacklistButton(details: HTMLElement, button: HTMLButtonElement): void {
-    if (details.querySelector(':scope > .edf-project-blacklist-button')) return;
+function isDarkBackground(element: HTMLElement): boolean {
+    const rect = element.getBoundingClientRect();
+    const overlapsImage = [...element.closest(PROJECT_CARD_SELECTOR)?.querySelectorAll("img") ?? []]
+        .some(image => {
+            const imageRect = image.getBoundingClientRect();
+            const overlapWidth = Math.max(0, Math.min(rect.right, imageRect.right) - Math.max(rect.left, imageRect.left));
+            const overlapHeight = Math.max(0, Math.min(rect.bottom, imageRect.bottom) - Math.max(rect.top, imageRect.top));
+            return overlapWidth * overlapHeight > rect.width * rect.height * 0.35;
+        });
+    if (overlapsImage) return true;
 
-    const address = details.lastElementChild;
-    if (!address) {
-        details.append(button);
-        return;
+    for (let current: HTMLElement | null = element; current; current = current.parentElement) {
+        const match = getComputedStyle(current).backgroundColor.match(/rgba?\((\d+)\D+(\d+)\D+(\d+)(?:\D+([\d.]+))?/);
+        if (!match || Number(match[4] ?? 1) === 0) continue;
+        const luminance = (0.2126 * Number(match[1]) + 0.7152 * Number(match[2]) + 0.0722 * Number(match[3])) / 255;
+        return luminance < 0.48;
     }
+    return false;
+}
 
-    if (address instanceof HTMLAnchorElement) {
-        address.after(button);
-        return;
-    }
-
-    address.append(button);
+function insertProjectBlacklistButton(
+    projectCard: HTMLElement,
+    button: HTMLButtonElement,
+): void {
+    projectCard.classList.add("edf-project-has-blacklist-action");
+    projectCard.append(button);
 }
 
 export function bindProjectCard(projectCard: HTMLElement, context: PageContext): void {
-    if (!projectCard.querySelector(PROJECT_MARKER_SELECTOR)) return;
-    const sourceButton = projectCard.querySelector<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR);
-    const details = projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR);
-    if (!sourceButton || !details || !getProjectUrl(projectCard)) return;
+    const marker = projectCard.querySelector<HTMLElement>(PROJECT_MARKER_SELECTOR);
+    if (!marker) return;
+    const details = projectCard.querySelector<HTMLElement>(PROJECT_DETAILS_SELECTOR) ?? marker;
+    if (!getProjectUrl(projectCard)) return;
     if (projectCard.querySelector(".edf-project-blacklist-button")) return;
 
     const button = createBlacklistAction({
@@ -148,5 +135,21 @@ export function bindProjectCard(projectCard: HTMLElement, context: PageContext):
         signal: context.signal,
     });
     button.classList.add("edf-project-blacklist-button");
-    insertProjectBlacklistButton(details, button);
+    insertProjectBlacklistButton(projectCard, button);
+    const syncLayout = (): void => {
+        const cardRect = projectCard.getBoundingClientRect();
+        const detailsRect = details.getBoundingClientRect();
+        const buttonHeight = button.getBoundingClientRect().height || 28;
+        button.style.top = `${Math.max(8, detailsRect.top - cardRect.top + (detailsRect.height - buttonHeight) / 2)}px`;
+        // The action is absolutely positioned over the project details strip, so
+        // inspecting the button's transparent ancestor chain reads the page
+        // surface instead of the surface actually behind it.  The details strip
+        // is the visual host and is the stable source of its contrast mode.
+        button.dataset.contrast = isDarkBackground(details) ? "light" : "default";
+    };
+    const resizeObserver = new ResizeObserver(syncLayout);
+    resizeObserver.observe(projectCard);
+    resizeObserver.observe(details);
+    requestAnimationFrame(syncLayout);
+    context.signal.addEventListener("abort", () => resizeObserver.disconnect(), { once: true });
 }

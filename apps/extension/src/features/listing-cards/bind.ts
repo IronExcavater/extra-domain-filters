@@ -1,10 +1,14 @@
 import { getBlacklist, removeBlacklistUrls } from "../../domain/blacklist/store";
 import { PageContext } from "../../platform/router";
-import { isShortlisted } from "../../site-dom/shortlist";
+import { consumeInternalShortlistRemoval, isShortlisted } from "../../site-dom/shortlist";
 import { getSettings } from "../../state/settings";
 import { createBlacklistAction } from "./actions/blacklistAction";
 import { toggleBlacklist } from "./blacklist/toggle";
-import { bindCarouselCard, disposeDetachedCarouselControls } from "./cards/carousel";
+import {
+    bindCarouselCard,
+    disposeCarouselControls,
+    disposeDetachedCarouselControls,
+} from "./cards/carousel";
 import { bindProjectCard } from "./cards/project";
 import {
     getCard,
@@ -24,10 +28,14 @@ function bindBlacklistButton(
     if (!card) return;
     const kind = getBlacklistCardKind(card, shortlistButton);
     if (kind === "project-child") return;
+    // Project cards have one aggregate action bound before the native shortlist controls are
+    // scanned. Treating the project's own shortlist trigger as a standard listing would add a
+    // second blacklist button with different semantics and styling.
+    if (card.querySelector(".edf-project-blacklist-button")) return;
 
     const url = getListingUrl(shortlistButton, card);
     if (!url) return;
-    if (shortlistButton.parentElement?.querySelector(".edf-blacklist-action")) return;
+    if (shortlistButton.parentElement?.querySelector('[data-testid="listing-card-blacklist"]')) return;
 
     const button = createBlacklistAction({
         active: false,
@@ -36,12 +44,14 @@ function bindBlacklistButton(
             await toggleBlacklist(card, url, context, shortlistButton, action);
         },
         signal: context.signal,
+        template: shortlistButton,
     });
     if (kind === "carousel-child") button.dataset.blacklistScope = "carousel-child";
     shortlistButton.parentElement?.classList.add("edf-listing-card-button-container");
     shortlistButton.after(button);
 
     shortlistButton.addEventListener("click", () => {
+        if (consumeInternalShortlistRemoval(shortlistButton)) return;
         requestAnimationFrame(async () => {
             if (!isShortlisted(shortlistButton)) return;
 
@@ -69,14 +79,23 @@ export async function injectListingCards(
         }
 
         for (const shortlistButton of document.querySelectorAll<HTMLButtonElement>(SHORTLIST_BUTTON_SELECTOR)) {
+            // Topspot/Slick repeats buttons across real and cloned slides. Those controls need
+            // the URL from their own slide and are reconciled by bindCarouselCard below; the
+            // generic card path otherwise resolves several clones to the carousel's first URL.
+            if (shortlistButton.closest(TOPSPOT_CAROUSEL_SELECTOR)) continue;
             bindBlacklistButton(shortlistButton, context);
         }
     }
 
-    if (settings.flags.enableCarouselControls) {
+    if (settings.flags.enableCarouselControls || settings.flags.enableBlacklist) {
         for (const carouselCard of document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)) {
-            bindCarouselCard(carouselCard, context, { enableBlacklist: settings.flags.enableBlacklist });
+            bindCarouselCard(carouselCard, context, {
+                enableBlacklist: settings.flags.enableBlacklist,
+                enablePause: settings.flags.enableCarouselControls,
+            });
         }
+    } else {
+        disposeCarouselControls();
     }
 
     await updateListingCards(settings, settings.flags.enableBlacklist ? blacklist : [], showBlacklistedView);

@@ -12,6 +12,7 @@ import {
     getUserListingUrl,
     getUserListingUrls,
     installSortControl,
+    relocateShortlistTogetherMessage,
     replaceUserListingTabs,
 } from "../features/user-listings/page";
 import { PageMount } from "../platform/router";
@@ -23,6 +24,15 @@ import {
 } from "../ui/selection";
 
 const ACTION_BUTTON_CLASS = "edf-selection-action";
+
+// Domain's note-action buttons can carry an icon alongside their label text.
+// Overwriting textContent directly would destroy that icon node (and any
+// listener/ref React attached to it); replace only the text-bearing span.
+function setButtonLabel(button: HTMLButtonElement, value: string): void {
+    const label = [...button.querySelectorAll<HTMLElement>("span")].find(span => !span.querySelector("svg"));
+    if (label) label.textContent = value;
+    else button.textContent = value;
+}
 
 const selectedCardIds = new Set<string>();
 
@@ -61,7 +71,7 @@ function configureNoteActions(card: HTMLElement, reconcileCards: ReconcileCards)
             const label = button.textContent?.trim().toLowerCase();
             if (label === "enquire") button.classList.add("edf-listing-card-enquire-action");
             if (label === "edit notes") {
-                button.textContent = "View notes";
+                setButtonLabel(button, "View notes");
                 button.ariaLabel = "View notes";
             }
         });
@@ -78,7 +88,7 @@ function configureNoteActions(card: HTMLElement, reconcileCards: ReconcileCards)
 
     cancel.classList.add("edf-listing-card-notes-cancel");
     save.dataset.edfNotesConfigured = "true";
-    save.textContent = "View details";
+    setButtonLabel(save, "View details");
     save.ariaLabel = "View listing details";
     save.addEventListener("click", event => {
         if (textarea.value.trim()) return;
@@ -131,6 +141,7 @@ function configureCards(
     container: HTMLElement,
     reconcileCards: ReconcileCards = () => undefined,
 ): void {
+    relocateShortlistTogetherMessage(container);
     syncSelectionControls(container, reconcileCards);
 }
 

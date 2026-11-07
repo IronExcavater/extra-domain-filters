@@ -16,6 +16,10 @@ const CARD_SELECTOR = [
     AGENCY_CARD_SELECTOR,
     CAROUSEL_CHILD_SELECTOR,
     TOPSPOT_CAROUSEL_SELECTOR,
+    '[data-testid="listing-card-wrapper-project-child"]',
+    '[data-testid="listing-card-wrapper-standard"]',
+    '[data-testid="similar-listing"]',
+    '[data-testid="listing-details__other-listings-listing"]',
     'li[data-testid^="listing-"]',
 ].join(',');
 
@@ -33,9 +37,43 @@ export type BlacklistCardKind =
     | "project"
     | "project-child";
 
+function scoreListingAnchor(anchor: HTMLAnchorElement): number {
+    const url = new URL(anchor.href, window.location.origin);
+    const testId = anchor.dataset.testid?.toLowerCase() ?? "";
+    let score = 0;
+
+    if (/^\/project\/\d+(?:\/|$)/.test(url.pathname)) score += 1_000;
+    if (/[-/]\d{6,}\/?$/.test(url.pathname)) score += 600;
+    if (testId.includes("address") || testId.includes("listing-card-link")) score += 500;
+    if (anchor.querySelector('[data-testid*="address" i], [data-testid="address-wrapper"]')) {
+        score += 450;
+    }
+    if (anchor.querySelector("h1, h2, h3")) score += 350;
+    if (anchor.querySelector(LISTING_PHOTO_SELECTOR)) score += 250;
+    if (/\/(?:agents?|real-estate-agenc(?:y|ies)|news|profile)(?:\/|$)/i.test(url.pathname)) {
+        score -= 2_000;
+    }
+    return score;
+}
+
+/** Resolve the property/project link without assuming it is the first anchor.
+ * Featured cards commonly place an agency logo and agent profile before the
+ * address, so DOM order alone can point blacklist actions at the wrong URL. */
+export function findListingAnchor(root: ParentNode): HTMLAnchorElement | undefined {
+    const anchors = [...root.querySelectorAll<HTMLAnchorElement>('a[href]')];
+    const ranked = anchors
+        .map((anchor, index) => ({ anchor, index, score: scoreListingAnchor(anchor) }))
+        .sort((first, second) => second.score - first.score || first.index - second.index);
+
+    return ranked.find(candidate => candidate.score > 0)?.anchor ?? anchors[0];
+}
+
 export function getCard(button: Element): Element | undefined {
     if ((button as HTMLElement).dataset.blacklistScope === "project") {
         return button.closest(PROJECT_CARD_SELECTOR) ?? undefined;
+    }
+    if ((button as HTMLElement).dataset.blacklistScope === "carousel-child") {
+        return button.closest(".slick-slide") ?? button.closest(CAROUSEL_CHILD_SELECTOR) ?? undefined;
     }
 
     return button.closest(CARD_SELECTOR) ?? undefined;
@@ -47,6 +85,9 @@ export function getBlacklistCardKind(card: Element, button?: Element): Blacklist
     }
     if ((button as HTMLElement | undefined)?.dataset.blacklistScope === "carousel") {
         return "carousel";
+    }
+    if ((button as HTMLElement | undefined)?.dataset.blacklistScope === "carousel-child") {
+        return "carousel-child";
     }
 
     if (card.matches('[data-testid="listing-card-child-listing"]')) {
@@ -63,8 +104,10 @@ export function getListingUrl(button: Element, card: Element): string | undefine
     const anchor =
         (button as HTMLElement).dataset.blacklistScope === "project"
             ? card.querySelector<HTMLAnchorElement>('a[href*="/project/"]')
+            : (button as HTMLElement).dataset.blacklistScope === "carousel-child"
+                ? findListingAnchor(card)
             : button.closest<HTMLAnchorElement>("a[href]") ??
-                card.querySelector<HTMLAnchorElement>('a[href]');
+                findListingAnchor(card);
 
     if (!anchor) return undefined;
 
@@ -184,7 +227,7 @@ export function getPropertyCount(card: Element): number {
 }
 
 export function getChildListingUrl(child: Element): string | undefined {
-    const anchor = child.querySelector<HTMLAnchorElement>('a[href]');
+    const anchor = findListingAnchor(child);
     if (!anchor) return undefined;
 
     return new URL(anchor.href, window.location.origin).href;

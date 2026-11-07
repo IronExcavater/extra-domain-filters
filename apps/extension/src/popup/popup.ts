@@ -5,6 +5,7 @@ import "../features/settings/settings.css";
 import "../ui/collection.css";
 import "../ui/domainControls.css";
 import "../ui/popover.css";
+import "../ui/resize.css";
 import "../ui/sort.css";
 import "../ui/toast.css";
 import "../ui/tooltip.css";
@@ -15,7 +16,9 @@ import { getBlacklist } from "../domain/blacklist/store";
 import { getSavedSearches } from "../domain/searches/savedSearches";
 import { createSettingsContent } from "../features/settings/view";
 import { onStorageChange } from "../platform/storage";
+import { syncDomainSavedSearchesFromExtensionPage } from "../platform/domainPageClient";
 import { getSettings } from "../state/settings";
+import { enableResizablePopup } from "../ui/resize";
 import { createNavigation } from "./components/navigation";
 import type { PopupData, PopupView } from "./model";
 import { createBlacklistView } from "./views/blacklist";
@@ -27,6 +30,12 @@ const selectedSavedSearchIds = new Set<string>();
 let activeView: PopupView = "saved-searches";
 let loginReturnView: Exclude<PopupView, "login"> = "saved-searches";
 let renderController: AbortController | undefined;
+let navigationKey = "";
+let navigationController: AbortController | undefined;
+let domainSessionPromise: ReturnType<typeof syncDomainSavedSearchesFromExtensionPage> | undefined;
+let domainSessionState: PopupData["domainSession"] = { status: "unavailable" };
+let lastDomainSyncAt = 0;
+const DOMAIN_SYNC_TTL_MS = 60_000;
 const root = document.querySelector<HTMLElement>("#app");
 const shell = document.createElement("main");
 const navigationHost = document.createElement("div");
@@ -37,6 +46,7 @@ navigationHost.className = "edf-popup-navigation-host";
 viewHost.className = "edf-popup-view-host";
 shell.append(navigationHost, viewHost);
 root?.replaceChildren(shell);
+void enableResizablePopup(shell);
 
 async function loadData(): Promise<PopupData> {
     const [blacklist, savedSearches, account] = await Promise.all([
@@ -45,7 +55,24 @@ async function loadData(): Promise<PopupData> {
         getAccountState().catch(() => undefined),
     ]);
 
-    return { account, blacklist, savedSearches };
+    return { account, blacklist, domainSession: domainSessionState, savedSearches };
+}
+
+function refreshDomainSavedSearches(force = false): void {
+    if (domainSessionPromise) return;
+    if (!force && Date.now() - lastDomainSyncAt < DOMAIN_SYNC_TTL_MS) return;
+
+    lastDomainSyncAt = Date.now();
+    domainSessionPromise = syncDomainSavedSearchesFromExtensionPage();
+    void domainSessionPromise
+        .then(state => {
+            const changed = state.status !== domainSessionState.status || state.count !== domainSessionState.count;
+            domainSessionState = state;
+            if (changed && activeView === "saved-searches") void render(false);
+        })
+        .finally(() => {
+            domainSessionPromise = undefined;
+        });
 }
 
 async function createPreferencesView(): Promise<HTMLElement> {
@@ -97,18 +124,36 @@ async function render(animate = true): Promise<void> {
             signal,
         });
     } else {
-        view = createSavedSearchesView(data.savedSearches, selectedSavedSearchIds, signal, animate);
+        view = createSavedSearchesView(
+            data.savedSearches,
+            selectedSavedSearchIds,
+            signal,
+            animate,
+            data.domainSession,
+        );
     }
-    if (activeView !== "login") {
-        navigationHost.replaceChildren(createNavigation({
+    // Rebuild the header only when something it shows changed. Storage-driven re-renders
+    // land right after a tab switch and used to replace the header mid-way through the
+    // underline's slide, so it snapped instead of animating.
+    const nextNavigationKey = activeView === "login" ? "" : JSON.stringify([
+        activeView,
+        data.account?.status,
+        data.account?.profile?.photoUrl,
+        data.domainSession.status,
+        data.savedSearches.length,
+        data.blacklist.filter(entry => !entry.removedAt).length,
+    ]);
+    if (nextNavigationKey !== navigationKey) {
+        navigationKey = nextNavigationKey;
+        navigationController?.abort();
+        navigationController = new AbortController();
+        navigationHost.replaceChildren(...(activeView === "login" ? [] : [createNavigation({
             activeView,
             data,
             onNavigate: navigate,
             onSessionChange: () => void render(),
-            signal,
-        }));
-    } else {
-        navigationHost.replaceChildren();
+            signal: navigationController.signal,
+        })]));
     }
 
     if (!signal.aborted) viewHost.replaceChildren(view);
@@ -116,4 +161,9 @@ async function render(animate = true): Promise<void> {
 
 onStorageChange("blacklist", () => void render(false));
 onStorageChange("savedSearches", () => void render(false));
+window.addEventListener("focus", () => refreshDomainSavedSearches());
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshDomainSavedSearches();
+});
+refreshDomainSavedSearches(true);
 void render();

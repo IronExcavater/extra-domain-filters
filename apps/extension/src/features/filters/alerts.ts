@@ -7,10 +7,17 @@ import {
     type SearchNotificationFrequency,
 } from "../../domain/searches/savedSearches";
 import type { PageContext } from "../../platform/router";
+import { sendExtensionMessage } from "../../platform/messaging";
 import { onStorageChange } from "../../platform/storage";
 import { domainAlertBridge } from "../../site-dom/alerts";
 import { removeDomainSavedSearch } from "../../site-dom/savedSearches";
+import { createSvgIcon } from "../../ui/elements";
 import { showToast } from "../../ui/toast";
+import {
+    replaceWithSavedSearchBellFilledIcon,
+    replaceWithSavedSearchBellIcon,
+} from "../../ui/icons";
+import { setTooltipText } from "../../ui/tooltip";
 import { openSavedSearchAlertPopover } from "../saved-searches/alertPopover";
 import { extractSharedFilterParams } from "./searchParams";
 
@@ -71,7 +78,38 @@ function readNativeActive(button: HTMLButtonElement): boolean {
     return active;
 }
 
+function isRecentSearchAlert(button: HTMLButtonElement): boolean {
+    const card = button.closest("article");
+    return Boolean(card?.querySelector(
+        'a[data-testid="recent-search-item"], a[data-testid="edf-recent-search-item"]',
+    ));
+}
+
+function isStandaloneAlert(button: HTMLButtonElement): boolean {
+    return button.dataset.testid === "edf-recent-search-alert";
+}
+
 function setButtonText(button: HTMLButtonElement, value: string): void {
+    if (button.dataset.edfAlertIconOnly === "true" || isRecentSearchAlert(button)) {
+        const iconState = value.startsWith("Edit") ? "active" : "inactive";
+        const renderIcon = value.startsWith("Edit")
+            ? replaceWithSavedSearchBellFilledIcon
+            : replaceWithSavedSearchBellIcon;
+        const icon = button.querySelector<SVGSVGElement>("svg")
+            ?? createSvgIcon(renderIcon, "edf-ui-button-icon-svg");
+
+        button.dataset.edfAlertIconOnly = "true";
+        icon.classList.add("edf-ui-button-icon-svg");
+        if (icon.dataset.edfAlertIconState !== iconState) {
+            renderIcon(icon);
+            icon.dataset.edfAlertIconState = iconState;
+        }
+        if (button.childNodes.length !== 1 || button.firstChild !== icon) {
+            button.replaceChildren(icon);
+        }
+        setTooltipText(button, value);
+        return;
+    }
     const label = [...button.querySelectorAll<HTMLElement>("span")].find(span => !span.querySelector("svg"));
     if (label) label.textContent = value;
     else button.textContent = value;
@@ -111,8 +149,16 @@ async function saveAlert(
     signal: AbortSignal,
 ): Promise<void> {
     const nativeActive = readNativeActive(trigger);
-    if (frequency !== "none" || nativeActive) {
-        await applyNativeFrequency(trigger, frequency, signal);
+    const standalone = isStandaloneAlert(trigger);
+    if (frequency !== "none" || nativeActive || standalone && current !== undefined) {
+        if (standalone) {
+            await sendExtensionMessage("domain-alert:apply", {
+                frequency,
+                search: createDraftSearch(context, current),
+            });
+        } else {
+            await applyNativeFrequency(trigger, frequency, signal);
+        }
     }
     const url = new URL(context.url, window.location.origin);
     await saveSearch({
@@ -134,7 +180,13 @@ async function deleteAlert(
     current: SavedSearch | undefined,
     signal: AbortSignal,
 ): Promise<void> {
-    if (current?.domainId) await removeDomainSavedSearch(current.domainId);
+    if (isStandaloneAlert(trigger) && current) {
+        if (current.domainId) {
+            await sendExtensionMessage("domain-saved-search:remove", { domainId: current.domainId });
+        } else {
+            await sendExtensionMessage("domain-alert:apply", { frequency: "none", search: current });
+        }
+    } else if (current?.domainId) await removeDomainSavedSearch(current.domainId);
     else if (readNativeActive(trigger)) await applyNativeFrequency(trigger, "none", signal);
     if (current) await removeSavedSearch(current.id);
     trigger.dataset.edfNativeAlertSelected = "false";
@@ -179,7 +231,8 @@ function bindButton(button: HTMLButtonElement, context: PageContext): void {
 
 function findAlertButtons(): HTMLButtonElement[] {
     return [...document.querySelectorAll<HTMLButtonElement>(
-        'button[name="property-alert"], [data-testid="create-alert-frequency-button"], #changeAlertFrequencyButton',
+        'button[name="property-alert"], [data-testid="create-alert-frequency-button"], ' +
+        '[data-testid="edf-recent-search-alert"], #changeAlertFrequencyButton',
     )];
 }
 

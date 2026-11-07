@@ -1,7 +1,35 @@
-.edf-popup-search-grid {
+.edf-popup-search-grid,
+.edf-popup-blacklist-grid.edf-blacklist-card-grid {
+    align-items: start;
     display: grid;
     gap: 12px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.edf-popup-domain-session-notice {
+    align-items: center;
+    background: #f4fbee;
+    border: 1px solid #c9e7c2;
+    border-radius: var(--edf-radius-control);
+    color: var(--edf-color-heading);
+    display: flex;
+    font-size: 14px;
+    gap: 12px;
+    justify-content: space-between;
+    line-height: 20px;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+}
+
+.edf-popup-domain-session-notice a {
+    color: var(--edf-color-green-hover);
+    flex: 0 0 auto;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.edf-popup-domain-session-notice a:hover {
+    text-decoration: underline;
 }
 
 .edf-popup-content .edf-collection-toolbar {
@@ -365,12 +393,12 @@
     }
 }
 
-.edf-popup-content .edf-blacklist-card-media {
-    aspect-ratio: 16 / 9;
+.edf-popup-content .edf-blacklist-card-body {
+    padding: 9px 10px 10px;
 }
 
-.edf-popup-content .edf-blacklist-card-body {
-    padding: 10px 12px 12px;
+.edf-popup-content .edf-blacklist-card-media {
+    aspect-ratio: 16 / 8.5;
 }
 
 .edf-popup-content .edf-blacklist-card-price {
@@ -387,4 +415,51 @@
 .edf-popup-content .edf-blacklist-card-features {
     gap: 8px;
     margin-top: 5px;
+}
+
+.edf-popup-content .edf-blacklist-card-heading {
+    gap: 6px;
+}
+
+@media (width <= 560px) {
+    .edf-popup-content {
+        padding: 16px;
+    }
+
+    .edf-popup-search-grid,
+    .edf-popup-blacklist-grid.edf-blacklist-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .edf-popup-content .edf-blacklist-card {
+        display: grid;
+        grid-template-columns: 128px minmax(0, 1fr);
+        min-height: 128px;
+    }
+
+    .edf-popup-content .edf-blacklist-card-media {
+        aspect-ratio: auto;
+        align-self: start;
+        height: 128px;
+        min-height: 0;
+    }
+
+    .edf-popup-content .edf-blacklist-card-body {
+        align-self: stretch;
+        min-width: 0;
+    }
+
+    .edf-popup-content .edf-collection-toolbar .edf-sort-dropdown-button {
+        min-width: 0;
+    }
+}
+
+@media (width <= 400px) {
+    .edf-popup-content .edf-blacklist-card {
+        grid-template-columns: 108px minmax(0, 1fr);
+    }
+
+    .edf-popup-content .edf-blacklist-card-media {
+        height: 108px;
+    }
 }

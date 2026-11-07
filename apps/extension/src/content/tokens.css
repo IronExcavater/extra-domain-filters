@@ -7,14 +7,14 @@
     --edf-color-surface: #fff;
     --edf-color-surface-muted: #f7f7f5;
     --edf-color-icon: #867a70;
-    --edf-color-green: #008a08;
-    --edf-color-green-hover: #006d00;
+    --edf-color-green: #0ea800;
+    --edf-color-green-hover: #087f00;
     --edf-color-green-tint: #f7fcf1;
     --edf-color-danger: #dc2626;
     --edf-color-danger-hover: #b91c1c;
-    --edf-color-focus: rgb(0 138 8 / 24%);
+    --edf-color-focus: rgb(14 168 0 / 24%);
     --edf-color-overlay: rgb(19 18 18 / 12%);
-    --edf-radius-control: 8px;
+    --edf-radius-control: 12px;
     --edf-radius-card: 3px;
     --edf-radius-dialog: 12px;
     --edf-space-1: 4px;
@@ -30,9 +30,12 @@
     --edf-motion-base: 220ms;
     --edf-shadow-card: 0 1px 3px 0 #d0d3d9;
     --edf-shadow-popover: 0 12px 32px rgb(19 18 18 / 18%), 0 2px 8px rgb(19 18 18 / 10%);
-    --edf-color-blacklist-inactive: rgb(100 100 99);
-    --edf-color-shortlist-hover: rgb(255 204 0);
-    --edf-color-shortlist-inactive: rgb(100 100 99 / 30%);
+
+    /* Domain 2026 accent-four states used by its shortlist controls. */
+    --edf-color-shortlist-hover: #ffe976;
+    --edf-color-shortlist-selected: #fc0;
+    --edf-color-shortlist-active-hover: #ffa200;
+    --edf-color-shortlist-inactive: #626a78;
 }
 
 .edf-theme-2026 {

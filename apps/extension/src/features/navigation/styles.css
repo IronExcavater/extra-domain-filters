@@ -1,34 +1,69 @@
-html:is([data-edf-sticky-header="true"], [data-edf-sticky-site="true"])
+html[data-edf-sticky-header="true"]
 [data-edf-sticky-header-root="true"] {
-    display: contents;
-}
-
-html:is([data-edf-sticky-header="true"], [data-edf-sticky-site="true"])
-[data-edf-sticky-navigation="true"] {
     background: var(--edf-color-surface, #fff);
-    border-bottom: 1px solid #d0d3d9;
-    box-shadow: none;
-    position: sticky;
+    box-sizing: border-box;
+    left: 0;
+    position: sticky !important;
+    right: 0;
     top: 0;
     transition: box-shadow 0.2s ease;
+    width: 100% !important;
     z-index: 1000;
 }
 
-html:is([data-edf-sticky-header="true"], [data-edf-sticky-site="true"])
-[data-edf-sticky-navigation="true"][data-edf-stuck="true"] {
-    border-color: var(--edf-color-surface, #fff);
+html[data-edf-sticky-header="true"]
+[data-edf-sticky-header-root="true"]::after {
+    background: var(--edf-color-border, #d0d3d9);
+    bottom: 0;
+    content: "";
+    height: 1px;
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    z-index: 1;
+}
+
+/* Several listing templates put the semantic header in a wrapper no taller than
+ * the header itself. Sticky positioning is bounded by that wrapper, so use the
+ * viewport once the sentinel has scrolled away. */
+html[data-edf-sticky-header="true"]
+[data-edf-sticky-header-root="true"][data-edf-stuck="true"] {
     box-shadow:
         0 4px 12px rgb(7 6 7 / 3%),
         0 2px 8px rgb(7 6 7 / 4%);
+    left: 0 !important;
+    position: fixed !important;
+    right: 0 !important;
+    width: 100% !important;
+}
+
+html[data-edf-sticky-header="true"]
+[data-edf-sticky-navigation="true"] {
+    background: transparent;
+    border-bottom: 0;
+    box-shadow: none;
+    inset: auto !important;
+    position: relative !important;
+    transform: none !important;
+    width: 100% !important;
+}
+
+/* Domain's own secondary bars (e.g. the listing agency bar) keep their native
+ * positioning and reveal animation; they only start below our sticky header. */
+html[data-edf-sticky-header="true"] [data-edf-secondary-sticky-bar="true"] {
+    top: var(--edf-sticky-header-height, 54px) !important;
+}
+
+/* The lower sticky toolbar owns the visual separation when it is present. A
+ * second shadow on the global header produces a dark double rule. */
+html[data-edf-secondary-sticky="true"] [data-edf-sticky-header-root="true"][data-edf-stuck="true"] {
+    box-shadow: none;
 }
 
 [data-edf-navigation-chevron="true"] {
     transform: rotate(0deg);
     transform-origin: center;
-    transition: none;
-}
-
-[data-edf-navigation-ready="true"] [data-edf-navigation-chevron="true"] {
     transition: transform var(--edf-motion-fast) ease;
 }
 
@@ -37,7 +72,7 @@ html:is([data-edf-sticky-header="true"], [data-edf-sticky-site="true"])
 }
 
 @media (prefers-reduced-motion: reduce) {
-    [data-edf-navigation-ready="true"] [data-edf-navigation-chevron="true"] {
+    [data-edf-navigation-chevron="true"] {
         transition: none;
     }
 }

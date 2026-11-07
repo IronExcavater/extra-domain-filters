@@ -19,10 +19,9 @@
 
 .edf-collection-toolbar {
     align-items: center;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     gap: 10px;
-    justify-content: flex-end;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
     margin-bottom: 18px;
 }
 
@@ -36,6 +35,13 @@
 
 .edf-collection-frame-body {
     min-height: 0;
+}
+
+/* Row-span masonry (see ui/masonry.ts): the column gap doubles as the row gap. */
+.edf-masonry {
+    align-items: start;
+    grid-auto-rows: 1px;
+    row-gap: 0 !important;
 }
 
 .edf-collection-frame-cards[data-animate="true"] {
@@ -60,7 +66,7 @@
     align-items: center;
     display: inline-flex;
     gap: 24px;
-    margin-right: auto;
+    margin-right: 0;
     overflow: visible;
 }
 
@@ -79,7 +85,7 @@
 }
 
 .edf-collection-tab::after {
-    background: #0aa600;
+    background: var(--edf-color-green);
     bottom: -5px;
     content: "";
     height: 3px;
@@ -91,7 +97,7 @@
 }
 
 .edf-collection-tab[aria-selected="true"] {
-    color: #0ea800;
+    color: var(--edf-color-green);
 }
 
 .edf-collection-tab[aria-selected="true"]::after {
@@ -105,6 +111,10 @@
     gap: 8px;
 }
 
+.edf-collection-toolbar > .edf-page-actions {
+    justify-self: end;
+}
+
 .edf-collection-toolbar > .edf-page-actions + .edf-sort-control,
 .edf-saved-search-page-toolbar > .edf-page-actions + .edf-sort-control,
 .edf-sort-actions > .edf-page-actions + [data-edf-sort-label="true"] {
@@ -113,9 +123,6 @@
 
 .edf-empty-state {
     align-items: center;
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: var(--edf-radius-card);
     color: var(--edf-color-heading);
     display: flex;
     flex-direction: column;
@@ -123,6 +130,13 @@
     min-height: 190px;
     padding: 30px;
     text-align: center;
+}
+
+.edf-empty-state-icon {
+    color: var(--edf-color-icon);
+    height: 40px;
+    margin-bottom: 12px;
+    width: 40px;
 }
 
 .edf-empty-state-title {
@@ -181,7 +195,36 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .edf-collection-frame-cards[data-animate="true"] {
+    /* Row-span masonry (see ui/masonry.ts): the column gap doubles as the row gap. */
+.edf-masonry {
+    align-items: start;
+    grid-auto-rows: 1px;
+    row-gap: 0 !important;
+}
+
+.edf-collection-frame-cards[data-animate="true"] {
         animation: none;
     }
+}
+
+@media (width <= 560px) {
+    .edf-collection-toolbar {
+        grid-template-columns: minmax(0, 1fr) max-content;
+    }
+
+    .edf-collection-toolbar > .edf-page-actions {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        min-height: var(--edf-control-height-sm);
+    }
+
+    .edf-collection-toolbar > .edf-sort-control {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+
+/* A lone empty state spans every masonry column. */
+.edf-masonry > .edf-empty-state {
+    grid-column: 1 / -1;
 }

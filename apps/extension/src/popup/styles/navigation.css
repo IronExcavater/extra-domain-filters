@@ -34,6 +34,31 @@
     gap: 24px;
     justify-content: flex-end;
     min-width: 0;
+    position: relative;
+}
+
+.edf-popup-navigation-indicator {
+    background: var(--edf-color-green);
+    bottom: 0;
+    height: 2.5px;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transform: translateX(0);
+    transition:
+        opacity 120ms ease,
+        transform 220ms ease,
+        width 220ms ease;
+    width: 0;
+}
+
+.edf-popup-navigation-indicator[data-visible="true"] {
+    opacity: 1;
+}
+
+.edf-popup-navigation-indicator[data-instant="true"] {
+    transition: none;
 }
 
 .edf-popup-navigation-button,
@@ -43,8 +68,10 @@
     border: 0;
     color: var(--edf-color-text);
     cursor: pointer;
+    display: inline-flex;
     font: inherit;
     font-size: 16px;
+    height: 100%;
     line-height: 22px;
     padding: 0;
     position: relative;
@@ -52,8 +79,8 @@
 
 .edf-popup-navigation-button::after,
 .edf-popup-navigation-item::after {
-    background: #0aa600;
-    bottom: -7px;
+    background: var(--edf-color-green);
+    bottom: 0;
     content: "";
     height: 2.5px;
     left: 0;
@@ -65,10 +92,9 @@
 }
 
 .edf-popup-navigation-button:hover::after,
-.edf-popup-navigation-button[data-active="true"]::after,
 .edf-popup-account-summary:hover::after,
 .edf-popup-account-summary:focus-visible::after,
-.edf-popup-account[open] > .edf-popup-account-summary::after {
+.edf-popup-account[data-open="true"] > .edf-popup-account-summary::after {
     transform: scaleX(1);
 }
 
@@ -83,7 +109,7 @@
     cursor: pointer;
     display: flex;
     font-size: 16px;
-    gap: 2px;
+    justify-content: center;
     height: 100%;
     list-style: none;
     overflow: visible;
@@ -91,23 +117,9 @@
     position: relative;
 }
 
-.edf-popup-account-summary::-webkit-details-marker {
-    display: none;
-}
-
-.edf-popup-chevron {
-    align-items: center;
-    display: inline-flex;
-    transition: transform 160ms ease;
-}
-
-.edf-popup-chevron svg {
-    height: 14px;
-    width: 14px;
-}
-
-.edf-popup-account[open] .edf-popup-chevron {
-    transform: rotate(180deg);
+.edf-popup-menu-icon {
+    height: 24px;
+    width: 24px;
 }
 
 .edf-popup-avatar {
@@ -136,25 +148,12 @@
     border-radius: 12px;
     box-shadow: var(--edf-shadow-popover);
     box-sizing: border-box;
-    padding: 10px;
+    padding: 8px 0;
     position: absolute;
     right: 0;
     top: calc(100% + 8px);
-    width: 280px;
+    width: min(360px, calc(100vw - 24px));
     z-index: 30;
-}
-
-.edf-popup-account-menu::before {
-    background: var(--edf-color-surface);
-    border-left: 1px solid var(--edf-color-border);
-    border-top: 1px solid var(--edf-color-border);
-    content: "";
-    height: 10px;
-    position: absolute;
-    right: 20px;
-    top: -6px;
-    transform: rotate(45deg);
-    width: 10px;
 }
 
 .edf-popup-account-card {
@@ -167,6 +166,28 @@
     padding: 10px;
     position: relative;
     z-index: 1;
+}
+
+.edf-popup-domain-status {
+    align-items: center;
+    color: var(--edf-color-muted);
+    display: flex;
+    font-size: 13px;
+    gap: 8px;
+    line-height: 18px;
+    padding: 4px 12px 8px;
+}
+
+.edf-popup-domain-status-indicator {
+    background: #bca899;
+    border-radius: 50%;
+    flex: 0 0 8px;
+    height: 8px;
+    width: 8px;
+}
+
+.edf-popup-domain-status[data-status="signed-in"] .edf-popup-domain-status-indicator {
+    background: var(--edf-color-green);
 }
 
 .edf-popup-account-identity {
@@ -198,7 +219,7 @@
     align-items: center;
     background: transparent;
     border: 0;
-    border-radius: 8px;
+    border-radius: 0;
     color: var(--edf-color-text);
     cursor: pointer;
     display: grid;
@@ -207,9 +228,9 @@
     gap: 12px;
     grid-template-columns: 24px minmax(0, 1fr) 22px;
     line-height: 24px;
-    margin: 2px 0;
-    min-height: 44px;
-    padding: 8px 12px;
+    margin: 0;
+    min-height: 48px;
+    padding: 10px 16px;
     position: relative;
     text-align: left;
     transition:
@@ -244,6 +265,7 @@
     border-radius: 50%;
     display: inline-flex;
     font-size: 12px;
+    font-weight: 700;
     height: 22px;
     justify-content: center;
     line-height: 22px;
@@ -252,4 +274,61 @@
 
 .edf-popup-account-menu-label {
     white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edf-popup-navigation-indicator {
+        transition: none;
+    }
+}
+
+@media (width <= 560px) {
+    .edf-popup-navigation {
+        column-gap: 12px;
+        grid-template-columns: minmax(0, 1fr) max-content;
+        padding: 0 12px;
+    }
+
+    .edf-popup-primary-navigation {
+        display: none;
+    }
+
+    .edf-popup-wordmark {
+        height: 22px;
+    }
+
+    .edf-popup-account-menu {
+        border-left: 0;
+        border-radius: 0 0 12px 12px;
+        border-right: 0;
+        box-shadow: 0 12px 24px rgb(19 18 18 / 12%);
+        position: fixed;
+        right: 0;
+        top: var(--edf-popup-navigation-height, 60px);
+        width: 100vw;
+    }
+
+    .edf-popup-account-card {
+        margin: 0 12px 8px;
+    }
+}
+
+@media (width <= 500px) {
+    .edf-popup-navigation {
+        column-gap: 10px;
+    }
+
+    .edf-popup-primary-navigation {
+        gap: 12px;
+    }
+
+    .edf-popup-navigation-button,
+    .edf-popup-navigation-item {
+        font-size: 14px;
+        line-height: 20px;
+    }
+
+    .edf-popup-wordmark {
+        height: 20px;
+    }
 }

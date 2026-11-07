@@ -22,7 +22,8 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
     activePopover?.close();
 
     const element = markOwned(document.createElement("section"), "popover");
-    let closed = false;
+    let closing = false;
+    let removed = false;
 
     element.className = "edf-popover";
     element.role = "dialog";
@@ -31,7 +32,7 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
     document.body.append(element);
 
     const place = (): void => {
-        if (closed || !element.isConnected) return;
+        if (closing || removed || !element.isConnected) return;
 
         const anchor = options.anchor.getBoundingClientRect();
         const popover = element.getBoundingClientRect();
@@ -50,18 +51,32 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
         element.style.top = `${Math.max(EDGE_GAP, top)}px`;
     };
 
+    const finishClose = (): void => {
+        if (removed) return;
+        removed = true;
+        element.remove();
+        if (options.anchor.isConnected) options.anchor.focus({ preventScroll: true });
+        options.onClose?.();
+    };
     const close = (): void => {
-        if (closed) return;
-        closed = true;
+        if (closing || removed) return;
+        closing = true;
         document.removeEventListener("pointerdown", onDocumentPointerDown, true);
         document.removeEventListener("keydown", onDocumentKeyDown, true);
         window.removeEventListener("resize", place);
         window.removeEventListener("scroll", place, true);
         options.signal?.removeEventListener("abort", close);
-        element.remove();
         if (activePopover === handle) activePopover = undefined;
-        if (options.anchor.isConnected) options.anchor.focus({ preventScroll: true });
-        options.onClose?.();
+        element.dataset.state = "closing";
+        element.inert = true;
+        element.setAttribute("aria-hidden", "true");
+        void element.offsetWidth;
+        const animations = element.getAnimations();
+        if (animations.length === 0) {
+            queueMicrotask(finishClose);
+            return;
+        }
+        void Promise.allSettled(animations.map(animation => animation.finished)).then(finishClose);
     };
     const onDocumentPointerDown = (event: PointerEvent): void => {
         const target = event.target;

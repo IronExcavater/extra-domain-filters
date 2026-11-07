@@ -52,6 +52,8 @@ export function findDomainFilterActionPlacement(root: ParentNode = document): Do
 export function readExcludedPropertyTypes(section: HTMLElement): string[] {
     const checkboxes = [...section.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
     if (!checkboxes.some(checkbox => checkbox.checked)) return [];
+    // Domain's default "All" box means no type restriction; its siblings stay unchecked.
+    if (checkboxes.some(checkbox => checkbox.checked && checkbox.name.toLowerCase() === "all")) return [];
 
     const checkedParentNames = new Set(
         checkboxes

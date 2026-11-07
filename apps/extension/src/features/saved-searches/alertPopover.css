@@ -23,12 +23,6 @@
     gap: var(--edf-space-2);
 }
 
-.edf-saved-search-alert-label {
-    color: var(--edf-color-text);
-    font-size: 14px;
-    font-weight: 700;
-}
-
 .edf-saved-search-alert-field .edf-sort-dropdown-button {
     min-height: var(--edf-control-height-md);
     width: 100%;

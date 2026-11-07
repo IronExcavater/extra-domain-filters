@@ -13,6 +13,7 @@ export interface TooltipOptions {
 const EDGE_GAP = 8;
 const TOOLTIP_GAP = 8;
 const TOOLTIP_HANDLES = new WeakMap<HTMLElement, InternalTooltipHandle>();
+let activeTooltip: { hide(): void; target: HTMLElement } | undefined;
 
 interface InternalTooltipHandle extends TooltipHandle {
     setPlacement(placement: NonNullable<TooltipOptions["placement"]>): void;
@@ -59,14 +60,21 @@ function placeTooltip(
     const desiredLeft = targetRect.left + (targetRect.width - tooltipRect.width) / 2;
 
     tooltip.dataset.placement = placement;
-    tooltip.style.left = `${Math.min(
+    const left = Math.min(
         window.innerWidth - tooltipRect.width - EDGE_GAP,
         Math.max(EDGE_GAP, desiredLeft),
-    )}px`;
+    );
+    const arrowLeft = Math.min(
+        tooltipRect.width - EDGE_GAP,
+        Math.max(EDGE_GAP, targetRect.left + targetRect.width / 2 - left),
+    );
+
+    tooltip.style.left = `${left}px`;
     tooltip.style.top = `${Math.min(
         window.innerHeight - tooltipRect.height - EDGE_GAP,
         Math.max(EDGE_GAP, desiredTop),
     )}px`;
+    tooltip.style.setProperty("--edf-tooltip-arrow-left", `${arrowLeft}px`);
 }
 
 export function attachTooltip(
@@ -93,10 +101,13 @@ export function attachTooltip(
     const hide = (): void => {
         tooltip?.remove();
         tooltip = undefined;
+        if (activeTooltip?.target === target) activeTooltip = undefined;
         restoreDescription(target, id, originalDescribedBy);
     };
     const show = (): void => {
         if (destroyed || tooltip || !text || isUnavailable(target)) return;
+
+        if (activeTooltip?.target !== target) activeTooltip?.hide();
 
         tooltip = markOwned(document.createElement("div"), "tooltip");
         tooltip.className = "edf-tooltip";
@@ -104,6 +115,7 @@ export function attachTooltip(
         tooltip.role = "tooltip";
         tooltip.textContent = text;
         document.body.append(tooltip);
+        activeTooltip = { hide, target };
         setDescription(target, id, originalDescribedBy);
         placeTooltip(target, tooltip, placement);
     };
@@ -158,4 +170,9 @@ export function attachTooltip(
 
 export function setTooltipText(target: HTMLElement, text: string): void {
     attachTooltip(target, text).setText(text);
+}
+
+export function removeTooltip(target: HTMLElement): void {
+    TOOLTIP_HANDLES.get(target)?.destroy();
+    target.removeAttribute("title");
 }

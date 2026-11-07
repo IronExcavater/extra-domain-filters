@@ -23,7 +23,7 @@ function getCapabilities(configured: boolean): AccountState["capabilities"] {
         apple: configured,
         emailPassword: configured,
         facebook: configured,
-        google: configured && Boolean(chrome.runtime.getManifest().oauth2?.client_id),
+        google: configured,
     };
 }
 

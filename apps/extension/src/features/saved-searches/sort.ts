@@ -14,8 +14,15 @@ export function sortSavedSearches(
     sort: SavedSearchSort,
 ): SavedSearch[] {
     return [...searches].sort((first, second) => {
-        if (sort === "oldest") return first.updatedAt - second.updatedAt;
-        if (sort === "title") return first.title.localeCompare(second.title);
-        return second.updatedAt - first.updatedAt;
+        // Editing an alert updates `updatedAt`; using it for the collection order made the
+        // card jump while the user was still interacting with it. Creation time is the stable
+        // meaning of newest/oldest and therefore only changes when a search is actually added.
+        if (sort === "oldest") {
+            return first.createdAt - second.createdAt || first.id.localeCompare(second.id);
+        }
+        if (sort === "title") {
+            return first.title.localeCompare(second.title) || first.createdAt - second.createdAt;
+        }
+        return second.createdAt - first.createdAt || first.id.localeCompare(second.id);
     });
 }

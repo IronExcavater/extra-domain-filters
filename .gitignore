@@ -13,3 +13,4 @@ hosting
 firebase-debug.log*
 firestore-debug.log*
 ui-debug.log*
+web-ext.config.ts

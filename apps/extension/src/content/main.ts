@@ -1,10 +1,11 @@
 import { waitForElement } from "../dom/wait";
 import { trackTelemetry } from "../domain/telemetry/client";
+import { getSavedSearches } from "../domain/searches/savedSearches";
 import { bindAccountMenuTrigger } from "../features/account";
 import { enableNavigationChevronAnimation } from "../features/navigation";
 import { createLifecycleScope } from "../platform/lifecycle";
 import { createLogger } from "../platform/logging";
-import { createRouter, observeUrlChanges } from "../platform/router";
+import { createRouter } from "../platform/router";
 import { onStorageChange } from "../platform/storage";
 import type { DomainPageResult } from "../site-dom/action";
 import {
@@ -15,7 +16,9 @@ import {
     findDomainSavedSearchAlertTrigger,
     findDomainSavedSearchEntry,
     isDomainSavedSearchRemoveMessage,
+    isDomainSavedSearchSyncMessage,
     removeDomainSavedSearch,
+    syncDomainSavedSearches,
 } from "../site-dom/savedSearches";
 import { getSettings, type Settings } from "../state/settings";
 import { routes } from "./routes";
@@ -25,7 +28,11 @@ const router = createRouter(routes, logger);
 const appScope = createLifecycleScope(undefined, "content-script");
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-    if (!isDomainAlertApplyMessage(message) && !isDomainSavedSearchRemoveMessage(message)) return false;
+    if (
+        !isDomainAlertApplyMessage(message) &&
+        !isDomainSavedSearchRemoveMessage(message) &&
+        !isDomainSavedSearchSyncMessage(message)
+    ) return false;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 15_000);
     const operation: Promise<DomainPageResult> = isDomainAlertApplyMessage(message)
@@ -40,13 +47,25 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
                 signal: controller.signal,
                 trigger,
             }))
-        : waitForElement(() => findDomainSavedSearchEntry(message.domainId), controller.signal, {
+        : isDomainSavedSearchRemoveMessage(message)
+            ? waitForElement(() => findDomainSavedSearchEntry(message.domainId), controller.signal, {
             timeoutMessage: "Domain's saved search entry is unavailable.",
             timeoutMs: 10_000,
         })
             .then(async () => {
-                await removeDomainSavedSearch(message.domainId);
+                await removeDomainSavedSearch(message.domainId, {
+                    confirmAutomatically: true,
+                    signal: controller.signal,
+                });
                 return { ok: true };
+            })
+            : waitForElement(
+                () => document.querySelector<HTMLElement>("#savedSearches") ?? undefined,
+                controller.signal,
+                { timeoutMessage: "Domain's saved searches are unavailable.", timeoutMs: 10_000 },
+            ).then(async () => {
+                const searches = await syncDomainSavedSearches(await getSavedSearches());
+                return { count: searches.length, ok: true };
             });
     void operation
         .then(sendResponse)
@@ -59,13 +78,6 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
     return true;
 });
 
-function syncStickyHeader(): void {
-    const isHomePage = window.location.pathname === "/";
-
-    if (isHomePage) delete document.documentElement.dataset.edfStickySite;
-    else document.documentElement.dataset.edfStickySite = "true";
-}
-
 console.info("[Extra Domain Filters] Content script bootstrap loaded");
 logger.info("Content script loaded");
 void trackTelemetry({
@@ -74,7 +86,14 @@ void trackTelemetry({
 }).catch(error => logger.warn("Failed to track extension startup", error));
 
 void (async () => {
-    const settings = await getSettings();
+    const [settings] = await Promise.all([
+        getSettings(),
+        waitForElement(() => document.body ?? undefined, appScope.signal, {
+            root: document,
+            timeoutMessage: "The page body was not created in time.",
+            timeoutMs: 15_000,
+        }),
+    ]);
     if (!settings.flags.enableExtension || appScope.disposed) return;
 
     router.start((error) => {
@@ -89,10 +108,6 @@ void (async () => {
         scope: appScope,
         logger: logger.child("navigation"),
     });
-    syncStickyHeader();
-    observeUrlChanges(syncStickyHeader, appScope.signal);
-    appScope.add(() => delete document.documentElement.dataset.edfStickySite);
-
     if (settings.flags.enableBlacklist) {
         const accountScope = appScope.child("account-menu");
         bindAccountMenuTrigger({

@@ -3,21 +3,22 @@ import {
     getBlacklistListing,
     type BlacklistEntry,
 } from "../../domain/matching";
-import { createSvgIcon, createUiButton } from "../../ui/elements";
+import { createSvgIcon } from "../../ui/elements";
 import {
     replaceWithBathIcon,
     replaceWithBedIcon,
-    replaceWithBinIcon,
     replaceWithParkingIcon,
 } from "../../ui/icons";
 import { createSelectionCheckbox } from "../../ui/selection";
+import { createBlacklistAction } from "../listing-cards/actions/blacklistAction";
 
 export interface BlacklistCardOptions {
     active?: boolean;
     onSelectionChange(selected: boolean): void;
-    onToggle(): Promise<void> | void;
+    onToggle(button: HTMLButtonElement, nextActive: boolean): Promise<void> | void;
     openLinksInNewTab?: boolean;
     selected: boolean;
+    signal?: AbortSignal;
 }
 
 function configureLink(
@@ -59,13 +60,11 @@ export function createBlacklistCard(
     const body = document.createElement("div");
     const heading = document.createElement("div");
     const price = document.createElement("p");
-    const toggleLabel = active ? "Remove from blacklist" : "Add to blacklist";
-    const toggle = createUiButton({
-        ariaLabel: toggleLabel,
-        className: "edf-blacklist-card-toggle",
-        icon: replaceWithBinIcon,
-        tooltip: toggleLabel,
-        variant: "icon",
+    const toggle = createBlacklistAction({
+        active,
+        appearance: "popup",
+        onToggle: options.onToggle,
+        signal: options.signal,
     });
     const address = document.createElement("a");
     const features = document.createElement("div");
@@ -88,18 +87,8 @@ export function createBlacklistCard(
     heading.className = "edf-blacklist-card-heading";
     price.className = "edf-blacklist-card-price";
     price.textContent = listing.price ?? listing.title;
-    toggle.dataset.active = String(active);
+    toggle.classList.add("edf-blacklist-card-toggle");
     toggle.dataset.testid = "extra-domain-filters-blacklist-toggle";
-    toggle.addEventListener("click", async event => {
-        event.preventDefault();
-        event.stopPropagation();
-        toggle.disabled = true;
-        try {
-            await options.onToggle();
-        } finally {
-            toggle.disabled = false;
-        }
-    });
     heading.append(
         createSelectionCheckbox(
             options.selected,

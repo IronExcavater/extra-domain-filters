@@ -6,17 +6,70 @@ import {
 } from "../../../domain/searches/savedSearches";
 import { trackTelemetry } from "../../../domain/telemetry/client";
 import { writeClipboardText } from "../../../platform/clipboard";
-import { createUiButton } from "../../../ui/elements";
+import { createSvgIcon, createUiButton } from "../../../ui/elements";
 import {
     replaceWithSavedSearchBellFilledIcon,
     replaceWithSavedSearchBellIcon,
     replaceWithSavedSearchShareIcon,
     replaceWithSavedSearchTrashIcon,
 } from "../../../ui/icons";
+import { openPopover } from "../../../ui/popover";
 import { showToast } from "../../../ui/toast";
 import { createSearchShareUrl } from "../../filters/shareLink";
 import { openSavedSearchAlertPopover } from "../alertPopover";
 import type { SavedSearchActions } from "./types";
+
+interface NativeShareData {
+    title: string;
+    url: string;
+}
+
+function canUseNativeShare(data: NativeShareData): boolean {
+    if (typeof navigator.share !== "function") return false;
+    return typeof navigator.canShare !== "function" || navigator.canShare(data);
+}
+
+async function tryNativeShare(data: NativeShareData): Promise<boolean> {
+    try {
+        await navigator.share!(data);
+        return true;
+    } catch (error) {
+        return error instanceof DOMException && error.name === "AbortError";
+    }
+}
+
+function openShareOptions(
+    anchor: HTMLElement,
+    data: NativeShareData,
+    signal: AbortSignal,
+    onCopy: () => Promise<void>,
+): void {
+    const content = document.createElement("div");
+    const titleRow = document.createElement("div");
+    const heading = document.createElement("h2");
+    const copy = createUiButton({ label: "Copy link", variant: "secondary" });
+    const email = createUiButton({ label: "Email", variant: "secondary" });
+
+    content.className = "edf-share-options";
+    titleRow.className = "edf-dialog-title-row";
+    heading.textContent = "Share this search";
+    copy.classList.add("edf-share-options-action");
+    email.classList.add("edf-share-options-action");
+    copy.addEventListener("click", () => {
+        void onCopy().then(() => popover.close());
+    }, { signal });
+    email.addEventListener("click", () => {
+        window.open(
+            `mailto:?subject=${encodeURIComponent(data.title)}&body=${encodeURIComponent(data.url)}`,
+            "_blank",
+            "noopener,noreferrer",
+        );
+        popover.close();
+    }, { signal });
+    titleRow.append(createSvgIcon(replaceWithSavedSearchShareIcon), heading);
+    content.append(titleRow, copy, email);
+    const popover = openPopover({ anchor, content, label: "Share this search", signal });
+}
 
 function notify(actions: SavedSearchActions, message: string): void {
     if (actions.onNotify) actions.onNotify(message);
@@ -100,6 +153,10 @@ export function createDeleteButton(
         button.disabled = true;
         void removeSearch(search, actions)
             .then(() => notify(actions, "Saved search deleted"))
+            .catch(error => {
+                const message = error instanceof Error ? error.message : "Could not delete saved search";
+                if (!/cancelled/i.test(message)) notify(actions, message);
+            })
             .finally(() => {
                 button.disabled = false;
             });
@@ -130,8 +187,13 @@ export function createShareButton(
                 search.url,
                 new URLSearchParams(search.filterParams),
             );
-            await writeClipboardText(url);
-            notify(actions, "Search link copied");
+            const copyLink = async (): Promise<void> => {
+                await writeClipboardText(url);
+                notify(actions, "Search link copied");
+            };
+            const shareData: NativeShareData = { title: search.title, url };
+            if (canUseNativeShare(shareData) && await tryNativeShare(shareData)) return;
+            openShareOptions(button, shareData, signal, copyLink);
         } finally {
             button.disabled = false;
             button.blur();

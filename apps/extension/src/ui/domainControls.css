@@ -35,6 +35,10 @@
         box-shadow var(--edf-motion-fast) ease;
 }
 
+.edf-ui-button[hidden] {
+    display: none;
+}
+
 .edf-ui-button:focus-visible {
     box-shadow: var(--edf-focus-ring);
     outline: 0;
@@ -93,6 +97,99 @@
     width: 20px;
 }
 
+
+/* stylelint-disable no-descending-specificity -- The contextual blacklist primitive intentionally overrides generic icon controls. */
+
+/* Domain uses distinct shortlist primitives in cards, carousels and listing toolbars. This
+ * base only resets the native button; each appearance owns its geometry in its context CSS. */
+.edf-blacklist-action {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    font: inherit;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    text-align: inherit;
+}
+
+.edf-blacklist-action:disabled,
+.edf-blacklist-action[aria-busy="true"] {
+    cursor: default;
+    opacity: 0.58;
+}
+
+.edf-blacklist-action:is(
+    .edf-blacklist-action-card,
+    .edf-blacklist-action-shortlist
+) {
+    background: none;
+    border-radius: 0;
+    color: inherit;
+    display: inline-block;
+    line-height: normal;
+    width: 24px;
+    z-index: 3;
+}
+
+.edf-blacklist-action-card {
+    height: 27.5139px;
+    padding-top: 3.5139px;
+}
+
+.edf-blacklist-action-shortlist {
+    height: 25.9861px;
+    padding-top: 1.9861px;
+}
+
+.edf-blacklist-action:is(
+    .edf-blacklist-action-card,
+    .edf-blacklist-action-shortlist
+):focus-visible {
+    outline: auto;
+    outline-offset: 0;
+}
+
+.edf-blacklist-action:is(
+    .edf-blacklist-action-card,
+    .edf-blacklist-action-shortlist
+):hover:not(:disabled) svg {
+    background: transparent;
+    color: var(--color-accent-four-trim-default, #ffe976);
+}
+
+.edf-blacklist-action:is(
+    .edf-blacklist-action-card,
+    .edf-blacklist-action-shortlist
+)[data-active="true"] svg {
+    background: transparent;
+    color: #fc0;
+}
+
+.edf-blacklist-action:is(
+    .edf-blacklist-action-card,
+    .edf-blacklist-action-shortlist
+)[data-active="true"]:hover:not(:disabled) svg {
+    background: transparent;
+    color: #ffa200;
+}
+
+.edf-blacklist-action:is(
+    .edf-blacklist-action-card,
+    .edf-blacklist-action-shortlist
+) svg {
+    color: var(--color-neutral-medium-default, #626a78);
+    display: block;
+    fill: currentcolor;
+    height: 24px;
+    pointer-events: none;
+    transition: color 200ms ease-in-out, fill 200ms ease-in-out;
+    width: 24px;
+}
+/* stylelint-enable no-descending-specificity */
+
 .edf-domain-button {
     cursor: pointer;
     padding: 8px 16px;
@@ -117,14 +214,26 @@
     cursor: pointer;
     font: inherit;
     font-size: 16px;
-    font-weight: 700;
     min-height: 40px;
     line-height: 22px;
     padding: 8px 16px;
     transition:
         background-color 150ms ease,
         border-color 150ms ease,
-        color 150ms ease;
+        color 150ms ease,
+        opacity 150ms ease,
+        transform 150ms ease;
+}
+
+.edf-selection-action[data-edf-selection-visible="false"] {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(2px);
+}
+
+.edf-selection-action[data-edf-selection-visible="true"] {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .edf-selection-action:disabled {
@@ -171,6 +280,7 @@
     color: var(--edf-color-text);
 }
 
+/* stylelint-disable-next-line no-descending-specificity -- Shared icons follow the more specific blacklist primitive above. */
 .edf-icon-button svg {
     height: 20px;
     width: 20px;
@@ -192,8 +302,8 @@
 .edf-selection-checkbox input {
     appearance: none;
     background: var(--edf-color-surface);
-    border: 1px solid #d0d3d9;
-    border-radius: 2px;
+    border: 0.8px solid #d0d3d9;
+    border-radius: 3px;
     cursor: pointer;
     display: block;
     height: 18px;
@@ -210,12 +320,12 @@
 
 .edf-selection-checkbox input:hover {
     border-color: var(--edf-color-green);
-    box-shadow: 0 0 0 2px rgb(14 168 0 / 16%);
+    box-shadow: 0 0 0 1.5px rgb(14 168 0 / 16%);
 }
 
 .edf-selection-checkbox input:focus-visible {
     border-color: var(--edf-color-green);
-    box-shadow: 0 0 0 2px rgb(14 168 0 / 24%);
+    box-shadow: 0 0 0 1.5px rgb(14 168 0 / 24%);
     outline: 0;
 }
 
@@ -229,9 +339,6 @@
     align-items: center;
     color: #fff;
     display: flex;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    font-weight: 700;
     height: 100%;
     left: 50%;
     line-height: 1;
@@ -244,6 +351,12 @@
     width: 100%;
     justify-content: center;
     z-index: 2;
+}
+
+.edf-selection-checkbox-icon {
+    display: block;
+    height: 16px;
+    width: 16px;
 }
 
 label.edf-selection-checkbox[data-checked="true"] .edf-selection-checkbox-indicator,

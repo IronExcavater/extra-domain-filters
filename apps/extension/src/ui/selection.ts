@@ -1,5 +1,6 @@
 import { markOwned } from "../dom/ownership";
-import { createButton } from "./elements";
+import { createButton, createSvgIcon } from "./elements";
+import { replaceWithCheckIcon } from "./icons";
 
 export interface SelectionControlOptions {
     actions?: readonly SelectionAction[];
@@ -15,6 +16,44 @@ export interface SelectionControlOptions {
 export interface SelectionAction {
     label: string;
     onAction(ids: readonly string[]): void;
+}
+
+const CHECKBOX_TRANSITION_MS = 160;
+const visibilityTimers = new WeakMap<HTMLButtonElement, number>();
+
+function getControlButton(
+    controls: HTMLElement,
+    key: string,
+    className: string,
+): HTMLButtonElement {
+    const existing = controls.querySelector<HTMLButtonElement>(
+        `[data-edf-selection-control="${CSS.escape(key)}"]`,
+    );
+    if (existing) return existing;
+    const button = createButton("", className);
+    button.dataset.edfSelectionControl = key;
+    button.dataset.edfSelectionVisible = "false";
+    button.hidden = true;
+    return button;
+}
+
+function setControlVisible(button: HTMLButtonElement, visible: boolean): void {
+    const pending = visibilityTimers.get(button);
+    if (pending !== undefined) window.clearTimeout(pending);
+
+    if (visible) {
+        button.hidden = false;
+        requestAnimationFrame(() => {
+            if (button.isConnected) button.dataset.edfSelectionVisible = "true";
+        });
+        return;
+    }
+
+    button.dataset.edfSelectionVisible = "false";
+    visibilityTimers.set(button, window.setTimeout(() => {
+        if (button.dataset.edfSelectionVisible === "false") button.hidden = true;
+        visibilityTimers.delete(button);
+    }, CHECKBOX_TRANSITION_MS));
 }
 
 export function replaceSelection(selection: Set<string>, ids: readonly string[]): void {
@@ -36,6 +75,7 @@ export function createSelectionCheckbox(
     const label = document.createElement("label");
     const input = document.createElement("input");
     const indicator = document.createElement("span");
+    let pendingCommit: number | undefined;
 
     label.className = "edf-selection-checkbox";
     input.type = "checkbox";
@@ -48,12 +88,19 @@ export function createSelectionCheckbox(
     }
     input.addEventListener("change", event => {
         event.stopPropagation();
-        label.dataset.checked = String(input.checked);
-        onChange(input.checked);
+        const checked = input.checked;
+        label.dataset.checked = String(checked);
+        if (pendingCommit !== undefined) window.clearTimeout(pendingCommit);
+        // Collection views rebuild their cards after selection changes. Commit after the
+        // visual transition so the checked background and tick can fade before replacement.
+        pendingCommit = window.setTimeout(() => {
+            pendingCommit = undefined;
+            onChange(checked);
+        }, CHECKBOX_TRANSITION_MS);
     });
     indicator.className = "edf-selection-checkbox-indicator";
     indicator.ariaHidden = "true";
-    indicator.textContent = "\u2713";
+    indicator.append(createSvgIcon(replaceWithCheckIcon, "edf-selection-checkbox-icon"));
     label.append(input, indicator);
 
     return markOwned(label, "selection-checkbox");
@@ -63,8 +110,8 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     const selected = new Set(options.selectedIds);
     const visible = options.visibleIds;
     const selectedVisibleCount = visible.filter(id => selected.has(id)).length;
-    const selectAllButton = createButton("", options.buttonClassName);
-    const clearButton = createButton("", options.buttonClassName);
+    const selectAllButton = getControlButton(options.controls, "select-all", options.buttonClassName);
+    const clearButton = getControlButton(options.controls, "clear", options.buttonClassName);
     let selectAllHandledOnPointer = false;
 
     const toggleVisibleSelection = (): void => {
@@ -76,40 +123,44 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     };
 
     selectAllButton.textContent = selectedVisibleCount === visible.length ? "Deselect all" : "Select all";
-    selectAllButton.hidden = visible.length === 0;
-    selectAllButton.addEventListener("pointerdown", event => {
+    setControlVisible(selectAllButton, visible.length > 0);
+    selectAllButton.onpointerdown = event => {
         event.preventDefault();
         event.stopPropagation();
         selectAllHandledOnPointer = true;
         toggleVisibleSelection();
-    });
-    selectAllButton.addEventListener("click", event => {
+    };
+    selectAllButton.onclick = event => {
         event.preventDefault();
         event.stopPropagation();
         if (selectAllHandledOnPointer) return;
         toggleVisibleSelection();
-    });
+    };
 
     clearButton.ariaLabel = options.clearLabel ?? "Clear selected listings";
     clearButton.textContent = options.clearLabel ?? "Clear selection";
-    clearButton.hidden = selectedVisibleCount === 0;
-    clearButton.addEventListener("click", event => {
+    setControlVisible(clearButton, selectedVisibleCount > 0);
+    clearButton.onclick = event => {
         event.preventDefault();
         event.stopPropagation();
         options.onClear(visible.filter(id => selected.has(id)));
-    });
+    };
 
-    const actionButtons = (options.actions ?? []).map(action => {
-        const button = createButton("", options.buttonClassName);
+    const actionButtons = (options.actions ?? []).map((action, index) => {
+        const button = getControlButton(options.controls, `action-${index}`, options.buttonClassName);
         button.textContent = action.label;
-        button.hidden = selectedVisibleCount === 0;
-        button.addEventListener("click", event => {
+        setControlVisible(button, selectedVisibleCount > 0);
+        button.onclick = event => {
             event.preventDefault();
             event.stopPropagation();
             action.onAction(visible.filter(id => selected.has(id)));
-        });
+        };
         return button;
     });
 
-    options.controls.replaceChildren(...actionButtons, clearButton, selectAllButton);
+    options.controls.querySelectorAll<HTMLButtonElement>('[data-edf-selection-control^="action-"]')
+        .forEach(button => {
+            if (!actionButtons.includes(button)) button.remove();
+        });
+    options.controls.append(...actionButtons, clearButton, selectAllButton);
 }

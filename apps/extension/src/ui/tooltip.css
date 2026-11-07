@@ -18,7 +18,7 @@
 .edf-tooltip::after {
     border: 6px solid transparent;
     content: "";
-    left: 50%;
+    left: var(--edf-tooltip-arrow-left, 50%);
     position: absolute;
     transform: translateX(-50%);
 }

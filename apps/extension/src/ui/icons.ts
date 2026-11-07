@@ -1,7 +1,11 @@
 import doorSvg from "../../../../packages/assets/icons/account/door.svg?raw";
 import settingsSvg from "../../../../packages/assets/icons/account/settings.svg?raw";
+import checkSvg from "../../../../packages/assets/icons/actions/check.svg?raw";
 import closeSvg from "../../../../packages/assets/icons/actions/close.svg?raw";
 import externalSvg from "../../../../packages/assets/icons/actions/external.svg?raw";
+import gripCornerSvg from "../../../../packages/assets/icons/actions/grip-corner.svg?raw";
+import gripHorizontalSvg from "../../../../packages/assets/icons/actions/grip-horizontal.svg?raw";
+import gripVerticalSvg from "../../../../packages/assets/icons/actions/grip-vertical.svg?raw";
 import eyeOffSvg from "../../../../packages/assets/icons/actions/hide.svg?raw";
 import plusSvg from "../../../../packages/assets/icons/actions/plus.svg?raw";
 import trashRestoreSvg from "../../../../packages/assets/icons/actions/restore.svg?raw";
@@ -11,9 +15,11 @@ import eyeSvg from "../../../../packages/assets/icons/actions/show.svg?raw";
 import shortlistFilledSvg from "../../../../packages/assets/icons/actions/star-filled.svg?raw";
 import shortlistOutlineSvg from "../../../../packages/assets/icons/actions/star.svg?raw";
 import trashSvg from "../../../../packages/assets/icons/actions/trash.svg?raw";
+import trashFilledSvg from "../../../../packages/assets/icons/actions/trash-filled.svg?raw";
 import bathSvg from "../../../../packages/assets/icons/amenities/bath.svg?raw";
 import bedSvg from "../../../../packages/assets/icons/amenities/bed.svg?raw";
 import parkingSvg from "../../../../packages/assets/icons/amenities/parking.svg?raw";
+import priceFilterSvg from "../../../../packages/assets/icons/filters/price.svg?raw";
 import chevronSvg from "../../../../packages/assets/icons/navigation/chevron.svg?raw";
 import bellFilledSvg from "../../../../packages/assets/icons/search/bell-filled.svg?raw";
 import bellOutlineSvg from "../../../../packages/assets/icons/search/bell.svg?raw";
@@ -57,6 +63,10 @@ export function replaceWithBinIcon(target: SVGElement): void {
     setSvgIcon(target, trashSvg);
 }
 
+export function replaceWithFilledBinIcon(target: SVGElement): void {
+    setSvgIcon(target, trashFilledSvg);
+}
+
 export function replaceWithUnbinIcon(target: SVGElement): void {
     setSvgIcon(target, trashRestoreSvg);
 }
@@ -85,6 +95,10 @@ export function replaceWithParkingIcon(target: SVGElement): void {
     setSvgIcon(target, parkingSvg);
 }
 
+export function replaceWithPriceFilterIcon(target: SVGElement): void {
+    setSvgIcon(target, priceFilterSvg);
+}
+
 export function replaceWithEyeIcon(target: SVGElement): void {
     setSvgIcon(target, eyeSvg);
 }
@@ -99,6 +113,10 @@ export function replaceWithChevronIcon(target: SVGElement): void {
 
 export function replaceWithCloseIcon(target: SVGElement): void {
     setSvgIcon(target, closeSvg);
+}
+
+export function replaceWithCheckIcon(target: SVGElement): void {
+    setSvgIcon(target, checkSvg);
 }
 
 export function replaceWithExternalIcon(target: SVGElement): void {
@@ -159,4 +177,16 @@ export function replaceWithSavedSearchTrashIcon(target: SVGElement): void {
 
 export function replaceWithSavedSearchShareIcon(target: SVGElement): void {
     setSvgIcon(target, shareSvg);
+}
+
+export function replaceWithGripCornerIcon(target: SVGElement): void {
+    setSvgIcon(target, gripCornerSvg);
+}
+
+export function replaceWithGripHorizontalIcon(target: SVGElement): void {
+    setSvgIcon(target, gripHorizontalSvg);
+}
+
+export function replaceWithGripVerticalIcon(target: SVGElement): void {
+    setSvgIcon(target, gripVerticalSvg);
 }

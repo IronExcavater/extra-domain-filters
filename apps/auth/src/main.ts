@@ -13,6 +13,7 @@ import { initializeApp } from "firebase/app";
 import {
     FacebookAuthProvider,
     getAuth,
+    GoogleAuthProvider,
     inMemoryPersistence,
     OAuthProvider,
     setPersistence,
@@ -32,6 +33,12 @@ function createProvider(provider: FederatedAuthProvider): AuthProvider {
         facebook.addScope("email");
         return facebook;
     }
+    if (provider === "google") {
+        const google = new GoogleAuthProvider();
+        google.addScope("email");
+        google.addScope("profile");
+        return google;
+    }
     const apple = new OAuthProvider("apple.com");
     apple.addScope("email");
     apple.addScope("name");
@@ -44,6 +51,8 @@ function readCredential(
 ): OAuthCredential | null {
     return provider === "facebook"
         ? FacebookAuthProvider.credentialFromResult(result)
+        : provider === "google"
+            ? GoogleAuthProvider.credentialFromResult(result)
         : OAuthProvider.credentialFromResult(result);
 }
 

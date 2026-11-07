@@ -10,14 +10,11 @@
     position: relative;
     transition:
         border-color var(--edf-motion-fast) ease,
-        box-shadow var(--edf-motion-fast) ease,
-        transform var(--edf-motion-fast) ease;
+        box-shadow var(--edf-motion-fast) ease;
 }
 
 .edf-saved-search-card:hover {
     border-color: #c8cec5;
-    box-shadow: var(--edf-shadow-card);
-    transform: translateY(-1px);
 }
 
 .edf-saved-search-card:has(.edf-saved-search-primary-link:focus-visible) {
@@ -197,6 +194,7 @@
 }
 
 .edf-saved-search-list {
+    align-items: start;
     box-sizing: border-box;
     display: grid;
     gap: var(--edf-space-4);
@@ -225,4 +223,23 @@ html[data-edf-extension-reload="true"] [id="savedSearches"] {
     .edf-saved-search-card {
         transition: none;
     }
+}
+
+.edf-share-options {
+    box-sizing: border-box;
+    display: grid;
+    gap: var(--edf-space-2);
+    padding: var(--edf-space-4);
+    width: min(240px, calc(100vw - 16px));
+}
+
+.edf-share-options h2 {
+    color: var(--edf-color-heading);
+    font-size: 16px;
+    margin: 0 0 var(--edf-space-1);
+}
+
+.edf-share-options-action {
+    justify-content: flex-start;
+    width: 100%;
 }

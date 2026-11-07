@@ -1,3 +1,5 @@
+import { createSvgIcon, type IconRenderer } from "./elements";
+
 export function createCollectionHeader(
     titleText: string,
     descriptionText: string,
@@ -19,12 +21,17 @@ export function createCollectionHeader(
 export function createEmptyState(
     titleText: string,
     descriptionText: string,
+    icon?: IconRenderer,
 ): HTMLElement {
     const empty = document.createElement("div");
     const title = document.createElement("p");
     const description = document.createElement("p");
 
     empty.className = "edf-empty-state";
+    if (icon) {
+        const iconWrapper = createSvgIcon(icon, "edf-empty-state-icon");
+        empty.append(iconWrapper);
+    }
     title.className = "edf-empty-state-title";
     title.textContent = titleText;
     description.className = "edf-empty-state-description";

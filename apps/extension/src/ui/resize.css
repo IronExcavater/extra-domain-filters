@@ -1,0 +1,57 @@
+.edf-popup-resize-handle {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    touch-action: none;
+    user-select: none;
+    z-index: 2147483647;
+}
+
+/* Left edge: a thin vertical strip running the full height, inset from the corner handle. */
+.edf-popup-resize-handle-left {
+    bottom: 16px;
+    left: 0;
+    top: 0;
+    width: 14px;
+}
+
+/* Bottom edge: a thin horizontal strip running the full width, inset from the corner handle. */
+.edf-popup-resize-handle-bottom {
+    bottom: 0;
+    height: 14px;
+    left: 16px;
+    right: 0;
+}
+
+/* Bottom-left corner: sits over both edges' shared corner. */
+.edf-popup-resize-handle-bottom-left {
+    bottom: 0;
+    height: 16px;
+    left: 0;
+    width: 16px;
+}
+
+.edf-popup-resize-handle-icon {
+    color: var(--edf-color-icon);
+
+    /*
+     * Visible (if subtle) at rest — an opacity-0 resting state means there's nothing on screen
+     * hinting these edges are draggable at all, so a user has no way to discover them before
+     * hovering blind over the exact right 14px strip.
+     */
+    height: 12px;
+    opacity: 0.45;
+    pointer-events: none;
+    transition: opacity var(--edf-motion-fast) ease;
+    width: 12px;
+}
+
+.edf-popup-resize-handle-bottom-left .edf-popup-resize-handle-icon-corner {
+    transform: rotate(90deg);
+}
+
+.edf-popup-resize-handle:hover .edf-popup-resize-handle-icon,
+.edf-popup-resize-handle[data-active="true"] .edf-popup-resize-handle-icon {
+    opacity: 0.9;
+}

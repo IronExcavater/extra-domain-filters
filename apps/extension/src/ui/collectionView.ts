@@ -1,4 +1,7 @@
+import { enableMasonry } from "./masonry";
+
 export interface CollectionFrame {
+    cards: HTMLElement;
     element: HTMLElement;
     replaceCards(cards: readonly Node[], animate?: boolean): void;
     setEmptyState(empty?: HTMLElement): void;
@@ -25,10 +28,12 @@ export function createCollectionFrame(options: CollectionFrameOptions = {}): Col
     if (options.cardsClassName) cards.classList.add(...options.cardsClassName.split(/\s+/).filter(Boolean));
     empty.className = "edf-collection-frame-empty";
     empty.hidden = true;
+    enableMasonry(cards);
     body.append(cards, empty);
     element.append(toolbar, body);
 
     return {
+        cards,
         element,
         replaceCards: (nextCards, animate = false) => {
             cards.replaceChildren(...nextCards);

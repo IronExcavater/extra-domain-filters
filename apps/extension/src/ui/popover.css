@@ -1,5 +1,5 @@
 .edf-popover {
-    animation: edf-popover-enter var(--edf-motion-fast) ease both;
+    animation: edf-popover-enter 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
     background: var(--edf-color-surface);
     border: 1px solid var(--edf-color-border);
     border-radius: var(--edf-radius-dialog);
@@ -8,25 +8,70 @@
     color: var(--edf-color-text);
     max-height: calc(100vh - 16px);
     max-width: calc(100vw - 16px);
-    overflow: auto;
+    overflow: visible;
     position: fixed;
+    transform-origin: top center;
     z-index: 2147483646;
 }
 
+.edf-popover[data-placement="top"] {
+    transform-origin: bottom center;
+}
+
+.edf-popover[data-state="closing"] {
+    animation: edf-popover-exit 160ms cubic-bezier(0.4, 0, 1, 1) both;
+    pointer-events: none;
+}
+
+.edf-dialog-title-row {
+    align-items: center;
+    display: flex;
+    gap: var(--edf-space-2);
+    min-width: 0;
+}
+
+.edf-dialog-title-row > svg {
+    color: var(--edf-color-heading);
+    flex: 0 0 24px;
+    height: 24px;
+    width: 24px;
+}
+
+.edf-dialog-title-row > :is(h1, h2, h3) {
+    min-width: 0;
+}
+
 @keyframes edf-popover-enter {
-    from {
+    0% {
         opacity: 0;
-        transform: translateY(-4px);
+        transform: scale(0.4);
+    }
+
+    25% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes edf-popover-exit {
+    from {
+        opacity: 1;
+        transform: scale(1);
     }
 
     to {
-        opacity: 1;
-        transform: translateY(0);
+        opacity: 0;
+        transform: scale(0.92) translateY(-2px);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .edf-popover {
+    .edf-popover,
+    .edf-popover[data-state="closing"] {
         animation: none;
     }
 }

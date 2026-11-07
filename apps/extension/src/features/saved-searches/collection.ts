@@ -2,7 +2,12 @@ import { createCollectionController } from "../../collections/controller";
 import type { SavedSearch } from "../../domain/searches/savedSearches";
 import { createEmptyState } from "../../ui/collection";
 import { createCollectionFrame } from "../../ui/collectionView";
-import { renderSelectionControls, replaceSelection } from "../../ui/selection";
+import { replaceWithSavedSearchBellIcon } from "../../ui/icons";
+import {
+    renderSelectionControls,
+    replaceSelection,
+    setSelectionCheckboxState,
+} from "../../ui/selection";
 import { createSortControl } from "../../ui/sort";
 import { createTabs } from "../../ui/tabs";
 import { createSavedSearchCard } from "./card";
@@ -36,9 +41,11 @@ export interface SavedSearchCollectionOptions {
 export function createSavedSearchCollection(
     options: SavedSearchCollectionOptions,
 ): SavedSearchCollection {
+    const selectionTransitionMs = 160;
     let items = [...options.items];
     let animateNext = options.animate ?? false;
     let cardsController = new AbortController();
+    let selectionCommitTimer: number | undefined;
     const controls = document.createElement("div");
     const frame = createCollectionFrame({
         cardsClassName: options.cardsClassName,
@@ -109,7 +116,21 @@ export function createSavedSearchCollection(
             clearLabel: "Remove selected",
             controls,
             onClear: ids => void removeSelected(ids),
-            onSelectionChange: ids => controller.replaceSelection(ids),
+            onSelectionChange: ids => {
+                const next = new Set(ids);
+                for (const card of frame.cards.querySelectorAll<HTMLElement>("[data-savedsearch-id]")) {
+                    const input = card.querySelector<HTMLInputElement>(".edf-selection-checkbox input");
+                    if (input) setSelectionCheckboxState(
+                        input,
+                        next.has(card.dataset.savedsearchId ?? ""),
+                    );
+                }
+                if (selectionCommitTimer !== undefined) window.clearTimeout(selectionCommitTimer);
+                selectionCommitTimer = window.setTimeout(() => {
+                    selectionCommitTimer = undefined;
+                    controller.replaceSelection(ids);
+                }, selectionTransitionMs);
+            },
             selectedIds: [...selection],
             visibleIds: visible.map(search => search.id),
         });
@@ -119,9 +140,8 @@ export function createSavedSearchCollection(
             onSave: saveAlert,
             onNotify: options.onNotify,
             onSelectionChange: selected => {
-                if (selected !== controller.getSelection().has(search.id)) {
-                    controller.toggleSelection(search.id);
-                }
+                if (selected === controller.getSelection().has(search.id)) return;
+                controller.toggleSelection(search.id);
             },
             openLinksInNewTab: options.openLinksInNewTab,
             selected: selection.has(search.id),
@@ -132,11 +152,15 @@ export function createSavedSearchCollection(
             items.length === 0
                 ? options.emptyMessage ?? "Save a search on domain.com.au to see it here."
                 : "Try another search category.",
+            replaceWithSavedSearchBellIcon,
         ) : undefined);
         animateNext = false;
     };
 
-    options.signal.addEventListener("abort", () => cardsController.abort(), { once: true });
+    options.signal.addEventListener("abort", () => {
+        cardsController.abort();
+        if (selectionCommitTimer !== undefined) window.clearTimeout(selectionCommitTimer);
+    }, { once: true });
     frame.setToolbar([tabs, controls, sort.element]);
     controller.subscribe(render, options.signal);
     render();

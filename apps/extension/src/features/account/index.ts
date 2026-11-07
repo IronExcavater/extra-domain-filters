@@ -20,10 +20,11 @@ function getActiveCount(entries: readonly unknown[] | undefined): number {
 }
 
 function bindBadge(item: HTMLElement, badge: HTMLElement, signal?: AbortSignal): void {
+    // Reserve the final count pill geometry while storage is being read. This
+    // prevents the menu item shifting after it is first painted.
+    if (!badge.textContent) badge.textContent = "0";
     const render = (entries: readonly unknown[] | undefined): void => {
-        const count = getActiveCount(entries);
-        badge.textContent = String(count);
-        badge.hidden = count === 0;
+        badge.textContent = String(getActiveCount(entries));
     };
     const dispose = onStorageChange<unknown[]>("blacklist", render);
     subscriptions.set(item, dispose);
@@ -38,25 +39,61 @@ function createAccountMenuItem(
 ): HTMLLIElement {
     const item = markOwned(document.createElement("li"), "account-menu-item");
     const link = document.createElement("a");
-    const label = document.createElement("span");
+    const icon = createSvgIcon(replaceWithBinIcon, "edf-account-menu-icon");
     const badge = document.createElement("span");
     const url = new URL(host.shortlistLink.href);
 
     url.searchParams.set("blacklist", "1");
-    item.className = "edf-account-menu-item";
+    item.classList.add("edf-account-menu-item");
     item.dataset.testid = "account-menu__blacklist-item";
     item.dataset.edfAccountMenuState = active ? "active" : "inactive";
+    link.className = "edf-account-menu-link";
     link.href = url.href;
-    link.dataset.menuItemName = "Blacklist";
+    link.ariaLabel = "Blacklist";
     if (active) link.setAttribute("aria-current", "page");
-    label.className = "edf-account-menu-label";
-    label.textContent = "Blacklist";
     badge.className = "edf-account-menu-badge";
     badge.dataset.testid = "account-menu__blacklist-count";
-    link.append(createSvgIcon(replaceWithBinIcon, "edf-account-menu-icon"), label, badge);
+    // Domain account-menu links use a direct label text node between the icon and
+    // count. An extra label wrapper changes flex sizing and creates excess spacing.
+    link.append(icon, document.createTextNode("Blacklist"), badge);
     item.append(link);
     bindBadge(item, badge, signal);
     return item;
+}
+
+function normalizeAccountMenuItem(
+    item: HTMLElement,
+    host: DomainAccountMenuHost,
+    signal?: AbortSignal,
+): HTMLAnchorElement | undefined {
+    const link = item.querySelector<HTMLAnchorElement>(":scope > a");
+    if (!link) return undefined;
+    const icon = link.querySelector<SVGSVGElement>(":scope > .edf-account-menu-icon")
+        ?? createSvgIcon(replaceWithBinIcon, "edf-account-menu-icon");
+    const existingBadge = link.querySelector<HTMLElement>(":scope > .edf-account-menu-badge");
+    const badge = existingBadge ?? document.createElement("span");
+    const label = link.childNodes[1];
+    const validStructure = link.childNodes.length === 3 &&
+        link.firstChild === icon &&
+        label?.nodeType === Node.TEXT_NODE &&
+        label.textContent === "Blacklist" &&
+        link.lastChild === badge;
+
+    link.className = "edf-account-menu-link";
+    delete link.dataset.menuItemName;
+    link.ariaLabel = "Blacklist";
+    const url = new URL(host.shortlistLink.href);
+    url.searchParams.set("blacklist", "1");
+    link.href = url.href;
+    badge.className = "edf-account-menu-badge";
+    badge.dataset.testid = "account-menu__blacklist-count";
+    if (!validStructure) link.replaceChildren(icon, document.createTextNode("Blacklist"), badge);
+    if (!existingBadge) {
+        subscriptions.get(item)?.();
+        subscriptions.delete(item);
+    }
+    if (!subscriptions.has(item)) bindBadge(item, badge, signal);
+    return link;
 }
 
 function disposeDetachedItems(): void {
@@ -73,10 +110,14 @@ export function injectAccountMenu(logger: Logger, signal?: AbortSignal): void {
 
     for (const host of findDomainAccountMenuHosts()) {
         const existingItems = [...host.list.querySelectorAll<HTMLLIElement>(ITEM_SELECTOR)];
-        const existing = existingItems.shift();
+        const candidate = existingItems.shift();
+        const existing = candidate?.querySelector(":scope > .edf-account-menu-link")
+            ? candidate
+            : undefined;
+        if (candidate && !existing) candidate.remove();
         existingItems.forEach(item => item.remove());
         const item = existing ?? createAccountMenuItem(host, active, signal);
-        const link = item.querySelector<HTMLAnchorElement>("a");
+        const link = normalizeAccountMenuItem(item, host, signal);
 
         item.dataset.edfAccountMenuState = active ? "active" : "inactive";
         if (link) {

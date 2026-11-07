@@ -1,14 +1,13 @@
 import type { ExclusionReason } from "../../../domain/matching";
 import { replaceWithChevronIcon, replaceWithEyeIcon, replaceWithUnbinIcon } from "../../../ui/icons";
-import { setTooltipText } from "../../../ui/tooltip";
-import { getBlacklistCardKind, getTitle, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
+import { removeTooltip, setTooltipText } from "../../../ui/tooltip";
+import { getBlacklistCardKind, getTitle, PROJECT_MARKER_SELECTOR, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 import { resolveExclusionAction, ROW_SELECTOR } from "./row";
 
 const GROUP_SELECTOR = '[data-testid="listing-card-exclusion-group"]';
 const GROUPED_CARD_CLASS = "edf-exclusion-group-member";
 const COLLAPSE_DELAY_MS = 180;
 const pinnedGroupUrls = new Set<string>();
-const expandedItemUrls = new Set<string>();
 let previousSignature = "";
 
 type ActiveReason = Exclude<ExclusionReason, "none">;
@@ -21,9 +20,14 @@ interface ExcludedCard {
 
 function getExcludedCard(element: Element): ExcludedCard | undefined {
     if (!(element instanceof HTMLElement) || !element.matches(TOP_LEVEL_CARD_SELECTOR)) return undefined;
-    if (getBlacklistCardKind(element) === "project-child" || getBlacklistCardKind(element) === "carousel-child") {
-        return undefined;
-    }
+    const kind = getBlacklistCardKind(element);
+    if (kind === "project-child" || kind === "carousel-child") return undefined;
+    // A top-level project bundle card reports as "standard" here (getBlacklistCardKind only
+    // detects "project" when given its aggregate button, which isn't available at this call
+    // site). Its own exclusion row already renders correct project-aware text via
+    // updateProjectBlacklistSummary, so keep it out of the generic group — grouping it would
+    // show it as a single expandable property instead of the project bundle it represents.
+    if (element.querySelector(PROJECT_MARKER_SELECTOR)) return undefined;
     if (!element.classList.contains("edf-listing-card-excluded")) return undefined;
 
     const row = element.querySelector<HTMLElement>(ROW_SELECTOR);
@@ -42,7 +46,10 @@ function getExcludedCard(element: Element): ExcludedCard | undefined {
 }
 
 function unwrapGroups(): void {
-    document.querySelectorAll<HTMLElement>(GROUP_SELECTOR).forEach(group => group.remove());
+    document.querySelectorAll<HTMLElement>(GROUP_SELECTOR).forEach(group => {
+        group.querySelectorAll<HTMLElement>("[aria-describedby]").forEach(removeTooltip);
+        group.remove();
+    });
     document.querySelectorAll<HTMLElement>(`.${GROUPED_CARD_CLASS}`)
         .forEach(card => card.classList.remove(GROUPED_CARD_CLASS));
 }
@@ -54,72 +61,39 @@ function setExpanded(group: HTMLElement, expanded: boolean): void {
 
     group.dataset.expanded = String(expanded);
     body.style.maxHeight = expanded ? `${body.scrollHeight}px` : "0px";
+    body.setAttribute("aria-hidden", String(!expanded));
     const label = expanded ? "Collapse hidden listings" : "Expand hidden listings";
     button.ariaLabel = label;
+    button.setAttribute("aria-expanded", String(expanded));
     setTooltipText(button, label);
 }
 
-function setItemExpanded(row: HTMLElement, expanded: boolean): void {
-    const details = row.querySelector<HTMLElement>(".edf-exclusion-group-item-details");
-    const button = row.querySelector<HTMLButtonElement>(".edf-exclusion-group-item-toggle");
-    if (!details || !button) return;
-
-    row.dataset.expanded = String(expanded);
-    button.dataset.expanded = String(expanded);
-    details.style.maxHeight = expanded ? `${details.scrollHeight}px` : "0px";
-    const label = expanded ? "Collapse listing details" : "Expand listing details";
-    button.ariaLabel = label;
-    setTooltipText(button, label);
-
-    const body = row.closest<HTMLElement>('[data-testid="listing-card-exclusion-group-body"]');
-    if (body?.closest<HTMLElement>(GROUP_SELECTOR)?.dataset.expanded === "true") {
-        requestAnimationFrame(() => {
-            body.style.maxHeight = `${body.scrollHeight}px`;
-        });
-    }
-}
-
+// A grouped item is always a flat row — icon, title (with its reason as inline context), and
+// a single always-visible action button. Earlier this also had its own per-item expand/collapse
+// panel nested inside the group's own expand/collapse, which produced an accordion-in-an-
+// accordion that made no sense: there's nothing here worth hiding a second time.
 function createGroupItem(item: ExcludedCard): HTMLElement {
     const row = document.createElement("div");
     const reasonIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const summary = document.createElement("span");
-    const toggle = document.createElement("button");
-    const toggleIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    const details = document.createElement("div");
+    const title = document.createElement("span");
     const reason = document.createElement("span");
     const action = document.createElement("button");
-    const key = item.urls[0]?.replace(/\/+$/, "") ?? "";
 
     row.className = "edf-exclusion-group-item";
     summary.className = "edf-exclusion-group-item-text";
-    summary.textContent = getTitle(item.card);
+    title.textContent = item.urls.length > 1
+        ? `${getTitle(item.card)} (${item.urls.length} properties)`
+        : getTitle(item.card);
+    reason.className = "edf-exclusion-group-item-reason";
+    reason.textContent = item.reason === "blacklisted" ? "Blacklisted" : "Filtered by your preferences";
+    summary.append(title, reason);
 
     reasonIcon.setAttribute("aria-hidden", "true");
     reasonIcon.setAttribute("width", "16");
     reasonIcon.setAttribute("height", "16");
     (item.reason === "blacklisted" ? replaceWithUnbinIcon : replaceWithEyeIcon)(reasonIcon);
 
-    toggleIcon.setAttribute("aria-hidden", "true");
-    toggleIcon.setAttribute("width", "18");
-    toggleIcon.setAttribute("height", "18");
-    replaceWithChevronIcon(toggleIcon);
-
-    toggle.type = "button";
-    toggle.className = "edf-exclusion-row-button edf-exclusion-group-item-toggle";
-    toggle.append(toggleIcon);
-    toggle.addEventListener("click", event => {
-        event.preventDefault();
-        event.stopPropagation();
-        const expanded = row.dataset.expanded !== "true";
-        if (expanded) expandedItemUrls.add(key);
-        else expandedItemUrls.delete(key);
-        setItemExpanded(row, expanded);
-    });
-
-    details.className = "edf-exclusion-group-item-details";
-    reason.textContent = item.reason === "blacklisted"
-        ? "Blacklisted"
-        : "Filtered by your preferences";
     action.type = "button";
     action.className = "edf-exclusion-group-item-action";
     action.textContent = item.reason === "blacklisted" ? "Unblacklist" : "Show anyway";
@@ -128,12 +102,8 @@ function createGroupItem(item: ExcludedCard): HTMLElement {
         event.stopPropagation();
         await resolveExclusionAction(item.urls, item.reason);
     });
-    details.append(reason, action);
 
-    row.append(reasonIcon, summary, toggle, details);
-    row.dataset.expanded = String(expandedItemUrls.has(key));
-    if (expandedItemUrls.has(key)) requestAnimationFrame(() => setItemExpanded(row, true));
-    else setItemExpanded(row, false);
+    row.append(reasonIcon, summary, action);
     return row;
 }
 

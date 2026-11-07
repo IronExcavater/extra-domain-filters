@@ -2,6 +2,11 @@ import { defineExtensionMessaging } from "@webext-core/messaging";
 import type { AccountProvider, AccountState } from "../domain/account/model";
 import type { ListingSnapshot } from "../domain/matching";
 import {
+    normalizeSavedSearch,
+    type SavedSearch,
+    type SearchNotificationFrequency,
+} from "../domain/searches/savedSearches";
+import {
     isCreateSharedSearchInput,
     isSharedSearchId,
     type SharedSearch,
@@ -17,6 +22,11 @@ export interface ExtensionProtocolMap {
     "account:login-provider": (data: { provider: AccountProvider }) => AccountState;
     "account:reset-password": (data: { email: string }) => void;
     "account:sign-out": () => AccountState;
+    "domain-alert:apply": (data: {
+        frequency: SearchNotificationFrequency;
+        search: SavedSearch;
+    }) => void;
+    "domain-saved-search:remove": (data: { domainId: string }) => void;
     "shared-search:create": (data: { params: string }) => SharedSearch;
     "shared-search:get": (data: { id: string }) => SharedSearch | undefined;
     "listing:enrich": (data: { listings: ListingSnapshot[] }) => void;
@@ -35,6 +45,9 @@ const REQUEST_VALIDATORS = {
         || value.provider === "google",
     "account:reset-password": value => isEmail(value.email),
     "account:sign-out": () => true,
+    "domain-alert:apply": value => isDomainAlertRequest(value),
+    "domain-saved-search:remove": value => typeof value.domainId === "string"
+        && value.domainId.length > 0 && value.domainId.length <= 200,
     "shared-search:create": isCreateSharedSearchInput,
     "shared-search:get": value => isSharedSearchId(value.id),
     "listing:enrich": value => Array.isArray(value.listings) && value.listings.length <= 24 &&
@@ -42,6 +55,17 @@ const REQUEST_VALIDATORS = {
             typeof listing.title === "string" && typeof listing.text === "string"),
     "telemetry:track": value => isTelemetryEventInput(value.event),
 } satisfies Record<keyof ExtensionProtocolMap, RequestValidator>;
+
+function isDomainAlertRequest(value: Record<string, unknown>): boolean {
+    const search = normalizeSavedSearch(value.search);
+    if (!search || !["daily", "none", "weekly"].includes(String(value.frequency))) return false;
+    try {
+        const hostname = new URL(search.url).hostname;
+        return hostname === "domain.com.au" || hostname === "www.domain.com.au";
+    } catch {
+        return false;
+    }
+}
 
 function isEmail(value: unknown): boolean {
     return typeof value === "string" && value.length > 2 && value.length <= 320;

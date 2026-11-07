@@ -1,7 +1,10 @@
 import type { SavedSearch, SearchNotificationFrequency } from "../domain/searches/savedSearches";
 import { isDomainPageResult, type DomainPageResult } from "../site-dom/action";
 import type { DomainAlertApplyMessage } from "../site-dom/alerts";
-import type { DomainSavedSearchRemoveMessage } from "../site-dom/savedSearches";
+import type {
+    DomainSavedSearchRemoveMessage,
+    DomainSavedSearchSyncMessage,
+} from "../site-dom/savedSearches";
 
 const SAVED_SEARCHES_URL = "https://www.domain.com.au/user/saved-searches";
 
@@ -9,13 +12,20 @@ const SAVED_SEARCHES_URL = "https://www.domain.com.au/user/saved-searches";
 const MAX_TAB_READY_ATTEMPTS = 24;
 const TAB_READY_POLL_INTERVAL_MS = 500;
 
+export interface DomainSessionState {
+    count?: number;
+    status: "signed-in" | "signed-out" | "unavailable";
+}
+
+class DomainSignedOutError extends Error {}
+
 function delay(milliseconds: number): Promise<void> {
-    return new Promise(resolve => window.setTimeout(resolve, milliseconds));
+    return new Promise(resolve => globalThis.setTimeout(resolve, milliseconds));
 }
 
 async function sendToDomainPage(
     url: string,
-    message: DomainAlertApplyMessage | DomainSavedSearchRemoveMessage,
+    message: DomainAlertApplyMessage | DomainSavedSearchRemoveMessage | DomainSavedSearchSyncMessage,
 ): Promise<DomainPageResult> {
     const tab = await chrome.tabs.create({ active: false, url });
     if (tab.id === undefined) throw new Error("Could not open Domain to complete this change.");
@@ -23,6 +33,11 @@ async function sendToDomainPage(
     try {
         let lastError: unknown;
         for (let attempt = 0; attempt < MAX_TAB_READY_ATTEMPTS; attempt++) {
+            const currentTab = await chrome.tabs.get(tab.id).catch(() => undefined);
+            const currentUrl = currentTab?.url ?? currentTab?.pendingUrl;
+            if (currentUrl && new URL(currentUrl).hostname === "auth.domain.com.au") {
+                throw new DomainSignedOutError("Sign in to Domain to sync saved searches.");
+            }
             try {
                 const result: unknown = await chrome.tabs.sendMessage(tab.id, message);
                 if (!isDomainPageResult(result)) {
@@ -62,4 +77,21 @@ export async function removeDomainSavedSearchFromExtensionPage(domainId: string)
         domainId,
         type: "edf:domain-saved-search:remove",
     });
+}
+
+export async function syncDomainSavedSearchesFromExtensionPage(): Promise<DomainSessionState> {
+    try {
+        const result = await sendToDomainPage(SAVED_SEARCHES_URL, {
+            type: "edf:domain-saved-search:sync",
+        });
+        const count = result.ok
+            ? (result as unknown as { count?: unknown }).count
+            : undefined;
+        return {
+            count: typeof count === "number" ? count : undefined,
+            status: "signed-in",
+        };
+    } catch (error) {
+        return { status: error instanceof DomainSignedOutError ? "signed-out" : "unavailable" };
+    }
 }

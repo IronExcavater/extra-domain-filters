@@ -1,9 +1,25 @@
 export interface NavigationMenuBinding {
     carrier: HTMLElement;
     chevron: SVGElement;
+    identity: string;
     isOpen(): boolean;
     menu?: HTMLElement;
     trigger: HTMLElement;
+}
+
+function getMenuIdentity(carrier: HTMLElement, trigger: HTMLElement): string {
+    const label = trigger.getAttribute("aria-label")
+        ?? trigger.getAttribute("title")
+        ?? trigger.textContent
+        ?? "";
+    const normalizedLabel = label.replace(/\s+/g, " ").trim().toLocaleLowerCase();
+    const control = trigger.getAttribute("aria-controls") ?? "";
+    const testId = carrier.getAttribute("data-testid") ?? "navigation-menu";
+
+    // Domain currently repeats the same `desktop-nav-menu-option` id across every
+    // desktop trigger, so an element id is not a menu identity. Prefer the visible
+    // label/aria-label and only fall back to a genuinely controlled menu id.
+    return `${testId}:${normalizedLabel || control}`;
 }
 
 export function findStickyNavigationBar(root: ParentNode = document): HTMLElement | undefined {
@@ -61,6 +77,7 @@ function createBinding(carrier: HTMLElement, trigger: HTMLElement): NavigationMe
     return {
         carrier,
         chevron,
+        identity: getMenuIdentity(carrier, trigger),
         isOpen: () => {
             const expanded = trigger.getAttribute("aria-expanded");
             if (expanded === "true") return true;

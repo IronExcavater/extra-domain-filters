@@ -70,7 +70,12 @@ export function bindListingCards(
 
     const containsListing = (node: Node): boolean =>
         node instanceof Element && !isExtensionNode(node) && (
-            node.matches(listingSelector) || node.querySelector(listingSelector) !== null
+            node.matches(listingSelector) ||
+            node.querySelector(listingSelector) !== null ||
+            (
+                Boolean(node.closest(TOPSPOT_CAROUSEL_SELECTOR)) &&
+                (node.matches(".slick-slide, .slick-track") || node.querySelector(".slick-slide, .slick-track") !== null)
+            )
         );
 
     onBodyMutations(mutations => {
@@ -82,7 +87,13 @@ export function bindListingCards(
             [...mutation.addedNodes].some(containsListing),
         );
 
-        if (hasExternalAddition) scheduleAfterDomainSettles();
+        if (hasExternalAddition) {
+            // Bind visible actions on the next frame instead of waiting for the
+            // entire Domain card subtree to go quiet. Keep the settled pass as a
+            // second reconciliation for late carousel slides/images.
+            reconciler.schedule();
+            scheduleAfterDomainSettles();
+        }
     }, scope.signal);
     scope.add(() => {
         if (quietTimer !== undefined) window.clearTimeout(quietTimer);

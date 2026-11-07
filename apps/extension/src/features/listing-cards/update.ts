@@ -50,7 +50,11 @@ export async function updateListingCards(
     showBlacklistedView: boolean,
 ): Promise<void> {
     const wholeProjectReasons = new Map<Element, ExclusionReason>();
-    const carouselCards = [...document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)];
+    // A single featured listing can use Domain's carousel-shaped shell for its photos, but it
+    // is still one standard listing. Running it through the bundle path hides the whole card
+    // after the standard path has created its blacklist row.
+    const carouselCards = [...document.querySelectorAll<HTMLElement>(TOPSPOT_CAROUSEL_SELECTOR)]
+        .filter(card => getCarouselMembers(card).length > 1);
     const carouselListings = carouselCards.flatMap(carouselCard =>
         getCarouselMembers(carouselCard).map(member => ({ carouselCard, ...member })),
     );
@@ -158,7 +162,11 @@ export async function updateListingCards(
     }
 
     for (const carouselCard of carouselCards) {
-        updateCarouselCard(carouselCard, carouselDecisions.get(carouselCard) ?? []);
+        updateCarouselCard(
+            carouselCard,
+            carouselDecisions.get(carouselCard) ?? [],
+            showBlacklistedView,
+        );
     }
 
     if (showBlacklistedView) compactExcludedListingCards();

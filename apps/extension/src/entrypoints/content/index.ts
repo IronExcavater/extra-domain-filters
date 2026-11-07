@@ -26,6 +26,8 @@ import "../../content/main";
 export default defineContentScript({
     matches: ["*://domain.com.au/*", "*://www.domain.com.au/*"],
     cssInjectionMode: "manifest",
-    runAt: "document_idle",
+    // Install observers before Domain finishes hydrating so extension controls do
+    // not visibly pop in after the page has already settled.
+    runAt: "document_start",
     main() {},
 });

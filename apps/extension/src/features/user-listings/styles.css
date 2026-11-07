@@ -3,6 +3,23 @@
     margin: 8px 12px;
 }
 
+.edf-relocated-shortlist-message {
+    display: block !important;
+    height: auto !important;
+    line-height: 24px;
+    margin: 0 0 12px;
+    max-width: 100%;
+    opacity: 1 !important;
+    overflow: visible !important;
+    position: static !important;
+    visibility: visible !important;
+    width: 100%;
+}
+
+[data-testid="shortlist__message_wrapper"]:not(.edf-relocated-shortlist-message) {
+    display: none !important;
+}
+
 .edf-page-actions {
     align-items: center;
     display: flex;
@@ -51,8 +68,23 @@
     align-items: center;
     display: flex;
     gap: 16px;
-    margin: 0 0 20px;
+    margin: 0 0 12px;
     width: 100%;
+}
+
+#shortlist > :first-child {
+    box-sizing: border-box;
+    margin-inline: auto;
+    max-width: 1200px !important;
+    width: 100%;
+}
+
+#shortlist:has(.edf-listing-tabs) [data-testid="shortlist__title"] {
+    margin-bottom: 0 !important;
+}
+
+#shortlist:has(.edf-listing-tabs) [data-testid="shortlist__title"] + .edf-relocated-shortlist-message {
+    margin-top: 0 !important;
 }
 
 #shortlist:has(.edf-listing-tabs) [role="tablist"]:not(.edf-listing-tabs) {

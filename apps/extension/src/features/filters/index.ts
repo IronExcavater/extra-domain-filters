@@ -3,11 +3,17 @@ import { markOwned, OWNED_ELEMENT_ATTRIBUTE } from "../../dom/ownership";
 import { bindLazyTrigger } from "../../dom/trigger";
 import { PREFERENCES, STRATA_MAX } from "../../domain/matching";
 import { trackTelemetry } from "../../domain/telemetry/client";
-import { observeUrlChanges, PageContext } from "../../platform/router";
+import type { LifecycleScope } from "../../platform/lifecycle";
+import { PageContext } from "../../platform/router";
 import { onStorageChange } from "../../platform/storage";
 import { findDomainFilterHosts, readExcludedPropertyTypes } from "../../site-dom/filters";
 import { Property } from "../../state/property";
 import { getSettings, toggleListId, updateSettings, type Settings } from "../../state/settings";
+import {
+    replaceWithPopupSavedSearchIcon,
+    replaceWithPopupStarIcon,
+    replaceWithPriceFilterIcon,
+} from "../../ui/icons";
 import { snapPrice } from "../../utils/number";
 import { createDraftProperty } from "./bindings/draft";
 import {
@@ -16,23 +22,42 @@ import {
     createRangeControl,
     createTextControl,
 } from "./controls";
-import { isRentMode, observeModeChanges } from "./mode";
 import { syncSharedFilterParams } from "./searchParams";
 
 function reportAsyncError(context: PageContext, action: string): (error: unknown) => void {
     return error => context.logger.warn(action, error);
 }
 
-function refreshPriceTitles(url: URL): void {
-    for (const priceDiv of findDomainFilterHosts().priceSections) {
-        const priceTitle = priceDiv.querySelector('h3');
-        if (priceTitle) priceTitle.textContent = isRentMode(url) ? 'Price (Weekly)' : 'Price';
+const propertyTypeClaim = createClaimTracker<Element>();
+const filterScopes = new WeakMap<Element, LifecycleScope>();
+
+function removeCustomFilters(): void {
+    for (const filter of document.querySelectorAll<HTMLElement>(
+        `[${OWNED_ELEMENT_ATTRIBUTE}="search-filter"]`,
+    )) {
+        filterScopes.get(filter)?.dispose();
+        filter.remove();
     }
 }
 
-const claim = createClaimTracker<Element>();
+function isFilterInteraction(target: Element): boolean {
+    if (target.closest(`[${OWNED_ELEMENT_ATTRIBUTE}="search-filter"]`)) return true;
 
-function appendCustomFilter(anchor: HTMLElement, filter: HTMLElement): void {
+    const dialog = target.closest('[role="dialog"]');
+    return Boolean(dialog?.querySelector('[data-testid*="dynamic-search-filters"]')) ||
+        Boolean(target.closest('[data-testid*="dynamic-search-filters"]'));
+}
+
+function appendCustomFilter(
+    anchor: HTMLElement,
+    filter: HTMLElement,
+    scope: LifecycleScope,
+): boolean {
+    const dialog = anchor.closest<HTMLElement>('[role="dialog"]');
+    if (!anchor.isConnected || anchor.getClientRects().length === 0 || dialog?.getAttribute("aria-hidden") === "true") {
+        return false;
+    }
+
     const testId = filter.getAttribute("data-testid");
     const existingFilter = testId
         ? anchor.parentElement?.querySelector(
@@ -40,9 +65,13 @@ function appendCustomFilter(anchor: HTMLElement, filter: HTMLElement): void {
         )
         : undefined;
 
-    if (existingFilter) return;
+    if (existingFilter) return false;
 
-    anchor.after(markOwned(filter, "search-filter"));
+    markOwned(filter, "search-filter");
+    filterScopes.set(filter, scope);
+    scope.add(() => filter.remove());
+    anchor.after(filter);
+    return true;
 }
 
 export function bindFilterTriggers(selectors: string[], context: PageContext): void {
@@ -50,11 +79,13 @@ export function bindFilterTriggers(selectors: string[], context: PageContext): v
         if (settings) syncSharedFilterParams(settings);
     });
     context.scope.add(unwatchSettings);
-    observeUrlChanges(url => {
-        refreshPriceTitles(url);
-    }, context.signal);
+    document.addEventListener('click', event => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
 
-    observeModeChanges(() => refreshPriceTitles(new URL(window.location.href)), context.signal);
+        const isFilterTrigger = selectors.some(selector => target.closest(selector));
+        if (isFilterTrigger || !isFilterInteraction(target)) removeCustomFilters();
+    }, { signal: context.signal, capture: true });
 
     bindLazyTrigger(
         selectors,
@@ -64,7 +95,7 @@ export function bindFilterTriggers(selectors: string[], context: PageContext): v
     );
 }
 
-export async function injectFilters(context: PageContext, url = context.url) {
+export async function injectFilters(context: PageContext) {
     const logger = context.logger;
     logger.info('Injecting filters');
     const settings = await getSettings();
@@ -72,18 +103,17 @@ export async function injectFilters(context: PageContext, url = context.url) {
 
     const hosts = findDomainFilterHosts();
     for (const mustHaveDiv of hosts.featureSections) {
-        if (!claim(mustHaveDiv)) continue;
         if (!settings.filters.enabled.couldHaves) continue;
 
-        const mustHaveTitle = mustHaveDiv.querySelector("h2, h3");
+        const scope = context.scope.child("could-haves-filter");
         const couldHaveDiv = createFilterSection(
             "Could-Haves",
             "dynamic-search-filters__preference-options",
+            replaceWithPopupStarIcon,
         );
         const checkboxGrid = document.createElement("div");
         checkboxGrid.className = "edf-filter-checkbox-grid";
         couldHaveDiv.append(checkboxGrid);
-        if (mustHaveTitle) mustHaveTitle.textContent = "Must-Haves";
 
         for (const preference of PREFERENCES) {
             const settingsProperty = Property.from('boolean', {
@@ -103,7 +133,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
                 mustHaveDiv,
                 settingsProperty,
                 false,
-                context.scope,
+                scope,
             );
 
             checkboxGrid.appendChild(await createCheckboxControl(
@@ -115,23 +145,22 @@ export async function injectFilters(context: PageContext, url = context.url) {
             ));
         }
 
-        if (context.signal.aborted) return;
-        appendCustomFilter(mustHaveDiv, couldHaveDiv);
+        if (context.signal.aborted || !appendCustomFilter(mustHaveDiv, couldHaveDiv, scope)) {
+            scope.dispose();
+            continue;
+        }
 
         logger.info('Appended preferences filter');
     }
 
     for (const includeDiv of hosts.keywordSections) {
-        if (!claim(includeDiv)) continue;
         if (!settings.filters.enabled.excludeKeywords) continue;
 
-        const includeTitle = includeDiv.querySelector('h3');
         const includeInput = includeDiv.querySelector<HTMLInputElement>('input');
 
-        if (!includeTitle || !includeInput) throw new Error('Failed to locate include keywords input');
+        if (!includeInput) throw new Error('Failed to locate include keywords input');
 
-        includeTitle.textContent = 'Include Keywords';
-        includeInput.ariaLabel = 'Include keywords (example: waterfront, views, street name)';
+        const scope = context.scope.child("exclude-keywords-filter");
 
         const settingsProperty = Property.from('string', {
             get: async () => {
@@ -148,7 +177,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
             includeDiv,
             settingsProperty,
             '',
-            context.scope,
+            scope,
         );
 
         const excludeDiv = await createTextControl(
@@ -158,21 +187,23 @@ export async function injectFilters(context: PageContext, url = context.url) {
                 label: 'Exclude Keywords',
                 placeholder: 'e.g. studio, granny flat',
                 ariaLabel: 'Exclude keywords (example: studio, granny flat)',
+                icon: replaceWithPopupSavedSearchIcon,
                 testId: 'dynamic-search-filters__preferences',
             },
         );
 
-        if (context.signal.aborted) return;
-        appendCustomFilter(includeDiv, excludeDiv);
+        if (context.signal.aborted || !appendCustomFilter(includeDiv, excludeDiv, scope)) {
+            scope.dispose();
+            continue;
+        }
 
         logger.info('Appended exclude keywords filter');
     }
 
-    refreshPriceTitles(url);
-
     for (const priceDiv of hosts.priceSections) {
-        if (!claim(priceDiv)) continue;
         if (!settings.filters.enabled.strataFees) continue;
+
+        const scope = context.scope.child("strata-fees-filter");
 
         const settingsProperty = Property.from('number', {
             get: async () => {
@@ -188,7 +219,7 @@ export async function injectFilters(context: PageContext, url = context.url) {
             priceDiv,
             settingsProperty,
             STRATA_MAX,
-            context.scope,
+            scope,
         );
 
         const strataFeesDiv = await createRangeControl(
@@ -196,24 +227,23 @@ export async function injectFilters(context: PageContext, url = context.url) {
             {
                 id: 'strataFees',
                 label: 'Strata Fees (Quarterly)',
+                icon: replaceWithPriceFilterIcon,
                 max: STRATA_MAX,
                 snap: snapPrice,
                 testId: 'dynamic-search-filters__strata-fees',
             },
         );
 
-        if (context.signal.aborted) return;
-        appendCustomFilter(priceDiv, strataFeesDiv);
+        if (context.signal.aborted || !appendCustomFilter(priceDiv, strataFeesDiv, scope)) {
+            scope.dispose();
+            continue;
+        }
 
         logger.info('Appended strata fees filter');
     }
 
-    requestAnimationFrame(() => {
-        if (!context.signal.aborted) refreshPriceTitles(url);
-    });
-
     for (const propertyTypesDiv of hosts.propertyTypeSections) {
-        if (!claim(propertyTypesDiv)) continue;
+        if (!propertyTypeClaim(propertyTypesDiv)) continue;
         if (!settings.filters.enabled.propertyTypes) continue;
 
         const updatePropertyExclusions = async (track = false): Promise<void> => {

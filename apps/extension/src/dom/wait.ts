@@ -12,7 +12,10 @@ export function waitForElement<T>(
 ): Promise<T> {
     const {
         observe = { childList: true, subtree: true },
-        root = document.body,
+        // Content scripts run at document_start, when document.body may still
+        // be null. The Document is always observable and includes the body as
+        // soon as the parser creates it.
+        root = document,
         timeoutMessage,
         timeoutMs,
     } = options;
