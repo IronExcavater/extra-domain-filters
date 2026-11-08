@@ -137,7 +137,14 @@ export function removeBlacklistEntry(
 export function getBlacklistListing(
     entry: BlacklistEntry,
 ): ListingSnapshot {
-    return entry.listing ?? {
+    if (entry.listing) {
+        return {
+            ...entry.listing,
+            displayAddress: entry.listing.displayAddress ?? entry.displayAddress,
+            thumbnailUrl: entry.listing.thumbnailUrl ?? entry.thumbnailUrl,
+        };
+    }
+    return {
         url: entry.url,
         title: entry.displayAddress ?? entry.url,
         text: "",

@@ -195,19 +195,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    /* Row-span masonry (see ui/masonry.ts): the column gap doubles as the row gap. */
-.edf-masonry {
-    align-items: start;
-    grid-auto-rows: 1px;
-    row-gap: 0 !important;
-}
-
-.edf-collection-frame-cards[data-animate="true"] {
+    .edf-collection-frame-cards[data-animate="true"] {
         animation: none;
     }
 }
 
-@media (width <= 560px) {
+/* Phones only: the popup (480px+) keeps tabs, selection and sort on one row. */
+@media (width <= 440px) {
     .edf-collection-toolbar {
         grid-template-columns: minmax(0, 1fr) max-content;
     }

@@ -322,7 +322,8 @@
     }
 }
 
-@media (width <= 560px) {
+/* Below 640px the tabs no longer fit beside the wordmark; the menu carries them. */
+@media (width < 640px) {
     .edf-popup-navigation {
         column-gap: 12px;
         grid-template-columns: minmax(0, 1fr) max-content;

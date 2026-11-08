@@ -142,10 +142,8 @@
 }
 /* stylelint-enable no-descending-specificity */
 
-.edf-popup-blacklist-grid.edf-blacklist-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
+/* Popup layout and breakpoints live in popup/styles/views.css only; mixing them with these
+ * page breakpoints produced a 2-column grid of horizontal cards between 561px and 600px. */
 @media (width <= 900px) {
     .edf-blacklist-card-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -155,25 +153,5 @@
 @media (width <= 600px) {
     .edf-blacklist-card-grid {
         grid-template-columns: minmax(0, 1fr);
-    }
-
-    .edf-popup-blacklist-grid .edf-blacklist-card {
-        display: grid;
-        grid-template-columns: 148px minmax(0, 1fr);
-    }
-
-    .edf-popup-blacklist-grid .edf-blacklist-card-media {
-        aspect-ratio: auto;
-        min-height: 124px;
-    }
-
-    .edf-popup-blacklist-grid .edf-blacklist-card-body {
-        padding: 10px 12px 12px;
-    }
-}
-
-@media (width <= 500px) {
-    .edf-popup-blacklist-grid .edf-blacklist-card {
-        grid-template-columns: 128px minmax(0, 1fr);
     }
 }
