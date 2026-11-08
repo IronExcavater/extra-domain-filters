@@ -221,19 +221,16 @@
         background-color 150ms ease,
         border-color 150ms ease,
         color 150ms ease,
-        opacity 150ms ease,
-        transform 150ms ease;
+        opacity 150ms ease;
 }
 
 .edf-selection-action[data-edf-selection-visible="false"] {
     opacity: 0;
     pointer-events: none;
-    transform: translateY(2px);
 }
 
 .edf-selection-action[data-edf-selection-visible="true"] {
     opacity: 1;
-    transform: translateY(0);
 }
 
 .edf-selection-action:disabled {

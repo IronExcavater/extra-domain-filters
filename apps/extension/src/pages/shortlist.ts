@@ -1,4 +1,3 @@
-import { DOMAIN_SETTLE_DELAY_MS } from "../dom/bodyMutations";
 import { isOwnedNode } from "../dom/ownership";
 import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
 import { isBlacklisted } from "../domain/matching";
@@ -6,15 +5,17 @@ import { bindListingCards } from "../features/listing-cards";
 import { getListingSnapshot } from "../features/listing-cards/dom/card";
 import { enableStickyHeader } from "../features/navigation";
 import {
-    findUserListingsContainer,
     getPageActions,
     getUserListingCards,
     getUserListingUrl,
     getUserListingUrls,
     installSortControl,
-    relocateShortlistTogetherMessage,
+    keepListingsPageMounted,
     replaceUserListingTabs,
+    setListingsSubtitle,
+    SHORTLIST_SUBTITLE,
 } from "../features/user-listings/page";
+import { bindShortlistNotes, watchShortlistNotes } from "../features/user-listings/notes";
 import { PageMount } from "../platform/router";
 import {
     createSelectionCheckbox,
@@ -25,83 +26,13 @@ import {
 
 const ACTION_BUTTON_CLASS = "edf-selection-action";
 
-// Domain's note-action buttons can carry an icon alongside their label text.
-// Overwriting textContent directly would destroy that icon node (and any
-// listener/ref React attached to it); replace only the text-bearing span.
-function setButtonLabel(button: HTMLButtonElement, value: string): void {
-    const label = [...button.querySelectorAll<HTMLElement>("span")].find(span => !span.querySelector("svg"));
-    if (label) label.textContent = value;
-    else button.textContent = value;
-}
-
 const selectedCardIds = new Set<string>();
-
-type ReconcileCards = () => void;
 
 function removeSelectionControls(container: HTMLElement): void {
     container.querySelectorAll(".edf-selection-checkbox").forEach(element => element.remove());
 }
 
-function configureNoteActions(card: HTMLElement, reconcileCards: ReconcileCards): void {
-    const actions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
-    const textarea = card.querySelector<HTMLTextAreaElement>("textarea");
-    if (!actions) {
-        textarea?.classList.add("edf-listing-card-notes-default");
-        card.classList.remove("edf-listing-card-notes-editing");
-        return;
-    }
-
-    const save = [...actions.querySelectorAll<HTMLButtonElement>("button")]
-        .find(button =>
-            /save notes/i.test(button.textContent ?? "") ||
-            button.dataset.edfNotesConfigured === "true",
-        );
-    if (!save) {
-        card.classList.remove("edf-listing-card-notes-editing");
-        card.querySelectorAll<HTMLElement>(
-            ".edf-listing-card-notes-field, .edf-listing-card-notes-container",
-        ).forEach(element => element.classList.remove(
-            "edf-listing-card-notes-field",
-            "edf-listing-card-notes-container",
-        ));
-        card.querySelectorAll<HTMLElement>(".edf-listing-card-notes-default")
-            .forEach(element => element.classList.remove("edf-listing-card-notes-default"));
-        textarea?.classList.add("edf-listing-card-notes-default");
-        actions.querySelectorAll<HTMLButtonElement>("button").forEach(button => {
-            const label = button.textContent?.trim().toLowerCase();
-            if (label === "enquire") button.classList.add("edf-listing-card-enquire-action");
-            if (label === "edit notes") {
-                setButtonLabel(button, "View notes");
-                button.ariaLabel = "View notes";
-            }
-        });
-        return;
-    }
-    if (!textarea) return;
-    textarea.classList.remove("edf-listing-card-notes-default");
-    textarea.parentElement?.classList.add("edf-listing-card-notes-field");
-    textarea.parentElement?.parentElement?.classList.add("edf-listing-card-notes-container");
-
-    const buttons = [...actions.querySelectorAll<HTMLButtonElement>("button")];
-    const cancel = buttons.find(button => /cancel/i.test(button.textContent ?? ""));
-    if (!cancel || !save || save.dataset.edfNotesConfigured === "true") return;
-
-    cancel.classList.add("edf-listing-card-notes-cancel");
-    save.dataset.edfNotesConfigured = "true";
-    setButtonLabel(save, "View details");
-    save.ariaLabel = "View listing details";
-    save.addEventListener("click", event => {
-        if (textarea.value.trim()) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        cancel.click();
-    }, { capture: true });
-    save.addEventListener("click", () => {
-        window.setTimeout(reconcileCards, DOMAIN_SETTLE_DELAY_MS);
-    });
-}
-
-function syncSelectionControls(container: HTMLElement, reconcileCards: ReconcileCards): void {
+function syncSelectionControls(container: HTMLElement): void {
     removeSelectionControls(container);
 
     for (const card of getUserListingCards(container)) {
@@ -119,30 +50,25 @@ function syncSelectionControls(container: HTMLElement, reconcileCards: Reconcile
         );
         const noteActions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
         if (noteActions) {
-            const savesNotes = [...noteActions.querySelectorAll<HTMLButtonElement>("button")]
-                .some(button =>
-                    /save notes/i.test(button.textContent ?? "") ||
-                    button.dataset.edfNotesConfigured === "true",
-                );
-            card.classList.toggle("edf-listing-card-notes-editing", savesNotes);
             noteActions.prepend(checkbox);
-            configureNoteActions(card, reconcileCards);
+            noteActions.querySelectorAll<HTMLButtonElement>("button").forEach(button => {
+                if (button.textContent?.trim().toLowerCase() === "enquire") {
+                    button.classList.add("edf-listing-card-enquire-action");
+                }
+            });
+            bindShortlistNotes(card, id);
             continue;
         }
 
-        card.classList.remove("edf-listing-card-notes-editing");
         const priceRow = card.querySelector<HTMLElement>('[data-testid="listing-card-price-wrapper"]') ?? card;
         priceRow.classList.add("edf-listing-card-button-container");
         priceRow.prepend(checkbox);
     }
 }
 
-function configureCards(
-    container: HTMLElement,
-    reconcileCards: ReconcileCards = () => undefined,
-): void {
-    relocateShortlistTogetherMessage(container);
-    syncSelectionControls(container, reconcileCards);
+function configureCards(container: HTMLElement): void {
+    setListingsSubtitle(container, SHORTLIST_SUBTITLE);
+    syncSelectionControls(container);
 }
 
 function syncSelectedCards(container: HTMLElement): void {
@@ -234,54 +160,15 @@ function chooseNativeSort(nativeSort: HTMLElement, label: string): void {
 const mountShortlistPage: PageMount = async (context) => {
     enableStickyHeader(context);
     const refreshListingCards = bindListingCards(context, { showBlacklistedView: false });
-    const container = findUserListingsContainer();
-    if (container) {
+
+    await keepListingsPageMounted(context.signal, async (container, signal) => {
         let frame: number | undefined;
-        let reconcileTimer: number | undefined;
-        const recoveryTimers = new Set<number>();
-        const recoveryFrames = new Set<number>();
-        const reconcileCards = (): void => {
-            if (reconcileTimer !== undefined) {
-                window.clearTimeout(reconcileTimer);
-                reconcileTimer = undefined;
-            }
-            const currentContainer = findUserListingsContainer();
-            if (!currentContainer) return;
-            configureCards(currentContainer, schedule);
-        };
-        const schedule = (): void => {
-            if (reconcileTimer !== undefined) window.clearTimeout(reconcileTimer);
-            reconcileTimer = window.setTimeout(reconcileCards, DOMAIN_SETTLE_DELAY_MS);
-        };
-        const recoverCard = (): void => {
-            refreshListingCards();
-            schedule();
-        };
-        const scheduleCardRecovery = (): void => {
-            const firstFrame = requestAnimationFrame(() => {
-                recoveryFrames.delete(firstFrame);
-                recoverCard();
-                const secondFrame = requestAnimationFrame(() => {
-                    recoveryFrames.delete(secondFrame);
-                    recoverCard();
-                });
-                recoveryFrames.add(secondFrame);
-            });
-            recoveryFrames.add(firstFrame);
-            for (const delay of [160, 320]) {
-                const timer = window.setTimeout(() => {
-                    recoveryTimers.delete(timer);
-                    recoverCard();
-                }, delay);
-                recoveryTimers.add(timer);
-            }
-        };
         await renderControls(container);
-        configureCards(container, schedule);
+        configureCards(container);
         const actions = container.querySelector<HTMLElement>(
             '[data-testid="extra-domain-filters-shortlist-sort-actions"]',
         ) ?? undefined;
-        const restoreTabs = replaceUserListingTabs(container, context.signal, undefined, actions);
+        const restoreTabs = replaceUserListingTabs(container, signal, undefined, actions);
         const restoreSort = installSortControl(container, {
             actionsTestId: "extra-domain-filters-shortlist-sort-actions",
             ariaLabel: "Sort shortlisted properties",
@@ -296,15 +183,16 @@ const mountShortlistPage: PageMount = async (context) => {
                 ["Earliest inspection", "Earliest inspection"],
                 ["Suburb", "Suburb"],
             ],
-            signal: context.signal,
+            signal,
         });
 
         const scheduleControls = (): void => {
             if (frame !== undefined) return;
             frame = requestAnimationFrame(() => {
                 frame = undefined;
+                refreshListingCards();
                 void renderControls(container);
-                configureCards(container, schedule);
+                configureCards(container);
             });
         };
         const observer = new MutationObserver(mutations => {
@@ -316,24 +204,16 @@ const mountShortlistPage: PageMount = async (context) => {
             if (hasDomainAddition) scheduleControls();
         });
         observer.observe(container, { childList: true, subtree: true });
-        container.addEventListener("click", event => {
-            const button = (event.target as Element | null)?.closest<HTMLButtonElement>("button");
-            const label = button?.textContent?.trim().toLowerCase();
-            if (label === "view notes" || label === "view details" || label === "edit notes") {
-                scheduleCardRecovery();
-            }
-        }, { capture: true, signal: context.signal });
+        const unwatchNotes = watchShortlistNotes(scheduleControls);
         scheduleControls();
-        context.signal.addEventListener("abort", () => {
+        return () => {
             observer.disconnect();
+            unwatchNotes();
             restoreTabs();
             restoreSort();
             if (frame !== undefined) cancelAnimationFrame(frame);
-            if (reconcileTimer !== undefined) window.clearTimeout(reconcileTimer);
-            recoveryFrames.forEach(frameId => cancelAnimationFrame(frameId));
-            recoveryTimers.forEach(timer => window.clearTimeout(timer));
-        }, { once: true });
-    }
+        };
+    });
 };
 
 export default mountShortlistPage;

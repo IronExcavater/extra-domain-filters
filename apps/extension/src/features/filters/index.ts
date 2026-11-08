@@ -1,3 +1,4 @@
+import { onBodyMutations } from "../../dom/bodyMutations";
 import { createClaimTracker } from "../../dom/claim";
 import { markOwned, OWNED_ELEMENT_ATTRIBUTE } from "../../dom/ownership";
 import { bindLazyTrigger } from "../../dom/trigger";
@@ -93,6 +94,36 @@ export function bindFilterTriggers(selectors: string[], context: PageContext): v
         ctx => injectFilters(ctx).catch(reportAsyncError(ctx, "Failed to inject filters after filter menu opened")),
         context,
     );
+
+    // Domain re-renders its filter sections in place (e.g. Buy ↔ Rent in the home panel),
+    // which drops ours without any filter-button click. Re-inject whenever its sections are
+    // visible without ours; injectFilters is idempotent and skips hidden panels.
+    let pending = false;
+    let lastAttempt = 0;
+    onBodyMutations(() => {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => {
+            pending = false;
+            if (!isCustomFilterMissing() || performance.now() - lastAttempt < 600) return;
+            lastAttempt = performance.now();
+            void injectFilters(context).catch(reportAsyncError(context, "Failed to re-inject filters"));
+        });
+    }, context.signal);
+}
+
+/** A visible Domain section that should be followed by one of ours, but isn't. */
+function isCustomFilterMissing(): boolean {
+    const anchors: [string, string][] = [
+        ["price-range", "strata-fees"],
+        ["feature-options", "preference-options"],
+        ["keywords", "preferences"],
+    ];
+    return anchors.some(([domain, custom]) => {
+        const section = document.querySelector<HTMLElement>(`[data-testid="dynamic-search-filters__${domain}"]`);
+        return section !== null && section.getClientRects().length > 0 &&
+            !section.parentElement?.querySelector(`:scope > [data-testid="dynamic-search-filters__${custom}"]`);
+    });
 }
 
 export async function injectFilters(context: PageContext) {

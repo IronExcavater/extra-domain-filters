@@ -75,6 +75,9 @@ export function getCard(button: Element): Element | undefined {
     if ((button as HTMLElement).dataset.blacklistScope === "carousel-child") {
         return button.closest(".slick-slide") ?? button.closest(CAROUSEL_CHILD_SELECTOR) ?? undefined;
     }
+    if ((button as HTMLElement).dataset.blacklistScope === "featured-single") {
+        return button.closest(TOPSPOT_CAROUSEL_SELECTOR) ?? undefined;
+    }
 
     return button.closest(CARD_SELECTOR) ?? undefined;
 }

@@ -138,10 +138,8 @@
     background: rgb(255 255 255 / 8%);
     border-color: rgb(0 0 0 / 16%);
     border-radius: var(--border-radius-inner, 8px);
-    flex: 1 1 0%;
     max-width: 200px;
     padding: 8px 26px;
-    width: 100%;
 }
 
 .edf-blacklist-action-listing-sticky:is(:hover, :focus-visible):not(:disabled) {
@@ -258,61 +256,102 @@
     position: relative !important;
 }
 
-[data-testid="listing-card-buttons-wrapper"],
-.edf-listing-card-notes-editing [data-testid="listing-card-buttons-wrapper"] {
+[data-testid="listing-card-buttons-wrapper"] {
     align-items: center;
     display: flex;
     gap: 8px;
     margin-top: 12px;
 }
 
-.edf-listing-card-notes-editing textarea {
-    box-sizing: border-box;
-    flex: 1 1 auto;
-    height: 100% !important;
-    max-height: none;
-    min-height: 180px;
-    overflow: auto;
-    resize: vertical;
-    width: 100%;
-}
-
-/* Domain's detail-page notes editor currently ships with a fixed 75px height,
- * which leaves only a few lines visible. Keep the native field but give the
- * writing surface the same practical height as the shortlist editor. */
+/* Domain's detail-page notes editor ships with a fixed 75px height. */
 [data-testid="listing-details__description-controls"] textarea {
     min-height: 180px;
     resize: vertical;
 }
 
-.edf-listing-card-notes-editing {
-    overflow: visible;
-}
-
-.edf-listing-card-notes-field,
-.edf-listing-card-notes-container {
-    box-sizing: border-box;
-    display: flex;
-    flex: 1 1 auto;
-    min-height: 180px;
-    width: 100%;
-}
-
-.edf-listing-card-notes-field {
-    align-self: stretch;
-    flex-direction: column;
-    min-height: 180px;
-}
-
-.edf-listing-card-notes-default,
-.edf-listing-card-enquire-action,
-.edf-listing-card-notes-cancel {
+.edf-listing-card-enquire-action {
     display: none !important;
 }
 
-#shortlist [data-testid="listing-card-container"]:not(.edf-listing-card-notes-editing) [data-testid="listing-card-wrapper-tall"] {
+#shortlist [data-testid="listing-card-wrapper-tall"] {
     height: auto !important;
     min-height: 0 !important;
+}
+
+/* Shortlist inline notes (features/user-listings/notes.ts). */
+.edf-shortlist-note {
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    color: var(--color-neutral-heavy-default, #131212);
+    display: -webkit-box;
+    font-size: 14px;
+    line-height: 20px;
+    margin: 12px 0 0;
+    overflow: hidden;
+    white-space: pre-wrap;
+}
+
+.edf-shortlist-note-editor {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.edf-shortlist-note-input {
+    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
+    border-radius: 8px;
+    box-sizing: border-box;
+    color: var(--color-neutral-heavy-default, #131212);
+    font: inherit;
+    font-size: 14px;
+    line-height: 20px;
+    min-height: 140px;
+    padding: 8px 12px;
+    resize: vertical;
+    transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
+    width: 100%;
+}
+
+.edf-shortlist-note-input:focus {
+    border-color: var(--color-interactive-base-default, #0ea800);
+    box-shadow: 0 0 0 2px var(--color-interactive-subdued-pressed, #7fc468);
+    outline: none;
+}
+
+.edf-shortlist-note-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.edf-shortlist-note-button {
+    background: var(--color-neutral-surface-default, #fff);
+    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
+    border-radius: 8px;
+    color: var(--color-neutral-heavy-default, #131212);
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 20px;
+    padding: 6px 14px;
+    transition: background-color 0.2s linear, border-color 0.2s linear;
+}
+
+.edf-shortlist-note-button:hover:not(:disabled) {
+    background: var(--color-secondary-surface-hover, #fdfcfb);
+    border-color: var(--color-neutral-trim-hover, #a9afba);
+}
+
+.edf-shortlist-note-button-primary {
+    background: var(--color-interactive-base-default, #0ea800);
+    border-color: var(--color-interactive-base-default, #0ea800);
+    color: #fff;
+}
+
+.edf-shortlist-note-button-primary:hover:not(:disabled) {
+    background: var(--color-interactive-base-hover, #066414);
+    border-color: var(--color-interactive-base-hover, #066414);
 }
 
 .edf-blacklist-row-list [data-edf-blacklist-row="true"] .edf-blacklist-action {
@@ -336,10 +375,7 @@
     position: relative;
 }
 
-.edf-project-has-blacklist-action [data-testid="listing-card-project-details"],
-.edf-project-has-blacklist-action [data-testid="listing-card-project"]:not(
-    :has([data-testid="listing-card-project-details"])
-) {
+.edf-project-has-blacklist-action[data-edf-project-action-host="details"] [data-testid="listing-card-project-details"] {
     padding-right: 48px;
 }
 /* stylelint-enable no-descending-specificity */
@@ -348,30 +384,49 @@
     opacity: 0.4;
 }
 
-/* Could-have matches, styled as Domain's own listing tag (e.g. "New"). */
+/* Could-have matches join Domain's photo tag row (render/preferenceTags.ts). Geometry
+ * matches Domain's tags; solid green + sparkle makes them stand out as extension matches. */
 .edf-preference-match-tags {
+    bottom: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    left: 12px;
-    max-width: calc(100% - 80px);
+    left: 0;
+    padding: 24px;
     pointer-events: none;
     position: absolute;
-    top: 12px;
     z-index: 3;
 }
 
 .edf-preference-match-tag {
-    background: var(--color-primary-trim-default, #d4f2c7);
+    align-items: center;
+    background: var(--color-interactive-base-default, #008a08);
     border-radius: 4px;
-    color: var(--color-interactive-base-pressed, #0f4b19);
+    box-shadow: 0 1px 2px rgb(19 18 18 / 20%);
+    color: #fff;
+    display: inline-flex;
     font-size: 12px;
     font-weight: 700;
+    gap: 3px;
     line-height: 16px;
-    padding: 2px 4px;
+    margin: 0 8px 0 0;
+    padding: 2px 6px 2px 4px;
+    pointer-events: none;
 }
 
-/* Domain caps the sticky toolbar at 400px for two buttons; a third must not overflow. */
+.edf-preference-match-icon {
+    flex: 0 0 auto;
+    height: 12px;
+    width: 12px;
+}
+
+/* Domain sizes its sticky toolbar for two stretching buttons (max 400px). With a third, keep
+ * the group content-sized so it never grows into the centred agency/project banner. */
 [data-testid="listing-details__desktop-header"] > :has(> .edf-blacklist-action-listing-sticky) {
+    flex: 0 0 auto !important;
     max-width: none !important;
+}
+
+[data-testid="listing-details__desktop-header"] > :has(> .edf-blacklist-action-listing-sticky) > button {
+    flex: 0 0 auto !important;
+    width: auto !important;
 }

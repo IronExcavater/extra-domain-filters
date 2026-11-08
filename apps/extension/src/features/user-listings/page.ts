@@ -1,6 +1,8 @@
+import { onBodyMutations } from "../../dom/bodyMutations";
 import { markOwned } from "../../dom/ownership";
 import { waitForElement } from "../../dom/wait";
 import { createSortControl } from "../../ui/sort";
+import { attachTabIndicator } from "../../ui/tabs";
 
 const SHORTLIST_ROOT_SELECTOR = "#shortlist";
 export const LISTING_CARD_SELECTOR = '[data-testid="listing-card-container"]';
@@ -33,32 +35,71 @@ export function getUserListingUrls(cards: readonly HTMLElement[]): string[] {
 }
 
 const MESSAGE_WRAPPER_SELECTOR = '[data-testid="shortlist__message_wrapper"]';
-const CUSTOM_MESSAGE_TEST_ID = "extra-domain-filters-shortlist-message";
-const SHORTLIST_TOGETHER_MESSAGE =
+const SUBTITLE_TEST_ID = "extra-domain-filters-listings-subtitle";
+export const SHORTLIST_SUBTITLE =
     "Want to Shortlist with someone? Download the Domain app to Shortlist Together.";
 
-export function relocateShortlistTogetherMessage(container: HTMLElement): void {
+/**
+ * An owned subtitle under the page title. Domain only renders its shortlist message on some
+ * tabs and drops it on re-render, so the page shows its own copy for its whole lifetime (and
+ * the blacklist page shows text that is actually about the blacklist).
+ */
+export function setListingsSubtitle(container: HTMLElement, text: string): void {
     const title = container.querySelector<HTMLElement>('[data-testid="shortlist__title"], h1, h2');
     if (!title) return;
 
-    // Domain conditionally removes its message when changing All/Buy/Rent. Render an owned,
-    // standalone version so its lifetime does not depend on Domain's current tab subtree.
     const nativeMessage = container.querySelector<HTMLElement>(MESSAGE_WRAPPER_SELECTOR);
     if (nativeMessage) nativeMessage.hidden = true;
 
-    const existing = container.querySelector<HTMLElement>(`[data-testid="${CUSTOM_MESSAGE_TEST_ID}"]`);
-    const message = existing ?? markOwned(document.createElement("div"), "shortlist-message");
-    if (!existing) {
-        const text = document.createElement("span");
-        message.dataset.testid = CUSTOM_MESSAGE_TEST_ID;
-        text.textContent = SHORTLIST_TOGETHER_MESSAGE;
-        message.append(text);
-    }
+    const existing = container.querySelector<HTMLElement>(`[data-testid="${SUBTITLE_TEST_ID}"]`);
+    const subtitle = existing ?? markOwned(document.createElement("p"), "listings-subtitle");
+    subtitle.className = "edf-relocated-shortlist-message";
+    subtitle.dataset.testid = SUBTITLE_TEST_ID;
+    if (subtitle.textContent !== text) subtitle.textContent = text;
+    if (title.nextElementSibling !== subtitle) title.after(subtitle);
+}
 
-    message.classList.add("edf-relocated-shortlist-message");
-    if (title.nextElementSibling === message) return;
+export type ListingsInstall = (container: HTMLElement, signal: AbortSignal) => Promise<() => void> | (() => void);
 
-    title.after(message);
+/**
+ * Mounts a shortlist/blacklist page into Domain's listings container and re-mounts whenever
+ * that container is replaced. The content script starts before Domain renders (and then
+ * hydrates) the page, so a one-off lookup either finds nothing or a node that is about to go.
+ */
+export async function keepListingsPageMounted(
+    signal: AbortSignal,
+    install: ListingsInstall,
+): Promise<void> {
+    let current: { container: HTMLElement; controller: AbortController; teardown: () => void } | undefined;
+    let pending: Promise<void> | undefined;
+
+    const mount = async (): Promise<void> => {
+        const container = await waitForUserListingsContainer(signal);
+        if (current?.container === container) return;
+        current?.controller.abort();
+        current?.teardown();
+        const controller = new AbortController();
+        signal.addEventListener("abort", () => controller.abort(), { once: true });
+        current = { container, controller, teardown: () => undefined };
+        const teardown = await install(container, controller.signal);
+        if (current?.controller === controller) current.teardown = teardown;
+        else teardown();
+    };
+    const remount = (): void => {
+        pending ??= mount().finally(() => {
+            pending = undefined;
+        });
+    };
+
+    remount();
+    await pending;
+    onBodyMutations(() => {
+        if (current && !current.container.isConnected) remount();
+    }, signal);
+    signal.addEventListener("abort", () => {
+        current?.controller.abort();
+        current?.teardown();
+    }, { once: true });
 }
 
 export function overridePageTitle(
@@ -152,11 +193,16 @@ export function replaceUserListingTabs(
 
     const tabs = markOwned(document.createElement("div"), "listing-tabs");
     const originalHidden = native.hidden;
+    const readNative = (): string | undefined =>
+        nativeTabs.find(tab => tab.ariaSelected === "true")?.textContent?.trim().toLowerCase();
+    // With `onChange` (blacklist page) the hidden native tabs never change, so the selection
+    // is ours; otherwise Domain's tabs drive it (shortlist page).
+    let selected = readNative() ?? "all";
     const sync = (): void => {
-        const selected = nativeTabs.find(tab => tab.ariaSelected === "true")?.textContent?.trim().toLowerCase();
-
+        if (!onChange) selected = readNative() ?? selected;
         tabs.querySelectorAll<HTMLButtonElement>("button").forEach(button => {
-            button.ariaSelected = String(button.dataset.filter === selected);
+            const next = String(button.dataset.filter === selected);
+            if (button.ariaSelected !== next) button.ariaSelected = next;
         });
     };
 
@@ -172,6 +218,7 @@ export function replaceUserListingTabs(
         tab.setAttribute("role", "tab");
         tab.textContent = filter;
         tab.addEventListener("click", () => {
+            selected = filter;
             if (onChange) onChange(filter);
             else nativeTab.click();
             sync();
@@ -192,6 +239,7 @@ export function replaceUserListingTabs(
         native.before(tabs);
     }
     native.hidden = true;
+    attachTabIndicator(tabs, "user-listing-tabs", signal);
     const observer = new MutationObserver(sync);
     observer.observe(native, { attributes: true, childList: true, subtree: true });
     signal.addEventListener("abort", () => {

@@ -41,6 +41,14 @@ function setControlVisible(button: HTMLButtonElement, visible: boolean): void {
     const pending = visibilityTimers.get(button);
     if (pending !== undefined) window.clearTimeout(pending);
 
+    // A control rendered for the first time (e.g. "Select all" on page load) appears in its
+    // final state; only later visibility changes fade.
+    if (!button.isConnected) {
+        button.hidden = !visible;
+        button.dataset.edfSelectionVisible = String(visible);
+        return;
+    }
+
     if (visible) {
         button.hidden = false;
         requestAnimationFrame(() => {

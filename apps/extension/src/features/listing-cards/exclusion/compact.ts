@@ -1,7 +1,7 @@
 import type { ExclusionReason } from "../../../domain/matching";
 import { replaceWithChevronIcon, replaceWithEyeOffIcon, replaceWithFilledBinIcon } from "../../../ui/icons";
 import { removeTooltip } from "../../../ui/tooltip";
-import { getBlacklistCardKind, getTitle, PROJECT_MARKER_SELECTOR, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
+import { getBlacklistCardKind, getTitle, TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
 import { createHiddenRow, resolveExclusionAction, ROW_SELECTOR, setHiddenRowState } from "./row";
 
 const GROUP_SELECTOR = '[data-testid="listing-card-exclusion-group"]';
@@ -22,15 +22,11 @@ function getExcludedCard(element: Element): ExcludedCard | undefined {
     if (!(element instanceof HTMLElement) || !element.matches(TOP_LEVEL_CARD_SELECTOR)) return undefined;
     const kind = getBlacklistCardKind(element);
     if (kind === "project-child" || kind === "carousel-child") return undefined;
-    // A top-level project bundle card reports as "standard" here (getBlacklistCardKind only
-    // detects "project" when given its aggregate button, which isn't available at this call
-    // site). Its own exclusion row already renders correct project-aware text via
-    // updateProjectBlacklistSummary, so keep it out of the generic group — grouping it would
-    // show it as a single expandable property instead of the project bundle it represents.
-    if (element.querySelector(PROJECT_MARKER_SELECTOR)) return undefined;
     if (!element.classList.contains("edf-listing-card-excluded")) return undefined;
 
-    const row = element.querySelector<HTMLElement>(ROW_SELECTOR);
+    // Only a row owned by this card (not a child listing's) describes the whole card.
+    const row = element.querySelector<HTMLElement>(`:scope > ${ROW_SELECTOR}`) ??
+        element.querySelector<HTMLElement>(ROW_SELECTOR);
     const reason = row?.dataset.exclusionReason as ActiveReason | undefined;
     const rawUrls = row?.dataset.exclusionUrls;
     if ((reason !== "blacklisted" && reason !== "filtered") || !rawUrls) return undefined;
@@ -84,9 +80,10 @@ function createGroupItem(item: ExcludedCard): HTMLElement {
     setHiddenRowState(row, {
         onAction: () => resolveExclusionAction(item.urls, item.reason),
         reason: item.reason,
-        title: item.urls.length > 1
-            ? `${getTitle(item.card)} (${item.urls.length} properties)`
-            : getTitle(item.card),
+        // Reuse the card's own row title: it already reads correctly for projects
+        // ("… (8 properties)") and featured carousels.
+        title: item.card.querySelector(`${ROW_SELECTOR} .edf-exclusion-row-title`)?.textContent?.trim() ||
+            getTitle(item.card),
         urls: item.urls,
     });
     return row;

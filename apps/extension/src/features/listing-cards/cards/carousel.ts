@@ -197,20 +197,23 @@ function getSlickSlideUrl(slide: HTMLElement): string | undefined {
     return anchor ? new URL(anchor.href, window.location.origin).href : undefined;
 }
 
+const PROPERTY_BUTTON_SELECTOR =
+    ':scope > [data-testid="listing-card-blacklist"]:is([data-blacklist-scope="carousel-child"], [data-blacklist-scope="featured-single"])';
+
+function getButtonSlide(carouselCard: HTMLElement, button: Element): HTMLElement {
+    // A single featured listing is often rendered without Slick, so the card is the "slide".
+    return button.closest<HTMLElement>(".slick-slide") ?? carouselCard;
+}
+
 function findCarouselShortlistButtons(carouselCard: HTMLElement): HTMLButtonElement[] {
     return [...carouselCard.querySelectorAll<HTMLButtonElement>(
         '[data-testid^="listing-card-shortlist"]',
-    )].filter(button => {
-        const slide = button.closest<HTMLElement>(".slick-slide");
-        return slide ? findListingAnchor(slide) !== undefined : false;
-    });
+    )].filter(button => findListingAnchor(getButtonSlide(carouselCard, button)) !== undefined);
 }
 
 function countBoundCarouselPropertyButtons(carouselCard: HTMLElement): number {
     return findCarouselShortlistButtons(carouselCard).filter(button =>
-        button.parentElement?.querySelector(
-            ':scope > [data-testid="listing-card-blacklist"][data-blacklist-scope="carousel-child"]',
-        )
+        button.parentElement?.querySelector(PROPERTY_BUTTON_SELECTOR)
     ).length;
 }
 
@@ -218,22 +221,28 @@ function bindCarouselPropertyButtons(
     carouselCard: HTMLElement,
     context: PageContext,
     enabled: boolean,
+    single: boolean,
 ): void {
     if (!enabled) {
         carouselCard.querySelectorAll(
-            '[data-testid="listing-card-blacklist"][data-blacklist-scope="carousel-child"]',
+            '[data-testid="listing-card-blacklist"]:is([data-blacklist-scope="carousel-child"], [data-blacklist-scope="featured-single"])',
         ).forEach(button => button.remove());
         return;
     }
 
+    // One featured listing behaves like a normal card (its own action, whole-card hiding);
+    // several are children of the carousel, which owns hiding and the header action.
+    const scope = single ? "featured-single" : "carousel-child";
     for (const shortlistButton of findCarouselShortlistButtons(carouselCard)) {
         const host = shortlistButton.parentElement;
-        const slide = shortlistButton.closest<HTMLElement>(".slick-slide");
-        const url = slide ? getSlickSlideUrl(slide) : undefined;
-        if (!host || !slide || !url) continue;
-        if (host.querySelector(
-            ':scope > [data-testid="listing-card-blacklist"][data-blacklist-scope="carousel-child"]',
-        )) continue;
+        const slide = getButtonSlide(carouselCard, shortlistButton);
+        const url = getSlickSlideUrl(slide);
+        if (!host || !url) continue;
+        const existing = host.querySelector<HTMLButtonElement>(PROPERTY_BUTTON_SELECTOR);
+        if (existing) {
+            if (existing.dataset.blacklistScope !== scope) existing.dataset.blacklistScope = scope;
+            continue;
+        }
 
         const button = createBlacklistAction({
             active: false,
@@ -248,7 +257,7 @@ function bindCarouselPropertyButtons(
             signal: context.signal,
         });
         button.classList.add("edf-featured-property-blacklist-button");
-        button.dataset.blacklistScope = "carousel-child";
+        button.dataset.blacklistScope = scope;
         host.classList.add("edf-listing-card-button-container");
         shortlistButton.after(button);
     }
@@ -613,7 +622,7 @@ export function bindCarouselCard(
     const members = getCarouselMembers(carouselCard);
     const memberCount = members.length;
     observeCarouselHydration(carouselCard, memberCount, context, options);
-    bindCarouselPropertyButtons(carouselCard, context, options.enableBlacklist);
+    bindCarouselPropertyButtons(carouselCard, context, options.enableBlacklist, memberCount <= 1);
 
     // A single featured property is a normal listing presented in a carousel-shaped shell.
     // Prefer its own card action. Do not create an aggregate portal at all once that action

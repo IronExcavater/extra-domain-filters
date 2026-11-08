@@ -68,9 +68,35 @@
     gap: 24px;
     margin-right: 0;
     overflow: visible;
+    position: relative;
+}
+
+/* Sliding underline (ui/tabs.ts attachTabIndicator) replaces the per-tab underline. */
+.edf-collection-tab-indicator {
+    background: var(--edf-color-green);
+    border-radius: 2px;
+    bottom: -5px;
+    height: 3px;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transition:
+        opacity 120ms ease,
+        transform 260ms cubic-bezier(0.2, 0, 0, 1),
+        width 260ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.edf-collection-tab-indicator[data-visible="true"] {
+    opacity: 1;
+}
+
+.edf-collection-tab-indicator[data-instant="true"] {
+    transition: none;
 }
 
 .edf-collection-tab {
+    transition: color 180ms ease;
     background: transparent;
     border: 0;
     color: #3c475b;
@@ -102,6 +128,10 @@
 
 .edf-collection-tab[aria-selected="true"]::after {
     transform: scaleX(1);
+}
+
+.edf-collection-tabs-indicated > .edf-collection-tab::after {
+    display: none;
 }
 
 .edf-page-actions {

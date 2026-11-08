@@ -1,4 +1,3 @@
-import { onBodyMutations } from "../dom/bodyMutations";
 import { enableMasonry } from "../ui/masonry";
 import { markOwned } from "../dom/ownership";
 import {
@@ -24,10 +23,10 @@ import {
     installSortControl,
     LISTING_CARD_SELECTOR,
     overridePageTitle,
-    relocateShortlistTogetherMessage,
+    keepListingsPageMounted,
+    setListingsSubtitle,
     replaceUserListingTabs,
     restorePageActions,
-    waitForUserListingsContainer,
 } from "../features/user-listings/page";
 import { PageMount } from "../platform/router";
 import { onStorageChange } from "../platform/storage";
@@ -175,7 +174,7 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
         fallbackAnchor: list,
         id: "blacklist",
     });
-    relocateShortlistTogetherMessage(container);
+    setListingsSubtitle(container, "Blacklisted properties are hidden from your Domain searches.");
     const renderRows = (): void => void render(container, list);
     const visibleIds = entries.map(entry => getBlacklistListing(entry).url);
     const syncCheckboxes = (): void => {
@@ -225,71 +224,53 @@ const mountBlacklistPage: PageMount = async context => {
     enableStickyHeader(context);
     retainedUnblacklistedEntries.clear();
     stableNewestOrder.clear();
-    let current: { container: HTMLElement; list: HTMLElement; teardown(): void } | undefined;
-    let installing = false;
+    let current: { container: HTMLElement; list: HTMLElement } | undefined;
     const renderRows = (): void => {
         if (current) void render(current.container, current.list);
     };
 
-    const install = async (): Promise<void> => {
-        if (installing) return;
-        installing = true;
-        try {
-            current?.teardown();
-            const container = await waitForUserListingsContainer(context.signal);
-            const restoreTitle = overridePageTitle(container, "Your blacklist", "Blacklisted properties");
-            const { list, restore: restoreList } = installList(container);
-            current = { container, list, teardown: () => undefined };
+    await keepListingsPageMounted(context.signal, async (container, signal) => {
+        const restoreTitle = overridePageTitle(container, "Your blacklist", "Blacklisted properties");
+        const { list, restore: restoreList } = installList(container);
+        current = { container, list };
 
-            await render(container, list);
-            const actions = container.querySelector<HTMLElement>(
-                '[data-testid="extra-domain-filters-blacklist-sort-actions"]',
-            ) ?? undefined;
-            const restoreTabs = replaceUserListingTabs(container, context.signal, filter => {
-                listingFilter = filter;
+        await render(container, list);
+        const actions = container.querySelector<HTMLElement>(
+            '[data-testid="extra-domain-filters-blacklist-sort-actions"]',
+        ) ?? undefined;
+        const restoreTabs = replaceUserListingTabs(container, signal, filter => {
+            listingFilter = filter;
+            renderRows();
+        }, actions);
+        const restoreSort = installSortControl(container, {
+            actionsTestId: "extra-domain-filters-blacklist-sort-actions",
+            ariaLabel: "Sort blacklisted properties",
+            onChange: value => {
+                listingSort = value as BlacklistSort;
                 renderRows();
-            }, actions);
-            const restoreSort = installSortControl(container, {
-                actionsTestId: "extra-domain-filters-blacklist-sort-actions",
-                ariaLabel: "Sort blacklisted properties",
-                onChange: value => {
-                    listingSort = value as BlacklistSort;
-                    renderRows();
-                },
-                options: [
-                    ["newest", "Newest"],
-                    ["oldest", "Oldest"],
-                    ["price-asc", "Lowest price"],
-                    ["price-desc", "Highest price"],
-                ],
-                signal: context.signal,
-            });
-            current.teardown = () => {
-                restoreTabs();
-                restoreSort();
-                restorePageActions(container, "blacklist");
-                restoreTitle();
-                restoreList();
-            };
-        } finally {
-            installing = false;
-        }
-    };
-
-    await install();
-    // The content script can find Domain's server-rendered shortlist before React hydrates
-    // it; hydration then re-renders that subtree and drops our list. Re-install whenever
-    // our list is no longer attached.
-    onBodyMutations(() => {
-        if (current && !current.list.isConnected) void install();
-    }, context.signal);
+            },
+            options: [
+                ["newest", "Newest"],
+                ["oldest", "Oldest"],
+                ["price-asc", "Lowest price"],
+                ["price-desc", "Highest price"],
+            ],
+            signal,
+        });
+        return () => {
+            restoreTabs();
+            restoreSort();
+            restorePageActions(container, "blacklist");
+            restoreTitle();
+            restoreList();
+        };
+    });
     const unwatchBlacklist = onStorageChange<BlacklistEntry[]>("blacklist", renderRows);
 
     context.signal.addEventListener("abort", () => {
         retainedUnblacklistedEntries.clear();
         stableNewestOrder.clear();
         unwatchBlacklist();
-        current?.teardown();
     }, { once: true });
 };
 

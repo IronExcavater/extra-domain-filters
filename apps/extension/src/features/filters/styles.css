@@ -154,7 +154,7 @@
     border-color: var(--color-neutral-trim-hover, #a9afba);
 }
 
-.edf-filter-checkbox input:focus-visible + .edf-filter-checkbox-indicator {
+.edf-filter-checkbox input:enabled:is(:focus, :active) + .edf-filter-checkbox-indicator {
     border-color: var(--color-interactive-base-default, #0ea800);
     box-shadow: 0 0 0 2px var(--color-interactive-subdued-pressed, #7fc468);
 }
@@ -222,16 +222,37 @@
 
 /* stylelint-enable no-descending-specificity */
 
+/* Mirrors Domain's Keywords input (.css-k1o08k): body type, 8px padding, inner radius,
+ * neutral trim; hover darkens the trim; focus adds a 1px inset ring in the trim colour. */
 .edf-filter-text {
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: var(--edf-radius-control);
+    background: var(--color-neutral-surface-default, #fff);
+    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
+    border-radius: var(--border-radius-inner, 3px);
     box-sizing: border-box;
-    color: var(--edf-color-text);
+    color: var(--color-neutral-heavy-default, #3c475b);
     font: inherit;
-    min-height: var(--edf-control-height-lg);
-    padding: 0 14px;
+    font-family: var(--type-body-family, inherit);
+    font-size: var(--type-body-size, 16px);
+    line-height: var(--type-body-line-height, 24px);
+    padding: 8px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     width: 100%;
+}
+
+.edf-filter-text::placeholder {
+    color: var(--color-neutral-medium-default, #626a78);
+    font-style: normal;
+}
+
+.edf-filter-text:hover {
+    border-color: var(--color-neutral-trim-hover, #a9afba);
+}
+
+.edf-filter-text:focus {
+    border-color: var(--color-interactive-trim-hover, #4ab535);
+    box-shadow: inset 0 0 0 1px var(--color-interactive-trim-hover, #4ab535);
+    color: var(--color-neutral-heavy-default, #3c475b);
+    outline: none;
 }
 
 .edf-filter-search-bar {
@@ -248,11 +269,9 @@
 }
 
 .edf-filter-section-home .edf-filter-text {
-    border: 0.8px solid rgb(208 211 217);
-    border-radius: 3px;
     color: inherit;
-    min-height: 41.6px;
-    padding: 8px calc(var(--edf-control-height-sm) + 6px) 8px 8px;
+    font-size: 16px;
+    line-height: 24px;
 }
 
 .edf-filter-search-bar-clear {
@@ -355,10 +374,6 @@
         rgb(208 211 217) 0 1px 1px inset;
 }
 
-.edf-filter-text:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: 0;
-}
 
 .edf-filter-range:focus-visible {
     outline: 0;
