@@ -38,6 +38,7 @@ export function openSavedSearchAlertPopover(
             signal: controller.signal,
             variant: "primary",
         });
+        submit.type = "submit";
         let frequency = options.search.notificationFrequency;
         let settled = false;
         const finish = (): void => {

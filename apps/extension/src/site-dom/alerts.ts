@@ -1,3 +1,4 @@
+import { isOwnedNode } from "../dom/ownership";
 import { waitForElement } from "../dom/wait";
 import type { DomainPageFailure, DomainPageResult } from "./action";
 
@@ -33,8 +34,8 @@ export interface DomainAlertBridge {
 interface ElementState {
     ariaHidden: string | null;
     element: HTMLElement;
-    hidden: boolean | "until-found";
     inert: boolean;
+    style: string | null;
 }
 
 const FORM_TIMEOUT_MS = 4_000;
@@ -45,31 +46,40 @@ const ALERT_OBSERVE_OPTIONS: MutationObserverInit = {
     subtree: true,
 };
 
-function findAlertForm(): HTMLFormElement | undefined {
-    return [...document.querySelectorAll<HTMLFormElement>(
-        '[role="dialog"] form, [role="tooltip"] form, form',
-    )].find(form =>
-        form.querySelector('[role="combobox"], input[name*="frequency" i]') !== null
-        || /receive alerts|email frequency|property alert/i.test(form.textContent ?? ""),
-    );
+// Layout-based: Domain's edit tooltip stays mounted while closed (its wrapper goes display:none).
+function isRendered(element: Element): boolean {
+    return element.isConnected && element.getClientRects().length > 0;
 }
 
+// Domain's alert editor: a create modal (segmented Daily/Weekly buttons outside a submit-only
+// form) or an edit tooltip form (Daily/Weekly/Never). Never our own popover, never a closed one.
+function findAlertSurface(): HTMLElement | undefined {
+    return [...document.querySelectorAll<HTMLElement>('[role="dialog"], [role="tooltip"], form')]
+        .find(element => !isOwnedNode(element)
+            && isRendered(element)
+            && element.querySelector('button[type="submit"]') !== null
+            && /receive alerts|email frequency|property alert/i.test(element.textContent ?? ""));
+}
+
+// Invisible but still laid out, so isRendered() keeps tracking Domain's own open/closed state.
 function conceal(element: HTMLElement): ElementState {
     const state = {
         ariaHidden: element.getAttribute("aria-hidden"),
         element,
-        hidden: element.hidden,
         inert: element.inert,
+        style: element.getAttribute("style"),
     };
-    element.hidden = true;
+    element.style.setProperty("opacity", "0", "important");
+    element.style.setProperty("pointer-events", "none", "important");
     element.inert = true;
     element.setAttribute("aria-hidden", "true");
     return state;
 }
 
 function restore(state: ElementState): void {
-    state.element.hidden = state.hidden;
     state.element.inert = state.inert;
+    if (state.style === null) state.element.removeAttribute("style");
+    else state.element.setAttribute("style", state.style);
     if (state.ariaHidden === null) state.element.removeAttribute("aria-hidden");
     else state.element.setAttribute("aria-hidden", state.ariaHidden);
 }
@@ -80,19 +90,22 @@ function frequencyPattern(frequency: DomainAlertFrequency): RegExp {
 }
 
 async function chooseFrequency(
-    form: HTMLFormElement,
+    surface: HTMLElement,
     frequency: DomainAlertFrequency,
     signal: AbortSignal,
 ): Promise<boolean> {
     const pattern = frequencyPattern(frequency);
-    const radio = [...form.querySelectorAll<HTMLInputElement>('input[type="radio"], input[name*="frequency" i]')]
-        .find(input => pattern.test(input.value) || pattern.test(input.closest("label")?.textContent?.trim() ?? ""));
-    if (radio) {
-        radio.click();
+    const choice = [...surface.querySelectorAll<HTMLElement>(
+        'button[data-selected], [role="radio"], input[type="radio"], input[name*="frequency" i]',
+    )].find(element => element instanceof HTMLInputElement
+        ? pattern.test(element.value) || pattern.test(element.closest("label")?.textContent?.trim() ?? "")
+        : pattern.test(element.textContent?.trim() ?? ""));
+    if (choice) {
+        choice.click();
         return true;
     }
 
-    const combobox = form.querySelector<HTMLButtonElement>('[role="combobox"]');
+    const combobox = surface.querySelector<HTMLButtonElement>('[role="combobox"]');
     if (!combobox) return false;
     combobox.click();
     const option = await waitForElement(() =>
@@ -128,11 +141,10 @@ export const domainAlertBridge: DomainAlertBridge = {
             request.trigger.dataset.edfNativeAlertBridge = "true";
             request.trigger.click();
             delete request.trigger.dataset.edfNativeAlertBridge;
-            const form = await waitForElement(findAlertForm, request.signal,
+            const surface = await waitForElement(findAlertSurface, request.signal,
                 { observe: ALERT_OBSERVE_OPTIONS, timeoutMs: FORM_TIMEOUT_MS });
-            const surface = form.closest<HTMLElement>('[role="dialog"], [role="tooltip"]') ?? form;
             state = conceal(surface);
-            if (!await chooseFrequency(form, request.frequency, request.signal)) {
+            if (!await chooseFrequency(surface, request.frequency, request.signal)) {
                 return {
                     message: "Domain's alert frequency controls have changed.",
                     ok: false,
@@ -140,7 +152,7 @@ export const domainAlertBridge: DomainAlertBridge = {
                 };
             }
             await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-            const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+            const submit = surface.querySelector<HTMLButtonElement>('button[type="submit"]');
             if (!submit) {
                 return {
                     message: "Domain's alert submit control is unavailable.",
@@ -149,7 +161,7 @@ export const domainAlertBridge: DomainAlertBridge = {
                 };
             }
             submit.click();
-            await waitForElement(() => form.isConnected ? undefined : true, request.signal,
+            await waitForElement(() => isRendered(submit) ? undefined : true, request.signal,
                 { observe: ALERT_OBSERVE_OPTIONS, timeoutMs: FORM_TIMEOUT_MS });
             return { frequency: request.frequency, ok: true };
         } catch (error) {

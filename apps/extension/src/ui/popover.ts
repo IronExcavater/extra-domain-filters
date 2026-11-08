@@ -34,21 +34,24 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
     const place = (): void => {
         if (closing || removed || !element.isConnected) return;
 
+        // Layout size, not the (possibly mid-animation, scaled) bounding box. Anchors can be
+        // fixed to the viewport bottom (Domain's floating "Create alert"), so clamp to it too.
         const anchor = options.anchor.getBoundingClientRect();
-        const popover = element.getBoundingClientRect();
+        const height = element.offsetHeight;
+        const width = element.offsetWidth;
         const spaceBelow = window.innerHeight - anchor.bottom - EDGE_GAP;
-        const placeBelow = spaceBelow >= popover.height || spaceBelow >= anchor.top - EDGE_GAP;
+        const placeBelow = spaceBelow >= height || spaceBelow >= anchor.top - EDGE_GAP;
         const top = placeBelow
             ? anchor.bottom + POPOVER_GAP
-            : anchor.top - popover.height - POPOVER_GAP;
+            : anchor.top - height - POPOVER_GAP;
         const left = Math.min(
-            window.innerWidth - popover.width - EDGE_GAP,
-            Math.max(EDGE_GAP, anchor.left + (anchor.width - popover.width) / 2),
+            window.innerWidth - width - EDGE_GAP,
+            Math.max(EDGE_GAP, anchor.left + (anchor.width - width) / 2),
         );
 
         element.dataset.placement = placeBelow ? "bottom" : "top";
         element.style.left = `${Math.max(EDGE_GAP, left)}px`;
-        element.style.top = `${Math.max(EDGE_GAP, top)}px`;
+        element.style.top = `${Math.max(EDGE_GAP, Math.min(top, window.innerHeight - height - EDGE_GAP))}px`;
     };
 
     const finishClose = (): void => {
@@ -64,6 +67,7 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
         document.removeEventListener("pointerdown", onDocumentPointerDown, true);
         document.removeEventListener("keydown", onDocumentKeyDown, true);
         window.removeEventListener("resize", place);
+        resizeObserver.disconnect();
         window.removeEventListener("scroll", place, true);
         options.signal?.removeEventListener("abort", close);
         if (activePopover === handle) activePopover = undefined;
@@ -89,6 +93,8 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
         close();
     };
     const handle: PopoverHandle = { close, element, place };
+    const resizeObserver = new ResizeObserver(place);
+    resizeObserver.observe(element);
 
     activePopover = handle;
     document.addEventListener("pointerdown", onDocumentPointerDown, true);

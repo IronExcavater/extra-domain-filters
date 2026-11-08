@@ -71,6 +71,8 @@ function getButtonContext(button: HTMLButtonElement): PropertyAlertSearchContext
 }
 
 function readNativeActive(button: HTMLButtonElement): boolean {
+    // Domain's live state wins; the text fallback below would otherwise read back our own label.
+    if (button.dataset.selected !== undefined) return button.dataset.selected === "true";
     if (button.dataset.edfNativeAlertSelected) return button.dataset.edfNativeAlertSelected === "true";
     const active = button.dataset.selected === "true"
         || /(?:change|edit).*(?:property )?alert/i.test(`${button.textContent} ${button.ariaLabel}`);
@@ -150,6 +152,8 @@ async function saveAlert(
 ): Promise<void> {
     const nativeActive = readNativeActive(trigger);
     const standalone = isStandaloneAlert(trigger);
+    // Domain toasts its own confirmation for edits made through its on-page editor.
+    const domainAnnounces = !standalone && (frequency !== "none" || nativeActive);
     if (frequency !== "none" || nativeActive || standalone && current !== undefined) {
         if (standalone) {
             await sendExtensionMessage("domain-alert:apply", {
@@ -172,7 +176,7 @@ async function saveAlert(
     });
     trigger.dataset.edfNativeAlertSelected = String(frequency !== "none");
     await updatePropertyAlertButtons();
-    showToast(frequency === "none" ? "Email alerts disabled" : "Property alert updated");
+    if (!domainAnnounces) showToast(frequency === "none" ? "Email alerts disabled" : "Property alert updated");
 }
 
 async function deleteAlert(
@@ -180,6 +184,7 @@ async function deleteAlert(
     current: SavedSearch | undefined,
     signal: AbortSignal,
 ): Promise<void> {
+    let domainAnnounces = false;
     if (isStandaloneAlert(trigger) && current) {
         if (current.domainId) {
             await sendExtensionMessage("domain-saved-search:remove", { domainId: current.domainId });
@@ -187,11 +192,14 @@ async function deleteAlert(
             await sendExtensionMessage("domain-alert:apply", { frequency: "none", search: current });
         }
     } else if (current?.domainId) await removeDomainSavedSearch(current.domainId);
-    else if (readNativeActive(trigger)) await applyNativeFrequency(trigger, "none", signal);
+    else if (readNativeActive(trigger)) {
+        await applyNativeFrequency(trigger, "none", signal);
+        domainAnnounces = true;
+    }
     if (current) await removeSavedSearch(current.id);
     trigger.dataset.edfNativeAlertSelected = "false";
     await updatePropertyAlertButtons();
-    showToast("Saved search deleted");
+    if (!domainAnnounces) showToast("Saved search deleted");
 }
 
 async function openAlertEditor(button: HTMLButtonElement, signal: AbortSignal): Promise<void> {
