@@ -76,7 +76,7 @@
     padding: 0 !important;
 }
 
-.edf-listing-card-excluded > :not(.edf-exclusion-row) {
+.edf-listing-card-excluded > :not(.edf-exclusion-row, .edf-listing-exit-copy) {
     display: none !important;
 }
 
@@ -159,4 +159,10 @@
 /* Items only repeat their reason when the group mixes blacklisted and filtered listings. */
 .edf-exclusion-group:not([data-exclusion-reason="mixed"]) .edf-exclusion-group-item .edf-exclusion-row-reason {
     display: none;
+}
+
+/* Hosts for the fading copy of a card being hidden (see exclusion/motion.ts). */
+.edf-listing-card-excluded,
+.edf-exclusion-group {
+    position: relative;
 }
