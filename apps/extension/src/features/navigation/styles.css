@@ -49,6 +49,31 @@ html[data-edf-sticky-header="true"]
     width: 100% !important;
 }
 
+/* Profile pages overlay a white-on-hero header. Keep it transparent in place and switch it
+ * to Domain's regular dark-on-white header once it sticks. */
+html[data-edf-sticky-header="true"]
+[data-edf-sticky-header-root="true"][data-edf-header-inverse="true"] {
+    transition: background-color var(--edf-motion-base) ease, box-shadow 0.2s ease;
+}
+
+html[data-edf-sticky-header="true"]
+[data-edf-sticky-header-root="true"][data-edf-header-inverse="true"]:not([data-edf-stuck="true"]) {
+    background: transparent;
+}
+
+html[data-edf-sticky-header="true"]
+[data-edf-sticky-header-root="true"][data-edf-header-inverse="true"]:not([data-edf-stuck="true"])::after {
+    display: none;
+}
+
+[data-edf-header-inverse="true"][data-edf-stuck="true"] #domain-logo-wrapper path {
+    fill: var(--edf-color-green);
+}
+
+[data-edf-header-inverse="true"][data-edf-stuck="true"] :is(nav :is(a, button), [data-testid="breadcrumbs"] li *) {
+    color: var(--edf-color-heading) !important;
+}
+
 /* Domain's own secondary bars (e.g. the listing agency bar) keep their native
  * positioning and reveal animation; they only start below our sticky header. */
 html[data-edf-sticky-header="true"] [data-edf-secondary-sticky-bar="true"] {

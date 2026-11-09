@@ -4,6 +4,7 @@ import type { PageContext } from "../../platform/router";
 import {
     findNavigationMenus,
     findStickyNavigationBar,
+    isInverseHeader,
     observeNavigationMenu,
 } from "../../site-dom/navigation";
 
@@ -163,6 +164,7 @@ export function enableStickyHeader(context: PageContext): void {
         if (stickyHost) {
             delete stickyHost.dataset.edfStuck;
             delete stickyHost.dataset.edfStickyHeaderRoot;
+            delete stickyHost.dataset.edfHeaderInverse;
         }
         observer = undefined;
         resizeObserver = undefined;
@@ -187,7 +189,13 @@ export function enableStickyHeader(context: PageContext): void {
             if (rect.width >= fullWidth * 0.9) break;
         }
         if (!nextNavigation || !nextHost) return;
-        if (nextNavigation === navigation && nextHost === stickyHost) return;
+        if (nextNavigation === navigation && nextHost === stickyHost) {
+            // The logo can render after binding. Only ever set: our stuck styles recolour it.
+            if (!nextHost.dataset.edfHeaderInverse && isInverseHeader(nextHost)) {
+                nextHost.dataset.edfHeaderInverse = "true";
+            }
+            return;
+        }
 
         clear();
         navigation = nextNavigation;
@@ -196,6 +204,7 @@ export function enableStickyHeader(context: PageContext): void {
         placeholder = markOwned(document.createElement("span"), "sticky-placeholder");
         navigation.dataset.edfStickyNavigation = "true";
         stickyHost.dataset.edfStickyHeaderRoot = "true";
+        if (isInverseHeader(stickyHost)) stickyHost.dataset.edfHeaderInverse = "true";
         sentinel.ariaHidden = "true";
         sentinel.style.cssText = "display:block;height:1px;margin:0;pointer-events:none;";
         placeholder.ariaHidden = "true";

@@ -5,21 +5,48 @@ import { getFromStorage, onStorageChange, setInStorage } from "../../platform/st
 const STORAGE_KEY = "shortlistNotes";
 const NOTE_TEST_ID = "extra-domain-filters-shortlist-note";
 const NATIVE_NOTES_LABEL = /^(?:add|edit|view) notes$/i;
+const NOTE_MAX_HEIGHT = 144;
 
 type ShortlistNotes = Record<string, { text: string; updatedAt: number }>;
 
 let notesCache: ShortlistNotes | undefined;
-const editing = new Map<string, string>();
+let domainNotes: Map<string, string> | undefined;
+/** Cards whose still-empty note field was opened with "Add notes". */
+const opened = new Set<string>();
 
 async function readNotes(): Promise<ShortlistNotes> {
     notesCache ??= (await getFromStorage<ShortlistNotes>(STORAGE_KEY)) ?? {};
     return notesCache;
 }
 
-async function writeNote(url: string, text: string): Promise<void> {
+/**
+ * Notes written while Domain still allowed editing them on the card (its feature flag is now
+ * off) only survive in the page data. Show them until the user edits the note here.
+ */
+function readDomainNotes(): Map<string, string> {
+    if (domainNotes) return domainNotes;
+    domainNotes = new Map();
+    try {
+        const data = JSON.parse(document.getElementById("__NEXT_DATA__")?.textContent ?? "{}");
+        for (const listing of data?.props?.pageProps?.componentProps?.shortlistListings ?? []) {
+            if (typeof listing?.url === "string" && typeof listing.notes === "string" && listing.notes.trim()) {
+                domainNotes.set(normalizeListingUrl(listing.url), listing.notes.trim());
+            }
+        }
+    } catch {
+        // No page data: only extension notes.
+    }
+    return domainNotes;
+}
+
+function noteFor(notes: ShortlistNotes, key: string): string {
+    return notes[key]?.text ?? readDomainNotes().get(key) ?? "";
+}
+
+async function writeNote(key: string, text: string): Promise<void> {
     const notes = { ...await readNotes() };
-    const key = normalizeListingUrl(url);
-    if (text.trim()) notes[key] = { text: text.trim(), updatedAt: Date.now() };
+    // An empty entry hides a Domain note the user cleared; otherwise drop the key.
+    if (text || readDomainNotes().has(key)) notes[key] = { text, updatedAt: Date.now() };
     else delete notes[key];
     notesCache = notes;
     await setInStorage(STORAGE_KEY, notes);
@@ -32,61 +59,45 @@ export function watchShortlistNotes(onChange: () => void): () => void {
     });
 }
 
-function setLabel(button: HTMLButtonElement, text: string): void {
-    if (button.textContent !== text) button.textContent = text;
+function resize(field: HTMLTextAreaElement): void {
+    field.style.height = "auto";
+    const borders = field.offsetHeight - field.clientHeight;
+    field.style.height = `${Math.min(field.scrollHeight, NOTE_MAX_HEIGHT) + borders}px`;
+    field.style.overflowY = field.scrollHeight > NOTE_MAX_HEIGHT ? "auto" : "hidden";
 }
 
-function createEditor(url: string, rerender: () => void): HTMLElement {
-    const editor = document.createElement("div");
-    const textarea = document.createElement("textarea");
-    const actions = document.createElement("div");
-    const cancel = document.createElement("button");
-    const save = document.createElement("button");
-    const key = normalizeListingUrl(url);
+function createField(key: string, rerender: () => void): HTMLTextAreaElement {
+    const field = markOwned(document.createElement("textarea"), "shortlist-note");
+    field.className = "edf-shortlist-note";
+    field.dataset.testid = NOTE_TEST_ID;
+    field.placeholder = "Add a private note…";
+    field.ariaLabel = "Notes";
+    field.rows = 1;
 
-    editor.className = "edf-shortlist-note-editor";
-    textarea.className = "edf-shortlist-note-input";
-    textarea.placeholder = "Write a private note about this property…";
-    textarea.ariaLabel = "Notes";
-    textarea.value = editing.get(key) ?? "";
-    textarea.addEventListener("input", () => editing.set(key, textarea.value));
-    actions.className = "edf-shortlist-note-actions";
-    cancel.type = "button";
-    cancel.className = "edf-shortlist-note-button";
-    cancel.textContent = "Cancel";
-    save.type = "button";
-    save.className = "edf-shortlist-note-button edf-shortlist-note-button-primary";
-    save.textContent = "Save note";
-
-    const close = (): void => {
-        editing.delete(key);
+    let reverting = false;
+    field.addEventListener("input", () => resize(field));
+    field.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            reverting = true;
+            field.blur();
+        } else if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+            field.blur();
+        }
+    });
+    field.addEventListener("blur", () => void readNotes().then(async notes => {
+        const text = field.value.trim();
+        opened.delete(key);
+        if (!reverting && text !== noteFor(notes, key)) await writeNote(key, text);
+        reverting = false;
         rerender();
-    };
-    const commit = async (): Promise<void> => {
-        save.disabled = true;
-        await writeNote(url, textarea.value);
-        close();
-    };
-    cancel.addEventListener("click", close);
-    save.addEventListener("click", () => void commit());
-    textarea.addEventListener("keydown", event => {
-        if (event.key === "Escape") close();
-        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) void commit();
-    });
-    actions.append(cancel, save);
-    editor.append(textarea, actions);
-    requestAnimationFrame(() => {
-        if (!textarea.isConnected || document.activeElement === textarea) return;
-        textarea.focus();
-        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-    });
-    return editor;
+    }));
+    return field;
 }
 
 /**
- * Inline notes on shortlist cards. Domain's "Add Notes" now navigates to the listing's notes
- * section (which many listings don't have) instead of editing in the card, so the button opens
- * this extension-owned editor; notes are stored in extension storage and shown on the card.
+ * Shortlist notes, edited in place on the card like Domain's old inline notes: click the note
+ * and type; it saves when focus leaves (Ctrl/⌘+Enter), Escape reverts. Domain's own "Add notes"
+ * now just opens the listing page, so the button opens this field instead.
  */
 export function bindShortlistNotes(card: HTMLElement, url: string): void {
     const actions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
@@ -95,28 +106,29 @@ export function bindShortlistNotes(card: HTMLElement, url: string): void {
     if (!actions || !native) return;
     const key = normalizeListingUrl(url);
 
-    const render = (): void => {
+    const findField = (): HTMLTextAreaElement | null =>
+        card.querySelector<HTMLTextAreaElement>(`[data-testid="${NOTE_TEST_ID}"]`);
+    const render = (focus = false): void => {
         void readNotes().then(notes => {
             if (!actions.isConnected) return;
-            const note = notes[key]?.text ?? "";
-            const isEditing = editing.has(key);
-            setLabel(native, note ? "Edit notes" : "Add notes");
-            native.ariaExpanded = String(isEditing);
+            const note = noteFor(notes, key);
+            const label = note ? "Edit notes" : "Add notes";
+            if (native.textContent !== label) native.textContent = label;
 
-            const existing = card.querySelector<HTMLElement>(`[data-testid="${NOTE_TEST_ID}"]`);
-            const mode = isEditing ? "editing" : note ? "note" : "empty";
-            if (existing?.dataset.mode === mode && (mode !== "note" || existing.textContent === note)) return;
-            existing?.remove();
-            if (mode === "empty") return;
-
-            const block = isEditing ? createEditor(url, render) : document.createElement("p");
-            if (!isEditing) {
-                block.className = "edf-shortlist-note";
-                block.textContent = note;
+            let field = findField();
+            if (field && document.activeElement === field) return;
+            if (!note && !opened.has(key)) {
+                field?.remove();
+                return;
             }
-            block.dataset.testid = NOTE_TEST_ID;
-            block.dataset.mode = mode;
-            actions.before(markOwned(block, "shortlist-note"));
+            field ??= createField(key, render);
+            if (field.value !== note) field.value = note;
+            if (field.nextElementSibling !== actions) actions.before(field);
+            resize(field);
+            if (focus) {
+                field.focus();
+                field.setSelectionRange(field.value.length, field.value.length);
+            }
         });
     };
 
@@ -125,11 +137,8 @@ export function bindShortlistNotes(card: HTMLElement, url: string): void {
         native.addEventListener("click", event => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            void readNotes().then(notes => {
-                if (editing.has(key)) editing.delete(key);
-                else editing.set(key, notes[key]?.text ?? "");
-                render();
-            });
+            opened.add(key);
+            render(true);
         }, { capture: true });
     }
     render();

@@ -278,80 +278,42 @@
     min-height: 0 !important;
 }
 
-/* Shortlist inline notes (features/user-listings/notes.ts). */
+/* Shortlist inline notes (features/user-listings/notes.ts): reads as text on the card and
+ * becomes a Domain-style field on hover/focus. Sits above the address link's stretched
+ * hit area (z-index 1), like Domain's own button row. */
 .edf-shortlist-note {
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
-    color: var(--color-neutral-heavy-default, #131212);
-    display: -webkit-box;
-    font-size: 14px;
-    line-height: 20px;
-    margin: 12px 0 0;
-    overflow: hidden;
-    white-space: pre-wrap;
-}
-
-.edf-shortlist-note-editor {
-    display: grid;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.edf-shortlist-note-input {
-    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
+    background: var(--edf-color-surface-muted);
+    border: 1px solid transparent;
     border-radius: 8px;
     box-sizing: border-box;
     color: var(--color-neutral-heavy-default, #131212);
+    display: block;
     font: inherit;
     font-size: 14px;
     line-height: 20px;
-    min-height: 140px;
+    margin: 12px 0 0;
+    min-height: 38px;
     padding: 8px 12px;
-    resize: vertical;
-    transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
+    position: relative;
+    resize: none;
+    transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, background-color 0.2s ease-out;
     width: 100%;
+    z-index: 2;
 }
 
-.edf-shortlist-note-input:focus {
+.edf-shortlist-note::placeholder {
+    color: var(--edf-color-muted);
+}
+
+.edf-shortlist-note:hover {
+    border-color: var(--color-neutral-trim-default, #d0d3d9);
+}
+
+.edf-shortlist-note:focus {
+    background: var(--edf-color-surface);
     border-color: var(--color-interactive-base-default, #0ea800);
     box-shadow: 0 0 0 2px var(--color-interactive-subdued-pressed, #7fc468);
     outline: none;
-}
-
-.edf-shortlist-note-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-}
-
-.edf-shortlist-note-button {
-    background: var(--color-neutral-surface-default, #fff);
-    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
-    border-radius: 8px;
-    color: var(--color-neutral-heavy-default, #131212);
-    cursor: pointer;
-    font: inherit;
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 20px;
-    padding: 6px 14px;
-    transition: background-color 0.2s linear, border-color 0.2s linear;
-}
-
-.edf-shortlist-note-button:hover:not(:disabled) {
-    background: var(--color-secondary-surface-hover, #fdfcfb);
-    border-color: var(--color-neutral-trim-hover, #a9afba);
-}
-
-.edf-shortlist-note-button-primary {
-    background: var(--color-interactive-base-default, #0ea800);
-    border-color: var(--color-interactive-base-default, #0ea800);
-    color: #fff;
-}
-
-.edf-shortlist-note-button-primary:hover:not(:disabled) {
-    background: var(--color-interactive-base-hover, #066414);
-    border-color: var(--color-interactive-base-hover, #066414);
 }
 
 .edf-blacklist-row-list [data-edf-blacklist-row="true"] .edf-blacklist-action {
@@ -419,11 +381,37 @@
     width: 12px;
 }
 
-/* Domain sizes its sticky toolbar for two stretching buttons (max 400px). With a third, keep
- * the group content-sized so it never grows into the centred agency/project banner. */
+/* Domain sizes its sticky toolbar for two stretching buttons and centres the agency/project
+ * banner absolutely over it, so a third button slides under the banner. Put the banner back in
+ * flow between two equal sides: it stays centred while it fits, and shrinks before overlapping. */
+[data-testid="listing-details__desktop-header"]:has(.edf-blacklist-action-listing-sticky) {
+    column-gap: 16px;
+}
+
+[data-testid="listing-details__desktop-header"]:has(.edf-blacklist-action-listing-sticky) > * {
+    flex: 1 1 0 !important;
+}
+
+[data-testid="listing-details__desktop-header"]:has(.edf-blacklist-action-listing-sticky)
+> :has(> [data-testid="listing-details__agency-sticky-header-logo"]) {
+    flex: 0 1 auto !important;
+    justify-content: center;
+    min-width: 0;
+    position: static !important;
+    transform: none !important;
+}
+
+[data-testid="listing-details__desktop-header"]:has(.edf-blacklist-action-listing-sticky)
+[data-testid="listing-details__agency-sticky-header-logo"] {
+    max-width: 100%;
+    object-fit: contain;
+}
+
 [data-testid="listing-details__desktop-header"] > :has(> .edf-blacklist-action-listing-sticky) {
-    flex: 0 0 auto !important;
+    flex: 1 0 0 !important;
+    justify-content: flex-end;
     max-width: none !important;
+    min-width: max-content;
 }
 
 [data-testid="listing-details__desktop-header"] > :has(> .edf-blacklist-action-listing-sticky) > button {

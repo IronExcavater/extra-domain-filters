@@ -35,6 +35,17 @@ export function findStickyNavigationBar(root: ParentNode = document): HTMLElemen
     );
 }
 
+/**
+ * Agency/agent profile pages render Domain's header transparently over a dark hero, with a
+ * white logo and white links. Those colours vanish once our sticky header paints it white.
+ */
+export function isInverseHeader(header: HTMLElement): boolean {
+    const logo = header.querySelector("#domain-logo-wrapper path");
+    if (!logo) return false;
+    const [red = 0, green = 0, blue = 0] = getComputedStyle(logo).fill.match(/\d+/g)?.map(Number) ?? [];
+    return Math.min(red, green, blue) > 200;
+}
+
 function findControlledMenu(trigger: HTMLElement): HTMLElement | undefined {
     const controlledId = trigger.getAttribute("aria-controls");
     if (controlledId) return document.getElementById(controlledId) ?? undefined;
