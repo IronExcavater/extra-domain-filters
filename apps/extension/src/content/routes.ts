@@ -35,7 +35,7 @@ export const routes: Route[] = [
     {
         id: "agency",
         test: match({
-            prefix: ["/real-estate-agencies/"],
+            prefix: ["/real-estate-agencies/", "/real-estate-agent/"],
         }),
         load: () => import("../pages/agency.ts"),
     },

@@ -1,13 +1,12 @@
 import { markOwned } from "../../../dom/ownership";
 import { TOP_LEVEL_CARD_SELECTOR } from "../dom/card";
-import { groupMembers } from "./compact";
 
 const GROUP_SELECTOR = '[data-testid="listing-card-exclusion-group"]';
 const HIDDEN_CLASSES = ["edf-listing-card-excluded", "edf-exclusion-group-member"];
 const DURATION_MS = 260;
 const EASING = "cubic-bezier(0.2, 0, 0, 1)";
 // Cards laid out by a previous update. Only these animate, so first paint, pagination and
-// infinite scroll render hidden listings in place instead of visibly collapsing them.
+// infinite scroll render hidden listings straight into the summary instead of collapsing.
 const settled = new WeakSet<HTMLElement>();
 
 function getItems(): HTMLElement[] {
@@ -24,8 +23,8 @@ function isHiddenCard(card: HTMLElement): boolean {
 
 /**
  * A card being hidden loses its content on the first frame. A static copy of it, laid over
- * the box that now holds its row or group and clipped by that box's height animation, fades
- * out instead, so the photo dissolves into the row rather than vanishing.
+ * the box that replaces it (its own row, or the exit spacer) and clipped by that box's height
+ * animation, fades out instead, so the photo dissolves rather than vanishing.
  */
 function fadeOutCopy(card: HTMLElement, rect: DOMRect, host: HTMLElement): void {
     const ghost = card.cloneNode(true) as HTMLElement;
@@ -55,10 +54,26 @@ function fadeOutCopy(card: HTMLElement, rect: DOMRect, host: HTMLElement): void 
 }
 
 /**
- * Runs `mutate` (which collapses, expands, merges or splits hidden listings) and animates
- * every affected card or group from its previous height to its new one. Because height is
- * animated in flow, the cards below slide with it, so position and size move together.
- * A new group starts from the combined height its members occupied before merging.
+ * A hidden card leaves the list for the hidden-listings summary. A spacer holding its old
+ * box (margin included) shrinks to nothing while a copy of the card fades out inside it,
+ * so the cards below slide up instead of jumping.
+ */
+function collapseOut(card: HTMLElement, rect: DOMRect): void {
+    const style = getComputedStyle(card);
+    const height = rect.height + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+    const spacer = markOwned(document.createElement("div"), "listing-exit-spacer");
+    spacer.className = "edf-listing-exit-spacer";
+    card.before(spacer);
+    fadeOutCopy(card, rect, spacer);
+    void spacer.animate([{ height: `${height}px` }, { height: "0px" }], { duration: DURATION_MS, easing: EASING })
+        .finished.catch(() => undefined).then(() => spacer.remove());
+}
+
+/**
+ * Runs `mutate` (which hides, restores or regroups listings) and animates every affected
+ * card or summary from its previous height to its new one. Height is animated in flow, so
+ * the cards below slide with it. Cards being hidden collapse out; cards coming back open
+ * from nothing and fade in.
  */
 export function animateListingLayout(mutate: () => void): void {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -66,55 +81,36 @@ export function animateListingLayout(mutate: () => void): void {
         return;
     }
 
-    const before = new Map<HTMLElement, number>();
-    const shown = new Map<HTMLElement, DOMRect>();
-    const hidden = new Set<HTMLElement>();
+    const before = new Map<HTMLElement, DOMRect>();
+    const wasHidden = new Set<HTMLElement>();
     for (const item of getItems()) {
-        if (!groupMembers.has(item)) {
-            const rect = item.getBoundingClientRect();
-            if (isHiddenCard(item)) hidden.add(item);
-            else if (settled.has(item) && isNearViewport(rect.top, rect.bottom)) shown.set(item, rect);
-        }
-        const height = item.getBoundingClientRect().height;
-        const members = groupMembers.get(item);
-        if (members) {
-            // Members are display:none inside a group; share the group's height between them
-            // so a re-formed group can start from what its members visibly occupied.
-            for (const member of members) before.set(member, height / members.length);
-        } else if (!before.has(item)) {
-            before.set(item, height);
-        }
+        before.set(item, item.getBoundingClientRect());
+        if (isHiddenCard(item)) wasHidden.add(item);
     }
 
     mutate();
 
     for (const item of getItems()) {
+        if (!settled.has(item)) continue;
+        const was = before.get(item);
         const rect = item.getBoundingClientRect();
+        if (was && was.height >= 1 && rect.height < 1) {
+            if (isHiddenCard(item) && isNearViewport(was.top, was.bottom)) collapseOut(item, was);
+            continue;
+        }
         if (rect.height < 1 || !isNearViewport(rect.top, rect.bottom)) continue;
 
-        const members = groupMembers.get(item);
-        const known = members ? members.every(member => settled.has(member)) : settled.has(item);
-        const from = !known
-            ? undefined
-            : members
-                ? members.reduce((sum, member) => sum + (before.get(member) ?? 0), 0)
-                : before.get(item);
-        if (from === undefined || from < 1 || Math.abs(from - rect.height) < 2) continue;
-
-        // A card coming back fades in as it opens; a card or group taking over hidden cards
-        // fades their old content out on top of itself.
-        const appearing = !members && hidden.has(item) && !isHiddenCard(item);
+        const from = was && was.height >= 1 ? was.height : 0;
+        if (Math.abs(from - rect.height) < 2) continue;
         item.animate(
             [
-                { height: `${from}px`, opacity: appearing ? 0 : 1, overflow: "hidden" },
+                { height: `${from}px`, opacity: from === 0 ? 0 : 1, overflow: "hidden" },
                 { height: `${rect.height}px`, opacity: 1, overflow: "hidden" },
             ],
             { duration: DURATION_MS, easing: EASING },
         );
-        for (const card of members ?? [item]) {
-            const previous = shown.get(card);
-            if (previous && isHiddenCard(card)) fadeOutCopy(card, previous, item);
-        }
+        // Pages without a summary keep the hidden card's own row in place.
+        if (was && !wasHidden.has(item) && isHiddenCard(item)) fadeOutCopy(item, was, item);
     }
-    for (const item of getItems()) if (!groupMembers.has(item)) settled.add(item);
+    for (const item of getItems()) settled.add(item);
 }

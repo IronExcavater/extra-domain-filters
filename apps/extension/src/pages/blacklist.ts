@@ -9,7 +9,9 @@ import {
     getBlacklistListing,
     type BlacklistEntry,
 } from "../domain/matching";
+import { isProfileEntry } from "../domain/blacklist/profiles";
 import { createBlacklistCard } from "../features/blacklist/card";
+import { createProfileStrip, PROFILE_STRIP_TEST_ID } from "../features/blacklist/profiles";
 import {
     filterBlacklistEntries,
     sortBlacklistEntries,
@@ -158,7 +160,17 @@ function reconcileRows(
 }
 
 async function render(container: HTMLElement, list: HTMLElement): Promise<void> {
-    const all = await getBlacklist();
+    const blacklist = await getBlacklist();
+    const strip = createProfileStrip(blacklist);
+    const currentStrip = container.querySelector(`[data-testid="${PROFILE_STRIP_TEST_ID}"]`);
+    if (strip) {
+        markOwned(strip, "blacklist-profiles");
+        if (currentStrip) currentStrip.replaceWith(strip);
+        else list.before(strip);
+    } else {
+        currentStrip?.remove();
+    }
+    const all = blacklist.filter(entry => !isProfileEntry(entry));
     const active = all.filter(entry => !entry.removedAt);
     const activeUrls = new Set(active.map(entry => entry.url));
     const retained = [...retainedUnblacklistedEntries.values()]

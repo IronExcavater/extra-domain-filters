@@ -155,3 +155,83 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* Blacklisted agencies & agents (features/blacklist/profiles.ts). */
+.edf-blacklist-profiles {
+    margin: 0 0 16px;
+}
+
+.edf-blacklist-profiles-heading {
+    color: var(--edf-color-muted);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 20px;
+    margin: 0 0 8px;
+}
+
+.edf-blacklist-profiles-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.edf-blacklist-profile {
+    align-items: center;
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 14px;
+    gap: 6px;
+    line-height: 20px;
+    max-width: 100%;
+    padding: 2px 4px 2px 12px;
+}
+
+.edf-blacklist-profile-name {
+    color: var(--edf-color-text);
+    font-weight: 700;
+    overflow: hidden;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.edf-blacklist-profile-name:hover {
+    text-decoration: underline;
+}
+
+.edf-blacklist-profile-kind {
+    color: var(--edf-color-muted);
+    font-size: 12px;
+}
+
+.edf-blacklist-profile-remove {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: var(--edf-color-muted);
+    cursor: pointer;
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    padding: 0;
+    transition: background-color var(--edf-motion-fast) ease, color var(--edf-motion-fast) ease;
+    width: 28px;
+}
+
+.edf-blacklist-profile-remove:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+    outline: none;
+}
+
+.edf-blacklist-profile-remove:hover:not(:disabled) {
+    background: var(--edf-color-surface-muted);
+    color: var(--edf-color-text);
+}
+
+.edf-blacklist-profile-remove-icon {
+    height: 16px;
+    width: 16px;
+}

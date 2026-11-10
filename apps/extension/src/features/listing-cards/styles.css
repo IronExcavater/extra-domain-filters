@@ -418,3 +418,18 @@
     flex: 0 0 auto !important;
     width: auto !important;
 }
+
+/* Agency/agent profile toggle (pages/agency.ts): Domain's Call classes give the shape;
+ * keep the icon and label laid out like Domain's own icon buttons. */
+.edf-profile-blacklist {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.edf-profile-blacklist-icon {
+    flex: 0 0 auto;
+    height: 18px;
+    width: 18px;
+}

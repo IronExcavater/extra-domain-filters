@@ -1,11 +1,8 @@
-/* Hidden listings: one row component for blacklisted and filtered listings, used on its
- * own and as the header/items of a merged group. Heights animate from motion.ts. */
+/* Hidden listings. Top-level cards collect into one quiet summary at the end of their list
+ * (compact.ts); project/featured children keep a compact row inside their card. Heights
+ * animate from motion.ts. */
 .edf-exclusion-row {
     align-items: center;
-    appearance: none;
-    background: var(--color-neutral-surface-default, #fff);
-    border: 1px solid var(--color-neutral-trim-default, #e1e1df);
-    border-radius: var(--border-radius-outer, 12px);
     box-sizing: border-box;
     color: var(--color-neutral-medium-default, #646463);
     display: none;
@@ -25,6 +22,21 @@
     opacity: 0.7;
 }
 
+.edf-exclusion-row-thumb {
+    background: var(--edf-color-border);
+    border-radius: 6px;
+    flex: 0 0 64px;
+    height: 44px;
+    overflow: hidden;
+}
+
+.edf-exclusion-row-thumb > img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
 .edf-exclusion-row-text {
     align-items: baseline;
     display: flex;
@@ -37,8 +49,13 @@
     color: var(--color-neutral-heavy-default, #131212);
     font-weight: 500;
     overflow: hidden;
+    text-decoration: none;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+a.edf-exclusion-row-title:hover {
+    text-decoration: underline;
 }
 
 .edf-exclusion-row-reason {
@@ -47,26 +64,38 @@
     line-height: 16px;
 }
 
+/* Domain's small secondary button: labelled, so restoring a listing reads as an action. */
 .edf-exclusion-row-button {
     align-items: center;
-    background: transparent;
-    border: 0;
-    border-radius: var(--border-radius-inner, 8px);
-    color: var(--color-neutral-medium-default, #646463);
+    background: var(--edf-color-surface);
+    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
+    border-radius: 8px;
+    color: var(--color-neutral-heavy-default, #131212);
     cursor: pointer;
     display: inline-flex;
     flex: 0 0 auto;
-    height: 34px;
-    justify-content: center;
-    padding: 0;
-    transition: background-color 0.2s linear, color 0.2s linear;
-    width: 34px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px 0 10px;
+    transition: background-color 0.2s linear, border-color 0.2s linear, color 0.2s linear;
 }
 
-.edf-exclusion-row-button:is(:hover, :focus-visible) {
-    background: rgb(19 18 18 / 6%);
-    color: var(--color-neutral-heavy-default, #131212);
+.edf-exclusion-row-button:focus-visible {
+    box-shadow: var(--edf-focus-ring);
     outline: none;
+}
+
+.edf-exclusion-row-button:disabled {
+    cursor: default;
+    opacity: 0.58;
+}
+
+.edf-exclusion-row-button:hover:not(:disabled) {
+    background: var(--edf-color-surface-muted);
+    border-color: var(--color-neutral-trim-hover, #a9afba);
 }
 
 .edf-listing-card-excluded {
@@ -81,38 +110,73 @@
 }
 
 .edf-listing-card-excluded > .edf-exclusion-row {
-    display: flex !important;
-}
-
-.edf-exclusion-group {
-    border: 1px solid var(--color-neutral-trim-default, #e1e1df);
+    background: var(--edf-color-surface-muted);
     border-radius: var(--border-radius-outer, 12px);
-    grid-column: 1 / -1;
-    margin-bottom: 16px;
-    overflow: hidden;
+    display: flex !important;
 }
 
 .edf-exclusion-group-member {
     display: none !important;
 }
 
-.edf-exclusion-group > .edf-exclusion-group-header {
-    border: 0;
-    border-radius: 0;
-    cursor: pointer;
-    display: flex;
-    transition: background-color 0.2s linear;
+/* The summary stays quiet until opened: a muted strip, then a list of the hidden listings. */
+.edf-exclusion-group {
+    background: var(--edf-color-surface-muted);
+    border-radius: var(--border-radius-outer, 12px);
+    grid-column: 1 / -1;
+    list-style: none;
+    margin: 0 0 24px;
+    overflow: hidden;
+    transition: background-color 0.2s linear, box-shadow 0.2s linear;
 }
 
-.edf-exclusion-group > .edf-exclusion-group-header:is(:hover, :focus-visible) {
-    background: var(--color-secondary-surface-hover, #fdfcfb);
+.edf-exclusion-group[data-expanded="true"] {
+    background: var(--edf-color-surface);
+    box-shadow: inset 0 0 0 1px var(--color-neutral-trim-default, #e1e1df);
+}
+
+.edf-exclusion-group-header {
+    align-items: center;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--color-neutral-medium-default, #646463);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 14px;
+    gap: 12px;
+    line-height: 20px;
+    min-height: 44px;
+    padding: 0 14px;
+    text-align: left;
+    transition: background-color 0.2s linear;
+    width: 100%;
+}
+
+.edf-exclusion-group-header:hover {
+    background: rgb(19 18 18 / 3%);
+}
+
+.edf-exclusion-group-header:focus-visible {
+    box-shadow: inset var(--edf-focus-ring);
     outline: none;
 }
 
+.edf-exclusion-group-header .edf-exclusion-row-title {
+    font-weight: 700;
+}
+
+.edf-exclusion-group-toggle {
+    align-items: center;
+    color: var(--color-interactive-base-default, #0ea800);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-weight: 700;
+    gap: 4px;
+}
+
 .edf-exclusion-group-chevron {
-    color: var(--color-neutral-medium-default, #646463);
-    flex: 0 0 18px;
-    margin: 0 8px;
     transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -130,14 +194,17 @@
 }
 
 .edf-exclusion-group-body > .edf-exclusion-group-item {
-    border: 0;
-    border-radius: 0;
     display: flex;
-    padding-left: 44px;
+    padding: 8px 12px 8px 14px;
 }
 
 .edf-exclusion-group-body > .edf-exclusion-group-item + .edf-exclusion-group-item {
     border-top: 1px solid var(--color-neutral-trim-default, #e1e1df);
+}
+
+/* Items only repeat their reason when the summary mixes blacklisted and filtered listings. */
+.edf-exclusion-group:not([data-exclusion-reason="mixed"]) .edf-exclusion-group-item:not(.edf-exclusion-row-detailed) .edf-exclusion-row-reason {
+    display: none;
 }
 
 .edf-hide-again-button {
@@ -156,13 +223,14 @@
     color: #131212;
 }
 
-/* Items only repeat their reason when the group mixes blacklisted and filtered listings. */
-.edf-exclusion-group:not([data-exclusion-reason="mixed"]) .edf-exclusion-group-item .edf-exclusion-row-reason {
-    display: none;
-}
-
 /* Hosts for the fading copy of a card being hidden (see exclusion/motion.ts). */
 .edf-listing-card-excluded,
-.edf-exclusion-group {
+.edf-listing-exit-spacer {
     position: relative;
+}
+
+.edf-listing-exit-spacer {
+    list-style: none;
+    overflow: hidden;
+    pointer-events: none;
 }

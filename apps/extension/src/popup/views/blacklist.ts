@@ -4,7 +4,9 @@ import {
     removeBlacklistUrls,
 } from "../../domain/blacklist/store";
 import { getBlacklistListing, type BlacklistEntry } from "../../domain/matching";
+import { isProfileEntry } from "../../domain/blacklist/profiles";
 import { createBlacklistCard } from "../../features/blacklist/card";
+import { createProfileStrip } from "../../features/blacklist/profiles";
 import {
     filterBlacklistEntries,
     sortBlacklistEntries,
@@ -36,7 +38,7 @@ const SELECTION_TRANSITION_MS = 160;
 
 export function createBlacklistView(options: BlacklistViewOptions): HTMLElement {
     const { entries, selectedUrls, signal } = options;
-    const active = entries.filter(entry => !entry.removedAt);
+    const active = entries.filter(entry => !entry.removedAt && !isProfileEntry(entry));
     const activeUrls = new Set(active.map(entry => getBlacklistListing(entry).url));
     const retained = [...retainedUnblacklistedEntries.values()]
         .filter(entry => !activeUrls.has(getBlacklistListing(entry).url));
@@ -151,6 +153,8 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
     };
 
     frame.setToolbar([tabs, controls, sort.element]);
+    const profiles = createProfileStrip(entries, { openInNewTab: true });
+    if (profiles) frame.cards.before(profiles);
     controller.subscribe(render, signal);
     render();
     return frame.element;

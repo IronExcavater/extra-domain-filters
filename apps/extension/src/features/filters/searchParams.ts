@@ -3,6 +3,7 @@ import { getSettings, updateSettings, type Settings } from "../../state/settings
 
 const PARAMS = {
     couldHaves: "could",
+    customCouldHaves: "could-other",
     excludeKeywords: "exclude",
     strataMax: "strata-max",
     propertyTypes: "exclude-types",
@@ -10,6 +11,7 @@ const PARAMS = {
 } as const;
 const LEGACY_PARAMS = {
     couldHaves: "edf-could",
+    customCouldHaves: "edf-could-other",
     excludeKeywords: "edf-exclude",
     strataMax: "edf-strata-max",
     propertyTypes: "edf-exclude-types",
@@ -58,6 +60,9 @@ export async function applySharedFilterParams(url: URL): Promise<void> {
             couldHaveRuleIds: hasParam(params, "couldHaves")
                 ? parseList(getParam(params, "couldHaves"))
                 : current.filters.couldHaveRuleIds,
+            customPreferenceText: hasParam(params, "customCouldHaves")
+                ? parseList(getParam(params, "customCouldHaves")).join(", ")
+                : current.filters.customPreferenceText,
             excludeKeywords: hasParam(params, "excludeKeywords")
                 ? parseList(getParam(params, "excludeKeywords"))
                 : current.filters.excludeKeywords,
@@ -96,6 +101,7 @@ export function removeSharedFilterParams(params: URLSearchParams): void {
 
 function writeSharedFilterParams(params: URLSearchParams, settings: Settings): void {
     setList(params, PARAMS.couldHaves, settings.filters.couldHaveRuleIds);
+    setList(params, PARAMS.customCouldHaves, parseList(settings.filters.customPreferenceText));
     setList(params, PARAMS.excludeKeywords, settings.filters.excludeKeywords);
     setList(params, PARAMS.propertyTypes, settings.filters.excludePropertyKeywords);
     if (settings.filters.strataMaxDollars >= 2000) params.delete(PARAMS.strataMax);

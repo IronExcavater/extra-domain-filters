@@ -84,11 +84,9 @@ export async function createCheckboxControl(
     return label;
 }
 
-export async function createTextControl(
-    property: Property<"string">,
-    config: ControlConfig & { ariaLabel?: string; placeholder?: string; testId: string },
-): Promise<HTMLDivElement> {
-    const section = createSection(config.label, config.testId, config.icon);
+type TextConfig = ControlConfig & { ariaLabel?: string; placeholder?: string };
+
+async function createTextField(property: Property<"string">, config: TextConfig): Promise<HTMLDivElement> {
     const input = document.createElement("input");
 
     input.className = "edf-filter-text";
@@ -97,9 +95,33 @@ export async function createTextControl(
     input.placeholder = config.placeholder ?? "";
     input.ariaLabel = config.ariaLabel ?? config.label;
     input.type = "text";
-    section.append(createSearchBar(input, config.label));
     await property.bindTwoWay(createTextProperty(input));
+    return createSearchBar(input, config.label);
+}
+
+export async function createTextControl(
+    property: Property<"string">,
+    config: TextConfig & { testId: string },
+): Promise<HTMLDivElement> {
+    const section = createSection(config.label, config.testId, config.icon);
+    section.append(await createTextField(property, config));
     return section;
+}
+
+/** A labelled text field inside another filter section (e.g. typed could-haves). */
+export async function createSubTextControl(
+    property: Property<"string">,
+    config: TextConfig,
+): Promise<HTMLDivElement> {
+    const field = document.createElement("div");
+    const label = document.createElement("label");
+
+    field.className = "edf-filter-subfield";
+    label.className = "edf-filter-subfield-label";
+    label.htmlFor = `edf-filter-${config.id}`;
+    label.textContent = config.label;
+    field.append(label, await createTextField(property, config));
+    return field;
 }
 
 export async function createRangeControl(

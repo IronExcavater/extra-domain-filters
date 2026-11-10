@@ -118,7 +118,7 @@ export function getFilterSummary(search: SavedSearch): SearchFilterSummary {
         4,
     );
     const excludedKeywords = formatList(getListParams(params, ["exclude", "edf-exclude"]), 4);
-    const preferences = formatList(getListParams(params, ["could", "edf-could"]), 4);
+    const preferences = formatList(getListParams(params, ["could", "edf-could", "could-other", "edf-could-other"]), 4);
     const propertyTypeSummary = formatList(propertyTypes);
 
     if (propertyTypeSummary) inlineDetails.push(propertyTypeSummary);

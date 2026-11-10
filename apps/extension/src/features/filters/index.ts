@@ -21,6 +21,7 @@ import {
     createCheckboxControl,
     createFilterSection,
     createRangeControl,
+    createSubTextControl,
     createTextControl,
 } from "./controls";
 import { syncSharedFilterParams } from "./searchParams";
@@ -175,6 +176,23 @@ export async function injectFilters(context: PageContext) {
                 },
             ));
         }
+
+        const customProperty = Property.from('string', {
+            get: async () => (await getSettings()).filters.customPreferenceText,
+            set: async value => {
+                await updateSettings({ filters: { customPreferenceText: value } });
+                void trackTelemetry({ name: "feature_used", feature: "could_haves" });
+            },
+        });
+        couldHaveDiv.append(await createSubTextControl(
+            await createDraftProperty(mustHaveDiv, customProperty, '', scope),
+            {
+                ariaLabel: 'Other could-haves, separated by commas (example: solar, ocean view)',
+                id: 'customCouldHaves',
+                label: 'Other could-haves',
+                placeholder: 'e.g. solar, ocean view, study',
+            },
+        ));
 
         if (context.signal.aborted || !appendCustomFilter(mustHaveDiv, couldHaveDiv, scope)) {
             scope.dispose();

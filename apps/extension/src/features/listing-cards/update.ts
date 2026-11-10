@@ -79,6 +79,7 @@ export async function updateListingCards(
 
     // Descriptions are only needed by text filters; skip background fetches otherwise.
     const needsDetail = settings.filters.couldHaveRuleIds.length > 0 ||
+        settings.filters.customPreferenceText.trim() !== "" ||
         settings.filters.excludeKeywords.length > 0 ||
         settings.filters.strataMaxDollars < STRATA_MAX;
     if (settings.filters.enrichListingDetails && needsDetail) {
@@ -129,12 +130,14 @@ export async function updateListingCards(
                     }
 
                     if (reason !== "none") {
+                        const profile = reason === "filtered" ? match.blacklistedProfile : undefined;
                         updateExclusionRow(
                             card,
                             button.dataset.blacklistScope === "project"
                                 ? getProjectActionUrls(card, url)
                                 : url,
                             reason,
+                            profile && `${profile.kind === "agency" ? "Agency" : "Agent"}: ${profile.name}`,
                         );
                     }
                 }

@@ -46,6 +46,9 @@ function toSearchListing(model: Record<string, unknown>): SearchListing | undefi
     const price = readString(model.price) ?? readString(model.priceFrom);
     const propertyType = readString(features?.propertyTypeFormatted) ?? readString(features?.propertyType);
     const keywords = readKeywords(model.keywords).map(humanize);
+    const branding = isRecord(model.branding) ? model.branding : undefined;
+    const agencyId = readNumber(branding?.agencyId)?.toString() ?? readString(branding?.agencyId);
+    const agentNames = readString(branding?.agentNames)?.split(/\s*(?:,|&|\band\b)\s*/i).filter(Boolean);
 
     return {
         lat: readNumber(address?.lat),
@@ -56,6 +59,8 @@ function toSearchListing(model: Record<string, unknown>): SearchListing | undefi
             displayAddress,
             price,
             propertyType: propertyType && propertyType !== "Unknown" ? humanize(propertyType) : undefined,
+            agencyId,
+            agentNames,
             features: {
                 bathrooms: readNumber(features?.baths)?.toString(),
                 bedrooms: readNumber(features?.beds)?.toString(),
@@ -136,6 +141,8 @@ export function mergeSearchSnapshot(card: ListingSnapshot, search: SearchListing
     return {
         ...card,
         propertyType: card.propertyType ?? search.snapshot.propertyType,
+        agencyId: card.agencyId ?? search.snapshot.agencyId,
+        agentNames: card.agentNames ?? search.snapshot.agentNames,
         text: `${card.text}\n${search.snapshot.text}`,
     };
 }

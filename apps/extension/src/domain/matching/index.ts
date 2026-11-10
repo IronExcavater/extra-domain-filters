@@ -1,8 +1,10 @@
 import type {
     BlacklistEntry,
+    FilterSettings,
     Settings,
 } from "../../state/settings";
 
+import { findBlacklistedProfile, type BlacklistProfile } from "../blacklist/profiles";
 import { normalizeListingUrl } from "../listings/url";
 
 export type { BlacklistEntry } from "../../state/settings";
@@ -51,6 +53,40 @@ export const PREFERENCES = [
     },
 ] satisfies PreferenceRule[];
 
+const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
+let customRules: { rules: PreferenceRule[]; text: string } | undefined;
+
+/**
+ * Could-haves the user typed ("solar, ocean view, study"). Each phrase matches the listing
+ * text case-insensitively from a word start, so "pool" won't match "whirlpool".
+ */
+export function parseCustomPreferences(text: string): PreferenceRule[] {
+    if (customRules?.text === text) return customRules.rules;
+    const seen = new Set<string>();
+    const rules: PreferenceRule[] = [];
+    for (const phrase of text.split(",").map(part => part.trim()).filter(Boolean)) {
+        const key = phrase.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const body = phrase.replace(REGEX_SPECIAL, "\\$&").replace(/\s+/g, "\\s+");
+        rules.push({
+            id: `custom:${key}`,
+            label: phrase.charAt(0).toUpperCase() + phrase.slice(1),
+            pattern: new RegExp(`(?<!\\w)${body}`, "i"),
+        });
+    }
+    customRules = { rules, text };
+    return rules;
+}
+
+/** Every could-have the user has asked for: ticked presets plus typed phrases. */
+export function getSelectedPreferences(filters: FilterSettings): PreferenceRule[] {
+    return [
+        ...PREFERENCES.filter(preference => filters.couldHaveRuleIds.includes(preference.id)),
+        ...parseCustomPreferences(filters.customPreferenceText),
+    ];
+}
+
 export const STRATA_MAX = 2000;
 
 export interface ListingSnapshot {
@@ -67,11 +103,17 @@ export interface ListingSnapshot {
     thumbnailUrl?: string;
     imageUrls?: string[];
     propertyType?: string;
+    /** Domain agency id (the number ending its profile URL). */
+    agencyId?: string;
+    agentIds?: string[];
+    agentNames?: string[];
 }
 
 export type ExclusionReason = "none" | "blacklisted" | "filtered";
 
 export interface ListingMatch {
+    /** A blacklisted agency/agent hides the listing like a filter (it can be shown anyway). */
+    blacklistedProfile?: BlacklistProfile;
     exclusionReason: ExclusionReason;
     filterMatched: boolean;
     matchedPreferences: PreferenceRule[];
@@ -218,15 +260,14 @@ export function matchListing(
     const text = `${listing.title}\n${listing.text}`;
     const filters = settings.filters;
 
-    const matchedPreferences = PREFERENCES.filter(
-        preference =>
-            filters.couldHaveRuleIds.includes(preference.id) &&
-            preference.pattern.test(text),
-    );
+    const selectedPreferences = getSelectedPreferences(filters);
+    const matchedPreferences = selectedPreferences.filter(preference => preference.pattern.test(text));
     const excludesCouldHaveMismatch = filters.excludeWhenNoCouldHaveMatch &&
-        filters.couldHaveRuleIds.length > 0 &&
+        selectedPreferences.length > 0 &&
         matchedPreferences.length === 0;
-    const filterMatched = includesAny(text, filters.excludeKeywords) ||
+    const blacklistedProfile = findBlacklistedProfile(blacklist, listing);
+    const filterMatched = blacklistedProfile !== undefined ||
+        includesAny(text, filters.excludeKeywords) ||
         exceedsStrataMax(text, filters.strataMaxDollars) ||
         matchesExcludedPropertyType(listing.propertyType, filters.excludePropertyKeywords) ||
         excludesCouldHaveMismatch;
@@ -237,6 +278,7 @@ export function matchListing(
             : "none";
 
     return {
+        blacklistedProfile,
         exclusionReason,
         filterMatched,
         matchedPreferences,

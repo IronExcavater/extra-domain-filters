@@ -46,7 +46,7 @@ function describeFilters(search: ExtensionRecentSearch): string {
     const params = new URLSearchParams(search.filterParams);
     const labels: string[] = [];
 
-    if (params.has("could")) labels.push("Could-haves");
+    if (params.has("could") || params.has("could-other")) labels.push("Could-haves");
     if (params.has("exclude")) labels.push("Excluded keywords");
     if (params.has("exclude-types")) labels.push("Excluded property types");
     if (params.has("strata-max")) labels.push("Strata limit");
