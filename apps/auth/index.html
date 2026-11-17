@@ -3,12 +3,22 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Extra Domain Filters federated authentication</title>
+        <title>Sign in to Extra Domain Filters</title>
+        <style>
+            body { align-items: center; background: #f6f3ec; color: #131212; display: flex; font-family: system-ui, sans-serif; justify-content: center; margin: 0; min-height: 100vh; padding: 24px; box-sizing: border-box; }
+            main { background: #fff; border: 1px solid #e1e1df; border-radius: 16px; box-shadow: 0 20px 50px rgb(19 18 18 / 10%); max-width: 400px; padding: 32px; text-align: center; }
+            h1 { font-size: 24px; margin: 0 0 8px; }
+            p { color: #646463; line-height: 1.5; margin: 0; }
+            .provider { background: #0ea800; border: 0; border-radius: 10px; color: #fff; cursor: pointer; font: inherit; font-size: 16px; font-weight: 700; margin-top: 22px; padding: 12px 22px; width: 100%; }
+            .provider:hover:not(:disabled) { background: #087f00; }
+            .provider:disabled { cursor: progress; opacity: 0.7; }
+            .status { font-size: 14px; margin-top: 14px; min-height: 21px; }
+        </style>
     </head>
     <body>
         <main>
             <h1>Extra Domain Filters</h1>
-            <p>This bridge securely completes Apple and Facebook login for the browser extension.</p>
+            <p>This page completes Google, Apple and Facebook sign-in for the browser extension.</p>
         </main>
         <script type="module" src="./src/main.ts"></script>
     </body>

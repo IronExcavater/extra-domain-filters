@@ -1,25 +1,22 @@
-/* Popup header, in Domain's header style: wordmark and Domain pill, tabs, and the account
- * trigger (avatar + chevron) with its menu. Each tab's underline is its own ::after, so it
- * always sits under the tab; switching tabs slides it across (navigation.ts slideUnderline). */
+/* Popup header, as Domain's own header: the wordmark, plain text tabs (the active one in the
+ * shared selected look: green text and a green line, which slides between tabs), and the
+ * account avatar with its chevron and menu. Domain sync lives in that menu. */
 .edf-popup-navigation {
     align-items: center;
     background: var(--edf-color-surface);
     border-bottom: 1px solid var(--edf-color-border);
-    column-gap: 12px;
+    column-gap: 24px;
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr) max-content;
-    padding: 0 12px 0 18px;
+    padding: 0 14px 0 22px;
     position: relative;
     transition: column-gap 220ms ease, padding 220ms ease;
 }
 
-/* Brand group: the wordmark, then the Domain pill tucked close to it. */
 .edf-popup-navigation-start {
     align-items: center;
     display: flex;
-    gap: 10px;
     min-width: 0;
-    transition: gap 220ms ease;
 }
 
 .edf-popup-brand {
@@ -45,7 +42,7 @@
 
 .edf-popup-wordmark {
     display: block;
-    height: 22px;
+    height: 24px;
     max-width: none;
     width: auto;
 }
@@ -58,23 +55,9 @@
     min-width: 0;
 }
 
-/* The tabs sit right, beside the account; an auto margin (not flex-end) keeps any overflow on
- * the measurable side, so navigation.ts can fold them to icons before they collide. */
 .edf-popup-primary-navigation {
-    gap: 0;
-}
-
-.edf-popup-primary-navigation > :first-child {
-    margin-left: auto;
-}
-
-/* A hairline divides the views from the account. */
-.edf-popup-navigation-actions::before {
-    background: var(--edf-color-border);
-    content: "";
-    height: 24px;
-    margin: 0 10px 0 6px;
-    width: 1px;
+    gap: 6px;
+    justify-content: flex-end;
 }
 
 .edf-popup-nav-item {
@@ -87,27 +70,26 @@
     font: inherit;
     font-size: 16px;
     font-weight: 400;
-    gap: 7px;
     height: 100%;
     justify-content: center;
     line-height: 22px;
-    padding: 0 8px;
+    padding: 0 10px;
     position: relative;
-    transition: color 180ms ease, gap 260ms cubic-bezier(0.2, 0, 0, 1), padding 260ms cubic-bezier(0.2, 0, 0, 1);
+    transition: color 180ms ease;
     white-space: nowrap;
 }
 
 .edf-popup-nav-item::after {
-    background: var(--edf-color-green);
+    background: var(--edf-selected-line-color);
     border-radius: 3px 3px 0 0;
     bottom: 0;
     content: "";
-    height: 3px;
-    left: 8px;
+    height: var(--edf-selected-line);
+    left: 10px;
     opacity: 0;
     pointer-events: none;
     position: absolute;
-    right: 8px;
+    right: 10px;
     transform: scaleX(0);
     transition:
         opacity 160ms ease,
@@ -115,12 +97,12 @@
 }
 
 .edf-popup-nav-item:is(:hover, :focus-visible) {
-    color: var(--edf-color-green-hover);
+    color: var(--edf-color-heading);
     outline: none;
 }
 
 .edf-popup-nav-item[data-active="true"] {
-    color: var(--edf-color-heading);
+    color: var(--edf-selected-color);
 }
 
 .edf-popup-nav-item[data-active="true"]::after {
@@ -134,59 +116,17 @@
     transition: none;
 }
 
-.edf-popup-nav-item-icon {
-    flex: 0 0 auto;
-    height: 18px;
-    opacity: 0.75;
-    transition:
-        color 180ms ease,
-        opacity 180ms ease,
-        transform 260ms cubic-bezier(0.2, 0, 0, 1);
-    width: 18px;
-}
-
-.edf-popup-nav-item:is(:hover, :focus-visible) .edf-popup-nav-item-icon {
-    opacity: 1;
-    transform: translateY(-1px);
-}
-
-.edf-popup-nav-item[data-active="true"] .edf-popup-nav-item-icon {
-    color: var(--edf-color-green-hover);
-    opacity: 1;
-    transform: scale(1.08);
-}
-
 /* Bold when active without changing width: a hidden bold copy sizes the label, and the
- * variable font eases between the weights. Folded (navigation.ts), the label narrows away. */
+ * variable font eases between the weights. */
 .edf-popup-nav-item-label {
     display: inline-flex;
     flex-direction: column;
-    max-width: 120px;
-    overflow: hidden;
-    transition:
-        font-weight 220ms ease,
-        max-width 280ms cubic-bezier(0.2, 0, 0, 1),
-        opacity 180ms ease;
-}
-
-.edf-popup-navigation[data-compact="true"] .edf-popup-nav-item {
-    gap: 0;
-    padding: 0 9px;
-}
-
-.edf-popup-navigation[data-compact="true"] .edf-popup-nav-item::after {
-    left: 6px;
-    right: 6px;
-}
-
-.edf-popup-navigation[data-compact="true"] .edf-popup-nav-item-label {
-    max-width: 0;
-    opacity: 0;
+    transition: font-weight 220ms ease;
 }
 
 .edf-popup-nav-item-label::before {
     content: attr(data-text);
-    font-weight: 700;
+    font-weight: var(--edf-selected-weight);
     height: 0;
     overflow: hidden;
     pointer-events: none;
@@ -195,7 +135,7 @@
 }
 
 .edf-popup-nav-item[data-active="true"] .edf-popup-nav-item-label {
-    font-weight: 700;
+    font-weight: var(--edf-selected-weight);
 }
 
 /* Account trigger: Domain's 36px avatar with a white ring, and a chevron that turns over. */
@@ -216,6 +156,7 @@
     display: inline-flex;
     gap: 2px;
     padding: 2px 4px 2px 2px;
+    position: relative;
     transition: background-color 150ms ease, color 150ms ease;
 }
 
@@ -227,6 +168,27 @@
 
 .edf-popup-menu-trigger:focus-visible {
     box-shadow: var(--edf-focus-ring);
+}
+
+/* Domain needs attention (signed out, unreachable): an amber dot on the avatar. */
+.edf-popup-menu-trigger::after {
+    background: #e8a200;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    content: "";
+    height: 8px;
+    left: 28px;
+    opacity: 0;
+    position: absolute;
+    top: 1px;
+    transform: scale(0.4);
+    transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0, 0, 1);
+    width: 8px;
+}
+
+.edf-popup-menu-trigger[data-domain-attention="true"]::after {
+    opacity: 1;
+    transform: none;
 }
 
 .edf-popup-menu-chevron {
@@ -254,7 +216,19 @@
     height: 36px;
     justify-content: center;
     overflow: hidden;
+    transition: box-shadow 200ms ease;
     width: 36px;
+}
+
+/* Syncing with Domain: the avatar's ring pulses green. */
+.edf-popup-menu-trigger[data-syncing="true"] .edf-popup-avatar {
+    animation: edf-popup-sync-ring 1.2s ease-in-out infinite;
+}
+
+@keyframes edf-popup-sync-ring {
+    50% {
+        box-shadow: 0 0 0 3px rgb(14 168 0 / 45%);
+    }
 }
 
 .edf-popup-avatar[data-initial="true"] {
@@ -271,93 +245,6 @@
     color: #fff;
     height: 22px;
     width: 22px;
-}
-
-/* Domain connection pill beside the wordmark (navigation.ts createDomainPill). */
-.edf-popup-domain-pill {
-    --edf-pill-background: #f1efeb;
-    --edf-pill-color: #5f6b7d;
-
-    align-items: center;
-    background: var(--edf-pill-background);
-    border: 0;
-    border-radius: 999px;
-    box-sizing: border-box;
-    color: var(--edf-pill-color);
-    cursor: pointer;
-    display: inline-flex;
-    flex: 0 0 auto;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    gap: 5px;
-    height: 24px;
-    line-height: 16px;
-    overflow: hidden;
-    padding: 0 10px 0 7px;
-    transition:
-        background-color 200ms ease,
-        color 200ms ease,
-        box-shadow 150ms ease;
-    white-space: nowrap;
-}
-
-.edf-popup-domain-pill:is(:hover, :focus-visible) {
-    box-shadow: inset 0 0 0 1px currentcolor;
-    outline: none;
-}
-
-.edf-popup-domain-pill[data-state="connected"] {
-    --edf-pill-background: #ebf6e6;
-    --edf-pill-color: var(--edf-color-green-hover);
-}
-
-.edf-popup-domain-pill[data-state="signed-out"] {
-    --edf-pill-background: #fdf3dc;
-    --edf-pill-color: #8a5a00;
-}
-
-.edf-popup-domain-pill[data-state="syncing"] {
-    --edf-pill-background: #ebf6e6;
-    --edf-pill-color: var(--edf-color-green-hover);
-
-    cursor: progress;
-}
-
-.edf-popup-domain-pill-icon {
-    display: grid;
-    flex: 0 0 auto;
-    height: 14px;
-    place-items: center;
-    width: 14px;
-}
-
-.edf-popup-domain-pill-icon > * {
-    grid-area: 1 / 1;
-    height: 14px;
-    opacity: 0;
-    transform: scale(0.6);
-    transition:
-        opacity 160ms ease,
-        transform 220ms cubic-bezier(0.2, 0, 0, 1);
-    width: 14px;
-}
-
-.edf-popup-domain-pill[data-state="connected"] .edf-popup-domain-pill-connected,
-.edf-popup-domain-pill:is([data-state="signed-out"], [data-state="offline"]) .edf-popup-domain-pill-disconnected,
-.edf-popup-domain-pill[data-state="syncing"] .edf-popup-domain-pill-sync {
-    opacity: 1;
-    transform: none;
-}
-
-.edf-popup-domain-pill[data-state="syncing"] .edf-popup-domain-pill-sync {
-    animation: edf-popup-spin 900ms linear infinite;
-}
-
-@keyframes edf-popup-spin {
-    to {
-        rotate: 360deg;
-    }
 }
 
 /* Menu, as Domain's account menu: identity, 40px items with 24px icons and counts. It fades
@@ -382,7 +269,7 @@
         transform 200ms cubic-bezier(0.2, 0, 0, 1),
         visibility 0s linear 200ms;
     visibility: hidden;
-    width: min(290px, calc(100vw - 24px));
+    width: min(300px, calc(100vw - 24px));
     z-index: 30;
 }
 
@@ -458,14 +345,15 @@
 }
 
 .edf-popup-account-menu-item:is(:hover, :focus-visible):not(:disabled) {
-    background: rgb(248 246 241);
+    background: var(--edf-hover-surface);
     color: var(--edf-color-heading);
     outline: none;
 }
 
 .edf-popup-account-menu-item[data-active="true"] {
-    color: var(--edf-color-green-hover);
-    font-weight: 600;
+    background: var(--edf-selected-surface);
+    color: var(--edf-selected-color);
+    font-weight: var(--edf-selected-weight);
 }
 
 .edf-popup-account-menu-count {
@@ -480,6 +368,35 @@
     text-align: center;
 }
 
+.edf-popup-account-menu-note {
+    color: var(--edf-color-muted);
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* The Domain sync row: green when synced, amber when it needs you, turning while it syncs. */
+.edf-popup-domain-item[data-state="connected"] svg {
+    color: var(--edf-color-green-hover);
+}
+
+.edf-popup-domain-item[data-state="signed-out"] svg {
+    color: #b07600;
+}
+
+.edf-popup-domain-item[data-state="syncing"] svg {
+    animation: edf-popup-spin 900ms linear infinite;
+}
+
+.edf-popup-domain-item:disabled[data-state="syncing"] {
+    opacity: 1;
+}
+
+@keyframes edf-popup-spin {
+    to {
+        rotate: 360deg;
+    }
+}
+
 .edf-popup-account-menu-divider {
     border: 0;
     border-top: 1px solid var(--edf-color-border);
@@ -490,29 +407,27 @@
     .edf-popup-navigation,
     .edf-popup-nav-item,
     .edf-popup-nav-item-label,
-    .edf-popup-nav-item-icon,
     .edf-popup-nav-item::after,
-    .edf-popup-domain-pill-icon > *,
     .edf-popup-menu-chevron,
     .edf-popup-account-menu {
         transition: none;
     }
 
-    .edf-popup-domain-pill[data-state="syncing"] .edf-popup-domain-pill-sync {
+    .edf-popup-menu-trigger[data-syncing="true"] .edf-popup-avatar,
+    .edf-popup-domain-item[data-state="syncing"] svg {
         animation-duration: 2.4s;
     }
 }
 
-/* Below 640px the tabs no longer fit beside the wordmark; the menu carries them. */
-@media (width < 640px) {
+/* Below 540px the tabs no longer fit beside the wordmark; the menu carries them. */
+@media (width < 540px) {
     .edf-popup-navigation {
         column-gap: 12px;
         grid-template-columns: minmax(0, 1fr) max-content;
         padding: 0 12px;
     }
 
-    .edf-popup-primary-navigation,
-    .edf-popup-navigation-actions::before {
+    .edf-popup-primary-navigation {
         display: none;
     }
 

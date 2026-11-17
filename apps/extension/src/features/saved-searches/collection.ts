@@ -34,6 +34,7 @@ export interface SavedSearchCollectionOptions {
     onSave(search: SavedSearch): Promise<void>;
     openLinksInNewTab?: boolean;
     selectedIds: Set<string>;
+    title?: string;
     signal: AbortSignal;
 }
 
@@ -66,6 +67,7 @@ export function createSavedSearchCollection(
     const frame = createCollectionFrame({
         cardsClassName: options.cardsClassName,
         className: options.className,
+        title: options.title,
     });
     const controller = createCollectionController<SavedSearchType, SavedSearch, SavedSearchSort>({
         filter: (search, type) => type === "all" || getSavedSearchType(search) === type,
@@ -178,7 +180,8 @@ export function createSavedSearchCollection(
         cardsController.abort();
         if (selectionCommitTimer !== undefined) window.clearTimeout(selectionCommitTimer);
     }, { once: true });
-    frame.setToolbar([tabs, controls, sort.element]);
+    frame.setTabs(tabs);
+    frame.setToolbar([controls, sort.element]);
     controller.subscribe(render, options.signal);
     render();
 

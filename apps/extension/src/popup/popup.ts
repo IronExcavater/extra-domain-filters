@@ -99,8 +99,14 @@ function navigate(view: PopupView): void {
 
 async function createPreferencesView(): Promise<HTMLElement> {
     const content = document.createElement("section");
+    const header = document.createElement("header");
+    const title = document.createElement("h1");
     content.className = "edf-popup-content";
-    content.append(createSettingsContent(await getSettings(), {
+    header.className = "edf-collection-head";
+    title.className = "edf-collection-heading";
+    title.textContent = "Preferences";
+    header.append(title);
+    content.append(header, createSettingsContent(await getSettings(), {
         // Filter toggles live on the Filters page.
         excludeSections: ["filters"],
         includeIntroduction: false,

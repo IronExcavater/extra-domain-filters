@@ -69,12 +69,15 @@ const mountSavedSearchesPage: PageMount = context => {
             onSave: search => saveAlert(search, context.signal),
             selectedIds: selectedSearchIds,
             signal: context.signal,
+            title: "Saved searches",
         });
         attach(markOwned(collection.element, "saved-search-collection"));
     }, error => context.logger.error("Could not render saved searches", error));
     const attach = (element: HTMLElement): void => {
         const host = findDomainSavedSearchHost();
         const heading = host.querySelector("h1");
+        // Our list carries the title, with its tabs beside it; Domain's own heading steps aside.
+        if (heading) heading.dataset.edfReplaced = "true";
         if (heading) heading.after(element);
         else host.append(element);
     };

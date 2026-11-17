@@ -25,6 +25,7 @@ export function createSavedSearchesView(
         density: "compact",
         items: searches,
         onNotify: showPopupToast,
+        title: "My searches",
         onRemove: async search => {
             if (search.domainId) await removeDomainSavedSearchFromExtensionPage(search.domainId);
             await removeSavedSearch(search.id);

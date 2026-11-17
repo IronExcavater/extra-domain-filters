@@ -61,3 +61,17 @@ export function isAuthResponse(value: unknown): value is AuthResponse {
 export function isAuthBridgeReady(value: unknown): value is AuthBridgeReady {
     return isPlainObject(value) && value.type === "federated-auth:ready";
 }
+
+/**
+ * The hosted sign-in page's answer when it runs in a tab (`?flow=tab`), which every browser can
+ * open. The page posts it to its own window; the extension's content script on that page
+ * relays it to the background, which matches `state` to the tab it opened.
+ */
+export interface TabAuthResult {
+    response: AuthResponse;
+    type: "federated-auth:tab-result";
+}
+
+export function isTabAuthResult(value: unknown): value is TabAuthResult {
+    return isPlainObject(value) && value.type === "federated-auth:tab-result" && isAuthResponse(value.response);
+}

@@ -58,6 +58,7 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
     const frame = createCollectionFrame({
         cardsClassName: "edf-popup-blacklist-grid edf-blacklist-card-grid",
         className: "edf-popup-content",
+        title: "Blacklist",
     });
     const controller = createCollectionController<BlacklistFilter, BlacklistEntry, BlacklistSort>({
         filter: (entry, filter) => filterBlacklistEntries([entry], filter).length > 0,
@@ -119,7 +120,7 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
     };
     const renderScope = (): void => {
         const scope = activeScope;
-        frame.setToolbar(scope === "properties" ? [tabs, controls, sort.element] : [tabs]);
+        frame.setToolbar(scope === "properties" ? [controls, sort.element] : []);
         frame.element.dataset.scope = scope;
         profileList.hidden = scope === "properties";
         if (scope === "properties") {
@@ -198,6 +199,7 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
     };
 
     controls.className = "edf-page-actions";
+    frame.setTabs(tabs);
     controller.subscribe(render, signal);
     renderScope();
     return frame.element;

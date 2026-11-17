@@ -72,6 +72,37 @@
     width: 100%;
 }
 
+.edf-listing-page-toolbar > .edf-sort-actions {
+    justify-content: space-between;
+    margin-left: 0;
+    width: 100%;
+}
+
+/* Shortlist and blacklist: the title with its tabs on the right (page.ts replaceUserListingTabs);
+ * the subtitle, selection and sort, and the listings run full width below. */
+#shortlist > [data-edf-listing-layout="true"] {
+    column-gap: 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+#shortlist > [data-edf-listing-layout="true"] > * {
+    grid-column: 1 / -1;
+}
+
+#shortlist > [data-edf-listing-layout="true"] > [data-testid="shortlist__title"] {
+    align-self: end;
+    grid-column: 1;
+    grid-row: 1;
+}
+
+#shortlist > [data-edf-listing-layout="true"] > .edf-listing-title-tabs {
+    align-self: end;
+    grid-column: 2;
+    grid-row: 1;
+    padding-bottom: 6px;
+}
+
 #shortlist > :first-child {
     box-sizing: border-box;
     margin-inline: auto;

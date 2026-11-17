@@ -37,11 +37,11 @@
     padding: 6px 10px;
 }
 
-.edf-popup-content .edf-collection-toolbar .edf-collection-tabs {
+.edf-popup-content .edf-collection-head .edf-collection-tabs {
     gap: 18px;
 }
 
-.edf-popup-content .edf-collection-toolbar .edf-collection-tab {
+.edf-popup-content .edf-collection-head .edf-collection-tab {
     font-size: 14px;
     line-height: 20px;
 }

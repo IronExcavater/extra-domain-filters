@@ -511,9 +511,9 @@
 }
 
 .edf-filters-chip[data-selected="true"] {
-    background: #ebf6e6;
-    border-color: var(--edf-color-green);
-    color: var(--edf-color-green-hover);
+    background: var(--edf-selected-surface);
+    border-color: var(--edf-selected-border);
+    color: var(--edf-selected-color);
 }
 
 .edf-filters-chip[data-removing="true"] {

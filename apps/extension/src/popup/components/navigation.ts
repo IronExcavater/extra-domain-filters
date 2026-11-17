@@ -17,7 +17,6 @@ import {
     replaceWithSlidersIcon,
     replaceWithSyncIcon,
 } from "../../ui/icons";
-import { attachTooltip } from "../../ui/tooltip";
 import type { PopupData, PopupView } from "../model";
 import { showPopupToast } from "../toast";
 
@@ -39,10 +38,10 @@ interface NavigationOptions {
 }
 
 const NAV_ITEMS = [
-    { icon: replaceWithPopupSavedSearchIcon, label: "My Searches", view: "saved-searches" },
-    { icon: replaceWithSlidersIcon, label: "Filters", view: "filters" },
-    { icon: replaceWithBinIcon, label: "Blacklist", view: "blacklist" },
-] satisfies Array<{ icon: IconRenderer; label: string; view: PopupView }>;
+    { label: "My Searches", view: "saved-searches" },
+    { label: "Filters", view: "filters" },
+    { label: "Blacklist", view: "blacklist" },
+] satisfies Array<{ label: string; view: PopupView }>;
 const DOMAIN_HOME_URL = "https://www.domain.com.au/";
 const DOMAIN_SIGN_IN_URL = "https://www.domain.com.au/user/saved-searches";
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
@@ -50,21 +49,17 @@ const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 const reducedMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
- * A header tab: icon, label and its own underline (CSS ::after), shown while it is the active
- * view. The underline is part of the item, so it always sits under it; switching tabs slides
- * it across (slideUnderline).
+ * A header tab, as Domain's own header: plain text, with its own underline (CSS ::after) while
+ * it is the active view. Switching tabs slides the line across (slideUnderline).
  */
-function createNavItem(options: { icon?: IconRenderer; label?: string; className?: string }): HTMLButtonElement {
-    const item = createButton("", ["edf-popup-nav-item", options.className].filter(Boolean).join(" "));
-    if (options.icon) item.append(createSvgIcon(options.icon, "edf-popup-nav-item-icon"));
-    if (options.label) {
-        const label = document.createElement("span");
-        label.className = "edf-popup-nav-item-label";
-        // The bold copy reserves the active width, so selecting a tab never nudges its neighbours.
-        label.dataset.text = options.label;
-        label.textContent = options.label;
-        item.append(label);
-    }
+function createNavItem(text: string): HTMLButtonElement {
+    const item = createButton("", "edf-popup-nav-item");
+    const label = document.createElement("span");
+    label.className = "edf-popup-nav-item-label";
+    // The bold copy reserves the active width, so selecting a tab never nudges its neighbours.
+    label.dataset.text = text;
+    label.textContent = text;
+    item.append(label);
     return item;
 }
 
@@ -117,7 +112,8 @@ function createMenuItem(
     label: string,
     renderIcon: IconRenderer,
     onClick: () => void,
-    count?: number,
+    /** A count shows as a badge; text (e.g. "5 min ago") as a quiet note. */
+    count?: number | string,
     active = false,
 ): HTMLButtonElement {
     const button = createButton("", "edf-popup-account-menu-item");
@@ -129,7 +125,7 @@ function createMenuItem(
     button.append(createSvgIcon(renderIcon), text);
     if (count !== undefined) {
         const badge = document.createElement("span");
-        badge.className = "edf-popup-account-menu-count";
+        badge.className = typeof count === "number" ? "edf-popup-account-menu-count" : "edf-popup-account-menu-note";
         badge.textContent = String(count);
         button.append(badge);
     }
@@ -159,97 +155,33 @@ function createIdentity(account: AccountState): HTMLElement | undefined {
 }
 
 function formatCheckedAt(checkedAt: number | undefined): string {
-    if (checkedAt === undefined) return "not synced yet";
+    if (checkedAt === undefined) return "";
     const minutes = Math.round((Date.now() - checkedAt) / 60_000);
-    if (minutes < 1) return "synced just now";
-    if (minutes < 60) return `synced ${minutes} min ago`;
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes} min ago`;
     const hours = Math.round(minutes / 60);
-    return `synced ${hours} hr${hours === 1 ? "" : "s"} ago`;
+    return `${hours} hr${hours === 1 ? "" : "s"} ago`;
 }
 
-type DomainPillState = "connected" | "offline" | "signed-out" | "syncing";
+type DomainState = "connected" | "offline" | "signed-out" | "syncing";
 
-function describeDomain(
-    session: DomainSessionState,
-    syncing: boolean,
-): { label: string; state: DomainPillState; tooltip: string } {
-    if (syncing) return { label: "Syncing", state: "syncing", tooltip: "Syncing your saved searches with Domain\u2026" };
+/** Domain sync, as the menu's first row: what it says, a note, and its icon. */
+function describeDomain(session: DomainSessionState, syncing: boolean): {
+    icon: IconRenderer;
+    label: string;
+    note?: string;
+    state: DomainState;
+} {
+    if (syncing) return { icon: replaceWithSyncIcon, label: "Syncing with Domain\u2026", state: "syncing" };
     if (session.status === "signed-in") {
-        return {
-            label: "Synced",
-            state: "connected",
-            tooltip: `Saved searches ${formatCheckedAt(session.checkedAt)} with Domain. Click to sync again.`,
-        };
+        return { icon: replaceWithConnectedIcon, label: "Synced with Domain", note: formatCheckedAt(session.checkedAt), state: "connected" };
     }
     if (session.status === "signed-out") {
-        return {
-            label: "Sign in",
-            state: "signed-out",
-            tooltip: "You're signed out of Domain, so saved searches can't sync. Click to sign in.",
-        };
+        return { icon: replaceWithDisconnectedIcon, label: "Sign in to Domain", note: "to sync", state: "signed-out" };
     }
     return session.checkedAt === undefined
-        ? { label: "Sync", state: "offline", tooltip: "Not synced with Domain yet. Click to sync your saved searches." }
-        : { label: "Offline", state: "offline", tooltip: "Couldn't reach Domain. Click to try again." };
-}
-
-/**
- * The Domain connection, as a small pill beside the wordmark: linked, unlinked, or turning
- * sync arrows while it syncs. The icon cross-fades, the pill eases to its new width, and a
- * finished sync pops once.
- */
-function createDomainPill(onSync: () => void): {
-    element: HTMLButtonElement;
-    update(session: DomainSessionState, syncing: boolean): void;
-} {
-    const pill = createButton("", "edf-popup-domain-pill");
-    const icon = document.createElement("span");
-    const label = document.createElement("span");
-    const tooltip = attachTooltip(pill, "", { placement: "bottom" });
-    let state: DomainPillState | undefined;
-
-    icon.className = "edf-popup-domain-pill-icon";
-    icon.ariaHidden = "true";
-    icon.append(
-        createSvgIcon(replaceWithConnectedIcon, "edf-popup-domain-pill-connected"),
-        createSvgIcon(replaceWithDisconnectedIcon, "edf-popup-domain-pill-disconnected"),
-        createSvgIcon(replaceWithSyncIcon, "edf-popup-domain-pill-sync"),
-    );
-    label.className = "edf-popup-domain-pill-label";
-    pill.append(icon, label);
-    pill.addEventListener("click", () => {
-        if (state === "syncing") return;
-        if (state === "signed-out") void browser.tabs.create({ url: DOMAIN_SIGN_IN_URL });
-        else onSync();
-    });
-
-    return {
-        element: pill,
-        update(session, syncing) {
-            const next = describeDomain(session, syncing);
-            if (state === "syncing" && next.state === "connected" && !reducedMotion()) {
-                pill.animate(
-                    [{ transform: "scale(1)" }, { transform: "scale(1.08)" }, { transform: "scale(1)" }],
-                    { duration: 360, easing: EASE },
-                );
-            }
-            state = next.state;
-            pill.dataset.state = next.state;
-            pill.ariaBusy = String(next.state === "syncing");
-            pill.ariaLabel = `Domain.com.au: ${next.label}`;
-            tooltip.setText(next.tooltip);
-            if (label.textContent === next.label) return;
-
-            const from = pill.isConnected ? pill.getBoundingClientRect().width : 0;
-            label.textContent = next.label;
-            if (!from || reducedMotion()) return;
-            const to = pill.getBoundingClientRect().width;
-            if (Math.abs(from - to) >= 1) {
-                pill.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration: 220, easing: EASE });
-            }
-            label.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: "ease-out" });
-        },
-    };
+        ? { icon: replaceWithSyncIcon, label: "Sync with Domain", state: "offline" }
+        : { icon: replaceWithDisconnectedIcon, label: "Couldn't reach Domain", note: "Retry", state: "offline" };
 }
 
 export function createNavigation(options: NavigationOptions): Navigation {
@@ -257,7 +189,6 @@ export function createNavigation(options: NavigationOptions): Navigation {
     const start = document.createElement("div");
     const brand = createButton("", "edf-popup-brand");
     const logo = document.createElement("img");
-    const domain = createDomainPill(options.onSyncDomain);
     const navigation = document.createElement("nav");
     const actions = document.createElement("div");
     const account = document.createElement("div");
@@ -265,15 +196,15 @@ export function createNavigation(options: NavigationOptions): Navigation {
     const chevron = createSvgIcon(replaceWithChevronIcon, "edf-popup-menu-chevron");
     const menu = document.createElement("div");
     const tabs = NAV_ITEMS.map(item => {
-        const tab = createNavItem({ icon: item.icon, label: item.label });
+        const tab = createNavItem(item.label);
         tab.dataset.popupView = item.view;
         tab.addEventListener("click", () => options.onNavigate(item.view));
         return tab;
     });
     let open = false;
-    let session: DomainSessionState = { status: "unavailable" };
     let syncing = false;
     let triggerKey: string | undefined;
+    let lastState: NavigationState | undefined;
 
     const setOpen = (next: boolean): void => {
         open = next;
@@ -294,7 +225,7 @@ export function createNavigation(options: NavigationOptions): Navigation {
     brand.ariaLabel = "Open Domain.com.au";
     brand.append(logo);
     brand.addEventListener("click", () => void browser.tabs.create({ url: DOMAIN_HOME_URL }));
-    start.append(brand, domain.element);
+    start.append(brand);
 
     navigation.className = "edf-popup-primary-navigation";
     navigation.append(...tabs);
@@ -317,35 +248,26 @@ export function createNavigation(options: NavigationOptions): Navigation {
     header.append(start, navigation, actions);
     setOpen(false);
 
-    // When the labelled tabs no longer fit beside the wordmark (a narrower popup), they fold
-    // to icons rather than overflowing onto the Domain pill; they unfold once the room they
-    // needed is back. The labels' width and opacity transition, so the tabs glide.
-    let labelledWidth = 0;
-    // Folded tabs name themselves in a tooltip; labelled ones don't need one.
-    const tabTooltips = tabs.map(tab => {
-        const label = tab.querySelector(".edf-popup-nav-item-label")?.textContent ?? "";
-        tab.ariaLabel = label;
-        return { label, tooltip: attachTooltip(tab, "", { placement: "bottom" }) };
-    });
-    const setCompact = (compact: boolean): void => {
-        header.dataset.compact = String(compact);
-        for (const { label, tooltip } of tabTooltips) tooltip.setText(compact ? label : "");
-    };
-    new ResizeObserver(() => {
-        const compact = header.dataset.compact === "true";
-        if (!compact && navigation.scrollWidth > navigation.clientWidth + 1) {
-            labelledWidth = navigation.scrollWidth;
-            setCompact(true);
-        } else if (compact && navigation.clientWidth >= labelledWidth) {
-            setCompact(false);
-        }
-    }).observe(navigation);
-
     const renderMenu = ({ activeView, data }: NavigationState): void => {
         const signedIn = data.account?.status === "signed-in";
         const items: HTMLElement[] = [];
         const identity = data.account ? createIdentity(data.account) : undefined;
         if (identity) items.push(identity);
+        const domain = describeDomain(data.domainSession, syncing);
+        const domainItem = createMenuItem(domain.label, domain.icon, () => {
+            if (domain.state === "signed-out") {
+                void browser.tabs.create({ url: DOMAIN_SIGN_IN_URL });
+                setOpen(false);
+            } else {
+                options.onSyncDomain();
+            }
+        }, domain.note);
+        domainItem.classList.add("edf-popup-domain-item");
+        domainItem.dataset.state = domain.state;
+        domainItem.disabled = domain.state === "syncing";
+        const domainDivider = document.createElement("hr");
+        domainDivider.className = "edf-popup-account-menu-divider";
+        items.push(domainItem, domainDivider);
         items.push(createMenuItem(
             "My searches",
             replaceWithPopupSavedSearchIcon,
@@ -411,7 +333,8 @@ export function createNavigation(options: NavigationOptions): Navigation {
         element: header,
         setSyncing(next) {
             syncing = next;
-            domain.update(session, syncing);
+            trigger.dataset.syncing = String(syncing);
+            if (lastState) renderMenu(lastState);
         },
         update(state) {
             const { activeView, data } = state;
@@ -429,8 +352,10 @@ export function createNavigation(options: NavigationOptions): Navigation {
                 trigger.replaceChildren(createAvatar(user), chevron);
             }
 
-            session = data.domainSession;
-            domain.update(session, syncing);
+            // The avatar carries a dot while Domain needs attention (signed out, unreachable).
+            trigger.dataset.domainAttention = String(data.domainSession.status === "signed-out"
+                || (data.domainSession.status === "unavailable" && data.domainSession.checkedAt !== undefined));
+            lastState = state;
             renderMenu(state);
         },
     };

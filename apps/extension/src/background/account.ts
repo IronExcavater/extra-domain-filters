@@ -11,9 +11,6 @@ import {
     type User,
 } from "firebase/auth/web-extension";
 
-import { getBundledAuthRuntime, isAllowedExtensionOrigin } from "@extra-domain-filters/shared/config/auth";
-import { browser } from "wxt/browser";
-
 import type { AccountProvider, AccountState } from "../domain/account/model";
 import { getFirebaseServices } from "../infrastructure/firebase/client";
 import { AuthBridgeError } from "./authBridge";
@@ -21,23 +18,13 @@ import { getProviderCredential } from "./authProviders";
 
 type LoginProvider = AccountProvider;
 
-/**
- * Google, Apple and Facebook go through the hosted sign-in page in an offscreen document,
- * which only Chromium browsers have, and that page only answers extension IDs it knows
- * (shared/config/auth.ts). Elsewhere, email sign-in still works.
- */
-function canUseFederatedSignIn(): boolean {
-    const { mode } = getBundledAuthRuntime();
-    return browser.offscreen !== undefined && isAllowedExtensionOrigin(new URL(browser.runtime.getURL("/popup.html")).origin, mode);
-}
-
 function getCapabilities(configured: boolean): AccountState["capabilities"] {
-    const federated = configured && canUseFederatedSignIn();
+    // Google, Apple and Facebook work in every browser (authBridge.ts picks the route).
     return {
-        apple: federated,
+        apple: configured,
         emailPassword: configured,
-        facebook: federated,
-        google: federated,
+        facebook: configured,
+        google: configured,
     };
 }
 

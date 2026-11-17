@@ -38,7 +38,20 @@ Run these in `apps/extension`. Each build goes to `.output/<browser>-mv3`, and `
 
 `pnpm zip:all` packages every browser at once.
 
-Google, Apple and Facebook sign-in runs in an offscreen document, which only Chromium browsers have, and the sign-in page only answers extension IDs listed in `packages/shared/src/config/auth.ts`. Add the Edge and Opera IDs there once those listings exist. Firefox and Safari users sign in with email.
+For Edge and Opera, `pnpm dev:edge` and `pnpm dev:opera` build into `.output/edge-mv3-dev` and `.output/opera-mv3-dev`; load that folder in the browser's extensions page. Run one dev server at a time (they share port 3000).
+
+### Store links
+
+`packages/shared/src/config/links.ts` (`STORE_LINKS`) holds where each browser gets the extension. The README and the website read from there. Edge, Firefox and Opera point at a store search until their listings are live: swap in each listing's URL then.
+
+### Google, Apple and Facebook sign-in
+
+Two routes, chosen by `apps/extension/src/background/authBridge.ts`:
+
+- **Offscreen** (one step, in the popup): Chromium browsers whose extension ID is listed in `packages/shared/src/config/auth.ts`. The hosted sign-in page runs in a hidden offscreen document.
+- **Tab** (every other browser): the hosted sign-in page opens in a tab with a "Continue with…" button. Its result is posted to the page itself, and the extension's content script on that page (`entrypoints/auth-bridge.content.ts`) relays it to the background, which closes the tab.
+
+Add the Edge and Opera listing IDs to `auth.ts` to give those browsers the one-step route.
 
 ## Checks
 

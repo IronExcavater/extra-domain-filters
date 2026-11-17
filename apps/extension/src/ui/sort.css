@@ -151,5 +151,11 @@
 }
 
 .edf-sort-dropdown-option:hover {
-    background: var(--edf-color-surface-muted);
+    background: var(--edf-hover-surface);
+}
+
+.edf-sort-dropdown-option[data-selected="true"] {
+    background: var(--edf-selected-surface);
+    color: var(--edf-selected-color);
+    font-weight: var(--edf-selected-weight);
 }

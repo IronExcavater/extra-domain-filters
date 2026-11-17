@@ -94,15 +94,21 @@
         align-items: center;
         background: #ebf6e6;
         border-radius: 50%;
+        color: #087f00;
         display: inline-flex;
-        font-size: 18px;
         height: 36px;
         justify-content: center;
         width: 36px;
     }
 
+    .callout span svg {
+        height: 20px;
+        width: 20px;
+    }
+
     .callout.gold span {
         background: #fff1c2;
+        color: #8a5a00;
     }
 
     /* 1280x800 screenshot: headline across the top, the popup running off the bottom. */
@@ -305,35 +311,40 @@
 </head>
 <body>
 <script>
-    // Headline (with an <em> accent), line, and callouts: [emoji, text, left, top, gold?].
+    // Headline (with an <em> accent), line, and callouts: [icon, text, left, top, gold?]. The
+    // icons are the extension's own (packages/assets/icons), inlined below.
     const SHOTS = {
         "saved-searches": {
             title: "Every saved search, <em>one click away</em>",
-            text: "See what's new in each search, change its alerts, and keep it in sync with your Domain account.",
-            callouts: [["✨", "New listings counted for you", 90, 690], ["🔔", "Daily, weekly or never alerts", 60, 548]],
+            text: "See what's new in each search, choose daily, weekly or no emails, and share any search with a link.",
+            callouts: [["search", "New listings counted for you", 960, 545], ["bell", "Daily, weekly or no emails at all", 60, 700]],
         },
         filters: {
             title: "Filters <em>Domain doesn't have</em>",
             text: "Pick your could-haves, exclude keywords, cap strata fees and hide property types. Changes apply straight away.",
-            callouts: [["🏊", "Tick extras, or add your own", 920, 470, true], ["💰", "Strata caps and keyword filters", 60, 735]],
+            callouts: [["could-haves", "Tick extras, or add your own", 920, 470, true], ["strata", "Strata caps and keyword filters", 60, 735]],
         },
         blacklist: {
             title: "Hide it once, and <em>it stays hidden</em>",
             text: "Blacklist listings, agencies and agents across every search, and bring any of them back in a click.",
-            callouts: [["🏢", "Hide whole agencies and agents", 60, 520], ["↩️", "Bring any back in a click", 940, 640]],
+            callouts: [["trash", "Hide whole agencies and agents", 60, 520], ["restore", "Bring any back in a click", 940, 640]],
         },
         "sign-in": {
             title: "Your setup, <em>on every browser</em>",
             text: "Sign in to sync your filters, blacklist and saved searches wherever you search.",
-            callouts: [["🔄", "Synced across your browsers", 920, 330], ["🔒", "Google, Apple, Facebook or email", 860, 610]],
+            callouts: [["sync", "Synced across your browsers", 920, 330], ["person", "Google, Apple, Facebook or email", 860, 610]],
         },
     };
     const params = new URLSearchParams(location.search);
     const tile = params.get("tile");
     const icon = '<img class="brand-icon" src="../../packages/assets/icons/brand/icon.png" alt="">';
     const popup = (name, className = "") => `<div class="popup ${className}"><img src="raw/${name}.png" alt=""></div>`;
-    const callout = ([emoji, text, left, top, gold]) =>
-        `<div class="callout${gold ? " gold" : ""}" style="left:${left}px;top:${top}px"><span>${emoji}</span>${text}</div>`;
+    const ICON_PATHS = {
+        bell: "search/bell", "could-haves": "filters/could-haves", hide: "actions/hide", person: "account/person",
+        restore: "actions/restore", search: "search/search", strata: "filters/strata", sync: "account/sync", trash: "actions/trash",
+    };
+    const callout = ([icon, text, left, top, gold]) =>
+        `<div class="callout${gold ? " gold" : ""}" style="left:${left}px;top:${top}px"><span data-icon="${icon}"></span>${text}</div>`;
 
     if (tile === "small") {
         document.body.className = "tile small";
@@ -356,7 +367,8 @@
             </div>
             ${popup("saved-searches", "back")}
             ${popup("filters", "front")}
-            ${callout(["🏊", "Pool matched", 760, 420, true])}`;
+            ${callout(["could-haves", "Pool matched", 760, 420, true])}
+            ${callout(["hide", "3 listings hidden", 1140, 470])}`;
     } else {
         const shot = SHOTS[params.get("shot") ?? "filters"];
         document.body.className = "screenshot";
@@ -369,6 +381,11 @@
             ${shot.callouts.map(callout).join("")}`;
         document.querySelector(".top p").textContent = shot.text;
     }
+    // Inline each icon so it takes the callout's colour; body[data-ready] says the image is done.
+    Promise.all([...document.querySelectorAll("[data-icon]")].map(async slot => {
+        const svg = await (await fetch(`../../packages/assets/icons/${ICON_PATHS[slot.dataset.icon]}.svg`)).text();
+        slot.innerHTML = svg.replace(/<\?xml[^>]*>|<!--[\s\S]*?-->/g, "").replace(/\s(?:width|height)="[^"]*"/g, "");
+    })).then(() => { document.body.dataset.ready = "true"; });
 </script>
 </body>
 </html>

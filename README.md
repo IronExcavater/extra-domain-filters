@@ -6,7 +6,7 @@
 
 Tick the extras you'd love 🏊, **hide the listings you never want to see again** 🚫, and keep every saved search one click away 🔖. It works on domain.com.au in **Chrome, Edge, Firefox, Opera and Safari**.
 
-- 🧩 **[Add to Chrome](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg)**
+- 🧩 **Get it for** [**Chrome**](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg), [**Edge**](https://microsoftedge.microsoft.com/addons/search/extra%20domain%20filters), [**Firefox**](https://addons.mozilla.org/en-US/firefox/search/?q=extra%20domain%20filters) or [**Opera**](https://addons.opera.com/en/search/?query=extra%20domain%20filters)
 - 🌐 **[Website](https://extra-domain-filters.web.app/)**
 - 💬 **[Support](https://extra-domain-filters.web.app/support/)**
 
@@ -48,18 +48,20 @@ Tick the extras you'd love 🏊, **hide the listings you never want to see again
 
 ### 🔄 Sync
 
-**Sign in to keep your filters, blacklist and saved searches the same on every browser you use.** On Chrome, sign in with Google, Apple, Facebook or email; on other browsers, with email. An account is **optional**: everything works without one.
+**Sign in to keep your filters, blacklist and saved searches the same on every browser you use**, with **Google, Apple, Facebook or email**, in any browser. An account is **optional**: everything works without one.
 
 ## 🌐 Browsers
 
-| Browser             | Filters and blacklist | Google, Apple or Facebook sign-in | Email sign-in | Where to get it                   |
-| ------------------- | :-------------------: | :-------------------------------: | :-----------: | --------------------------------- |
-| **Chrome**          |          ✅           |                ✅                 |      ✅       | Chrome Web Store                  |
-| **Edge**            |          ✅           |            Coming soon            |      ✅       | Microsoft Edge Add-ons            |
-| **Firefox**         |          ✅           |                ❌                 |      ✅       | Firefox Add-ons                   |
-| **Opera, Opera GX** |          ✅           |            Coming soon            |      ✅       | Opera add-ons or Chrome Web Store |
-| **Safari for Mac**  |          ✅           |                ❌                 |      ✅       | App Store                         |
-| **Brave, Vivaldi**  |          ✅           |                ✅                 |      ✅       | Chrome Web Store                  |
+| Browser             | Filters and blacklist | Sign in with Google, Apple, Facebook or email | Where to get it                                |
+| ------------------- | :-------------------: | :-------------------------------------------: | ---------------------------------------------- |
+| **Chrome**          |          ✅           |                      ✅                       | [Chrome Web Store](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg)                      |
+| **Edge**            |          ✅           |                      ✅                       | [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/search/extra%20domain%20filters)               |
+| **Firefox**         |          ✅           |                      ✅                       | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/search/?q=extra%20domain%20filters)                   |
+| **Opera, Opera GX** |          ✅           |                      ✅                       | [Opera add-ons](https://addons.opera.com/en/search/?query=extra%20domain%20filters)                       |
+| **Safari for Mac**  |          ✅           |                      ✅                       | [Build it for Safari](CONTRIBUTING.md#build-for-each-browser)                |
+| **Brave, Vivaldi**  |          ✅           |                      ✅                       | [Chrome Web Store](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg)                      |
+
+On Chrome, Google, Apple and Facebook sign-in finishes **right in the popup**; in other browsers it finishes **in a sign-in tab** that closes by itself.
 
 ## 🚀 Get started
 

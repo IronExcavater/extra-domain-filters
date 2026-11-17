@@ -18,13 +18,71 @@ export interface LegalPage {
 
 export const EFFECTIVE_DATE = "12 August 2026";
 
-/** The landing page's feature rows, as in the store screenshots: [image, accent, rest, text]. */
-export const features = [
-    ["saved-searches", "One click away:", "every saved search", "See what's new in each search, choose Daily, Weekly or Never alerts, and keep them in sync with your Domain account."],
-    ["filters", "Filters", "Domain doesn't have", "Tick the could-haves you'd love, add your own, exclude keywords, cap strata fees and hide property types, including listings described as one."],
-    ["blacklist", "Hide it once,", "and it stays hidden", "Blacklist a listing, an agency or an agent and it's gone from every search, with a tidy summary of what's hidden and a way back."],
-    ["sign-in", "Your setup,", "on every browser", "Sign in with Google, Apple, Facebook or email to sync your filters, blacklist and saved searches wherever you search."],
-] as const;
+export interface Feature {
+    /** The part of the title in green. */
+    accent: string;
+    bullets: readonly string[];
+    /** One of the extension's own icons (landing.ts ICONS). */
+    icon: "bell" | "bin" | "could-haves" | "sync";
+    id: string;
+    rest: string;
+    shot: "blacklist" | "filters" | "saved-searches" | "sign-in";
+}
+
+/** The landing page's features, each with its popup capture (docs/store/web). */
+export const features: readonly Feature[] = [
+    {
+        id: "filters",
+        icon: "could-haves",
+        accent: "Filters",
+        rest: "Domain doesn't have",
+        shot: "filters",
+        bullets: [
+            "Tick could-haves like a pool or a dishwasher, or add your own",
+            "Matches get a gold tag in results and a gold pin on the map",
+            "Exclude keywords such as \"studio\" or \"tenanted\"",
+            "Cap strata fees, and hide property types, even mis-tagged ones",
+        ],
+    },
+    {
+        id: "blacklist",
+        icon: "bin",
+        accent: "Hide it once,",
+        rest: "it stays hidden",
+        shot: "blacklist",
+        bullets: [
+            "Bin a listing and it's gone from every search",
+            "Hide every listing from an agency, or from one agent",
+            "See why each listing is hidden, and bring it back in a click",
+            "Hidden listings' pins disappear from the map too",
+        ],
+    },
+    {
+        id: "saved-searches",
+        icon: "bell",
+        accent: "Saved searches,",
+        rest: "without the inbox",
+        shot: "saved-searches",
+        bullets: [
+            "Every saved search in one place, with what's new",
+            "Daily or weekly emails, or none at all: save a search with no alerts",
+            "Share a search, filters included, with a link",
+            "Notes on shortlisted listings, on the back of each card",
+        ],
+    },
+    {
+        id: "sync",
+        icon: "sync",
+        accent: "Your setup,",
+        rest: "on every browser",
+        shot: "sign-in",
+        bullets: [
+            "Optional: everything works without an account",
+            "Sign in with Google, Apple, Facebook or email",
+            "Filters, blacklist and searches follow you everywhere",
+        ],
+    },
+];
 
 export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = {
     "/support/": {
@@ -62,7 +120,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 title: "Accounts and sync",
                 body: [
                     "An account is optional. Signing in keeps your filters, blacklist and saved searches the same on every browser you use.",
-                    "On Chrome you can sign in with Google, Apple or Facebook, or with an email and password. On other browsers, sign in with an email and password.",
+                    "Sign in with Google, Apple, Facebook or an email and password, in any browser. On Chrome, Google, Apple and Facebook sign-in finishes in the popup; in other browsers it finishes in a sign-in tab that closes by itself.",
                     "Saved searches sync with your Domain account while you're signed in to domain.com.au in the same browser.",
                 ],
             },

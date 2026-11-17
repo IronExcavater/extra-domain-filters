@@ -31,6 +31,16 @@
     --edf-shadow-card: 0 1px 3px 0 #d0d3d9;
     --edf-shadow-popover: 0 12px 32px rgb(19 18 18 / 18%), 0 2px 8px rgb(19 18 18 / 10%);
 
+    /* One "selected" look for every component: green text, a light green tint (menus,
+     * dropdowns, chips) or a green line (tabs), and a heavier weight. */
+    --edf-selected-color: #087f00;
+    --edf-selected-surface: #eef7e9;
+    --edf-selected-border: #0ea800;
+    --edf-selected-line-color: #0ea800;
+    --edf-selected-line: 3px;
+    --edf-selected-weight: 700;
+    --edf-hover-surface: #f7f7f5;
+
     /* Domain 2026 accent-four states used by its shortlist controls. */
     --edf-color-shortlist-hover: #ffe976;
     --edf-color-shortlist-selected: #fc0;

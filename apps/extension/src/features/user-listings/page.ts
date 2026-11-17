@@ -237,13 +237,22 @@ export function replaceUserListingTabs(
     const toolbar = actions
         ? markOwned(document.createElement("div"), "listing-toolbar")
         : undefined;
+    // The tabs sit on the right of the page title, as in the popup: the container becomes a
+    // grid whose first row holds Domain's title and our tabs (features/user-listings/styles.css).
+    // Domain's own nodes stay where React put them.
+    const title = container.querySelector<HTMLElement>(':scope > [data-testid="shortlist__title"], :scope > h1, :scope > h2');
+    tabs.classList.add("edf-listing-title-tabs");
+    if (title) {
+        container.dataset.edfListingLayout = "true";
+        title.after(tabs);
+    }
     if (toolbar && actions) {
+        // Selection on the left, sort on the right, under the title.
         toolbar.className = "edf-listing-page-toolbar";
         native.before(toolbar);
-        toolbar.append(tabs, actions);
-    } else {
-        native.before(tabs);
+        toolbar.append(actions);
     }
+    if (!tabs.isConnected) native.before(tabs);
     native.hidden = true;
     const observer = new MutationObserver(sync);
     observer.observe(native, { attributes: true, childList: true, subtree: true });
@@ -258,6 +267,7 @@ export function replaceUserListingTabs(
         }
         toolbar?.remove();
         tabs.remove();
+        delete container.dataset.edfListingLayout;
         native.hidden = originalHidden;
     }, { once: true });
     sync();
@@ -273,6 +283,7 @@ export function replaceUserListingTabs(
         }
         toolbar?.remove();
         tabs.remove();
+        delete container.dataset.edfListingLayout;
         native.hidden = originalHidden;
     };
 }

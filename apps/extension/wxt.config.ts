@@ -88,6 +88,17 @@ export default defineConfig({
             ...browserManifests[browser] ?? chromium,
         };
     },
+    hooks: {
+        // The sign-in page's content script (entrypoints/auth-bridge.content.ts) matches the
+        // production page; dev builds talk to the local one instead.
+        "build:manifestGenerated": (wxt, manifest) => {
+            const { bridgeOrigin } = getAuthRuntime(wxt.config.mode);
+            for (const script of manifest.content_scripts ?? []) {
+                script.matches = script.matches?.map(match =>
+                    match.startsWith("https://extra-domain-filters.web.app/auth/") ? `${bridgeOrigin}/auth/*` : match);
+            }
+        },
+    },
     vite: ({ mode }) => {
         const authRuntime = getAuthRuntime(mode);
         return {
