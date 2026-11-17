@@ -119,27 +119,23 @@ a.edf-exclusion-row-title:hover {
     display: none !important;
 }
 
-/* The summary stays quiet until opened: a muted strip, then a list of the hidden listings. */
-.edf-exclusion-group {
-    background: var(--edf-color-surface-muted);
-    border-radius: var(--border-radius-outer, 12px);
+/* Hidden listings summary (compact.ts): one quiet line after the results with faded
+ * previews and a breakdown; opened, the listings sit in two groups (blacklisted, hidden by
+ * filters) with their price, why they're hidden and the way back. */
+.edf-hidden-summary {
+    border-top: 1px solid var(--color-neutral-trim-default, #e1e1df);
     grid-column: 1 / -1;
     list-style: none;
-    margin: 0 0 24px;
+    margin: 8px 0 24px;
     overflow: hidden;
-    transition: background-color 0.2s linear, box-shadow 0.2s linear;
 }
 
-.edf-exclusion-group[data-expanded="true"] {
-    background: var(--edf-color-surface);
-    box-shadow: inset 0 0 0 1px var(--color-neutral-trim-default, #e1e1df);
-}
-
-.edf-exclusion-group-header {
+.edf-hidden-summary-header {
     align-items: center;
     appearance: none;
     background: transparent;
     border: 0;
+    border-radius: 10px;
     color: var(--color-neutral-medium-default, #646463);
     cursor: pointer;
     display: flex;
@@ -147,64 +143,270 @@ a.edf-exclusion-row-title:hover {
     font-size: 14px;
     gap: 12px;
     line-height: 20px;
-    min-height: 44px;
-    padding: 0 14px;
+    margin-top: 8px;
+    min-height: 48px;
+    padding: 6px 8px;
     text-align: left;
-    transition: background-color 0.2s linear;
+    transition: background-color 150ms ease, color 150ms ease;
     width: 100%;
 }
 
-.edf-exclusion-group-header:hover {
-    background: rgb(19 18 18 / 3%);
+.edf-hidden-summary-header:hover {
+    background: var(--color-neutral-surface-hover, #f7f7f5);
+    color: var(--color-neutral-heavy-default, #131212);
 }
 
-.edf-exclusion-group-header:focus-visible {
+.edf-hidden-summary-header:focus-visible {
     box-shadow: inset var(--edf-focus-ring);
     outline: none;
 }
 
-.edf-exclusion-group-header .edf-exclusion-row-title {
-    font-weight: 700;
-}
-
-.edf-exclusion-group-toggle {
-    align-items: center;
-    color: var(--color-interactive-base-default, #0ea800);
+.edf-hidden-summary-previews {
     display: inline-flex;
     flex: 0 0 auto;
-    font-weight: 700;
-    gap: 4px;
 }
 
-.edf-exclusion-group-chevron {
-    transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
+.edf-hidden-summary-preview {
+    background: var(--color-neutral-trim-default, #e1e1df);
+    border: 2px solid var(--edf-color-surface, #fff);
+    border-radius: 8px;
+    box-sizing: border-box;
+    height: 34px;
+    overflow: hidden;
+    width: 44px;
 }
 
-.edf-exclusion-group[data-expanded="true"] .edf-exclusion-group-chevron {
+.edf-hidden-summary-preview + .edf-hidden-summary-preview {
+    margin-left: -18px;
+}
+
+.edf-hidden-summary-preview > img,
+.edf-hidden-item-photo > img {
+    display: block;
+    filter: grayscale(0.6);
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.85;
+    transition: filter 200ms ease, opacity 200ms ease;
+    width: 100%;
+}
+
+.edf-hidden-summary-header:hover .edf-hidden-summary-preview > img,
+.edf-hidden-item:hover .edf-hidden-item-photo > img {
+    filter: none;
+    opacity: 1;
+}
+
+.edf-hidden-summary-text {
+    align-items: center;
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    min-width: 0;
+}
+
+.edf-hidden-summary-title {
+    color: var(--color-neutral-heavy-default, #131212);
+    font-weight: 600;
+}
+
+.edf-hidden-summary-breakdown {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.edf-hidden-summary-chip,
+.edf-hidden-group-count,
+.edf-hidden-item-reason {
+    background: var(--color-neutral-surface-hover, #f3f1ed);
+    border-radius: 999px;
+    color: var(--color-neutral-medium-default, #646463);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 20px;
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
+.edf-hidden-summary-toggle {
+    align-items: center;
+    color: var(--color-neutral-heavy-default, #131212);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-weight: 600;
+    gap: 2px;
+}
+
+.edf-hidden-summary-chevron {
+    height: 18px;
+    transition: transform 240ms cubic-bezier(0.2, 0, 0, 1);
+    width: 18px;
+}
+
+.edf-hidden-summary[data-expanded="true"] .edf-hidden-summary-chevron {
     transform: rotate(180deg);
 }
 
-.edf-exclusion-group-body {
-    border-top: 1px solid var(--color-neutral-trim-default, #e1e1df);
+.edf-hidden-summary-body {
     overflow: hidden;
 }
 
-.edf-exclusion-group-body[hidden] {
+.edf-hidden-summary-body[hidden] {
     display: none;
 }
 
-.edf-exclusion-group-body > .edf-exclusion-group-item {
+.edf-hidden-group {
+    padding: 8px 8px 4px;
+}
+
+.edf-hidden-group-head {
+    align-items: center;
     display: flex;
-    padding: 8px 12px 8px 14px;
+    gap: 12px;
+    justify-content: space-between;
+    margin: 8px 0 4px;
 }
 
-.edf-exclusion-group-body > .edf-exclusion-group-item + .edf-exclusion-group-item {
-    border-top: 1px solid var(--color-neutral-trim-default, #e1e1df);
+.edf-hidden-group-title {
+    align-items: center;
+    color: var(--color-neutral-heavy-default, #131212);
+    display: inline-flex;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    gap: 8px;
+    margin: 0;
 }
 
-/* Items only repeat their reason when the summary mixes blacklisted and filtered listings. */
-.edf-exclusion-group:not([data-exclusion-reason="mixed"]) .edf-exclusion-group-item:not(.edf-exclusion-row-detailed) .edf-exclusion-row-reason {
-    display: none;
+.edf-hidden-group-action {
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: var(--color-interactive-base-default, #0ea800);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 8px;
+}
+
+.edf-hidden-group-action:is(:hover, :focus-visible) {
+    background: var(--color-neutral-surface-hover, #f3f1ed);
+    outline: none;
+}
+
+.edf-hidden-group-list {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.edf-hidden-item {
+    align-items: center;
+    border-radius: 10px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    padding: 8px;
+    transition: background-color 150ms ease, opacity 200ms ease;
+}
+
+.edf-hidden-item:hover {
+    background: var(--color-neutral-surface-hover, #f7f7f5);
+}
+
+.edf-hidden-item[data-leaving="true"] {
+    opacity: 0.4;
+}
+
+.edf-hidden-item-photo {
+    background: var(--color-neutral-trim-default, #e1e1df);
+    border-radius: 8px;
+    height: 48px;
+    overflow: hidden;
+    width: 64px;
+}
+
+.edf-hidden-item-text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.edf-hidden-item-title {
+    color: var(--color-neutral-heavy-default, #131212);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    overflow: hidden;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+a.edf-hidden-item-title:hover {
+    text-decoration: underline;
+}
+
+.edf-hidden-item-price {
+    color: var(--color-neutral-medium-default, #646463);
+    font-size: 13px;
+    line-height: 18px;
+}
+
+.edf-hidden-item-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.edf-hidden-item-reason {
+    background: #fdf3dc;
+    color: #8a5a00;
+    font-weight: 500;
+}
+
+.edf-hidden-item-action {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
+    border-radius: 8px;
+    color: var(--color-neutral-heavy-default, #131212);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px 0 10px;
+    transition: background-color 150ms ease, border-color 150ms ease;
+    white-space: nowrap;
+}
+
+.edf-hidden-item-action .domain-icon {
+    height: 16px;
+    width: 16px;
+}
+
+.edf-hidden-item-action:disabled {
+    cursor: progress;
+}
+
+.edf-hidden-item-action:is(:hover, :focus-visible):not(:disabled) {
+    background: var(--edf-color-surface, #fff);
+    border-color: var(--color-neutral-trim-hover, #a9afba);
+    outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edf-hidden-summary-chevron {
+        transition: none;
+    }
 }
 
 .edf-hide-again-button {

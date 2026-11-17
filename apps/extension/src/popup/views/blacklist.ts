@@ -6,7 +6,7 @@ import {
 import { getBlacklistListing, type BlacklistEntry } from "../../domain/matching";
 import { isProfileEntry } from "../../domain/blacklist/profiles";
 import { createBlacklistCard } from "../../features/blacklist/card";
-import { createProfileStrip } from "../../features/blacklist/profiles";
+import { createProfileCard, getProfileEntries } from "../../features/blacklist/profiles";
 import {
     filterBlacklistEntries,
     sortBlacklistEntries,
@@ -22,7 +22,7 @@ import {
     replaceSelection,
     setSelectionCheckboxState,
 } from "../../ui/selection";
-import { createSortControl } from "../../ui/sort";
+import { createDropdownControl, createSortControl } from "../../ui/sort";
 import { createTabs } from "../../ui/tabs";
 
 interface BlacklistViewOptions {
@@ -32,7 +32,11 @@ interface BlacklistViewOptions {
     signal: AbortSignal;
 }
 
+type BlacklistScope = "agency" | "agent" | "properties";
+
 const retainedUnblacklistedEntries = new Map<string, BlacklistEntry>();
+// The scope survives re-renders (e.g. after showing an agency again).
+let activeScope: BlacklistScope = "properties";
 const stableNewestOrder = new Map<string, number>();
 const SELECTION_TRANSITION_MS = 160;
 
@@ -72,20 +76,71 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
         ],
         signal,
     });
-    const tabs = createTabs<BlacklistFilter>({
-        active: "all",
+    const profiles = { agency: getProfileEntries(entries, "agency"), agent: getProfileEntries(entries, "agent") };
+    const profileList = document.createElement("div");
+    profileList.className = "edf-profile-grid edf-popup-profile-grid";
+    frame.cards.after(profileList);
+    const type = createDropdownControl({
+        ariaLabel: "Listing type",
         onChange: filter => {
             animateNext = true;
-            controller.setFilter(filter);
+            controller.setFilter(filter as BlacklistFilter);
         },
         options: [
-            { label: "All", value: "all" },
-            { label: "Buy", value: "buy" },
-            { label: "Rent", value: "rent" },
+            ["all", "Buy and rent"],
+            ["buy", "Buy"],
+            ["rent", "Rent"],
+        ],
+        signal,
+        value: "all",
+    });
+    type.element.classList.add("edf-blacklist-type");
+    const tabs = createTabs<BlacklistScope>({
+        active: activeScope,
+        indicatorKey: "popup-blacklist-scope",
+        onChange: scope => {
+            activeScope = scope;
+            animateNext = true;
+            renderScope();
+        },
+        options: [
+            { count: items.filter(entry => !entry.removedAt).length, label: "Properties", value: "properties" },
+            { count: profiles.agency.length, label: "Agencies", value: "agency" },
+            { count: profiles.agent.length, label: "Agents", value: "agent" },
         ],
         signal,
     });
+    const renderProfiles = (scope: Exclude<BlacklistScope, "properties">): void => {
+        const list = profiles[scope];
+        profileList.replaceChildren(...(list.length > 0
+            ? list.map(profile => createProfileCard(profile, { openInNewTab: true, toastScope: "popup" }))
+            : [createEmptyState(
+                scope === "agency" ? "No hidden agencies" : "No hidden agents",
+                "Hide one from the bin button in a listing card's agency strip, or from an agency's page on Domain.",
+                replaceWithBinIcon,
+            )]));
+        if (animateNext) {
+            profileList.removeAttribute("data-animate");
+            void profileList.offsetWidth;
+            profileList.dataset.animate = "true";
+        }
+        animateNext = false;
+    };
+    const renderScope = (): void => {
+        const scope = activeScope;
+        frame.setToolbar(scope === "properties" ? [tabs, type.element, controls, sort.element] : [tabs]);
+        frame.element.dataset.scope = scope;
+        profileList.hidden = scope === "properties";
+        if (scope === "properties") {
+            render();
+            return;
+        }
+        frame.setEmptyState(undefined);
+        frame.cards.hidden = true;
+        renderProfiles(scope);
+    };
     const render = (): void => {
+        if (activeScope !== "properties") return;
         const visible = controller.getVisibleItems();
         const selection = controller.getSelection();
 
@@ -152,10 +207,8 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
         animateNext = false;
     };
 
-    frame.setToolbar([tabs, controls, sort.element]);
-    const profiles = createProfileStrip(entries, { openInNewTab: true });
-    if (profiles) frame.cards.before(profiles);
+    controls.className = "edf-page-actions";
     controller.subscribe(render, signal);
-    render();
+    renderScope();
     return frame.element;
 }

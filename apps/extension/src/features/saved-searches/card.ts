@@ -62,7 +62,7 @@ export function createSavedSearchCard(
         ));
     }
     headingRow.append(createTitle(search));
-    main.append(createCategory(summary), headingRow, createFeatureRow(summary, false));
+    main.append(createCategory(summary), headingRow, createFeatureRow(summary));
     if (chips) main.append(chips);
     actions.className = "edf-saved-search-card-actions";
     actions.append(

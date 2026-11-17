@@ -53,38 +53,74 @@ export const PREFERENCES = [
     },
 ] satisfies PreferenceRule[];
 
-const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
-let customRules: { rules: PreferenceRule[]; text: string } | undefined;
-
-/**
- * Could-haves the user typed ("solar, ocean view, study"). Each phrase matches the listing
- * text case-insensitively from a word start, so "pool" won't match "whirlpool".
- */
-export function parseCustomPreferences(text: string): PreferenceRule[] {
-    if (customRules?.text === text) return customRules.rules;
-    const seen = new Set<string>();
-    const rules: PreferenceRule[] = [];
-    for (const phrase of text.split(",").map(part => part.trim()).filter(Boolean)) {
-        const key = phrase.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const body = phrase.replace(REGEX_SPECIAL, "\\$&").replace(/\s+/g, "\\s+");
-        rules.push({
-            id: `custom:${key}`,
-            label: phrase.charAt(0).toUpperCase() + phrase.slice(1),
-            pattern: new RegExp(`(?<!\\w)${body}`, "i"),
-        });
-    }
-    customRules = { rules, text };
-    return rules;
+/** A could-have the user can tick in the filters: a built-in (its id is a PREFERENCES id) or their own. */
+export interface CouldHaveOption {
+    id: string;
+    label: string;
 }
 
-/** Every could-have the user has asked for: ticked presets plus typed phrases. */
+/** The starting list, and what "Reset" goes back to. */
+export const DEFAULT_COULD_HAVES: readonly CouldHaveOption[] = PREFERENCES.map(({ id, label }) => ({ id, label }));
+
+const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
+const CUSTOM_PREFIX = "custom:";
+const phraseRules = new Map<string, PreferenceRule>();
+
+function tidyLabel(text: string): string {
+    const label = text.trim().replace(/\s+/g, " ");
+    return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** A user's could-have, from what they typed. Undefined when there is nothing to add. */
+export function createCouldHave(text: string): CouldHaveOption | undefined {
+    const label = tidyLabel(text).slice(0, 60);
+    if (!label) return undefined;
+    return { id: `${CUSTOM_PREFIX}${label.toLowerCase()}`, label };
+}
+
+/** Custom ids carry their phrase, so a shared link can rebuild the option it names. */
+export function couldHaveFromId(id: string): CouldHaveOption | undefined {
+    const builtIn = DEFAULT_COULD_HAVES.find(option => option.id === id);
+    if (builtIn) return { ...builtIn };
+    return id.startsWith(CUSTOM_PREFIX) ? createCouldHave(id.slice(CUSTOM_PREFIX.length)) : undefined;
+}
+
+/**
+ * A typed could-have matches its phrase case-insensitively from a word start, so "pool"
+ * won't match "whirlpool". "Ocean view / sea view" matches either phrase.
+ */
+function phraseRule(option: CouldHaveOption): PreferenceRule {
+    const cached = phraseRules.get(option.id);
+    if (cached && cached.label === option.label) return cached;
+    const phrases = option.label.split("/").map(part => part.trim()).filter(Boolean);
+    const body = phrases
+        .map(phrase => phrase.replace(REGEX_SPECIAL, "\\$&").replace(/\s+/g, "\\s+"))
+        .join("|");
+    const rule = { id: option.id, label: option.label, pattern: new RegExp(`(?<!\\w)(?:${body})`, "i") };
+    phraseRules.set(option.id, rule);
+    return rule;
+}
+
+export function getCouldHaveRule(option: CouldHaveOption): PreferenceRule {
+    const builtIn = PREFERENCES.find(preference => preference.id === option.id);
+    return builtIn ? { ...builtIn, label: option.label } : phraseRule(option);
+}
+
+/** Older settings kept typed could-haves as one comma-separated string. */
+export function parseCustomPreferences(text: string): CouldHaveOption[] {
+    const seen = new Set<string>();
+    return text.split(",").flatMap(part => {
+        const option = createCouldHave(part);
+        if (!option || seen.has(option.id)) return [];
+        seen.add(option.id);
+        return [option];
+    });
+}
+
+/** Every could-have the user has ticked. */
 export function getSelectedPreferences(filters: FilterSettings): PreferenceRule[] {
-    return [
-        ...PREFERENCES.filter(preference => filters.couldHaveRuleIds.includes(preference.id)),
-        ...parseCustomPreferences(filters.customPreferenceText),
-    ];
+    const selected = new Set(filters.couldHaveRuleIds);
+    return filters.couldHaveOptions.filter(option => selected.has(option.id)).map(getCouldHaveRule);
 }
 
 export const STRATA_MAX = 2000;
@@ -105,6 +141,7 @@ export interface ListingSnapshot {
     propertyType?: string;
     /** Domain agency id (the number ending its profile URL). */
     agencyId?: string;
+    agencyName?: string;
     agentIds?: string[];
     agentNames?: string[];
 }
@@ -116,6 +153,8 @@ export interface ListingMatch {
     blacklistedProfile?: BlacklistProfile;
     exclusionReason: ExclusionReason;
     filterMatched: boolean;
+    /** Why the filters hide it, in words ("Mentions “studio”"); empty when they don't. */
+    filterReasons: string[];
     matchedPreferences: PreferenceRule[];
 }
 
@@ -195,34 +234,35 @@ export function getBlacklistListing(
     };
 }
 
-function includesAny(
+function findKeyword(
     text: string,
     keywords: readonly string[],
-): boolean {
+): string | undefined {
     const normalizedText = text.toLowerCase();
 
-    return keywords.some(keyword => {
+    return keywords.find(keyword => {
         const normalizedKeyword = keyword.trim().toLowerCase();
 
         return (
             normalizedKeyword !== "" &&
             normalizedText.includes(normalizedKeyword)
         );
-    });
+    })?.trim();
 }
 
-function exceedsStrataMax(
+/** The listing's strata fee when it is above the user's maximum. */
+function strataOverMax(
     text: string,
     maximum: number,
-): boolean {
-    if (maximum >= STRATA_MAX) return false;
+): number | undefined {
+    if (maximum >= STRATA_MAX) return undefined;
 
     const match = text.match(STRATA_PATTERN);
-    if (!match) return false;
+    if (!match) return undefined;
 
     const amount = Number(match[1].replaceAll(",", ""));
 
-    return Number.isFinite(amount) && amount > maximum;
+    return Number.isFinite(amount) && amount > maximum ? amount : undefined;
 }
 
 function matchesExcludedPropertyType(
@@ -251,6 +291,10 @@ function matchesExcludedPropertyType(
     });
 }
 
+function formatDollars(amount: number): string {
+    return amount.toLocaleString("en-AU", { currency: "AUD", maximumFractionDigits: 0, style: "currency" });
+}
+
 export function matchListing(
     listing: ListingSnapshot,
     settings: Settings,
@@ -266,11 +310,19 @@ export function matchListing(
         selectedPreferences.length > 0 &&
         matchedPreferences.length === 0;
     const blacklistedProfile = findBlacklistedProfile(blacklist, listing);
-    const filterMatched = blacklistedProfile !== undefined ||
-        includesAny(text, filters.excludeKeywords) ||
-        exceedsStrataMax(text, filters.strataMaxDollars) ||
-        matchesExcludedPropertyType(listing.propertyType, filters.excludePropertyKeywords) ||
-        excludesCouldHaveMismatch;
+    const keyword = findKeyword(text, filters.excludeKeywords);
+    const strata = strataOverMax(text, filters.strataMaxDollars);
+    const excludedType = matchesExcludedPropertyType(listing.propertyType, filters.excludePropertyKeywords)
+        ? listing.propertyType
+        : undefined;
+    const filterReasons = [
+        blacklistedProfile && `${blacklistedProfile.kind === "agency" ? "Agency" : "Agent"}: ${blacklistedProfile.name}`,
+        keyword && `Mentions “${keyword}”`,
+        strata === undefined ? undefined : `Strata ${formatDollars(strata)} a quarter`,
+        excludedType,
+        excludesCouldHaveMismatch ? "None of your could-haves" : undefined,
+    ].filter((reason): reason is string => typeof reason === "string" && reason !== "");
+    const filterMatched = filterReasons.length > 0;
     const exclusionReason: ExclusionReason = isBlacklisted(blacklist, listing.url)
         ? "blacklisted"
         : filterMatched && !policy.isFilteredListingRevealed?.(listing.url)
@@ -281,6 +333,7 @@ export function matchListing(
         blacklistedProfile,
         exclusionReason,
         filterMatched,
+        filterReasons,
         matchedPreferences,
     };
 }

@@ -1,5 +1,6 @@
 import type { SavedSearch, SearchNotificationFrequency } from "../domain/searches/savedSearches";
 import { isDomainPageResult, type DomainPageResult } from "../site-dom/action";
+import { getFromStorage, setInStorage } from "./storage";
 import type { DomainAlertApplyMessage } from "../site-dom/alerts";
 import type {
     DomainSavedSearchRemoveMessage,
@@ -13,8 +14,23 @@ const MAX_TAB_READY_ATTEMPTS = 24;
 const TAB_READY_POLL_INTERVAL_MS = 500;
 
 export interface DomainSessionState {
+    /** When Domain was last checked; the popup only opens a hidden Domain tab when stale. */
+    checkedAt?: number;
     count?: number;
     status: "signed-in" | "signed-out" | "unavailable";
+}
+
+const SESSION_KEY = "domainSession";
+const SIGNED_IN_TTL_MS = 30 * 60_000;
+const RETRY_TTL_MS = 10 * 60_000;
+
+export async function getDomainSession(): Promise<DomainSessionState> {
+    return (await getFromStorage<DomainSessionState>(SESSION_KEY)) ?? { status: "unavailable" };
+}
+
+export function isDomainSessionStale(session: DomainSessionState, now = Date.now()): boolean {
+    const ttl = session.status === "signed-in" ? SIGNED_IN_TTL_MS : RETRY_TTL_MS;
+    return session.checkedAt === undefined || now - session.checkedAt >= ttl;
 }
 
 class DomainSignedOutError extends Error {}
@@ -79,7 +95,7 @@ export async function removeDomainSavedSearchFromExtensionPage(domainId: string)
     });
 }
 
-export async function syncDomainSavedSearchesFromExtensionPage(): Promise<DomainSessionState> {
+async function checkDomainSession(): Promise<DomainSessionState> {
     try {
         const result = await sendToDomainPage(SAVED_SEARCHES_URL, {
             type: "edf:domain-saved-search:sync",
@@ -94,4 +110,11 @@ export async function syncDomainSavedSearchesFromExtensionPage(): Promise<Domain
     } catch (error) {
         return { status: error instanceof DomainSignedOutError ? "signed-out" : "unavailable" };
     }
+}
+
+/** Syncs saved searches through a hidden Domain tab and remembers the outcome. */
+export async function syncDomainSavedSearchesFromExtensionPage(): Promise<DomainSessionState> {
+    const session = { ...await checkDomainSession(), checkedAt: Date.now() };
+    await setInStorage(SESSION_KEY, session);
+    return session;
 }

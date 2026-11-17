@@ -1,4 +1,5 @@
 import { createStorageRepository } from "../../platform/repository";
+import { findProfileEntry, type BlacklistProfile } from "./profiles";
 import {
     addBlacklistEntry,
     isBlacklisted,
@@ -58,6 +59,31 @@ export async function toggleBlacklistListings(
         return anyActive
             ? listings.reduce((current, listing) => removeBlacklistEntry(current, listing.url), entries)
             : listings.reduce((current, listing) => addBlacklistEntry(current, listing), entries);
+    });
+    return nextActive;
+}
+
+/**
+ * Blacklists an agency or agent, or lifts it when it already is (under whichever URL it was
+ * saved, e.g. from its profile page or from a listing card). Returns whether it is now hidden.
+ */
+export async function toggleBlacklistProfile(
+    profile: BlacklistProfile,
+    details: { thumbnailUrl?: string } = {},
+): Promise<boolean> {
+    let nextActive = false;
+    await blacklistRepository.update(entries => {
+        const existing = findProfileEntry(entries, profile);
+        nextActive = !existing;
+        return existing
+            ? removeBlacklistEntry(entries, existing.url)
+            : addBlacklistEntry(entries, {
+                displayAddress: profile.name,
+                text: "",
+                thumbnailUrl: details.thumbnailUrl,
+                title: profile.name,
+                url: profile.url,
+            });
     });
     return nextActive;
 }

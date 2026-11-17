@@ -16,8 +16,7 @@ export function createSavedSearchesView(
     selectedIds: Set<string>,
     signal: AbortSignal,
     animate = true,
-    // Session state is shown by the header's Domain chip; kept for the call signature.
-    _domainSession: DomainSessionState = { status: "unavailable" },
+    domainSession: DomainSessionState = { status: "unavailable" },
 ): HTMLElement {
     const collection = createSavedSearchCollection({
         animate,
@@ -38,5 +37,20 @@ export function createSavedSearchesView(
         selectedIds,
         signal,
     }).element;
+    if (domainSession.status === "signed-out") collection.prepend(createSignInNotice());
     return collection;
+}
+
+/** Signed out of Domain is the one session state worth interrupting the list for. */
+function createSignInNotice(): HTMLElement {
+    const notice = document.createElement("p");
+    const link = document.createElement("a");
+    notice.className = "edf-popup-domain-notice";
+    notice.append("Sign in to Domain.com.au to sync your saved searches and alerts.");
+    link.href = "https://www.domain.com.au/user/saved-searches";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Sign in";
+    notice.append(link);
+    return notice;
 }

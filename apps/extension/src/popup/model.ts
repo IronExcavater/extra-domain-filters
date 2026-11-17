@@ -3,7 +3,7 @@ import type { BlacklistEntry } from "../domain/matching";
 import type { SavedSearch } from "../domain/searches/savedSearches";
 import type { DomainSessionState } from "../platform/domainPageClient";
 
-export type PopupView = "blacklist" | "login" | "preferences" | "saved-searches";
+export type PopupView = "blacklist" | "filters" | "login" | "preferences" | "saved-searches";
 
 export interface PopupData {
     account?: AccountState;

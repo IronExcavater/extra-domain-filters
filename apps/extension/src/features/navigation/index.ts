@@ -1,5 +1,6 @@
 import { onBodyMutations } from "../../dom/bodyMutations";
 import { markOwned } from "../../dom/ownership";
+import { waitForHydration } from "../../dom/wait";
 import type { PageContext } from "../../platform/router";
 import {
     findNavigationMenus,
@@ -76,9 +77,7 @@ export function enableStickyHeader(context: PageContext): void {
     document.documentElement.dataset.edfStickyHeader = "true";
     let navigation: HTMLElement | undefined;
     let stickyHost: HTMLElement | undefined;
-    let sentinel: HTMLSpanElement | undefined;
     let placeholder: HTMLSpanElement | undefined;
-    let observer: IntersectionObserver | undefined;
     let resizeObserver: ResizeObserver | undefined;
     let layoutFrame: number | undefined;
     const secondaryBars = new Set<HTMLElement>();
@@ -124,9 +123,7 @@ export function enableStickyHeader(context: PageContext): void {
         if (!stickyHost) return;
         const height = Math.ceil(stickyHost.getBoundingClientRect().height);
         document.documentElement.style.setProperty("--edf-sticky-header-height", `${height}px`);
-        if (placeholder && stickyHost.dataset.edfStuck === "true") {
-            placeholder.style.height = `${height}px`;
-        }
+        if (placeholder && placeholder.style.height !== `${height}px`) placeholder.style.height = `${height}px`;
 
         const candidates = new Set<HTMLElement>();
         const agencyBar = document.querySelector<HTMLElement>(
@@ -152,10 +149,17 @@ export function enableStickyHeader(context: PageContext): void {
         layoutFrame = requestAnimationFrame(syncLayout);
     };
 
+    // Scrolled at all = stuck. Only styling (white bar, shadow) depends on it, never layout.
+    const syncStuck = (): void => {
+        if (!stickyHost || !navigation) return;
+        const stuck = String(window.scrollY > 0);
+        if (stickyHost.dataset.edfStuck === stuck) return;
+        stickyHost.dataset.edfStuck = stuck;
+        navigation.dataset.edfStuck = stuck;
+    };
+
     const clear = (): void => {
-        observer?.disconnect();
         resizeObserver?.disconnect();
-        sentinel?.remove();
         placeholder?.remove();
         if (navigation) {
             delete navigation.dataset.edfStuck;
@@ -166,9 +170,7 @@ export function enableStickyHeader(context: PageContext): void {
             delete stickyHost.dataset.edfStickyHeaderRoot;
             delete stickyHost.dataset.edfHeaderInverse;
         }
-        observer = undefined;
         resizeObserver = undefined;
-        sentinel = undefined;
         placeholder = undefined;
         navigation = undefined;
         stickyHost = undefined;
@@ -200,43 +202,39 @@ export function enableStickyHeader(context: PageContext): void {
         clear();
         navigation = nextNavigation;
         stickyHost = nextHost;
-        sentinel = markOwned(document.createElement("span"), "sticky-sentinel");
+        // The header is fixed from the start and a same-height placeholder keeps its place in
+        // flow. Becoming "stuck" then changes nothing about layout, so the page (and its
+        // scrollbar) never jumps the way switching sticky → fixed mid-scroll did.
+        const style = getComputedStyle(nextHost);
+        const height = Math.ceil(nextHost.getBoundingClientRect().height +
+            parseFloat(style.marginTop) + parseFloat(style.marginBottom));
         placeholder = markOwned(document.createElement("span"), "sticky-placeholder");
+        placeholder.ariaHidden = "true";
+        placeholder.style.cssText = `display:block;height:${height}px;margin:0;pointer-events:none;`;
+        stickyHost.before(placeholder);
         navigation.dataset.edfStickyNavigation = "true";
         stickyHost.dataset.edfStickyHeaderRoot = "true";
         if (isInverseHeader(stickyHost)) stickyHost.dataset.edfHeaderInverse = "true";
-        sentinel.ariaHidden = "true";
-        sentinel.style.cssText = "display:block;height:1px;margin:0;pointer-events:none;";
-        placeholder.ariaHidden = "true";
-        placeholder.style.cssText = "display:block;height:0;margin:0;pointer-events:none;";
-        stickyHost.before(sentinel);
-        sentinel.after(placeholder);
-        const observedNavigation = navigation;
-        const observedHost = stickyHost;
-        observer = new IntersectionObserver(([entry]) => {
-            const stuck = String(!entry.isIntersecting);
-            observedNavigation.dataset.edfStuck = stuck;
-            observedHost.dataset.edfStuck = stuck;
-            if (placeholder) {
-                placeholder.style.height = stuck === "true"
-                    ? `${Math.ceil(observedHost.getBoundingClientRect().height)}px`
-                    : "0";
-            }
-            scheduleLayoutSync();
-        });
-
-        observer.observe(sentinel);
+        syncStuck();
         resizeObserver = new ResizeObserver(scheduleLayoutSync);
         resizeObserver.observe(stickyHost);
         scheduleLayoutSync();
     };
 
-    reconcile();
+    // The placeholder goes into Domain's server-rendered header markup; adding it before React
+    // hydrates makes React adopt it. At the top of the page the switch is invisible anyway.
+    let hydrated = false;
+    void waitForHydration(context.signal).then(() => {
+        hydrated = true;
+        reconcile();
+    }, () => undefined);
     onBodyMutations(() => {
+        if (!hydrated) return;
         reconcile();
         scheduleLayoutSync();
     }, context.signal);
     window.addEventListener("resize", scheduleLayoutSync, { passive: true, signal: context.signal });
+    window.addEventListener("scroll", syncStuck, { passive: true, signal: context.signal });
     context.scope.add(() => {
         clear();
         clearSecondaryBars();

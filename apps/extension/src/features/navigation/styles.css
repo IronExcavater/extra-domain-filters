@@ -1,11 +1,14 @@
+/* Fixed from the start; an in-flow placeholder of the same height holds its place
+ * (features/navigation/index.ts), so sticking never changes layout. */
 html[data-edf-sticky-header="true"]
 [data-edf-sticky-header-root="true"] {
     background: var(--edf-color-surface, #fff);
     box-sizing: border-box;
-    left: 0;
-    position: sticky !important;
-    right: 0;
-    top: 0;
+    left: 0 !important;
+    margin: 0 !important;
+    position: fixed !important;
+    right: 0 !important;
+    top: 0 !important;
     transition: box-shadow 0.2s ease;
     width: 100% !important;
     z-index: 1000;
@@ -24,18 +27,11 @@ html[data-edf-sticky-header="true"]
     z-index: 1;
 }
 
-/* Several listing templates put the semantic header in a wrapper no taller than
- * the header itself. Sticky positioning is bounded by that wrapper, so use the
- * viewport once the sentinel has scrolled away. */
 html[data-edf-sticky-header="true"]
 [data-edf-sticky-header-root="true"][data-edf-stuck="true"] {
     box-shadow:
         0 4px 12px rgb(7 6 7 / 3%),
         0 2px 8px rgb(7 6 7 / 4%);
-    left: 0 !important;
-    position: fixed !important;
-    right: 0 !important;
-    width: 100% !important;
 }
 
 html[data-edf-sticky-header="true"]

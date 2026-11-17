@@ -274,19 +274,118 @@
     line-height: 24px;
 }
 
-.edf-filter-subfield {
-    display: grid;
+/* Could-haves: each tick can be removed (on hover or focus), and one field adds more. */
+.edf-filter-heading-action {
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: var(--color-interactive-base-default, #0ea800);
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    margin-left: auto;
+    padding: 2px 6px;
+}
+
+.edf-filter-heading-action:is(:hover, :focus-visible) {
+    background: var(--color-neutral-surface-hover, #f3f1ed);
+    outline: none;
+}
+
+.edf-filter-heading-action[hidden] {
+    display: none;
+}
+
+.edf-filter-could-have {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    min-width: 0;
+}
+
+.edf-filter-could-have > .edf-filter-checkbox {
+    min-width: 0;
+}
+
+.edf-filter-could-have-remove {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--color-neutral-medium-default, #646463);
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 24px;
+    height: 24px;
+    justify-content: center;
+    opacity: 0;
+    padding: 0;
+    transition: opacity 150ms ease, background-color 150ms ease;
+}
+
+.edf-filter-could-have-remove svg {
+    height: 14px;
+    width: 14px;
+}
+
+.edf-filter-could-have:is(:hover, :focus-within) .edf-filter-could-have-remove {
+    opacity: 1;
+}
+
+.edf-filter-could-have .edf-filter-could-have-remove:is(:hover, :focus-visible) {
+    background: var(--color-neutral-surface-hover, #f3f1ed);
+    color: var(--color-neutral-heavy-default, #131212);
+    outline: none;
+}
+
+.edf-filter-could-have[data-removing="true"] {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.edf-filter-could-have-adder {
+    align-items: center;
+    display: flex;
     gap: 8px;
     margin-top: 24px;
 }
 
-.edf-filter-subfield-label {
-    color: var(--color-neutral-heavy-default, #131212);
-    font-size: 16px;
-    line-height: 24px;
+.edf-filter-could-have-adder > .edf-filter-text {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
-.edf-filter-section-home .edf-filter-subfield {
+.edf-filter-could-have-add {
+    align-items: center;
+    background: var(--edf-color-surface, #fff);
+    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
+    border-radius: 8px;
+    color: var(--color-neutral-heavy-default, #131212);
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    gap: 4px;
+    height: 40px;
+    padding: 0 14px 0 10px;
+    transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.edf-filter-could-have-add svg {
+    height: 18px;
+    width: 18px;
+}
+
+.edf-filter-could-have-add:is(:hover, :focus-visible) {
+    background: var(--color-neutral-surface-hover, #f3f1ed);
+    border-color: var(--color-neutral-trim-hover, #a9afba);
+    outline: none;
+}
+
+.edf-filter-section-home .edf-filter-could-have-adder {
     margin-top: 16px;
 }
 
@@ -528,14 +627,28 @@ article:has(> a[data-testid="recent-search-item"]) > a[data-testid="recent-searc
 }
 
 .edf-recent-search-description {
-    color: #3c475b;
-    font-size: 14px;
-    line-height: 18px;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
     overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+.edf-recent-search-chip {
+    background: var(--color-neutral-surface-hover, #f3f1ed);
+    border-radius: 999px;
+    color: #3c475b;
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 20px;
+    padding: 0 8px;
     white-space: nowrap;
 }
 
 .edf-recent-search-alert {
     flex: 0 0 auto;
+}
+
+.edf-filter-could-have-strict {
+    margin-top: 20px;
 }

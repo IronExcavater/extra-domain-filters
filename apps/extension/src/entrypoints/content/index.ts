@@ -15,6 +15,7 @@ import "../../features/listing-cards/styles.css";
 import "../../features/listing-cards/exclusion/styles.css";
 import "../../features/listing-cards/carousel.css";
 import "../../features/navigation/styles.css";
+import "../../features/map/styles.css";
 import "../../features/account/styles.css";
 import "../../features/settings/settings.css";
 import "../../features/user-listings/styles.css";

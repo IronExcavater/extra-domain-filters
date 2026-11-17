@@ -1,5 +1,5 @@
 import { isOwnedNode } from "../dom/ownership";
-import { waitForElement } from "../dom/wait";
+import { nextFrame, waitForElement } from "../dom/wait";
 import type { DomainPageFailure, DomainPageResult } from "./action";
 
 export type DomainAlertFrequency = "daily" | "none" | "weekly";
@@ -151,7 +151,7 @@ export const domainAlertBridge: DomainAlertBridge = {
                     reason: "changed-markup",
                 };
             }
-            await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+            await nextFrame();
             const submit = surface.querySelector<HTMLButtonElement>('button[type="submit"]');
             if (!submit) {
                 return {

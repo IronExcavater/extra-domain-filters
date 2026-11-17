@@ -2,9 +2,16 @@ import { getCachedListings } from "../../domain/listings/cache";
 import { requestListingEnrichment } from "../../domain/listings/enrichment";
 import { getSearchListings, mergeSearchSnapshot } from "../../domain/listings/searchData";
 import { normalizeListingUrl } from "../../domain/listings/url";
-import { matchListing, STRATA_MAX, type BlacklistEntry, type ExclusionReason } from "../../domain/matching";
+import {
+    getSelectedPreferences,
+    matchListing,
+    STRATA_MAX,
+    type BlacklistEntry,
+    type ExclusionReason,
+} from "../../domain/matching";
 import { type Settings } from "../../state/settings";
 import { setBlacklistActionState } from "./actions/blacklistAction";
+import { ensureProfileAction } from "./actions/profileAction";
 import {
     getCarouselMembers,
     updateCarouselCard,
@@ -78,8 +85,7 @@ export async function updateListingCards(
     ]);
 
     // Descriptions are only needed by text filters; skip background fetches otherwise.
-    const needsDetail = settings.filters.couldHaveRuleIds.length > 0 ||
-        settings.filters.customPreferenceText.trim() !== "" ||
+    const needsDetail = getSelectedPreferences(settings.filters).length > 0 ||
         settings.filters.excludeKeywords.length > 0 ||
         settings.filters.strataMaxDollars < STRATA_MAX;
     if (settings.filters.enrichListingDetails && needsDetail) {
@@ -130,14 +136,13 @@ export async function updateListingCards(
                     }
 
                     if (reason !== "none") {
-                        const profile = reason === "filtered" ? match.blacklistedProfile : undefined;
                         updateExclusionRow(
                             card,
                             button.dataset.blacklistScope === "project"
                                 ? getProjectActionUrls(card, url)
                                 : url,
                             reason,
-                            profile && `${profile.kind === "agency" ? "Agency" : "Agent"}: ${profile.name}`,
+                            reason === "filtered" ? match.filterReasons : undefined,
                         );
                     }
                 }
@@ -146,6 +151,9 @@ export async function updateListingCards(
                     card,
                     reason === "none" ? match.matchedPreferences : [],
                 );
+                if (reason === "none" && !["project", "carousel", "carousel-child"].includes(button.dataset.blacklistScope ?? "")) {
+                    ensureProfileAction(card, listing);
+                }
             });
 
         for (const projectCard of document.querySelectorAll<HTMLElement>(PROJECT_CARD_SELECTOR)) {

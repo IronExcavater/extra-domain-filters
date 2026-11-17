@@ -156,82 +156,254 @@
     }
 }
 
-/* Blacklisted agencies & agents (features/blacklist/profiles.ts). */
-.edf-blacklist-profiles {
-    margin: 0 0 16px;
+/* Hide-agency/agent button in a result card's agency strip (actions/profileAction.ts). */
+.edf-card-branding {
+    position: relative;
 }
 
-.edf-blacklist-profiles-heading {
-    color: var(--edf-color-muted);
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 20px;
-    margin: 0 0 8px;
-}
-
-.edf-blacklist-profiles-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.edf-blacklist-profile {
+.edf-card-profile-action {
     align-items: center;
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: 999px;
+    background: rgb(255 255 255 / 92%);
+    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgb(7 6 7 / 8%);
+    color: var(--color-neutral-heavy-default, #131212);
+    cursor: pointer;
     display: inline-flex;
-    font-size: 14px;
-    gap: 6px;
-    line-height: 20px;
-    max-width: 100%;
-    padding: 2px 4px 2px 12px;
+    height: 30px;
+    justify-content: center;
+    opacity: 0;
+    padding: 0;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%) scale(0.9);
+    transition:
+        opacity 150ms ease,
+        transform 150ms ease,
+        background-color 150ms ease;
+    width: 30px;
+    z-index: 4;
 }
 
-.edf-blacklist-profile-name {
-    color: var(--edf-color-text);
+.edf-card-profile-action .domain-icon {
+    height: 16px;
+    width: 16px;
+}
+
+.edf-card-profile-action:is(:hover, :focus-visible) {
+    background: #fff;
+    outline: none;
+}
+
+.edf-card-profile-action:is(:focus-visible, [aria-expanded="true"]),
+li:is(:hover, :focus-within) .edf-card-profile-action {
+    opacity: 1;
+    transform: translateY(-50%);
+}
+
+.edf-profile-menu {
+    display: grid;
+    gap: 2px;
+    min-width: 240px;
+}
+
+.edf-profile-menu-heading {
+    color: var(--color-neutral-medium-default, #646463);
+    font-size: 13px;
+    line-height: 18px;
+    margin: 0 0 4px;
+    padding: 0 8px;
+}
+
+.edf-profile-menu-item {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: var(--color-neutral-heavy-default, #131212);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 9px 8px;
+    text-align: left;
+    transition: background-color 150ms ease;
+}
+
+.edf-profile-menu-item:disabled {
+    cursor: progress;
+    opacity: 0.6;
+}
+
+.edf-profile-menu-item:is(:hover, :focus-visible):not(:disabled) {
+    background: var(--edf-color-surface-muted, #f3f1ed);
+    outline: none;
+}
+
+.edf-profile-menu-name {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+}
+
+.edf-profile-menu-kind {
+    color: var(--color-neutral-medium-default, #646463);
+    font-size: 12px;
+    line-height: 16px;
+}
+
+/* Blacklisted agencies and agents (blacklist/profiles.ts): a grid of cards, each with the
+ * agency's logo (or initials), its name, when it was hidden, and Show again. */
+.edf-profile-section {
+    margin: 0 0 32px;
+}
+
+.edf-profile-section-heading {
+    align-items: center;
+    color: var(--edf-color-heading, #131212);
+    display: flex;
+    font-size: 20px;
+    gap: 8px;
+    line-height: 28px;
+    margin: 0 0 12px;
+}
+
+.edf-profile-section-count,
+.edf-collection-tab-count {
+    background: var(--edf-color-surface-muted, #f3f1ed);
+    border-radius: 999px;
+    color: var(--edf-color-muted, #646463);
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 20px;
+    min-width: 20px;
+    padding: 0 6px;
+    text-align: center;
+    text-transform: none;
+}
+
+.edf-collection-tab-count {
+    margin-left: 6px;
+    transition: background-color 180ms ease, color 180ms ease;
+    vertical-align: 1px;
+}
+
+.edf-collection-tab[aria-selected="true"] .edf-collection-tab-count {
+    background: #ebf6e6;
+    color: var(--edf-color-green-hover, #0c8a00);
+}
+
+.edf-profile-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.edf-profile-grid[hidden] {
+    display: none;
+}
+
+.edf-profile-grid[data-animate="true"] {
+    animation: edf-collection-cards-enter var(--edf-motion-fast) ease-out both;
+}
+
+.edf-profile-card {
+    align-items: center;
+    background: var(--edf-color-surface, #fff);
+    border: 1px solid var(--edf-color-border, #e1e1df);
+    border-radius: 12px;
+    box-sizing: border-box;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    min-height: 72px;
+    padding: 12px 12px 12px 14px;
+    transition: opacity 150ms ease, border-color 150ms ease;
+}
+
+.edf-profile-card:hover {
+    border-color: var(--color-neutral-trim-hover, #a9afba);
+}
+
+.edf-profile-card[data-removing="true"] {
+    opacity: 0.45;
+}
+
+.edf-profile-card-avatar {
+    align-items: center;
+    background: var(--edf-color-surface-muted, #f3f1ed);
+    border-radius: 10px;
+    color: var(--edf-color-muted, #646463);
+    display: inline-flex;
+    font-size: 15px;
     font-weight: 700;
+    height: 44px;
+    justify-content: center;
+    overflow: hidden;
+    width: 44px;
+}
+
+.edf-profile-card[data-kind="agent"] .edf-profile-card-avatar {
+    border-radius: 50%;
+}
+
+.edf-profile-card .edf-profile-card-avatar > img {
+    height: 100%;
+    object-fit: contain;
+    width: 100%;
+}
+
+.edf-profile-card-text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.edf-profile-card-name {
+    color: var(--edf-color-heading, #131212);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 20px;
     overflow: hidden;
     text-decoration: none;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.edf-blacklist-profile-name:hover {
+.edf-profile-card-name:hover {
     text-decoration: underline;
 }
 
-.edf-blacklist-profile-kind {
-    color: var(--edf-color-muted);
-    font-size: 12px;
+.edf-profile-card-meta {
+    color: var(--edf-color-muted, #646463);
+    font-size: 13px;
+    line-height: 18px;
 }
 
-.edf-blacklist-profile-remove {
-    align-items: center;
+.edf-profile-card-action {
     background: transparent;
-    border: 0;
-    border-radius: 999px;
-    color: var(--edf-color-muted);
+    border: 1px solid var(--edf-color-border, #d0d3d9);
+    border-radius: 8px;
+    color: var(--edf-color-heading, #131212);
     cursor: pointer;
-    display: inline-flex;
-    height: 28px;
-    justify-content: center;
-    padding: 0;
-    transition: background-color var(--edf-motion-fast) ease, color var(--edf-motion-fast) ease;
-    width: 28px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    height: 32px;
+    padding: 0 12px;
+    transition: background-color 150ms ease, border-color 150ms ease;
+    white-space: nowrap;
 }
 
-.edf-blacklist-profile-remove:focus-visible {
-    box-shadow: var(--edf-focus-ring);
+.edf-profile-card-action:disabled {
+    cursor: progress;
+}
+
+.edf-profile-card-action:is(:hover, :focus-visible):not(:disabled) {
+    background: var(--edf-color-surface-muted, #f3f1ed);
+    border-color: var(--color-neutral-trim-hover, #a9afba);
     outline: none;
-}
-
-.edf-blacklist-profile-remove:hover:not(:disabled) {
-    background: var(--edf-color-surface-muted);
-    color: var(--edf-color-text);
-}
-
-.edf-blacklist-profile-remove-icon {
-    height: 16px;
-    width: 16px;
 }

@@ -28,10 +28,7 @@ function createFeature(
     return item;
 }
 
-export function createFeatureRow(
-    summary: SearchFilterSummary,
-    showTypesSeparator = true,
-): HTMLElement {
+export function createFeatureRow(summary: SearchFilterSummary): HTMLElement {
     const row = document.createElement("div");
     const features = document.createElement("div");
 
@@ -44,11 +41,12 @@ export function createFeatureRow(
         createFeature("Baths", summary.features.bathrooms, replaceWithBathIcon),
         createFeature("Parking", summary.features.parking, replaceWithParkingIcon),
     );
-    if (summary.inlineDetails.length > 0) {
-        const details = document.createElement("span");
-        details.className = "edf-saved-search-inline-details";
-        details.textContent = `${showTypesSeparator ? "· " : ""}${summary.inlineDetails.join(", ")}`;
-        features.append(details);
+    // Property types read as their own quiet chips after the bed/bath/parking counts.
+    for (const detail of summary.inlineDetails) {
+        const chip = document.createElement("span");
+        chip.className = "edf-saved-search-inline-details";
+        chip.textContent = detail;
+        features.append(chip);
     }
     row.append(features);
 

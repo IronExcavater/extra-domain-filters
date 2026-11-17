@@ -1,3 +1,4 @@
+import { nextFrame } from "../dom/wait";
 import { saveSearch, type SavedSearch } from "../domain/searches/savedSearches";
 import { extractSharedFilterParams } from "../features/filters/searchParams";
 
@@ -177,7 +178,8 @@ export async function removeDomainSavedSearch(
     const toggle = entry.querySelector<HTMLButtonElement>('button[aria-label*="menu" i], button[aria-haspopup="menu"]');
     if (!toggle) throw new Error("Domain's saved-search menu is unavailable.");
     toggle.click();
-    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    await nextFrame();
+    await nextFrame();
     const remove = [...document.querySelectorAll<HTMLElement>('[role="option"], [role="menuitem"]')]
         .find(option => /^remove search$/i.test(option.textContent?.trim() ?? ""));
     if (!remove) throw new Error("Domain's remove-search action is unavailable.");

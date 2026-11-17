@@ -1,4 +1,5 @@
 import { onBodyMutations } from "../dom/bodyMutations";
+import { waitForHydration } from "../dom/wait";
 import { markOwned } from "../dom/ownership";
 import { createFrameReconciler } from "../dom/reconcile";
 import {
@@ -48,11 +49,15 @@ async function saveAlert(search: SavedSearch, signal: AbortSignal): Promise<void
 const mountSavedSearchesPage: PageMount = context => {
     enableStickyHeader(context);
     let collection: SavedSearchCollection | undefined;
+    let hydrated = false;
 
     const reconcile = createFrameReconciler(context.scope, async () => {
+        if (!hydrated) return;
         const searches = await syncDomainSavedSearches(await getSavedSearches());
         if (collection) {
             collection.replaceItems(searches);
+            // React re-renders can drop our list while Domain's own entries stay concealed.
+            if (!collection.element.isConnected) attach(collection.element);
             return;
         }
         collection = createSavedSearchCollection({
@@ -65,12 +70,14 @@ const mountSavedSearchesPage: PageMount = context => {
             selectedIds: selectedSearchIds,
             signal: context.signal,
         });
+        attach(markOwned(collection.element, "saved-search-collection"));
+    }, error => context.logger.error("Could not render saved searches", error));
+    const attach = (element: HTMLElement): void => {
         const host = findDomainSavedSearchHost();
         const heading = host.querySelector("h1");
-        const element = markOwned(collection.element, "saved-search-collection");
         if (heading) heading.after(element);
         else host.append(element);
-    }, error => context.logger.error("Could not render saved searches", error));
+    };
 
     onBodyMutations(reconcile.schedule, context.signal);
     context.scope.add(onStorageChange("savedSearches", reconcile.schedule));
@@ -79,7 +86,10 @@ const mountSavedSearchesPage: PageMount = context => {
         restoreDomainSavedSearches();
         collection?.element.remove();
     });
-    reconcile.schedule();
+    void waitForHydration(context.signal).then(() => {
+        hydrated = true;
+        reconcile.schedule();
+    }, () => undefined);
 };
 
 export default mountSavedSearchesPage;

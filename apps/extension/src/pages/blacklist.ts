@@ -11,7 +11,7 @@ import {
 } from "../domain/matching";
 import { isProfileEntry } from "../domain/blacklist/profiles";
 import { createBlacklistCard } from "../features/blacklist/card";
-import { createProfileStrip, PROFILE_STRIP_TEST_ID } from "../features/blacklist/profiles";
+import { createProfileSection, PROFILE_SECTION_TEST_ID } from "../features/blacklist/profiles";
 import {
     filterBlacklistEntries,
     sortBlacklistEntries,
@@ -161,8 +161,8 @@ function reconcileRows(
 
 async function render(container: HTMLElement, list: HTMLElement): Promise<void> {
     const blacklist = await getBlacklist();
-    const strip = createProfileStrip(blacklist);
-    const currentStrip = container.querySelector(`[data-testid="${PROFILE_STRIP_TEST_ID}"]`);
+    const strip = createProfileSection(blacklist);
+    const currentStrip = container.querySelector(`[data-testid="${PROFILE_SECTION_TEST_ID}"]`);
     if (strip) {
         markOwned(strip, "blacklist-profiles");
         if (currentStrip) currentStrip.replaceWith(strip);

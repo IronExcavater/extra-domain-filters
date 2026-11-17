@@ -278,12 +278,12 @@
     min-height: 0 !important;
 }
 
-/* Shortlist inline notes (features/user-listings/notes.ts): reads as text on the card and
- * becomes a Domain-style field on hover/focus. Sits above the address link's stretched
+/* Shortlist notes (features/user-listings/notes.ts): the always-present notes box of Domain's
+ * old shortlist card (60px tall, growing to 144px). Sits above the address link's stretched
  * hit area (z-index 1), like Domain's own button row. */
 .edf-shortlist-note {
-    background: var(--edf-color-surface-muted);
-    border: 1px solid transparent;
+    background: var(--edf-color-surface);
+    border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
     border-radius: 8px;
     box-sizing: border-box;
     color: var(--color-neutral-heavy-default, #131212);
@@ -292,7 +292,7 @@
     font-size: 14px;
     line-height: 20px;
     margin: 12px 0 0;
-    min-height: 38px;
+    min-height: 60px;
     padding: 8px 12px;
     position: relative;
     resize: none;
@@ -306,7 +306,7 @@
 }
 
 .edf-shortlist-note:hover {
-    border-color: var(--color-neutral-trim-default, #d0d3d9);
+    border-color: var(--color-neutral-trim-hover, #a9afba);
 }
 
 .edf-shortlist-note:focus {

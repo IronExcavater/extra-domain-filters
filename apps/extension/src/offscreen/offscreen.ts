@@ -1,4 +1,5 @@
 import {
+    isAuthBridgeReady,
     isAuthResponse,
     isOffscreenAuthRequest,
     type AuthPageRequest,
@@ -7,15 +8,28 @@ import {
 import { getBundledAuthRuntime } from "@extra-domain-filters/shared/config/auth";
 
 const LOGIN_TIMEOUT_MS = 90_000;
+const BRIDGE_READY_TIMEOUT_MS = 10_000;
 
-const { bridgeOrigin, bridgeUrl } = getBundledAuthRuntime();
+const { bridgeOrigin, bridgeUrl, mode } = getBundledAuthRuntime();
 const iframe = document.createElement("iframe");
-const loaded = new Promise<void>((resolve, reject) => {
-    iframe.addEventListener("load", () => resolve(), { once: true });
-    iframe.addEventListener("error", () => reject(new Error("Could not load the hosted authentication page.")), {
-        once: true,
-    });
+// An iframe fires "load" even for an error page, so wait for the page itself to say it is
+// listening. Without that, a missing or unreachable auth page used to hang for 90 seconds.
+const ready = new Promise<void>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+        window.removeEventListener("message", onReady);
+        reject(new Error(mode === "development"
+            ? `Couldn't reach the sign-in page at ${new URL(bridgeUrl).host}. Start it with "pnpm dev".`
+            : "Couldn't reach the sign-in service. Check your connection and try again."));
+    }, BRIDGE_READY_TIMEOUT_MS);
+    const onReady = (event: MessageEvent<unknown>): void => {
+        if (event.origin !== bridgeOrigin || event.source !== iframe.contentWindow || !isAuthBridgeReady(event.data)) return;
+        window.clearTimeout(timer);
+        window.removeEventListener("message", onReady);
+        resolve();
+    };
+    window.addEventListener("message", onReady);
 });
+ready.catch(() => undefined);
 
 iframe.hidden = true;
 iframe.src = bridgeUrl;
@@ -48,7 +62,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
         requestId: message.requestId,
     }), LOGIN_TIMEOUT_MS);
     window.addEventListener("message", onMessage);
-    void loaded.then(() => {
+    void ready.then(() => {
         const request: AuthPageRequest = {
             provider: message.provider,
             requestId: message.requestId,

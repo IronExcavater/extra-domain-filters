@@ -1,8 +1,7 @@
 import { onBodyMutations } from "../../dom/bodyMutations";
 import { markOwned } from "../../dom/ownership";
-import { waitForElement } from "../../dom/wait";
+import { waitForElement, waitForHydration } from "../../dom/wait";
 import { createSortControl } from "../../ui/sort";
-import { attachTabIndicator } from "../../ui/tabs";
 
 const SHORTLIST_ROOT_SELECTOR = "#shortlist";
 export const LISTING_CARD_SELECTOR = '[data-testid="listing-card-container"]';
@@ -15,7 +14,8 @@ export function findUserListingsContainer(): HTMLElement | undefined {
         : undefined;
 }
 
-export function waitForUserListingsContainer(signal: AbortSignal): Promise<HTMLElement> {
+export async function waitForUserListingsContainer(signal: AbortSignal): Promise<HTMLElement> {
+    await waitForHydration(signal);
     return waitForElement(findUserListingsContainer, signal);
 }
 
@@ -210,7 +210,9 @@ export function replaceUserListingTabs(
     tabs.setAttribute("role", "tablist");
     nativeTabs.forEach(nativeTab => {
         const filter = nativeTab.textContent?.trim().toLowerCase();
-        if (!filter || !isListingFilter(filter)) return;
+        // Our own filtering (blacklist page) only knows buy/rent; Domain's tabs (shortlist,
+        // which also has "New Homes") are mirrored as they are.
+        if (!filter || (onChange && !isListingFilter(filter))) return;
 
         const tab = document.createElement("button");
         tab.className = "edf-collection-tab edf-listing-tab";
@@ -219,7 +221,7 @@ export function replaceUserListingTabs(
         tab.textContent = filter;
         tab.addEventListener("click", () => {
             selected = filter;
-            if (onChange) onChange(filter);
+            if (onChange && isListingFilter(filter)) onChange(filter);
             else nativeTab.click();
             sync();
         }, { signal });
@@ -239,7 +241,6 @@ export function replaceUserListingTabs(
         native.before(tabs);
     }
     native.hidden = true;
-    attachTabIndicator(tabs, "user-listing-tabs", signal);
     const observer = new MutationObserver(sync);
     observer.observe(native, { attributes: true, childList: true, subtree: true });
     signal.addEventListener("abort", () => {

@@ -81,6 +81,10 @@ function authError(error: unknown, provider?: AccountProvider): Error {
     if (!(error instanceof FirebaseError) && !(error instanceof AuthBridgeError)) {
         return error instanceof Error ? error : new Error("Login did not complete.");
     }
+    // The API key's restrictions leave out Identity Toolkit, so Google rejects every auth call.
+    if (error.code?.includes("are-blocked") || error.code === "auth/api-key-service-blocked") {
+        return new Error("Sign-in is blocked by the Firebase API key: allow the Identity Toolkit API on it in Google Cloud.");
+    }
     if (error.code === "auth/operation-not-allowed") {
         const label = provider ? `${provider[0].toUpperCase()}${provider.slice(1)}` : "This";
         return new Error(`${label} login is supported by the extension but is not enabled in Firebase yet.`);

@@ -1,0 +1,13 @@
+/* Map pins (map/pins.ts): pins of hidden listings go, and pins of listings matching a
+ * could-have turn gold, like the could-have tags in results. */
+gmp-advanced-marker[data-edf-pin="hidden"] {
+    display: none !important;
+}
+
+gmp-advanced-marker[data-edf-pin="match"] #marker-main :is(rect, path) {
+    fill: #e2a400 !important;
+}
+
+gmp-advanced-marker[data-edf-pin="match"]:is(:hover, :focus-visible) #marker-main :is(rect, path) {
+    fill: #b88400 !important;
+}

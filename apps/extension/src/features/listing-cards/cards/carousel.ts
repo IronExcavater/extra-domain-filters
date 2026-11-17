@@ -506,6 +506,7 @@ function setCarouselChildDecision(
 }
 
 const frozenTracks = new Map<HTMLElement, MutationObserver>();
+const carouselLayouts = new WeakMap<HTMLElement, string>();
 
 /** Holds the slick track still while the featured card is hidden, so auto-advance is paused. */
 function freezeCarousel(carouselCard: HTMLElement, frozen: boolean): void {
@@ -609,7 +610,15 @@ export function updateCarouselCard(
         )?.click();
     }
 
-    window.dispatchEvent(new Event("resize"));
+    // Slick only re-measures on resize. Nudge it when the hidden slides changed, never on every
+    // pass: each resize re-renders the carousel, which schedules another pass.
+    const layout = decisions.map(decision => decision.exclusionReason).join("|");
+    const previousLayout = carouselLayouts.get(carouselCard);
+    carouselLayouts.set(carouselCard, layout);
+    const anyExcluded = decisions.some(decision => decision.exclusionReason !== "none");
+    if (previousLayout === undefined ? anyExcluded : previousLayout !== layout) {
+        window.dispatchEvent(new Event("resize"));
+    }
 }
 
 export function bindCarouselCard(

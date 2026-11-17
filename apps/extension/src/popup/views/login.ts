@@ -17,9 +17,31 @@ interface LoginViewOptions {
 }
 
 type LoginMode = "login" | "sign-up";
-type SocialProvider = AccountProvider;
 
-function createProviderMark(provider: SocialProvider): SVGSVGElement {
+const PROVIDER_LABELS: Record<AccountProvider, string> = {
+    apple: "Apple",
+    facebook: "Facebook",
+    google: "Google",
+};
+
+const COPY: Record<LoginMode, { introduction: string; submit: string; switchAction: string; switchPrompt: string; title: string }> = {
+    login: {
+        introduction: "Sync your searches, blacklist and preferences across your browsers.",
+        submit: "Log in",
+        switchAction: "Create an account",
+        switchPrompt: "New here?",
+        title: "Welcome back",
+    },
+    "sign-up": {
+        introduction: "One account keeps your searches, blacklist and preferences in sync.",
+        submit: "Create account",
+        switchAction: "Log in",
+        switchPrompt: "Already have an account?",
+        title: "Create your account",
+    },
+};
+
+function createProviderMark(provider: AccountProvider): SVGSVGElement {
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     icon.setAttribute("aria-hidden", "true");
     icon.setAttribute("viewBox", "0 0 24 24");
@@ -31,13 +53,6 @@ function createProviderMark(provider: SocialProvider): SVGSVGElement {
         icon.innerHTML = "<path fill=\"#1877f2\" d=\"M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z\"/>";
     }
     return icon;
-}
-
-function createWordmark(): HTMLImageElement {
-    const image = document.createElement("img");
-    image.alt = "Extra Domain Filters";
-    image.src = wordmarkUrl;
-    return image;
 }
 
 function createField(labelText: string, input: HTMLInputElement): HTMLLabelElement {
@@ -70,20 +85,33 @@ function addPasswordToggle(field: HTMLLabelElement, input: HTMLInputElement): HT
     return toggle;
 }
 
+function createSpinner(): HTMLSpanElement {
+    const spinner = document.createElement("span");
+    spinner.className = "edf-popup-login-spinner";
+    spinner.ariaHidden = "true";
+    return spinner;
+}
+
+/**
+ * Sign-in: one-click providers first, email below, and a link at the bottom to switch between
+ * logging in and creating an account. The button that started a sign-in shows a spinner until
+ * it settles; the provider window can close the popup, which is fine, as the account is kept
+ * by the background worker and shows when the popup reopens.
+ */
 export function createLoginView(options: LoginViewOptions): HTMLElement {
     let mode: LoginMode = "login";
     let busy = false;
+    const unavailable = options.account?.status === "unavailable";
     const view = document.createElement("section");
     const panel = document.createElement("div");
     const header = document.createElement("header");
     const content = document.createElement("div");
-    const brand = createWordmark();
+    const brand = document.createElement("img");
     const back = document.createElement("button");
     const title = document.createElement("h1");
     const introduction = document.createElement("p");
-    const modes = document.createElement("div");
-    const loginMode = document.createElement("button");
-    const signUpMode = document.createElement("button");
+    const providers = document.createElement("div");
+    const divider = document.createElement("div");
     const form = document.createElement("form");
     const name = document.createElement("input");
     const email = document.createElement("input");
@@ -95,33 +123,32 @@ export function createLoginView(options: LoginViewOptions): HTMLElement {
     const confirmationField = createField("Confirm password", confirmation);
     const forgot = document.createElement("button");
     const submit = document.createElement("button");
+    const submitLabel = document.createElement("span");
     const status = document.createElement("p");
-    const divider = document.createElement("div");
-    const providers = document.createElement("div");
+    const switcher = document.createElement("p");
+    const switchPrompt = document.createElement("span");
+    const switchAction = document.createElement("button");
     const image = document.createElement("aside");
     const passwordToggle = addPasswordToggle(passwordField, password);
     const confirmationToggle = addPasswordToggle(confirmationField, confirmation);
-    const interactive = [loginMode, signUpMode, forgot, submit, passwordToggle, confirmationToggle];
+    const providerButtons: HTMLButtonElement[] = [];
+    const interactive = [forgot, submit, passwordToggle, confirmationToggle, switchAction];
 
     view.className = "edf-popup-login";
     panel.className = "edf-popup-login-panel";
     header.className = "edf-popup-login-header";
     content.className = "edf-popup-login-content";
     brand.className = "edf-popup-login-brand";
+    brand.alt = "Extra Domain Filters";
+    brand.src = wordmarkUrl;
     back.className = "edf-popup-login-back";
     back.type = "button";
-    back.ariaLabel = "Back";
     back.append(createSvgIcon(replaceWithChevronIcon), document.createTextNode("Back"));
     back.addEventListener("click", options.onBack);
-    title.textContent = "Log in";
     introduction.className = "edf-popup-login-introduction";
-    introduction.textContent = "Log in to sync your searches, blacklist and preferences.";
-    modes.className = "edf-popup-login-modes";
-    for (const [button, label] of [[loginMode, "Log in"], [signUpMode, "Create account"]] as const) {
-        button.type = "button";
-        button.textContent = label;
-        modes.append(button);
-    }
+    providers.className = "edf-popup-login-providers";
+    divider.className = "edf-popup-login-divider";
+    divider.textContent = "or use email";
     form.className = "edf-popup-login-form";
     name.autocomplete = "name";
     name.maxLength = 100;
@@ -130,7 +157,6 @@ export function createLoginView(options: LoginViewOptions): HTMLElement {
     email.placeholder = "you@example.com";
     email.required = true;
     email.type = "email";
-    password.autocomplete = "current-password";
     password.placeholder = "Your password";
     password.required = true;
     password.type = "password";
@@ -142,128 +168,149 @@ export function createLoginView(options: LoginViewOptions): HTMLElement {
     forgot.textContent = "Forgot password?";
     submit.className = "edf-popup-login-submit";
     submit.type = "submit";
-    submit.textContent = "Log in";
+    submit.append(submitLabel);
     status.className = "edf-popup-login-status";
-    status.role = "alert";
+    status.role = "status";
     status.ariaLive = "polite";
-    divider.className = "edf-popup-login-divider";
-    divider.textContent = "or continue with";
-    providers.className = "edf-popup-login-providers";
+    switcher.className = "edf-popup-login-switch";
+    switchAction.type = "button";
+    switchAction.addEventListener("click", () => setMode(mode === "login" ? "sign-up" : "login"));
+    switcher.append(switchPrompt, " ", switchAction);
 
-    const setStatus = (message = "", error = false): void => {
+    const setStatus = (message = "", tone: "error" | "info" = "info"): void => {
         status.textContent = message;
-        status.dataset.error = String(error);
+        status.dataset.tone = tone;
     };
-    const providerButtons: HTMLButtonElement[] = [];
-    const setBusy = (value: boolean): void => {
-        busy = value;
-        [...interactive, ...providerButtons].forEach(button => {
-            button.disabled = value || button.dataset.available === "false";
-        });
-        view.ariaBusy = String(value);
+    // `trigger` shows the spinner; everything else is disabled until the attempt settles.
+    const setBusy = (trigger?: HTMLButtonElement): void => {
+        busy = Boolean(trigger);
+        for (const button of [...interactive, ...providerButtons]) {
+            button.disabled = busy || unavailable;
+            button.dataset.busy = String(button === trigger);
+        }
+        for (const input of [name, email, password, confirmation]) input.readOnly = busy;
+        view.ariaBusy = String(busy);
     };
     const complete = (message: string): void => {
         showPopupToast(message);
         options.onComplete();
     };
+    const reveal = (element: HTMLElement): void => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        element.animate(
+            [{ opacity: 0, transform: "translateY(-4px)" }, { opacity: 1, transform: "none" }],
+            { duration: 180, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+        );
+    };
     const setMode = (next: LoginMode): void => {
+        const changed = next !== mode;
         mode = next;
         const signingUp = mode === "sign-up";
-        loginMode.ariaPressed = String(!signingUp);
-        signUpMode.ariaPressed = String(signingUp);
+        const copy = COPY[mode];
         nameField.hidden = !signingUp;
+        confirmationField.hidden = !signingUp;
+        forgot.hidden = signingUp;
         password.autocomplete = signingUp ? "new-password" : "current-password";
         password.minLength = signingUp ? 8 : 1;
-        forgot.hidden = signingUp;
-        confirmationField.hidden = !signingUp;
         confirmation.required = signingUp;
         confirmation.minLength = signingUp ? 8 : 0;
-        title.textContent = signingUp ? "Create account" : "Log in";
-        introduction.textContent = signingUp
-            ? "Create one account to keep your extension data in sync."
-            : "Log in to sync your searches, blacklist and preferences.";
-        submit.textContent = signingUp ? "Create account" : "Log in";
-        setStatus();
+        title.textContent = copy.title;
+        introduction.textContent = copy.introduction;
+        submitLabel.textContent = copy.submit;
+        switchPrompt.textContent = copy.switchPrompt;
+        switchAction.textContent = copy.switchAction;
+        setStatus(unavailable ? "Sync isn't set up for this build of the extension." : "", "error");
+        if (changed) {
+            reveal(title);
+            if (signingUp) [nameField, confirmationField].forEach(reveal);
+        }
     };
-    loginMode.addEventListener("click", () => setMode("login"));
-    signUpMode.addEventListener("click", () => setMode("sign-up"));
-    confirmation.addEventListener("input", () => confirmation.setCustomValidity(""));
+
     forgot.addEventListener("click", async () => {
-        if (busy || !email.reportValidity()) return;
-        setBusy(true);
+        if (busy) return;
+        if (!email.value.trim()) {
+            setStatus("Enter your email first, then we'll send a reset link.", "error");
+            email.focus();
+            return;
+        }
+        if (!email.reportValidity()) return;
+        setBusy(forgot);
         setStatus();
         try {
             await requestPasswordReset(email.value);
             setStatus("If an account exists for that email, a reset link is on its way.");
         } catch (error) {
-            setStatus(error instanceof Error ? error.message : "Could not send the reset email.", true);
+            setStatus(error instanceof Error ? error.message : "Could not send the reset email.", "error");
         } finally {
-            setBusy(false);
+            setBusy();
         }
     });
+    confirmation.addEventListener("input", () => confirmation.setCustomValidity(""));
     form.addEventListener("submit", async event => {
         event.preventDefault();
         if (busy || !form.reportValidity()) return;
-        setBusy(true);
+        if (mode === "sign-up" && password.value !== confirmation.value) {
+            confirmation.setCustomValidity("Passwords do not match.");
+            confirmation.reportValidity();
+            return;
+        }
+        setBusy(submit);
         setStatus();
         try {
             if (mode === "sign-up") {
-                if (password.value !== confirmation.value) {
-                    confirmation.setCustomValidity("Passwords do not match.");
-                    confirmation.reportValidity();
-                    setStatus("Passwords do not match.", true);
-                    return;
-                }
                 await createEmailAccount(email.value, password.value, name.value);
                 complete("Account created. Check your email to verify it.");
             } else {
                 await loginWithEmail(email.value, password.value);
-                complete("Logged in successfully");
+                complete("Logged in");
             }
         } catch (error) {
-            setStatus(error instanceof Error ? error.message : "Login did not complete.", true);
+            setStatus(error instanceof Error ? error.message : "Login did not complete.", "error");
         } finally {
-            setBusy(false);
+            setBusy();
         }
     });
 
-    const labels: Record<SocialProvider, string> = {
-        apple: "Apple",
-        facebook: "Facebook",
-        google: "Google",
-    };
+    // Providers show whenever sync is configured, even if the account state was slow to load.
     for (const provider of ["google", "apple", "facebook"] as const) {
+        if (options.account && !options.account.capabilities[provider]) continue;
+        const label = PROVIDER_LABELS[provider];
         const button = document.createElement("button");
-        const available = options.account?.capabilities[provider] ?? false;
-        if (!available) continue;
+        const mark = document.createElement("span");
         button.className = "edf-popup-auth-provider";
         button.type = "button";
-        button.append(createProviderMark(provider), document.createTextNode(labels[provider]));
+        button.ariaLabel = `Continue with ${label}`;
+        mark.className = "edf-popup-auth-provider-mark";
+        mark.append(createProviderMark(provider), createSpinner());
+        button.append(mark, document.createTextNode(label));
         button.addEventListener("click", async () => {
             if (busy) return;
-            setBusy(true);
-            setStatus();
+            setBusy(button);
+            setStatus(`Finish signing in with ${label} in the window that opened.`);
             try {
                 await loginWithProvider(provider);
-                complete(`Logged in with ${labels[provider]}`);
+                complete(`Logged in with ${label}`);
             } catch (error) {
-                setStatus(error instanceof Error ? error.message : `${labels[provider]} login did not complete.`, true);
+                setStatus(error instanceof Error ? error.message : `${label} login did not complete.`, "error");
             } finally {
-                setBusy(false);
+                setBusy();
             }
         });
         providerButtons.push(button);
         providers.append(button);
     }
+    submit.prepend(createSpinner());
 
     image.className = "edf-popup-login-image";
     image.setAttribute("aria-label", "Contemporary Australian home interior");
-    divider.hidden = providerButtons.length === 0;
     form.append(nameField, emailField, passwordField, confirmationField, forgot, submit, status);
     header.append(back, brand);
-    content.append(title, introduction, modes, form, divider, providers);
+    content.append(title, introduction);
+    if (providerButtons.length > 0) content.append(providers, divider);
+    content.append(form, switcher);
     panel.append(header, content);
     view.append(panel, image);
     setMode("login");
+    setBusy();
     return view;
 }

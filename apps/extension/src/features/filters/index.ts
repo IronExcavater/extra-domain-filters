@@ -2,28 +2,22 @@ import { onBodyMutations } from "../../dom/bodyMutations";
 import { createClaimTracker } from "../../dom/claim";
 import { markOwned, OWNED_ELEMENT_ATTRIBUTE } from "../../dom/ownership";
 import { bindLazyTrigger } from "../../dom/trigger";
-import { PREFERENCES, STRATA_MAX } from "../../domain/matching";
+import { STRATA_MAX } from "../../domain/matching";
 import { trackTelemetry } from "../../domain/telemetry/client";
 import type { LifecycleScope } from "../../platform/lifecycle";
 import { PageContext } from "../../platform/router";
 import { onStorageChange } from "../../platform/storage";
 import { findDomainFilterHosts, readExcludedPropertyTypes } from "../../site-dom/filters";
 import { Property } from "../../state/property";
-import { getSettings, toggleListId, updateSettings, type Settings } from "../../state/settings";
+import { getSettings, updateSettings, type Settings } from "../../state/settings";
 import {
-    replaceWithCouldHavesFilterIcon,
     replaceWithExcludeKeywordsFilterIcon,
     replaceWithStrataFilterIcon,
 } from "../../ui/icons";
 import { snapPrice } from "../../utils/number";
 import { createDraftProperty } from "./bindings/draft";
-import {
-    createCheckboxControl,
-    createFilterSection,
-    createRangeControl,
-    createSubTextControl,
-    createTextControl,
-} from "./controls";
+import { createRangeControl, createTextControl } from "./controls";
+import { createCouldHavesSection } from "./couldHaves";
 import { syncSharedFilterParams } from "./searchParams";
 
 function reportAsyncError(context: PageContext, action: string): (error: unknown) => void {
@@ -138,61 +132,7 @@ export async function injectFilters(context: PageContext) {
         if (!settings.filters.enabled.couldHaves) continue;
 
         const scope = context.scope.child("could-haves-filter");
-        const couldHaveDiv = createFilterSection(
-            "Could-Haves",
-            "dynamic-search-filters__preference-options",
-            replaceWithCouldHavesFilterIcon,
-        );
-        const checkboxGrid = document.createElement("div");
-        checkboxGrid.className = "edf-filter-checkbox-grid";
-        couldHaveDiv.append(checkboxGrid);
-
-        for (const preference of PREFERENCES) {
-            const settingsProperty = Property.from('boolean', {
-                get: async () => {
-                    const settings = await getSettings();
-                    return settings.filters.couldHaveRuleIds.includes(preference.id);
-                },
-                set: async value => {
-                    const settings = await getSettings();
-                    await updateSettings({ filters: { couldHaveRuleIds:
-                        toggleListId(settings.filters.couldHaveRuleIds, preference.id, value)
-                    }}, settings);
-                    void trackTelemetry({ name: "feature_used", feature: "could_haves" });
-                },
-            });
-            const draftProperty = await createDraftProperty(
-                mustHaveDiv,
-                settingsProperty,
-                false,
-                scope,
-            );
-
-            checkboxGrid.appendChild(await createCheckboxControl(
-                draftProperty,
-                {
-                    id: preference.id,
-                    label: preference.label,
-                },
-            ));
-        }
-
-        const customProperty = Property.from('string', {
-            get: async () => (await getSettings()).filters.customPreferenceText,
-            set: async value => {
-                await updateSettings({ filters: { customPreferenceText: value } });
-                void trackTelemetry({ name: "feature_used", feature: "could_haves" });
-            },
-        });
-        couldHaveDiv.append(await createSubTextControl(
-            await createDraftProperty(mustHaveDiv, customProperty, '', scope),
-            {
-                ariaLabel: 'Other could-haves, separated by commas (example: solar, ocean view)',
-                id: 'customCouldHaves',
-                label: 'Other could-haves',
-                placeholder: 'e.g. solar, ocean view, study',
-            },
-        ));
+        const couldHaveDiv = await createCouldHavesSection(mustHaveDiv, scope);
 
         if (context.signal.aborted || !appendCustomFilter(mustHaveDiv, couldHaveDiv, scope)) {
             scope.dispose();

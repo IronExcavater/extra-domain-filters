@@ -19,6 +19,11 @@ export interface AuthPageRequest {
     type: "federated-auth:start";
 }
 
+/** Posted by the hosted auth page once it can take requests, so a missing page fails fast. */
+export interface AuthBridgeReady {
+    type: "federated-auth:ready";
+}
+
 export type AuthResponse =
     | { credential: Record<string, unknown>; ok: true; requestId: string }
     | { code?: string; message: string; ok: false; requestId: string };
@@ -51,4 +56,8 @@ export function isAuthResponse(value: unknown): value is AuthResponse {
     return value.ok
         ? isPlainObject(value.credential)
         : typeof value.message === "string" && (value.code === undefined || typeof value.code === "string");
+}
+
+export function isAuthBridgeReady(value: unknown): value is AuthBridgeReady {
+    return isPlainObject(value) && value.type === "federated-auth:ready";
 }

@@ -1,3 +1,5 @@
+import connectedSvg from "../../../../packages/assets/icons/account/connected.svg?raw";
+import disconnectedSvg from "../../../../packages/assets/icons/account/disconnected.svg?raw";
 import doorSvg from "../../../../packages/assets/icons/account/door.svg?raw";
 import settingsSvg from "../../../../packages/assets/icons/account/settings.svg?raw";
 import checkSvg from "../../../../packages/assets/icons/actions/check.svg?raw";
@@ -21,6 +23,7 @@ import bedSvg from "../../../../packages/assets/icons/amenities/bed.svg?raw";
 import parkingSvg from "../../../../packages/assets/icons/amenities/parking.svg?raw";
 import couldHavesFilterSvg from "../../../../packages/assets/icons/filters/could-haves.svg?raw";
 import excludeKeywordsFilterSvg from "../../../../packages/assets/icons/filters/exclude-keywords.svg?raw";
+import slidersSvg from "../../../../packages/assets/icons/filters/sliders.svg?raw";
 import strataFilterSvg from "../../../../packages/assets/icons/filters/strata.svg?raw";
 import chevronSvg from "../../../../packages/assets/icons/navigation/chevron.svg?raw";
 import bellFilledSvg from "../../../../packages/assets/icons/search/bell-filled.svg?raw";
@@ -101,6 +104,10 @@ export function replaceWithStrataFilterIcon(target: SVGElement): void {
     setSvgIcon(target, strataFilterSvg);
 }
 
+export function replaceWithSlidersIcon(target: SVGElement): void {
+    setSvgIcon(target, slidersSvg);
+}
+
 export function replaceWithCouldHavesFilterIcon(target: SVGElement): void {
     setSvgIcon(target, couldHavesFilterSvg);
 }
@@ -163,6 +170,14 @@ export function replaceWithPopupCogIcon(target: SVGElement): void {
 
 export function replaceWithPopupDoorIcon(target: SVGElement): void {
     setSvgIcon(target, doorSvg);
+}
+
+export function replaceWithConnectedIcon(target: SVGElement): void {
+    setSvgIcon(target, connectedSvg);
+}
+
+export function replaceWithDisconnectedIcon(target: SVGElement): void {
+    setSvgIcon(target, disconnectedSvg);
 }
 
 export function replaceWithPopupPlusIcon(target: SVGElement): void {

@@ -21,6 +21,12 @@ function isHiddenCard(card: HTMLElement): boolean {
     return HIDDEN_CLASSES.some(name => card.classList.contains(name));
 }
 
+/** What hiding/showing listings can change about an item; anything else is not ours to animate. */
+function exclusionState(item: HTMLElement): string {
+    const hiddenInside = item.querySelectorAll(".edf-listing-card-excluded, .edf-carousel-child-blacklisted").length;
+    return `${isHiddenCard(item)}|${hiddenInside}|${item.dataset.signature ?? ""}`;
+}
+
 /**
  * A card being hidden loses its content on the first frame. A static copy of it, laid over
  * the box that replaces it (its own row, or the exit spacer) and clipped by that box's height
@@ -81,18 +87,23 @@ export function animateListingLayout(mutate: () => void): void {
         return;
     }
 
-    const before = new Map<HTMLElement, DOMRect>();
-    const wasHidden = new Set<HTMLElement>();
+    const before = new Map<HTMLElement, { hidden: boolean; rect: DOMRect; state: string }>();
     for (const item of getItems()) {
-        before.set(item, item.getBoundingClientRect());
-        if (isHiddenCard(item)) wasHidden.add(item);
+        before.set(item, {
+            hidden: isHiddenCard(item),
+            rect: item.getBoundingClientRect(),
+            state: exclusionState(item),
+        });
     }
 
     mutate();
 
     for (const item of getItems()) {
-        if (!settled.has(item)) continue;
-        const was = before.get(item);
+        const previous = before.get(item);
+        // Only hide/show changes animate. Any other height change (images loading, carousels,
+        // the window resizing) must apply instantly, or cards visibly resize for no reason.
+        if (!settled.has(item) || (previous && previous.state === exclusionState(item))) continue;
+        const was = previous?.rect;
         const rect = item.getBoundingClientRect();
         if (was && was.height >= 1 && rect.height < 1) {
             if (isHiddenCard(item) && isNearViewport(was.top, was.bottom)) collapseOut(item, was);
@@ -110,7 +121,7 @@ export function animateListingLayout(mutate: () => void): void {
             { duration: DURATION_MS, easing: EASING },
         );
         // Pages without a summary keep the hidden card's own row in place.
-        if (was && !wasHidden.has(item) && isHiddenCard(item)) fadeOutCopy(item, was, item);
+        if (was && previous && !previous.hidden && isHiddenCard(item)) fadeOutCopy(item, was, item);
     }
     for (const item of getItems()) settled.add(item);
 }

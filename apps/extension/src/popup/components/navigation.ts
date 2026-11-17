@@ -1,70 +1,51 @@
 import wordmarkUrl from "../../../../../packages/assets/icons/brand/wordmark.svg?url";
 import { signOut } from "../../domain/account/client";
 import type { AccountState } from "../../domain/account/model";
+import type { DomainSessionState } from "../../platform/domainPageClient";
 import { createButton, createSvgIcon, type IconRenderer } from "../../ui/elements";
 import {
     replaceWithBinIcon,
+    replaceWithConnectedIcon,
+    replaceWithDisconnectedIcon,
     replaceWithPopupCogIcon,
     replaceWithPopupDoorIcon,
     replaceWithPopupSavedSearchIcon,
     replaceWithPopupStarIcon,
+    replaceWithSlidersIcon,
 } from "../../ui/icons";
-import type { PopupData, PopupView } from "../model";
 import { attachTooltip } from "../../ui/tooltip";
+import type { PopupData, PopupView } from "../model";
 import { showPopupToast } from "../toast";
 
-interface NavigationOptions {
+export interface NavigationState {
     activeView: PopupView;
     data: PopupData;
+}
+
+export interface Navigation {
+    element: HTMLElement;
+    setSyncing(syncing: boolean): void;
+    update(state: NavigationState): void;
+}
+
+interface NavigationOptions {
     onNavigate(view: PopupView): void;
     onSessionChange(): void;
-    signal: AbortSignal;
+    onSyncDomain(): void;
 }
 
 const NAV_ITEMS = [
-    { label: "My Searches", view: "saved-searches" },
-    { label: "Blacklist", view: "blacklist" },
-] satisfies Array<{ label: string; view: PopupView }>;
-let previousPrimaryView: PopupView | undefined;
+    { icon: replaceWithPopupSavedSearchIcon, label: "My Searches", view: "saved-searches" },
+    { icon: replaceWithSlidersIcon, label: "Filters", view: "filters" },
+    { icon: replaceWithBinIcon, label: "Blacklist", view: "blacklist" },
+] satisfies Array<{ icon: IconRenderer; label: string; view: PopupView }>;
+const DOMAIN_SIGN_IN_URL = "https://www.domain.com.au/user/saved-searches";
+const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 
-function placePrimaryIndicator(
-    navigation: HTMLElement,
-    indicator: HTMLElement,
-    activeView: PopupView,
-): void {
-    const buttons = [...navigation.querySelectorAll<HTMLButtonElement>("[data-popup-view]")];
-    const active = buttons.find(button => button.dataset.popupView === activeView);
-    if (!active) {
-        indicator.dataset.visible = "false";
-        return;
-    }
-
-    const previous = buttons.find(button => button.dataset.popupView === previousPrimaryView);
-    const place = (button: HTMLButtonElement): void => {
-        indicator.style.transform = `translateX(${button.offsetLeft}px)`;
-        indicator.style.width = `${button.offsetWidth}px`;
-    };
-
-    indicator.dataset.visible = "true";
-    if (previous && previous !== active) {
-        indicator.dataset.instant = "true";
-        place(previous);
-        void indicator.offsetWidth;
-        delete indicator.dataset.instant;
-        requestAnimationFrame(() => {
-            if (indicator.isConnected) place(active);
-        });
-    } else {
-        indicator.dataset.instant = "true";
-        place(active);
-        requestAnimationFrame(() => delete indicator.dataset.instant);
-    }
-    previousPrimaryView = activeView;
-}
+const reducedMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function renderMenuIcon(icon: SVGElement): void {
     icon.setAttribute("viewBox", "0 0 24 24");
-    icon.setAttribute("aria-hidden", "true");
     icon.replaceChildren();
     for (const y of [6, 12, 18]) {
         const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -77,12 +58,23 @@ function renderMenuIcon(icon: SVGElement): void {
     }
 }
 
-function createWordmark(): HTMLImageElement {
-    const image = document.createElement("img");
-
-    image.alt = "Extra Domain Filters";
-    image.src = wordmarkUrl;
-    return image;
+/**
+ * The one header item: optional icon, optional label, and its own underline (CSS ::after),
+ * shown while it is the active view or its menu is open. The underline is part of the item,
+ * so it always sits under it and animates in place.
+ */
+function createNavItem(options: { icon?: IconRenderer; label?: string; className?: string }): HTMLButtonElement {
+    const item = createButton("", ["edf-popup-nav-item", options.className].filter(Boolean).join(" "));
+    if (options.icon) item.append(createSvgIcon(options.icon, "edf-popup-nav-item-icon"));
+    if (options.label) {
+        const label = document.createElement("span");
+        label.className = "edf-popup-nav-item-label";
+        // The bold copy reserves the active width, so selecting a tab never nudges its neighbours.
+        label.dataset.text = options.label;
+        label.textContent = options.label;
+        item.append(label);
+    }
+    return item;
 }
 
 function createAvatar(state: AccountState): HTMLElement {
@@ -113,6 +105,7 @@ function createMenuItem(
     const text = document.createElement("span");
 
     button.dataset.active = String(active);
+    button.setAttribute("role", "menuitem");
     text.textContent = label;
     button.append(createSvgIcon(renderIcon), text);
     if (count !== undefined) {
@@ -146,157 +139,252 @@ function createIdentity(account: AccountState): HTMLElement | undefined {
     return card;
 }
 
-const DOMAIN_SESSION_COPY = {
-    "signed-in": { label: "Domain", title: "Signed in to Domain.com.au — saved searches stay in sync" },
-    "signed-out": { label: "Sign in to Domain", title: "Sign in to Domain.com.au to sync your saved searches" },
-    unavailable: { label: "Domain offline", title: "Domain.com.au could not be reached — open it to refresh" },
-} as const;
-
-/** One always-visible place for the Domain.com.au session, instead of banners and menu text. */
-function createDomainChip(data: PopupData): HTMLAnchorElement {
-    const chip = document.createElement("a");
-    const dot = document.createElement("span");
-    const label = document.createElement("span");
-    const copy = DOMAIN_SESSION_COPY[data.domainSession.status];
-
-    chip.className = "edf-popup-domain-chip";
-    chip.dataset.status = data.domainSession.status;
-    chip.href = "https://www.domain.com.au/user/saved-searches";
-    chip.target = "_blank";
-    chip.rel = "noopener noreferrer";
-    chip.ariaLabel = copy.title;
-    dot.className = "edf-popup-domain-chip-dot";
-    dot.ariaHidden = "true";
-    label.textContent = copy.label;
-    chip.append(dot, label);
-    attachTooltip(chip, copy.title);
-    return chip;
+function formatCheckedAt(checkedAt: number | undefined): string {
+    if (checkedAt === undefined) return "not synced yet";
+    const minutes = Math.round((Date.now() - checkedAt) / 60_000);
+    if (minutes < 1) return "synced just now";
+    if (minutes < 60) return `synced ${minutes} min ago`;
+    const hours = Math.round(minutes / 60);
+    return `synced ${hours} hr${hours === 1 ? "" : "s"} ago`;
 }
 
-export function createNavigation(options: NavigationOptions): HTMLElement {
-    const { activeView, data, onNavigate, onSessionChange, signal } = options;
+type DomainPillState = "connected" | "offline" | "signed-out" | "syncing";
+
+function describeDomain(
+    session: DomainSessionState,
+    syncing: boolean,
+): { label: string; state: DomainPillState; tooltip: string } {
+    if (syncing) return { label: "Syncing", state: "syncing", tooltip: "Syncing saved searches with Domain.com.au…" };
+    if (session.status === "signed-in") {
+        return {
+            label: "Synced",
+            state: "connected",
+            tooltip: `Connected to Domain.com.au, ${formatCheckedAt(session.checkedAt)}. Click to sync now.`,
+        };
+    }
+    if (session.status === "signed-out") {
+        return {
+            label: "Sign in",
+            state: "signed-out",
+            tooltip: "Signed out of Domain.com.au, so saved searches can't sync. Click to sign in.",
+        };
+    }
+    return session.checkedAt === undefined
+        ? { label: "Connect", state: "offline", tooltip: "Not synced with Domain.com.au yet. Click to sync." }
+        : { label: "Offline", state: "offline", tooltip: "Couldn't reach Domain.com.au. Click to try again." };
+}
+
+/**
+ * Domain.com.au connection, as a small pill beside the wordmark. The icon (linked, unlinked,
+ * spinner) cross-fades and the pill eases to its new width when the state changes.
+ */
+function createDomainPill(onSync: () => void): {
+    element: HTMLButtonElement;
+    update(session: DomainSessionState, syncing: boolean): void;
+} {
+    const pill = createButton("", "edf-popup-domain-pill");
+    const icon = document.createElement("span");
+    const label = document.createElement("span");
+    const spinner = document.createElement("span");
+    const tooltip = attachTooltip(pill, "", { placement: "bottom" });
+    let state: DomainPillState | undefined;
+
+    icon.className = "edf-popup-domain-pill-icon";
+    icon.ariaHidden = "true";
+    spinner.className = "edf-popup-domain-pill-spinner";
+    icon.append(
+        createSvgIcon(replaceWithConnectedIcon, "edf-popup-domain-pill-connected"),
+        createSvgIcon(replaceWithDisconnectedIcon, "edf-popup-domain-pill-disconnected"),
+        spinner,
+    );
+    label.className = "edf-popup-domain-pill-label";
+    pill.append(icon, label);
+    pill.addEventListener("click", () => {
+        if (state === "syncing") return;
+        if (state === "signed-out") void chrome.tabs.create({ url: DOMAIN_SIGN_IN_URL });
+        else onSync();
+    });
+
+    return {
+        element: pill,
+        update(session, syncing) {
+            const next = describeDomain(session, syncing);
+            state = next.state;
+            pill.dataset.state = next.state;
+            pill.ariaBusy = String(next.state === "syncing");
+            pill.ariaLabel = `Domain.com.au: ${next.label}`;
+            tooltip.setText(next.tooltip);
+            if (label.textContent === next.label) return;
+
+            const from = pill.isConnected ? pill.getBoundingClientRect().width : 0;
+            label.textContent = next.label;
+            if (!from || reducedMotion()) return;
+            const to = pill.getBoundingClientRect().width;
+            if (Math.abs(from - to) >= 1) {
+                pill.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration: 220, easing: EASE });
+            }
+            label.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: "ease-out" });
+        },
+    };
+}
+
+export function createNavigation(options: NavigationOptions): Navigation {
     const header = document.createElement("header");
+    const start = document.createElement("div");
     const brand = createButton("", "edf-popup-brand");
-    const logo = createWordmark();
+    const logo = document.createElement("img");
+    const domain = createDomainPill(options.onSyncDomain);
     const navigation = document.createElement("nav");
-    const indicator = document.createElement("span");
-    const account = document.createElement("div");
-    const summary = createButton("", "edf-popup-tab edf-popup-menu-trigger");
     const actions = document.createElement("div");
+    const account = document.createElement("div");
+    const trigger = createNavItem({ className: "edf-popup-menu-trigger" });
     const menu = document.createElement("div");
-    const blacklistCount = data.blacklist.filter(entry => !entry.removedAt).length;
+    const tabs = NAV_ITEMS.map(item => {
+        const tab = createNavItem({ icon: item.icon, label: item.label });
+        tab.dataset.popupView = item.view;
+        tab.addEventListener("click", () => options.onNavigate(item.view));
+        return tab;
+    });
     let open = false;
+    let session: DomainSessionState = { status: "unavailable" };
+    let syncing = false;
+    let triggerKey: string | undefined;
+
     const setOpen = (next: boolean): void => {
         open = next;
+        header.dataset.menuOpen = String(open);
         account.dataset.open = String(open);
-        menu.hidden = !open;
-        summary.setAttribute("aria-expanded", String(open));
+        menu.inert = !open;
+        trigger.setAttribute("aria-expanded", String(open));
     };
     const closeAndNavigate = (view: PopupView): void => {
         setOpen(false);
-        onNavigate(view);
+        options.onNavigate(view);
     };
 
     header.className = "edf-popup-navigation";
-    logo.classList.add("edf-popup-wordmark");
+    start.className = "edf-popup-navigation-start";
+    logo.className = "edf-popup-wordmark";
+    logo.alt = "Extra Domain Filters";
+    logo.src = wordmarkUrl;
     brand.ariaLabel = "Extra Domain Filters";
     brand.append(logo);
-    brand.addEventListener("click", () => onNavigate("saved-searches"));
+    brand.addEventListener("click", () => options.onNavigate("saved-searches"));
+    start.append(brand, domain.element);
 
     navigation.className = "edf-popup-primary-navigation";
-    indicator.className = "edf-popup-navigation-indicator";
-    indicator.ariaHidden = "true";
-    for (const item of NAV_ITEMS) {
-        const button = createButton(item.label, "edf-popup-tab");
-        button.dataset.active = String(item.view === activeView);
-        button.dataset.popupView = item.view;
-        button.addEventListener("click", () => onNavigate(item.view));
-        navigation.append(button);
-    }
-    navigation.append(indicator);
+    navigation.append(...tabs);
 
     account.className = "edf-popup-account";
     document.addEventListener("pointerdown", event => {
-        if (!account.contains(event.target as Node)) setOpen(false);
-    }, { capture: true, signal });
+        if (open && !account.contains(event.target as Node)) setOpen(false);
+    }, { capture: true });
     document.addEventListener("keydown", event => {
-        if (event.key === "Escape") setOpen(false);
-    }, { signal });
-    summary.setAttribute("aria-haspopup", "menu");
-    summary.setAttribute("aria-expanded", "false");
-    summary.ariaLabel = "Open menu";
-    if (data.account?.status === "signed-in") {
-        summary.append(createAvatar(data.account));
-    } else {
-        summary.append(createSvgIcon(renderMenuIcon, "edf-popup-menu-icon"));
-    }
-    summary.addEventListener("click", () => setOpen(!open), { signal });
-
+        if (event.key === "Escape" && open) setOpen(false);
+    });
+    trigger.setAttribute("aria-haspopup", "menu");
+    trigger.ariaLabel = "Open menu";
+    trigger.addEventListener("click", () => setOpen(!open));
     menu.className = "edf-popup-account-menu";
-    menu.hidden = true;
-    const identity = data.account ? createIdentity(data.account) : undefined;
-    if (identity) menu.append(identity);
-    menu.append(createMenuItem(
-        "My searches",
-        replaceWithPopupSavedSearchIcon,
-        () => closeAndNavigate("saved-searches"),
-        data.savedSearches.length,
-        activeView === "saved-searches",
-    ));
-    if (data.account?.status === "signed-in") {
-        menu.append(createMenuItem("Shortlist", replaceWithPopupStarIcon, () => {
-            void chrome.tabs.create({ url: "https://www.domain.com.au/user/shortlist" });
-            setOpen(false);
-        }));
-    }
-    menu.append(
-        createMenuItem(
-            "Blacklist",
-            replaceWithBinIcon,
-            () => closeAndNavigate("blacklist"),
-            blacklistCount,
-            activeView === "blacklist",
-        ),
-        createMenuItem(
-            "Preferences",
-            replaceWithPopupCogIcon,
-            () => closeAndNavigate("preferences"),
-            undefined,
-            activeView === "preferences",
-        ),
-    );
-
-    const signedIn = data.account?.status === "signed-in";
-    const sessionLabel = signedIn ? "Log out of sync" : "Sign in to sync";
-    const session = createMenuItem(sessionLabel, replaceWithPopupDoorIcon, async () => {
-        if (!signedIn) {
-            closeAndNavigate("login");
-            return;
-        }
-        session.disabled = true;
-        try {
-            await signOut();
-            setOpen(false);
-            showPopupToast("Logged out");
-            onSessionChange();
-        } catch (error) {
-            showPopupToast(error instanceof Error ? error.message : "Unable to sign out.");
-        } finally {
-            session.disabled = false;
-        }
-    });
-    session.disabled = data.account?.status === "unavailable";
-    const divider = document.createElement("hr");
-    divider.className = "edf-popup-account-menu-divider";
-    menu.append(divider, session);
-    account.append(summary, menu);
+    menu.setAttribute("role", "menu");
+    account.append(trigger, menu);
     actions.className = "edf-popup-navigation-actions";
-    actions.append(createDomainChip(data), account);
-    header.append(brand, navigation, actions);
+    actions.append(account);
+    header.append(start, navigation, actions);
     setOpen(false);
-    requestAnimationFrame(() => {
-        if (navigation.isConnected) placePrimaryIndicator(navigation, indicator, activeView);
-    });
 
-    return header;
+    const renderMenu = ({ activeView, data }: NavigationState): void => {
+        const signedIn = data.account?.status === "signed-in";
+        const items: HTMLElement[] = [];
+        const identity = data.account ? createIdentity(data.account) : undefined;
+        if (identity) items.push(identity);
+        items.push(createMenuItem(
+            "My searches",
+            replaceWithPopupSavedSearchIcon,
+            () => closeAndNavigate("saved-searches"),
+            data.savedSearches.length,
+            activeView === "saved-searches",
+        ));
+        if (signedIn) {
+            items.push(createMenuItem("Shortlist", replaceWithPopupStarIcon, () => {
+                void chrome.tabs.create({ url: "https://www.domain.com.au/user/shortlist" });
+                setOpen(false);
+            }));
+        }
+        items.push(
+            createMenuItem(
+                "Filters",
+                replaceWithSlidersIcon,
+                () => closeAndNavigate("filters"),
+                undefined,
+                activeView === "filters",
+            ),
+            createMenuItem(
+                "Blacklist",
+                replaceWithBinIcon,
+                () => closeAndNavigate("blacklist"),
+                data.blacklist.filter(entry => !entry.removedAt).length,
+                activeView === "blacklist",
+            ),
+            createMenuItem(
+                "Preferences",
+                replaceWithPopupCogIcon,
+                () => closeAndNavigate("preferences"),
+                undefined,
+                activeView === "preferences",
+            ),
+        );
+
+        const sessionItem = createMenuItem(signedIn ? "Log out of sync" : "Sign in to sync", replaceWithPopupDoorIcon, async () => {
+            if (!signedIn) {
+                closeAndNavigate("login");
+                return;
+            }
+            sessionItem.disabled = true;
+            try {
+                await signOut();
+                setOpen(false);
+                showPopupToast("Logged out");
+                options.onSessionChange();
+            } catch (error) {
+                showPopupToast(error instanceof Error ? error.message : "Unable to sign out.");
+            } finally {
+                sessionItem.disabled = false;
+            }
+        });
+        sessionItem.disabled = data.account?.status === "unavailable";
+        const divider = document.createElement("hr");
+        divider.className = "edf-popup-account-menu-divider";
+        items.push(divider, sessionItem);
+        menu.replaceChildren(...items);
+    };
+
+    return {
+        element: header,
+        setSyncing(next) {
+            syncing = next;
+            domain.update(session, syncing);
+        },
+        update(state) {
+            const { activeView, data } = state;
+            for (const tab of tabs) tab.dataset.active = String(tab.dataset.popupView === activeView);
+            // Views that only live in the menu (Preferences) mark the menu trigger instead.
+            trigger.dataset.active = String(!NAV_ITEMS.some(item => item.view === activeView));
+
+            const user = data.account;
+            const nextTriggerKey = user?.status === "signed-in"
+                ? `avatar:${user.profile?.photoUrl ?? user.profile?.displayName ?? user.profile?.email ?? ""}`
+                : "menu";
+            if (nextTriggerKey !== triggerKey) {
+                triggerKey = nextTriggerKey;
+                trigger.replaceChildren(user?.status === "signed-in"
+                    ? createAvatar(user)
+                    : createSvgIcon(renderMenuIcon, "edf-popup-nav-item-icon"));
+            }
+
+            session = data.domainSession;
+            domain.update(session, syncing);
+            renderMenu(state);
+        },
+    };
 }

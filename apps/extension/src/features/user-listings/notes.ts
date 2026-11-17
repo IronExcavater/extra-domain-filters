@@ -11,8 +11,6 @@ type ShortlistNotes = Record<string, { text: string; updatedAt: number }>;
 
 let notesCache: ShortlistNotes | undefined;
 let domainNotes: Map<string, string> | undefined;
-/** Cards whose still-empty note field was opened with "Add notes". */
-const opened = new Set<string>();
 
 async function readNotes(): Promise<ShortlistNotes> {
     notesCache ??= (await getFromStorage<ShortlistNotes>(STORAGE_KEY)) ?? {};
@@ -70,9 +68,9 @@ function createField(key: string, rerender: () => void): HTMLTextAreaElement {
     const field = markOwned(document.createElement("textarea"), "shortlist-note");
     field.className = "edf-shortlist-note";
     field.dataset.testid = NOTE_TEST_ID;
-    field.placeholder = "Add a private note…";
+    field.placeholder = "Add notes…";
     field.ariaLabel = "Notes";
-    field.rows = 1;
+    field.rows = 2;
 
     let reverting = false;
     field.addEventListener("input", () => resize(field));
@@ -86,7 +84,6 @@ function createField(key: string, rerender: () => void): HTMLTextAreaElement {
     });
     field.addEventListener("blur", () => void readNotes().then(async notes => {
         const text = field.value.trim();
-        opened.delete(key);
         if (!reverting && text !== noteFor(notes, key)) await writeNote(key, text);
         reverting = false;
         rerender();
@@ -95,9 +92,10 @@ function createField(key: string, rerender: () => void): HTMLTextAreaElement {
 }
 
 /**
- * Shortlist notes, edited in place on the card like Domain's old inline notes: click the note
- * and type; it saves when focus leaves (Ctrl/⌘+Enter), Escape reverts. Domain's own "Add notes"
- * now just opens the listing page, so the button opens this field instead.
+ * Shortlist notes as Domain's old shortlist card had them: every card carries a notes box you
+ * click into and type; it grows with the note, saves when focus leaves (or Ctrl/⌘+Enter) and
+ * Escape reverts. Domain's own "Add notes" now just opens the listing page, so the button
+ * jumps into the box instead.
  */
 export function bindShortlistNotes(card: HTMLElement, url: string): void {
     const actions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
@@ -117,10 +115,6 @@ export function bindShortlistNotes(card: HTMLElement, url: string): void {
 
             let field = findField();
             if (field && document.activeElement === field) return;
-            if (!note && !opened.has(key)) {
-                field?.remove();
-                return;
-            }
             field ??= createField(key, render);
             if (field.value !== note) field.value = note;
             if (field.nextElementSibling !== actions) actions.before(field);
@@ -137,7 +131,6 @@ export function bindShortlistNotes(card: HTMLElement, url: string): void {
         native.addEventListener("click", event => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            opened.add(key);
             render(true);
         }, { capture: true });
     }

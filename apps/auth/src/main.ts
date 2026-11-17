@@ -1,5 +1,6 @@
 import {
     isAuthPageRequest,
+    type AuthBridgeReady,
     type AuthPageRequest,
     type AuthResponse,
 } from "@extra-domain-filters/shared/authMessages";
@@ -99,3 +100,9 @@ window.addEventListener("message", event => {
         || !isAuthPageRequest(event.data)) return;
     void handleAuth(event.data, window.parent, event.origin);
 });
+
+// Tell the extension's offscreen document this page loaded and is listening.
+const parentOrigin = window.location.ancestorOrigins?.[0];
+if (window.parent !== window && parentOrigin && isAllowedExtensionOrigin(parentOrigin, runtime.mode)) {
+    window.parent.postMessage({ type: "federated-auth:ready" } satisfies AuthBridgeReady, parentOrigin);
+}

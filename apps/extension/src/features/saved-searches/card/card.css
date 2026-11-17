@@ -117,9 +117,17 @@
 }
 
 .edf-saved-search-inline-details {
+    background: var(--edf-color-surface-muted, #f3f1ed);
+    border-radius: 999px;
     color: var(--edf-color-muted);
-    font-weight: 400;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 20px;
     min-width: 0;
+    overflow: hidden;
+    padding: 0 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .edf-saved-search-filter-chips {

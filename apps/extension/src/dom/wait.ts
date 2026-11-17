@@ -59,3 +59,33 @@ export function waitForElement<T>(
         signal.addEventListener("abort", onAbort, { once: true });
     });
 }
+
+/**
+ * Resolves once Domain's Next.js app has hydrated: Next mounts its route announcer from an
+ * effect after the first commit. Restructuring server-rendered markup before then makes
+ * React adopt our nodes as its own (it hydrated our toolbar as its tab row and hid its sort).
+ * Pages without the announcer resolve after the timeout.
+ */
+export async function waitForHydration(signal: AbortSignal): Promise<void> {
+    try {
+        await waitForElement(() => document.querySelector("next-route-announcer") ?? undefined, signal, {
+            timeoutMs: 8000,
+        });
+    } catch (error) {
+        if (!(error instanceof DOMException && error.name === "TimeoutError")) throw error;
+    }
+}
+
+/**
+ * Lets the page render a frame. Hidden tabs (the background tab the popup opens to apply a
+ * change on Domain) never run animation frames, so a short timer settles it there instead.
+ */
+export function nextFrame(): Promise<void> {
+    return new Promise(resolve => {
+        const timer = window.setTimeout(resolve, 50);
+        requestAnimationFrame(() => {
+            window.clearTimeout(timer);
+            resolve();
+        });
+    });
+}

@@ -108,22 +108,6 @@ export async function createTextControl(
     return section;
 }
 
-/** A labelled text field inside another filter section (e.g. typed could-haves). */
-export async function createSubTextControl(
-    property: Property<"string">,
-    config: TextConfig,
-): Promise<HTMLDivElement> {
-    const field = document.createElement("div");
-    const label = document.createElement("label");
-
-    field.className = "edf-filter-subfield";
-    label.className = "edf-filter-subfield-label";
-    label.htmlFor = `edf-filter-${config.id}`;
-    label.textContent = config.label;
-    field.append(label, await createTextField(property, config));
-    return field;
-}
-
 export async function createRangeControl(
     property: Property<"number">,
     config: ControlConfig & { max: number; min?: number; snap?: (value: number) => number; testId: string },

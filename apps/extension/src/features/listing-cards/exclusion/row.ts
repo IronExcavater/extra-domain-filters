@@ -101,8 +101,8 @@ export function createHiddenRow(options: HiddenRowOptions = {}): HTMLElement {
 export function setHiddenRowState(
     row: HTMLElement,
     state: {
-        /** Replaces the generic reason, e.g. "Agency: Ray White Yamba". */
-        detail?: string;
+        /** Why the filters hide it ("Mentions “studio”"); the first replaces the generic reason. */
+        details?: readonly string[];
         onAction(): Promise<void> | void;
         reason: ActiveReason;
         title: string;
@@ -119,7 +119,9 @@ export function setHiddenRowState(
     const nextUrls = JSON.stringify(state.urls);
 
     if (title && title.textContent !== state.title) title.textContent = state.title;
-    const reasonText = state.detail ?? labels.reason;
+    const reasonText = state.details?.[0] ?? labels.reason;
+    const details = JSON.stringify(state.details ?? []);
+    if (row.dataset.exclusionDetails !== details) row.dataset.exclusionDetails = details;
     if (reason && reason.textContent !== reasonText) reason.textContent = reasonText;
     if (label && label.textContent !== labels.action) label.textContent = labels.action;
     if (row.dataset.exclusionReason !== state.reason) row.dataset.exclusionReason = state.reason;
@@ -159,10 +161,10 @@ export function updateExclusionRow(
     card: Element,
     url: string | readonly string[],
     reason: ActiveReason,
-    detail?: string,
+    details?: readonly string[],
 ): void {
     setHiddenRowState(getExclusionRow(card), {
-        detail,
+        details,
         onAction: () => resolveExclusionAction(url, reason),
         reason,
         title: getExclusionSummaryText(card, reason),

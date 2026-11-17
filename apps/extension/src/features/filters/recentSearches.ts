@@ -42,7 +42,7 @@ function getSearchTitle(search: ExtensionRecentSearch): string {
     return "Recent search";
 }
 
-function describeFilters(search: ExtensionRecentSearch): string {
+function describeFilters(search: ExtensionRecentSearch): string[] {
     const params = new URLSearchParams(search.filterParams);
     const labels: string[] = [];
 
@@ -51,7 +51,7 @@ function describeFilters(search: ExtensionRecentSearch): string {
     if (params.has("exclude-types")) labels.push("Excluded property types");
     if (params.has("strata-max")) labels.push("Strata limit");
     if (params.has("hide-non-matches")) labels.push("Matching listings only");
-    return labels.join(" · ") || "Custom filters";
+    return labels.length > 0 ? labels : ["Custom filters"];
 }
 
 function createRecentSearchCard(
@@ -78,7 +78,13 @@ function createRecentSearchCard(
     content.className = "edf-recent-search-content";
     titleElement.textContent = title;
     description.className = "edf-recent-search-description";
-    description.textContent = describeFilters(search);
+    // One small chip per extra filter, rather than a dot-joined line.
+    description.append(...describeFilters(search).map(label => {
+        const chip = document.createElement("span");
+        chip.className = "edf-recent-search-chip";
+        chip.textContent = label;
+        return chip;
+    }));
     alert.classList.add("edf-recent-search-alert");
     alert.dataset.testid = "edf-recent-search-alert";
     alert.dataset.edfAlertIconOnly = "true";

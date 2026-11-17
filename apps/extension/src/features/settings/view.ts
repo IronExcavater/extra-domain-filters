@@ -21,6 +21,8 @@ import { SETTINGS_SECTIONS } from "./definitions";
 type HeadingTag = "h1" | "h2" | "h3";
 
 interface SettingsViewOptions {
+    /** Sections shown elsewhere (the popup's Filters page shows "filters"). */
+    excludeSections?: readonly string[];
     includeIntroduction?: boolean;
     sectionHeading: HeadingTag;
     titleHeading: HeadingTag;
@@ -152,7 +154,7 @@ function createChoice(definition: ChoiceSettingDefinition, settings: Settings): 
     return control.element;
 }
 
-function createRow(definition: SettingsControlDefinition, settings: Settings): HTMLElement {
+export function createSettingRow(definition: SettingsControlDefinition, settings: Settings): HTMLElement {
     const row = document.createElement("div");
     const copy = document.createElement("div");
     const title = document.createElement("p");
@@ -316,6 +318,25 @@ function createAccountSection(sectionHeading: HeadingTag, toastScope: ToastScope
     return section;
 }
 
+/** One settings card (toggles and choices) by section id. */
+export function createSettingsSection(id: string, settings: Settings, heading: HeadingTag): HTMLElement | undefined {
+    const section = SETTINGS_SECTIONS.find(candidate => candidate.id === id);
+    if (!section) return undefined;
+    const card = document.createElement("section");
+    const description = section.description ? document.createElement("p") : undefined;
+    card.className = "edf-settings-section";
+    if (description) {
+        description.className = "edf-settings-section-description";
+        description.textContent = section.description ?? "";
+    }
+    card.append(
+        createHeading(heading, "edf-settings-section-title", section.title),
+        ...(description ? [description] : []),
+        ...section.settings.map(definition => createSettingRow(definition, settings)),
+    );
+    return card;
+}
+
 export function createSettingsContent(settings: Settings, options: SettingsViewOptions): DocumentFragment {
     const content = document.createDocumentFragment();
     const toastScope = options.toastScope ?? "page";
@@ -336,19 +357,8 @@ export function createSettingsContent(settings: Settings, options: SettingsViewO
     content.append(createAccountSection(options.sectionHeading, toastScope));
 
     for (const section of SETTINGS_SECTIONS) {
-        const card = document.createElement("section");
-        const description = section.description ? document.createElement("p") : undefined;
-        card.className = "edf-settings-section";
-        if (description) {
-            description.className = "edf-settings-section-description";
-            description.textContent = section.description ?? "";
-        }
-        card.append(
-            createHeading(options.sectionHeading, "edf-settings-section-title", section.title),
-            ...(description ? [description] : []),
-            ...section.settings.map(definition => createRow(definition, settings)),
-        );
-        content.append(card);
+        if (options.excludeSections?.includes(section.id)) continue;
+        content.append(createSettingsSection(section.id, settings, options.sectionHeading)!);
     }
 
     const maintenance = document.createElement("section");

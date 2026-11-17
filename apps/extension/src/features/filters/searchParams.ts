@@ -1,3 +1,4 @@
+import { couldHaveFromId, parseCustomPreferences, type CouldHaveOption } from "../../domain/matching";
 import { getSharedSearch } from "../../domain/searches/client";
 import { getSettings, updateSettings, type Settings } from "../../state/settings";
 
@@ -53,16 +54,26 @@ export async function applySharedFilterParams(url: URL): Promise<void> {
     lastAppliedHref = url.href;
 
     const current = await getSettings();
+    // Could-haves a link names but this browser doesn't offer yet are added to its list.
+    // Older links carried typed could-haves separately ("could-other").
+    const linked = [
+        ...parseList(getParam(params, "couldHaves")).map(couldHaveFromId),
+        ...parseCustomPreferences(parseList(getParam(params, "customCouldHaves")).join(",")),
+    ].filter((option): option is CouldHaveOption => option !== undefined);
+    const known = new Set(current.filters.couldHaveOptions.map(option => option.id));
+    const couldHaveOptions = [
+        ...current.filters.couldHaveOptions,
+        ...linked.filter(option => !known.has(option.id) && known.add(option.id)),
+    ];
+    const linksCouldHaves = hasParam(params, "couldHaves") || hasParam(params, "customCouldHaves");
     // A missing param must not read as Number(null) === 0, which would cap strata at $0.
     const strata = hasParam(params, "strataMax") ? Number(getParam(params, "strataMax")) : Number.NaN;
     await updateSettings({
         filters: {
-            couldHaveRuleIds: hasParam(params, "couldHaves")
-                ? parseList(getParam(params, "couldHaves"))
+            couldHaveOptions,
+            couldHaveRuleIds: linksCouldHaves
+                ? [...new Set(linked.map(option => option.id))]
                 : current.filters.couldHaveRuleIds,
-            customPreferenceText: hasParam(params, "customCouldHaves")
-                ? parseList(getParam(params, "customCouldHaves")).join(", ")
-                : current.filters.customPreferenceText,
             excludeKeywords: hasParam(params, "excludeKeywords")
                 ? parseList(getParam(params, "excludeKeywords"))
                 : current.filters.excludeKeywords,
@@ -101,7 +112,7 @@ export function removeSharedFilterParams(params: URLSearchParams): void {
 
 function writeSharedFilterParams(params: URLSearchParams, settings: Settings): void {
     setList(params, PARAMS.couldHaves, settings.filters.couldHaveRuleIds);
-    setList(params, PARAMS.customCouldHaves, parseList(settings.filters.customPreferenceText));
+    params.delete(PARAMS.customCouldHaves);
     setList(params, PARAMS.excludeKeywords, settings.filters.excludeKeywords);
     setList(params, PARAMS.propertyTypes, settings.filters.excludePropertyKeywords);
     if (settings.filters.strataMaxDollars >= 2000) params.delete(PARAMS.strataMax);

@@ -1,8 +1,7 @@
 import { onBodyMutations } from "../dom/bodyMutations";
 import { isOwnedNode, markOwned } from "../dom/ownership";
-import { parseProfileUrl, type BlacklistProfile } from "../domain/blacklist/profiles";
-import { getBlacklist, toggleBlacklistListing } from "../domain/blacklist/store";
-import { isBlacklisted } from "../domain/matching";
+import { findProfileEntry, parseProfileUrl, type BlacklistProfile } from "../domain/blacklist/profiles";
+import { getBlacklist, toggleBlacklistProfile } from "../domain/blacklist/store";
 import { bindListingCards } from "../features/listing-cards";
 import { enableStickyHeader } from "../features/navigation";
 import type { PageContext, PageMount } from "../platform/router";
@@ -54,7 +53,7 @@ function bindProfileBlacklist(context: PageContext): void {
         ({ ...parsed, name: textOf(document.querySelector("h1") ?? document.body) || parsed.name });
     const sync = async (): Promise<void> => {
         const button = document.querySelector<HTMLButtonElement>(`[data-testid="${BUTTON_TEST_ID}"]`);
-        if (button) render(button, getProfile(), isBlacklisted(await getBlacklist(), parsed.url));
+        if (button) render(button, getProfile(), findProfileEntry(await getBlacklist(), parsed) !== undefined);
     };
     const ensure = (): void => {
         if (document.querySelector(`[data-testid="${BUTTON_TEST_ID}"]`)) return;
@@ -73,12 +72,8 @@ function bindProfileBlacklist(context: PageContext): void {
             button.disabled = true;
             const profile = getProfile();
             try {
-                const active = await toggleBlacklistListing({
-                    displayAddress: profile.name,
-                    text: "",
-                    title: profile.name,
-                    url: profile.url,
-                });
+                const logo = document.querySelector<HTMLImageElement>('img[alt*="logo" i]')?.src;
+                const active = await toggleBlacklistProfile(profile, { thumbnailUrl: logo });
                 render(button, profile, active);
                 showToast(active
                     ? `Listings from ${profile.name} are now hidden in your searches`
