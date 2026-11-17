@@ -66,6 +66,25 @@ body {
     overflow: auto;
     padding: 22px 24px;
     scrollbar-gutter: stable;
+    transition: padding 220ms ease;
+}
+
+/* Layout eases between breakpoints as the popup is resized, rather than snapping. */
+.edf-settings-popup :is(.edf-collection-toolbar, .edf-collection-frame-cards, .edf-profile-grid, .edf-filters-chips) {
+    transition: gap 220ms ease, padding 220ms ease, margin 220ms ease;
+}
+
+@media (width < 600px) {
+    .edf-popup-content {
+        padding: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edf-popup-content,
+    .edf-settings-popup :is(.edf-collection-toolbar, .edf-collection-frame-cards, .edf-profile-grid, .edf-filters-chips) {
+        transition: none;
+    }
 }
 
 .edf-popup-content > * {

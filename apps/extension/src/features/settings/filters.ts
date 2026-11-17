@@ -1,5 +1,5 @@
 import { STRATA_MAX } from "../../domain/matching";
-import { createSettingRow, createSettingsSection } from "../../features/settings/view";
+import { createSettingRow, createSettingsSection } from "./view";
 import { onStorageChange } from "../../platform/storage";
 import {
     addCouldHave,
@@ -22,6 +22,9 @@ import {
 } from "../../ui/icons";
 
 interface FiltersViewOptions {
+    /** Inside Domain's settings page: just the cards, no page title. */
+    embedded?: boolean;
+    heading?: "h2" | "h3";
     settings: Settings;
     signal: AbortSignal;
 }
@@ -32,14 +35,14 @@ function formatStrata(value: number): string {
         : `Up to ${value.toLocaleString("en-AU", { currency: "AUD", maximumFractionDigits: 0, style: "currency" })} a quarter`;
 }
 
-function createCard(title: string, description: string, icon: IconRenderer): {
+function createCard(title: string, description: string, icon: IconRenderer, level: "h2" | "h3"): {
     actions: HTMLElement;
     body: HTMLElement;
     card: HTMLElement;
 } {
     const card = document.createElement("section");
     const head = document.createElement("div");
-    const heading = document.createElement("h2");
+    const heading = document.createElement(level);
     const actions = document.createElement("div");
     const copy = document.createElement("p");
     const body = document.createElement("div");
@@ -136,6 +139,7 @@ function createEmpty(text: string): HTMLElement {
  * applied immediately. Domain's filter panel offers the same controls next to its own.
  */
 export function createFiltersView(options: FiltersViewOptions): HTMLElement {
+    const level = options.heading ?? "h2";
     let settings = options.settings;
     // Every change re-reads settings and redraws, without waiting for the storage event.
     const apply = async (change: Promise<unknown>): Promise<void> => {
@@ -149,7 +153,7 @@ export function createFiltersView(options: FiltersViewOptions): HTMLElement {
     const title = document.createElement("h1");
     const lede = document.createElement("p");
 
-    content.className = "edf-popup-content edf-popup-filters";
+    content.className = options.embedded ? "edf-settings-filters" : "edf-popup-content edf-popup-filters";
     intro.className = "edf-popup-page-header";
     title.textContent = "Filters";
     lede.textContent = "Applied to every Domain search, on top of Domain's own filters. Changes apply straight away.";
@@ -160,6 +164,7 @@ export function createFiltersView(options: FiltersViewOptions): HTMLElement {
         "Could-haves",
         "Tick the extras you'd like. Listings that mention one get a gold tag in results and a gold pin on the map.",
         replaceWithCouldHavesFilterIcon,
+        level,
     );
     const couldHaveChips = document.createElement("div");
     const reset = document.createElement("button");
@@ -183,6 +188,7 @@ export function createFiltersView(options: FiltersViewOptions): HTMLElement {
         "Exclude keywords",
         "Listings whose description mentions any of these are hidden.",
         replaceWithExcludeKeywordsFilterIcon,
+        level,
     );
     const keywordChips = document.createElement("div");
     keywordChips.className = "edf-filters-chips";
@@ -199,19 +205,24 @@ export function createFiltersView(options: FiltersViewOptions): HTMLElement {
         "Strata fees",
         "Hide listings whose quarterly strata or body corporate fee is above your maximum.",
         replaceWithStrataFilterIcon,
+        level,
     );
     const strataValue = document.createElement("output");
     const strataInput = document.createElement("input");
     strataValue.className = "edf-filters-range-value";
-    strataInput.className = "edf-filters-range";
+    // Domain's rheostat look, shared with the filter panel (ui/domainControls.css).
+    strataInput.className = "edf-filter-range";
     strataInput.type = "range";
     strataInput.min = "0";
     strataInput.max = String(STRATA_MAX);
     strataInput.step = "50";
     strataInput.ariaLabel = "Maximum quarterly strata fee";
-    strataInput.addEventListener("input", () => {
-        strataValue.textContent = formatStrata(Number(strataInput.value));
-    });
+    const renderStrata = (): void => {
+        const value = Number(strataInput.value);
+        strataValue.textContent = formatStrata(value);
+        strataInput.style.setProperty("--edf-range-progress", `${(value / STRATA_MAX) * 100}%`);
+    };
+    strataInput.addEventListener("input", renderStrata);
     strataInput.addEventListener("change", () =>
         void apply(updateSettings({ filters: { strataMaxDollars: Number(strataInput.value) } })));
     strata.body.append(strataValue, strataInput);
@@ -219,8 +230,9 @@ export function createFiltersView(options: FiltersViewOptions): HTMLElement {
     // Property types
     const types = createCard(
         "Property types",
-        "Types you untick in Domain's property type filter are hidden. Remove one here to show it again.",
+        "Types you untick in Domain's property type filter are hidden, along with listings described as one. Remove a type to show it again.",
         replaceWithExcludeKeywordsFilterIcon,
+        level,
     );
     const typeChips = document.createElement("div");
     typeChips.className = "edf-filters-chips";
@@ -256,7 +268,7 @@ export function createFiltersView(options: FiltersViewOptions): HTMLElement {
         if (filters.excludeKeywords.length === 0) keywordChips.append(createEmpty("Nothing excluded."));
 
         if (document.activeElement !== strataInput) strataInput.value = String(filters.strataMaxDollars);
-        strataValue.textContent = formatStrata(Number(strataInput.value));
+        renderStrata();
 
         typeChips.replaceChildren(...filters.excludePropertyKeywords.map(type => createChip({
             label: type,
@@ -272,8 +284,9 @@ export function createFiltersView(options: FiltersViewOptions): HTMLElement {
     };
 
     render();
-    const domainSection = createSettingsSection("filters", settings, "h2");
-    content.append(intro, couldHaves.card, keywords.card, strata.card, types.card, ...(domainSection ? [domainSection] : []));
+    const domainSection = createSettingsSection("filters", settings, level);
+    if (!options.embedded) content.append(intro);
+    content.append(couldHaves.card, keywords.card, strata.card, types.card, ...(domainSection ? [domainSection] : []));
     const unwatch = onStorageChange<Settings>("settings", next => {
         if (!next?.filters?.couldHaveOptions) return;
         settings = next;

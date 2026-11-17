@@ -8,7 +8,14 @@ export type FederatedAuthProvider = "apple" | "facebook" | "google";
 
 export const DEVELOPMENT_BRIDGE_URL = "http://127.0.0.1:5174/auth/";
 const PRODUCTION_BRIDGE_URL = "https://extra-domain-filters.web.app/auth/";
-const PRODUCTION_EXTENSION_ORIGIN = "chrome-extension://opblibcobnkicpdjkinngfcbjjnjldkg";
+/**
+ * Store builds allowed to use the hosted sign-in page. Each store gives the extension its own
+ * ID; add the Edge Add-ons and Opera add-ons IDs here once those listings exist (Firefox and
+ * Safari have no offscreen documents, so they sign in by email instead).
+ */
+const PRODUCTION_EXTENSION_ORIGINS: readonly string[] = [
+    "chrome-extension://opblibcobnkicpdjkinngfcbjjnjldkg",
+];
 const DEVELOPMENT_EXTENSION_ORIGIN = /^chrome-extension:\/\/[a-p]{32}$/;
 
 export interface AuthRuntimeConfig {
@@ -38,5 +45,5 @@ export function isAllowedExtensionOrigin(origin: string, mode: string): boolean 
     const resolvedMode = readMode(mode);
     return resolvedMode === "development"
         ? DEVELOPMENT_EXTENSION_ORIGIN.test(origin)
-        : origin === PRODUCTION_EXTENSION_ORIGIN;
+        : PRODUCTION_EXTENSION_ORIGINS.includes(origin);
 }

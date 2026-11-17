@@ -26,7 +26,7 @@ import { enableResizablePopup } from "../ui/resize";
 import { createNavigation } from "./components/navigation";
 import type { PopupData, PopupView } from "./model";
 import { createBlacklistView } from "./views/blacklist";
-import { createFiltersView } from "./views/filters";
+import { createFiltersView } from "../features/settings/filters";
 import { createLoginView } from "./views/login";
 import { createSavedSearchesView } from "./views/savedSearches";
 
@@ -104,6 +104,7 @@ async function createPreferencesView(): Promise<HTMLElement> {
         // Filter toggles live on the Filters page.
         excludeSections: ["filters"],
         includeIntroduction: false,
+        onEmailSignIn: () => navigate("login"),
         sectionHeading: "h2",
         titleHeading: "h1",
         toastScope: "popup",

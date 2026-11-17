@@ -256,46 +256,6 @@ li:is(:hover, :focus-within) .edf-card-profile-action {
 
 /* Blacklisted agencies and agents (blacklist/profiles.ts): a grid of cards, each with the
  * agency's logo (or initials), its name, when it was hidden, and Show again. */
-.edf-profile-section {
-    margin: 0 0 32px;
-}
-
-.edf-profile-section-heading {
-    align-items: center;
-    color: var(--edf-color-heading, #131212);
-    display: flex;
-    font-size: 20px;
-    gap: 8px;
-    line-height: 28px;
-    margin: 0 0 12px;
-}
-
-.edf-profile-section-count,
-.edf-collection-tab-count {
-    background: var(--edf-color-surface-muted, #f3f1ed);
-    border-radius: 999px;
-    color: var(--edf-color-muted, #646463);
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 20px;
-    min-width: 20px;
-    padding: 0 6px;
-    text-align: center;
-    text-transform: none;
-}
-
-.edf-collection-tab-count {
-    margin-left: 6px;
-    transition: background-color 180ms ease, color 180ms ease;
-    vertical-align: 1px;
-}
-
-.edf-collection-tab[aria-selected="true"] .edf-collection-tab-count {
-    background: #ebf6e6;
-    color: var(--edf-color-green-hover, #0c8a00);
-}
-
 .edf-profile-grid {
     display: grid;
     gap: 12px;

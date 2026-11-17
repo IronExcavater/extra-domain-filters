@@ -153,7 +153,7 @@ export interface ListingMatch {
     blacklistedProfile?: BlacklistProfile;
     exclusionReason: ExclusionReason;
     filterMatched: boolean;
-    /** Why the filters hide it, in words ("Mentions “studio”"); empty when they don't. */
+    /** Why the filters hide it, in words ("Mentions “studio”", "Agency X is blacklisted"); empty when they don't. */
     filterReasons: string[];
     matchedPreferences: PreferenceRule[];
 }
@@ -265,6 +265,62 @@ function strataOverMax(
     return Number.isFinite(amount) && amount > maximum ? amount : undefined;
 }
 
+/**
+ * Words that name each Domain property type, for listings whose tag is wrong or missing
+ * ("3 bedroom townhouse" tagged House). They only count in phrases that describe the whole
+ * listing, a bedroom count or "for sale/rent/lease", never alone: addresses ("Unit 3", "Smith
+ * Terrace") and extras ("with a granny flat") would otherwise hide the wrong listings.
+ * ponytail: a word list, not a classifier; extend a group when a mis-tag slips through.
+ */
+const TYPE_WORDS: ReadonlyArray<readonly [type: RegExp, words: string]> = [
+    [/apartment|unit|flat|studio|penthouse/, "apartments?|units?|flats?|studios?|penthouses?|condos?"],
+    [/town ?house/, "town ?houses?|townhomes?"],
+    [/villa/, "villas?"],
+    [/duplex|semi/, "duplex(?:es)?|semi-detached"],
+    [/terrace/, "terraces?"],
+    [/(?:^|\W)house(?:$|\W)|free-?standing/, "houses?|cottages?|bungalows?"],
+    [/(?:^|\W)land(?:$|\W)/, "land|blocks?"],
+    [/acreage|rural|farm/, "acreages?|farms?"],
+];
+
+/** The type word in a phrase naming the whole listing ("3 bedroom townhouse", "unit for rent"). */
+function findDescribedType(text: string, words: string): string | undefined {
+    const pattern = new RegExp(
+        String.raw`\b(?:\d+|one|two|three|four|five|six)[\s-]*(?:bed(?:room)?s?|br)\s+(?:[a-z-]+\s+)?(${words})\b`
+        + String.raw`|\b(${words})\s+(?:for\s+(?:sale|rent|lease)|available\s+now)\b`,
+        "i",
+    );
+    const match = text.match(pattern);
+    return (match?.[1] ?? match?.[2])?.toLowerCase();
+}
+
+function withArticle(word: string): string {
+    // "an apartment", but "a unit".
+    return `${/^(?:[aeio]|u(?!ni))/i.test(word) ? "an" : "a"} ${word}`;
+}
+
+/** Why the listing counts as a type the user excluded, by its tag or by how it is described. */
+function excludedTypeReason(listing: ListingSnapshot, excluded: readonly string[]): string | undefined {
+    if (excluded.length === 0) return undefined;
+    if (matchesExcludedPropertyType(listing.propertyType, excluded)) {
+        return `${listing.propertyType}, a type you excluded`;
+    }
+    const text = `${listing.title}\n${listing.text}`;
+    const tagged = listing.propertyType?.toLowerCase();
+    const ownWords = tagged ? TYPE_WORDS.find(([type]) => type.test(tagged))?.[1] : undefined;
+    // When the text also describes the tagged type ("3 bedroom house plus a 2 bedroom unit"),
+    // the tag is right.
+    if (ownWords && findDescribedType(text, ownWords)) return undefined;
+    for (const keyword of excluded) {
+        // "New apartments / off the plan" is a sub-type; its words also describe the parent.
+        if (/\bnew\b|off the plan/.test(keyword)) continue;
+        const words = TYPE_WORDS.find(([type]) => type.test(keyword))?.[1];
+        const word = words ? findDescribedType(text, words) : undefined;
+        if (word) return `Described as ${withArticle(word)}, a type you excluded`;
+    }
+    return undefined;
+}
+
 function matchesExcludedPropertyType(
     propertyType: string | undefined,
     excludePropertyKeywords: readonly string[],
@@ -312,15 +368,16 @@ export function matchListing(
     const blacklistedProfile = findBlacklistedProfile(blacklist, listing);
     const keyword = findKeyword(text, filters.excludeKeywords);
     const strata = strataOverMax(text, filters.strataMaxDollars);
-    const excludedType = matchesExcludedPropertyType(listing.propertyType, filters.excludePropertyKeywords)
-        ? listing.propertyType
-        : undefined;
+    // Each reason reads on its own, as a summary chip or after "Filtered:" on a hidden card.
     const filterReasons = [
-        blacklistedProfile && `${blacklistedProfile.kind === "agency" ? "Agency" : "Agent"}: ${blacklistedProfile.name}`,
+        blacklistedProfile
+            && `${blacklistedProfile.kind === "agency" ? "Agency" : "Agent"} ${blacklistedProfile.name} is blacklisted`,
         keyword && `Mentions “${keyword}”`,
-        strata === undefined ? undefined : `Strata ${formatDollars(strata)} a quarter`,
-        excludedType,
-        excludesCouldHaveMismatch ? "None of your could-haves" : undefined,
+        strata === undefined
+            ? undefined
+            : `Strata ${formatDollars(strata)} a quarter, over your ${formatDollars(filters.strataMaxDollars)} limit`,
+        excludedTypeReason(listing, filters.excludePropertyKeywords),
+        excludesCouldHaveMismatch ? "Has none of your could-haves" : undefined,
     ].filter((reason): reason is string => typeof reason === "string" && reason !== "");
     const filterMatched = filterReasons.length > 0;
     const exclusionReason: ExclusionReason = isBlacklisted(blacklist, listing.url)

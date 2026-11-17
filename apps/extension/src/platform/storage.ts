@@ -1,3 +1,4 @@
+import { browser } from "wxt/browser";
 import { storage, type StorageArea, type StorageItemKey } from "wxt/utils/storage";
 
 const CONTEXT_ERROR_PATTERN = /extension context invalidated|context invalidated|receiving end does not exist/i;
@@ -20,7 +21,7 @@ function fromStorageKey(key: StorageItemKey): string {
 }
 
 export function isExtensionContextUnavailable(error?: unknown): boolean {
-    return chrome.runtime?.id === undefined || isContextError(error);
+    return browser.runtime?.id === undefined || isContextError(error);
 }
 
 export async function readLocalStorage(keys: string | readonly string[]): Promise<Record<string, unknown>> {

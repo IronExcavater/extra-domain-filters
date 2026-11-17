@@ -34,9 +34,21 @@ export async function resolveExclusionAction(url: string | readonly string[], re
 }
 
 const REASON_LABELS: Record<ActiveReason, { action: string; reason: string }> = {
-    blacklisted: { action: "Unblacklist", reason: "Blacklisted" },
-    filtered: { action: "Show", reason: "Filtered" },
+    blacklisted: { action: "Unblacklist", reason: "Blacklisted by you" },
+    filtered: { action: "Show", reason: "Filtered by your filters" },
 };
+
+/**
+ * The reason line: "Blacklisted by you", "Agency Ray White is blacklisted", or "Filtered:"
+ * and the first filter that hides it, with a count of any others.
+ */
+export function describeExclusion(reason: ActiveReason, details: readonly string[] = []): string {
+    const [first, ...rest] = details;
+    if (reason === "blacklisted" || !first) return REASON_LABELS[reason].reason;
+    const more = rest.length > 0 ? ` and ${rest.length} more` : "";
+    if (first.endsWith(" is blacklisted")) return `${first}${more}`;
+    return `Filtered: ${first.charAt(0).toLowerCase()}${first.slice(1)}${more}`;
+}
 
 function createIcon(className: string, size: number): SVGSVGElement {
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -119,7 +131,7 @@ export function setHiddenRowState(
     const nextUrls = JSON.stringify(state.urls);
 
     if (title && title.textContent !== state.title) title.textContent = state.title;
-    const reasonText = state.details?.[0] ?? labels.reason;
+    const reasonText = describeExclusion(state.reason, state.details);
     const details = JSON.stringify(state.details ?? []);
     if (row.dataset.exclusionDetails !== details) row.dataset.exclusionDetails = details;
     if (reason && reason.textContent !== reasonText) reason.textContent = reasonText;

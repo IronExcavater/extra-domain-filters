@@ -1,4 +1,6 @@
-import { isOwnedNode } from "../dom/ownership";
+import { isOwnedNode, markOwned } from "../dom/ownership";
+import { createEmptyState, createSearchAction, type SearchMode } from "../ui/collection";
+import { replaceWithPopupStarIcon } from "../ui/icons";
 import { getBlacklist, removeBlacklistUrls, toggleBlacklistListing } from "../domain/blacklist/store";
 import { isBlacklisted } from "../domain/matching";
 import { bindListingCards } from "../features/listing-cards";
@@ -66,9 +68,63 @@ function syncSelectionControls(container: HTMLElement): void {
     }
 }
 
+const NATIVE_EMPTY_SELECTOR = '[data-testid="listings-nofound-container"]';
+const EMPTY_TEST_ID = "extra-domain-filters-shortlist-empty";
+const EMPTY_COPY: Record<string, { description: string; mode: SearchMode; title: string }> = {
+    all: {
+        title: "No shortlisted properties yet",
+        description: "Tap the star on any listing to save it to your shortlist.",
+        mode: "buy",
+    },
+    buy: {
+        title: "No properties for sale shortlisted",
+        description: "Tap the star on a listing for sale to save it here.",
+        mode: "buy",
+    },
+    rent: {
+        title: "No rentals shortlisted",
+        description: "Tap the star on a rental listing to save it here.",
+        mode: "rent",
+    },
+    "new homes": {
+        title: "No new homes shortlisted",
+        description: "Tap the star on a new home or project to save it here.",
+        mode: "new homes",
+    },
+};
+
+/**
+ * Domain's "No shortlisted properties, yet :(" becomes the shared empty state, worded for the
+ * tab in view and with the same search button. Domain still decides when it shows.
+ */
+function syncEmptyState(container: HTMLElement): void {
+    const native = container.querySelector<HTMLElement>(NATIVE_EMPTY_SELECTOR);
+    const existing = container.querySelector<HTMLElement>(`[data-testid="${EMPTY_TEST_ID}"]`);
+    if (!native) {
+        existing?.remove();
+        return;
+    }
+    const tab = container.querySelector(
+        '[role="tablist"]:not([data-extra-domain-filters-owner]) [role="tab"][aria-selected="true"]',
+    )?.textContent?.trim().toLowerCase() ?? "all";
+    if (existing?.dataset.tab === tab && existing.previousElementSibling === native) return;
+
+    const copy = EMPTY_COPY[tab] ?? EMPTY_COPY.all;
+    const empty = markOwned(
+        createEmptyState(copy.title, copy.description, replaceWithPopupStarIcon, createSearchAction(copy.mode)),
+        "shortlist-empty",
+    );
+    empty.dataset.testid = EMPTY_TEST_ID;
+    empty.dataset.tab = tab;
+    native.dataset.edfReplaced = "true";
+    existing?.remove();
+    native.after(empty);
+}
+
 function configureCards(container: HTMLElement): void {
     setListingsSubtitle(container, SHORTLIST_SUBTITLE);
     syncSelectionControls(container);
+    syncEmptyState(container);
 }
 
 function syncSelectedCards(container: HTMLElement): void {

@@ -62,24 +62,59 @@
     padding: 0 var(--space-xxs, 4px);
 }
 
+/* "Extension preferences" in Domain's profile sidebar, sized like Domain's items (12px
+ * padding, 48px tall, 8px corners, beige when selected). */
 .edf-profile-settings-tab {
     list-style: none;
-    padding: 2px 0;
 }
 
 .edf-profile-settings-tab > button {
     appearance: none;
     background: transparent;
     border: 0;
-    border-radius: var(--edf-radius-control);
-    color: var(--edf-color-text);
+    border-radius: 8px;
+    color: #131212;
     cursor: pointer;
     font: inherit;
-    padding: 12px 16px;
+    font-size: 16px;
+    line-height: 24px;
+    min-height: 48px;
+    padding: 12px;
     text-align: left;
+    transition: background-color 150ms ease;
     width: 100%;
 }
 
 .edf-profile-settings-tab[data-selected="true"] > button {
-    background: var(--edf-color-surface-muted);
+    background: rgb(248 246 241);
+}
+
+/* Domain keeps its own item's selected class while our page is open; show it unselected. */
+ul[data-edf-settings-active="true"] > li:not(.edf-profile-settings-tab) > button {
+    background: transparent !important;
+}
+
+/* Signed out there is no account menu, so a cog beside "Log in" opens the settings. */
+.edf-header-settings-link {
+    align-items: center;
+    border-radius: 50%;
+    color: rgb(60 71 91);
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 40px;
+    justify-content: center;
+    margin-right: 4px;
+    transition: background-color 150ms ease, color 150ms ease;
+    width: 40px;
+}
+
+.edf-header-settings-link:is(:hover, :focus-visible) {
+    background: var(--edf-color-surface-muted, #f7f7f5);
+    color: var(--edf-color-green-hover, #0c8a00);
+    outline: none;
+}
+
+.edf-header-settings-icon {
+    height: 22px;
+    width: 22px;
 }

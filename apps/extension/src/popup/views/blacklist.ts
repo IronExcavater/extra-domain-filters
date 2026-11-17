@@ -6,7 +6,12 @@ import {
 import { getBlacklistListing, type BlacklistEntry } from "../../domain/matching";
 import { isProfileEntry } from "../../domain/blacklist/profiles";
 import { createBlacklistCard } from "../../features/blacklist/card";
-import { createProfileCard, getProfileEntries } from "../../features/blacklist/profiles";
+import {
+    createProfileCard,
+    getProfileEntries,
+    PROFILE_EMPTY_COPY,
+    PROPERTIES_EMPTY_COPY,
+} from "../../features/blacklist/profiles";
 import {
     filterBlacklistEntries,
     sortBlacklistEntries,
@@ -14,7 +19,7 @@ import {
     type BlacklistFilter,
     type BlacklistSort,
 } from "../../features/blacklist/sort";
-import { createEmptyState } from "../../ui/collection";
+import { createEmptyState, createSearchAction } from "../../ui/collection";
 import { createCollectionFrame } from "../../ui/collectionView";
 import { replaceWithBinIcon } from "../../ui/icons";
 import {
@@ -22,7 +27,7 @@ import {
     replaceSelection,
     setSelectionCheckboxState,
 } from "../../ui/selection";
-import { createDropdownControl, createSortControl } from "../../ui/sort";
+import { createSortControl } from "../../ui/sort";
 import { createTabs } from "../../ui/tabs";
 
 interface BlacklistViewOptions {
@@ -80,21 +85,6 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
     const profileList = document.createElement("div");
     profileList.className = "edf-profile-grid edf-popup-profile-grid";
     frame.cards.after(profileList);
-    const type = createDropdownControl({
-        ariaLabel: "Listing type",
-        onChange: filter => {
-            animateNext = true;
-            controller.setFilter(filter as BlacklistFilter);
-        },
-        options: [
-            ["all", "Buy and rent"],
-            ["buy", "Buy"],
-            ["rent", "Rent"],
-        ],
-        signal,
-        value: "all",
-    });
-    type.element.classList.add("edf-blacklist-type");
     const tabs = createTabs<BlacklistScope>({
         active: activeScope,
         indicatorKey: "popup-blacklist-scope",
@@ -104,9 +94,9 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
             renderScope();
         },
         options: [
-            { count: items.filter(entry => !entry.removedAt).length, label: "Properties", value: "properties" },
-            { count: profiles.agency.length, label: "Agencies", value: "agency" },
-            { count: profiles.agent.length, label: "Agents", value: "agent" },
+            { label: "Properties", value: "properties" },
+            { label: "Agencies", value: "agency" },
+            { label: "Agents", value: "agent" },
         ],
         signal,
     });
@@ -115,9 +105,10 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
         profileList.replaceChildren(...(list.length > 0
             ? list.map(profile => createProfileCard(profile, { openInNewTab: true, toastScope: "popup" }))
             : [createEmptyState(
-                scope === "agency" ? "No hidden agencies" : "No hidden agents",
-                "Hide one from the bin button in a listing card's agency strip, or from an agency's page on Domain.",
+                PROFILE_EMPTY_COPY[scope].title,
+                PROFILE_EMPTY_COPY[scope].description,
                 replaceWithBinIcon,
+                createSearchAction("buy", true),
             )]));
         if (animateNext) {
             profileList.removeAttribute("data-animate");
@@ -128,7 +119,7 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
     };
     const renderScope = (): void => {
         const scope = activeScope;
-        frame.setToolbar(scope === "properties" ? [tabs, type.element, controls, sort.element] : [tabs]);
+        frame.setToolbar(scope === "properties" ? [tabs, controls, sort.element] : [tabs]);
         frame.element.dataset.scope = scope;
         profileList.hidden = scope === "properties";
         if (scope === "properties") {
@@ -198,11 +189,10 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
             });
         }), animateNext);
         frame.setEmptyState(visible.length === 0 ? createEmptyState(
-            items.length === 0 ? "No blacklisted properties" : "No matching properties",
-            items.length === 0
-                ? "Properties hidden from Domain results will appear here."
-                : "Try another property category.",
+            PROPERTIES_EMPTY_COPY.title,
+            PROPERTIES_EMPTY_COPY.description,
             replaceWithBinIcon,
+            createSearchAction("buy", true),
         ) : undefined);
         animateNext = false;
     };

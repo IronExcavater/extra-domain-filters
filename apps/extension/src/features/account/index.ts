@@ -3,9 +3,10 @@ import { markOwned } from "../../dom/ownership";
 import { Logger } from "../../platform/logging";
 import { observeUrlChanges, PageContext } from "../../platform/router";
 import { getFromStorage, onStorageChange } from "../../platform/storage";
-import { findDomainAccountMenuHosts, type DomainAccountMenuHost } from "../../site-dom/profile";
+import { findDomainAccountMenuHosts, PROFILE_SETTINGS_URL, type DomainAccountMenuHost } from "../../site-dom/profile";
 import { createSvgIcon } from "../../ui/elements";
-import { replaceWithBinIcon } from "../../ui/icons";
+import { replaceWithBinIcon, replaceWithPopupCogIcon } from "../../ui/icons";
+import { setTooltipText } from "../../ui/tooltip";
 
 const ITEM_SELECTOR = '[data-testid="account-menu__blacklist-item"]';
 const subscriptions = new Map<HTMLElement, () => void>();
@@ -129,6 +130,34 @@ export function injectAccountMenu(logger: Logger, signal?: AbortSignal): void {
     }
 }
 
+const HEADER_SETTINGS_SELECTOR = '[data-testid="extra-domain-filters-header-settings"]';
+
+/**
+ * Signed out, Domain's header has no account menu to hold the settings, so a cog beside its
+ * log-in button opens the same settings URL.
+ */
+function injectSignedOutSettingsLink(): void {
+    const header = document.querySelector<HTMLElement>('header[role="banner"]');
+    const existing = header?.querySelector(HEADER_SETTINGS_SELECTOR);
+    if (!header || header.querySelector('button[aria-label="User profile"]')) {
+        existing?.remove();
+        return;
+    }
+    if (existing) return;
+    const login = [...header.querySelectorAll<HTMLElement>("a, button")]
+        .find(element => /^(log ?in|sign ?in)\b/i.test(element.textContent?.trim() ?? ""));
+    if (!login) return;
+
+    const link = markOwned(document.createElement("a"), "header-settings");
+    link.className = "edf-header-settings-link";
+    link.dataset.testid = "extra-domain-filters-header-settings";
+    link.href = PROFILE_SETTINGS_URL;
+    link.ariaLabel = "Extra Domain Filters preferences";
+    link.append(createSvgIcon(replaceWithPopupCogIcon, "edf-header-settings-icon"));
+    setTooltipText(link, "Extension preferences");
+    login.before(link);
+}
+
 export function bindAccountMenuTrigger(context: PageContext): void {
     let frame: number | undefined;
     const schedule = (): void => {
@@ -136,6 +165,7 @@ export function bindAccountMenuTrigger(context: PageContext): void {
         frame = requestAnimationFrame(() => {
             frame = undefined;
             injectAccountMenu(context.logger, context.signal);
+            injectSignedOutSettingsLink();
         });
     };
 

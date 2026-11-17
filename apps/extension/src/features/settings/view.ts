@@ -1,6 +1,7 @@
+import { browser } from "wxt/browser";
 import { CHROME_WEB_STORE_URL, GITHUB_URL } from "@extra-domain-filters/shared/config/links";
 import { getAccountState, loginWithProvider, signOut } from "../../domain/account/client";
-import type { AccountState } from "../../domain/account/model";
+import type { AccountProvider, AccountState } from "../../domain/account/model";
 import { setBlacklist } from "../../domain/blacklist/store";
 import { clearListingCache } from "../../domain/listings/cache";
 import { trackTelemetry } from "../../domain/telemetry/client";
@@ -12,6 +13,7 @@ import {
     replaceWithGithubIcon,
     replaceWithItchioIcon,
     replaceWithLinkedInIcon,
+    PROVIDER_ICONS,
 } from "../../ui/icons";
 import { createDropdownControl } from "../../ui/sort";
 import { showToast, type ToastScope } from "../../ui/toast";
@@ -24,6 +26,8 @@ interface SettingsViewOptions {
     /** Sections shown elsewhere (the popup's Filters page shows "filters"). */
     excludeSections?: readonly string[];
     includeIntroduction?: boolean;
+    /** Where an email sign-in form exists (the popup), the Account card links to it. */
+    onEmailSignIn?(): void;
     sectionHeading: HeadingTag;
     titleHeading: HeadingTag;
     toastScope?: ToastScope;
@@ -50,13 +54,13 @@ interface SupportGroup {
 const MAINTENANCE_ACTIONS: MaintenanceAction[] = [
     {
         title: "Clear listing cache",
-        description: "Remove cached listing details and images. They will be collected again when needed.",
+        description: "Forget the listing details and photos read so far. They're read again when needed.",
         label: "Clear cache",
         run: clearListingCache,
     },
     {
         title: "Clear blacklist",
-        description: "Remove every listing from the extension blacklist.",
+        description: "Show every blacklisted listing, agency and agent again.",
         label: "Clear blacklist",
         run: () => setBlacklist([]),
     },
@@ -258,62 +262,184 @@ function createSupportGroup(group: SupportGroup): HTMLElement {
     return section;
 }
 
-function createAccountSection(sectionHeading: HeadingTag, toastScope: ToastScope): HTMLElement {
+const PROVIDERS: ReadonlyArray<readonly [AccountProvider, string]> = [
+    ["google", "Google"],
+    ["apple", "Apple"],
+    ["facebook", "Facebook"],
+];
+
+function createAvatar(state: AccountState): HTMLElement {
+    const avatar = document.createElement("span");
+    avatar.className = "edf-settings-account-avatar";
+    avatar.ariaHidden = "true";
+    if (state.profile?.photoUrl) {
+        const image = document.createElement("img");
+        image.alt = "";
+        image.src = state.profile.photoUrl;
+        avatar.append(image);
+    } else {
+        avatar.textContent = (state.profile?.displayName ?? state.profile?.email ?? "E").charAt(0).toUpperCase();
+    }
+    return avatar;
+}
+
+/**
+ * Account: who is signed in and Log out, or Google, Apple and Facebook buttons (and email,
+ * where a sign-in form exists, i.e. the popup). Cross-device sync sits underneath.
+ */
+function createAccountSection(
+    settings: Settings,
+    options: Pick<SettingsViewOptions, "onEmailSignIn" | "sectionHeading" | "toastScope">,
+): HTMLElement {
+    const toastScope = options.toastScope ?? "page";
     const section = document.createElement("section");
-    const row = document.createElement("div");
-    const copy = document.createElement("div");
-    const title = document.createElement("p");
-    const description = document.createElement("p");
-    const button = document.createElement("button");
-
+    const body = document.createElement("div");
     section.className = "edf-settings-section";
-    row.className = "edf-settings-row";
-    copy.className = "edf-settings-copy";
-    title.className = "edf-settings-row-title";
-    description.className = "edf-settings-row-description";
-    button.className = "edf-settings-action edf-domain-button";
-    button.type = "button";
-    title.textContent = "Account";
-    description.textContent = "Checking account status...";
-    button.disabled = true;
-    button.textContent = "Log in";
+    section.dataset.section = "account";
+    body.className = "edf-settings-account";
 
+    const setDisabled = (disabled: boolean): void => {
+        body.querySelectorAll("button").forEach(button => { button.disabled = disabled; });
+    };
+    const run = async (button: HTMLButtonElement, action: () => Promise<AccountState>, done: string): Promise<void> => {
+        setDisabled(true);
+        button.dataset.busy = "true";
+        try {
+            render(await action());
+            showToast(done, toastScope);
+        } catch (error) {
+            showToast(error instanceof Error ? error.message : "Couldn't update your account.", toastScope);
+            setDisabled(false);
+            delete button.dataset.busy;
+        }
+    };
     const render = (state: AccountState): void => {
-        button.disabled = state.status === "unavailable" || state.status === "signed-out" && !state.capabilities.google;
-        button.textContent = state.status === "signed-in" ? "Log out" : "Log in with Google";
-        description.textContent = state.status === "signed-in"
-            ? `Syncing as ${state.profile?.email ?? state.profile?.displayName ?? "extension user"}.`
-            : state.status === "unavailable"
-                ? "Account sync is not configured in this build."
-                : "Log in to sync your extension data across devices.";
+        body.ariaBusy = "false";
+        if (state.status === "unavailable") {
+            const copy = document.createElement("div");
+            const title = document.createElement("p");
+            const description = document.createElement("p");
+            copy.className = "edf-settings-copy";
+            title.className = "edf-settings-row-title";
+            title.textContent = "Sync isn't available";
+            description.className = "edf-settings-row-description";
+            description.textContent = "This build of the extension has no sync service. Everything still works on this browser.";
+            copy.append(title, description);
+            body.dataset.state = "unavailable";
+            body.replaceChildren(copy);
+            return;
+        }
+        if (state.status === "signed-in") {
+            const identity = document.createElement("div");
+            const name = document.createElement("p");
+            const email = document.createElement("p");
+            const logout = document.createElement("button");
+            identity.className = "edf-settings-copy";
+            name.className = "edf-settings-row-title";
+            name.textContent = state.profile?.displayName ?? state.profile?.email ?? "Signed in";
+            email.className = "edf-settings-row-description";
+            email.textContent = state.profile?.displayName ? state.profile.email ?? "" : "Syncing across your browsers";
+            identity.append(name, email);
+            logout.type = "button";
+            logout.className = "edf-settings-action edf-domain-button";
+            logout.textContent = "Log out";
+            logout.addEventListener("click", () => void run(logout, signOut, "Logged out"));
+            body.dataset.state = "signed-in";
+            body.replaceChildren(createAvatar(state), identity, logout);
+            return;
+        }
+
+        const copy = document.createElement("div");
+        const title = document.createElement("p");
+        const description = document.createElement("p");
+        const providers = document.createElement("div");
+        copy.className = "edf-settings-copy";
+        title.className = "edf-settings-row-title";
+        title.textContent = "Sign in to sync";
+        description.className = "edf-settings-row-description";
+        description.textContent = "Keep your filters, blacklist and searches on every browser you use.";
+        copy.append(title, description);
+        providers.className = "edf-settings-providers";
+        for (const [provider, label] of PROVIDERS) {
+            if (!state.capabilities[provider]) continue;
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "edf-settings-provider";
+            button.ariaLabel = `Continue with ${label}`;
+            button.append(createSvgIcon(PROVIDER_ICONS[provider], "edf-settings-provider-icon"), label);
+            button.addEventListener("click", () =>
+                void run(button, () => loginWithProvider(provider), `Signed in with ${label}`));
+            providers.append(button);
+        }
+        if (options.onEmailSignIn && state.capabilities.emailPassword) {
+            const email = document.createElement("button");
+            email.type = "button";
+            email.className = "edf-settings-provider";
+            email.textContent = "Email";
+            email.addEventListener("click", () => options.onEmailSignIn?.());
+            providers.append(email);
+        }
+        body.dataset.state = "signed-out";
+        body.replaceChildren(copy, providers);
     };
 
-    button.addEventListener("click", async () => {
-        button.disabled = true;
+    /** Placeholder shapes of the signed-in row while the background worker answers. */
+    const renderLoading = (): void => {
+        const lines = document.createElement("span");
+        lines.className = "edf-settings-skeleton-lines";
+        lines.append(...["38%", "64%"].map(width => {
+            const line = document.createElement("span");
+            line.className = "edf-settings-skeleton";
+            line.style.width = width;
+            return line;
+        }));
+        const avatar = document.createElement("span");
+        avatar.className = "edf-settings-skeleton edf-settings-skeleton-avatar";
+        body.ariaBusy = "true";
+        body.ariaLabel = "Checking your account";
+        body.dataset.state = "loading";
+        body.replaceChildren(avatar, lines);
+    };
+    /** The worker didn't answer (it may be restarting): say so, with a way to ask again. */
+    const renderError = (message: string): void => {
+        const copy = document.createElement("div");
+        const title = document.createElement("p");
+        const description = document.createElement("p");
+        const retry = document.createElement("button");
+        copy.className = "edf-settings-copy";
+        title.className = "edf-settings-row-title";
+        title.textContent = "Couldn't check your account";
+        description.className = "edf-settings-row-description";
+        description.textContent = message;
+        copy.append(title, description);
+        retry.type = "button";
+        retry.className = "edf-settings-action edf-domain-button";
+        retry.textContent = "Try again";
+        retry.addEventListener("click", load);
+        body.ariaBusy = "false";
+        body.dataset.state = "error";
+        body.replaceChildren(copy, retry);
+    };
+    function load(): void {
+        renderLoading();
+        const timeout = new Promise<never>((_, reject) => window.setTimeout(
+            () => reject(new Error("The extension didn't answer in time. It may still be starting up.")),
+            8000,
+        ));
+        void Promise.race([getAccountState(), timeout]).then(state => {
+            body.removeAttribute("aria-label");
+            render(state);
+        }).catch((error: unknown) => {
+            renderError(error instanceof Error ? error.message : "The extension's background service didn't answer.");
+        });
+    }
+    load();
 
-        try {
-            const current = await getAccountState();
-            render(current.status === "signed-in" ? await signOut() : await loginWithProvider("google"));
-            showToast(current.status === "signed-in" ? "Logged out" : "Logged in", toastScope);
-        } catch (error) {
-            showToast(error instanceof Error ? error.message : "Unable to update the account.", toastScope);
-        } finally {
-            button.disabled = false;
-        }
-    });
-
-    void getAccountState().then(render).catch((error: unknown) => {
-        button.disabled = true;
-        description.textContent = error instanceof Error
-            ? error.message
-            : "Unable to connect to the extension background service.";
-    });
-
-    copy.append(title, description);
-    row.append(copy, button);
+    const sync = SETTINGS_SECTIONS.find(candidate => candidate.id === "sync");
     section.append(
-        createHeading(sectionHeading, "edf-settings-section-title", "Account"),
-        row,
+        createHeading(options.sectionHeading, "edf-settings-section-title", "Account"),
+        body,
+        ...(sync?.settings.map(definition => createSettingRow(definition, settings)) ?? []),
     );
     return section;
 }
@@ -323,23 +449,54 @@ export function createSettingsSection(id: string, settings: Settings, heading: H
     const section = SETTINGS_SECTIONS.find(candidate => candidate.id === id);
     if (!section) return undefined;
     const card = document.createElement("section");
-    const description = section.description ? document.createElement("p") : undefined;
     card.className = "edf-settings-section";
-    if (description) {
+    card.dataset.section = id;
+    card.append(createHeading(heading, "edf-settings-section-title", section.title));
+    if (section.description) {
+        const description = document.createElement("p");
         description.className = "edf-settings-section-description";
-        description.textContent = section.description ?? "";
+        description.textContent = section.description;
+        card.append(description);
     }
-    card.append(
-        createHeading(heading, "edf-settings-section-title", section.title),
-        ...(description ? [description] : []),
-        ...section.settings.map(definition => createSettingRow(definition, settings)),
-    );
+    card.append(...section.settings.map(definition => createSettingRow(definition, settings)));
     return card;
 }
 
+function createSupportSection(heading: HeadingTag): HTMLElement {
+    const support = document.createElement("section");
+    const project = document.createElement("div");
+    const name = document.createElement("p");
+    const version = document.createElement("span");
+    const publisher = document.createElement("p");
+    support.className = "edf-settings-section";
+    support.dataset.section = "support";
+    project.className = "edf-settings-support-project";
+    name.className = "edf-settings-support-meta";
+    version.className = "edf-settings-support-version";
+    publisher.className = "edf-settings-support-meta";
+    name.textContent = "Extra Domain Filters";
+    version.textContent = `Version ${browser.runtime.getManifest().version}`;
+    publisher.textContent = "Developed and published by Niclas Rogulski.";
+    project.append(name, version);
+    support.append(
+        createHeading(heading, "edf-settings-section-title", "Support"),
+        project,
+        createSupportGroup(SUPPORT_GROUPS[0]),
+        publisher,
+        createSupportGroup(SUPPORT_GROUPS[1]),
+    );
+    return support;
+}
+
+/**
+ * Account, General, the filter-panel options (unless shown elsewhere), Privacy and data (with
+ * the maintenance actions) and Support. Each card carries data-section, so a page can insert
+ * its own cards in between (Domain's settings page adds the Filters cards after General).
+ */
 export function createSettingsContent(settings: Settings, options: SettingsViewOptions): DocumentFragment {
     const content = document.createDocumentFragment();
     const toastScope = options.toastScope ?? "page";
+    const heading = options.sectionHeading;
     if (options.includeIntroduction !== false) {
         const introduction = document.createElement("div");
         const description = document.createElement("p");
@@ -354,44 +511,12 @@ export function createSettingsContent(settings: Settings, options: SettingsViewO
         content.append(introduction);
     }
 
-    content.append(createAccountSection(options.sectionHeading, toastScope));
-
-    for (const section of SETTINGS_SECTIONS) {
-        if (options.excludeSections?.includes(section.id)) continue;
-        content.append(createSettingsSection(section.id, settings, options.sectionHeading)!);
+    content.append(createAccountSection(settings, options));
+    for (const id of ["general", "filters"]) {
+        if (!options.excludeSections?.includes(id)) content.append(createSettingsSection(id, settings, heading)!);
     }
-
-    const maintenance = document.createElement("section");
-    maintenance.className = "edf-settings-section";
-    maintenance.append(
-        createHeading(options.sectionHeading, "edf-settings-section-title", "Maintenance"),
-        ...MAINTENANCE_ACTIONS.map(action => createActionRow(action, toastScope)),
-    );
-    content.append(maintenance);
-
-    const support = document.createElement("section");
-    const project = document.createElement("div");
-    const name = document.createElement("p");
-    const version = document.createElement("span");
-    const publisher = document.createElement("p");
-    support.className = "edf-settings-section";
-    support.dataset.section = "support";
-    project.className = "edf-settings-support-project";
-    name.className = "edf-settings-support-meta";
-    version.className = "edf-settings-support-version";
-    publisher.className = "edf-settings-support-meta";
-    name.textContent = "Extra Domain Filters";
-    version.textContent = `Version ${chrome.runtime.getManifest().version}`;
-    publisher.textContent = "Developed and published by Niclas Rogulski.";
-    project.append(name, version);
-    support.append(
-        createHeading(options.sectionHeading, "edf-settings-section-title", "Support"),
-        project,
-        createSupportGroup(SUPPORT_GROUPS[0]),
-        publisher,
-        createSupportGroup(SUPPORT_GROUPS[1]),
-    );
-    content.append(support);
-
+    const privacy = createSettingsSection("privacy", settings, heading)!;
+    privacy.append(...MAINTENANCE_ACTIONS.map(action => createActionRow(action, toastScope)));
+    content.append(privacy, createSupportSection(heading));
     return content;
 }

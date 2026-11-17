@@ -1,6 +1,4 @@
 export interface TabOption<T extends string> {
-    /** Shown as a small badge after the label. */
-    count?: number;
     label: string;
     value: T;
 }
@@ -36,12 +34,6 @@ export function createTabs<T extends string>(options: {
         tab.dataset.value = option.value;
         tab.setAttribute("role", "tab");
         tab.textContent = option.label;
-        if (option.count !== undefined) {
-            const count = document.createElement("span");
-            count.className = "edf-collection-tab-count";
-            count.textContent = String(option.count);
-            tab.append(count);
-        }
         tab.addEventListener("click", () => {
             select(option.value);
             options.onChange(option.value);

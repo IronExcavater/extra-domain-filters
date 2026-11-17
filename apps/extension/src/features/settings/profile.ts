@@ -1,18 +1,30 @@
 import { onBodyMutations } from "../../dom/bodyMutations";
-import { markOwned } from "../../dom/ownership";
+import { isOwnedNode, markOwned } from "../../dom/ownership";
 import { createReplacementSlot } from "../../dom/replacement";
-import { waitForElement } from "../../dom/wait";
+import { waitForElement, waitForHydration } from "../../dom/wait";
 import { observeUrlChanges, type PageContext } from "../../platform/router";
-import { findDomainProfileHosts } from "../../site-dom/profile";
+import { findDomainProfileHosts, SETTINGS_QUERY, SETTINGS_VALUE } from "../../site-dom/profile";
 import { getSettings } from "../../state/settings";
+import { createFiltersView } from "./filters";
 import { createSettingsContent } from "./view";
 
-const SETTINGS_QUERY = "extra-domain-filters";
-const SETTINGS_VALUE = "settings";
 const TAB_SELECTOR = '[data-extra-domain-filters-settings-tab="true"]';
 
 function isSettingsView(url = new URL(window.location.href)): boolean {
     return url.searchParams.get(SETTINGS_QUERY) === SETTINGS_VALUE;
+}
+
+/** Account, General, the Filters cards (as in the popup), Privacy and data, Support. */
+async function renderSettings(root: HTMLElement, signal: AbortSignal): Promise<void> {
+    const settings = await getSettings();
+    const content = createSettingsContent(settings, {
+        excludeSections: ["filters"],
+        sectionHeading: "h3",
+        titleHeading: "h2",
+    });
+    const filters = createFiltersView({ embedded: true, heading: "h3", settings, signal });
+    content.querySelector('[data-section="general"]')?.after(filters);
+    root.replaceChildren(content);
 }
 
 function createSettingsTab(context: PageContext): HTMLLIElement {
@@ -32,6 +44,10 @@ function createSettingsTab(context: PageContext): HTMLLIElement {
     return item;
 }
 
+/**
+ * Domain marks its selected item with a class of its own, which it keeps while our page is
+ * open; the list's flag lets CSS show that item as unselected (features/account/styles.css).
+ */
 function updateTabState(): void {
     const tab = document.querySelector<HTMLElement>(TAB_SELECTOR);
     const button = tab?.querySelector("button");
@@ -39,6 +55,7 @@ function updateTabState(): void {
     if (!tab || !button) return;
 
     tab.dataset.selected = String(active);
+    if (tab.parentElement) tab.parentElement.dataset.edfSettingsActive = String(active);
     if (active) button.setAttribute("aria-current", "page");
     else button.removeAttribute("aria-current");
 }
@@ -63,8 +80,39 @@ function injectSettingsTab(context: PageContext): void {
     updateTabState();
 }
 
+/**
+ * Signed out there is no profile sidebar to sit in, so the settings take over the page's
+ * main content instead, on the same URL.
+ */
+function mountStandaloneSettings(context: PageContext): void {
+    if (!isSettingsView()) return;
+    const main = document.querySelector<HTMLElement>("main") ?? document.body;
+    const panel = markOwned(document.createElement("div"), "profile-settings");
+    const replaced = [...main.children].filter((child): child is HTMLElement =>
+        child instanceof HTMLElement && !isOwnedNode(child));
+
+    panel.className = "edf-settings-panel edf-settings-standalone";
+    panel.dataset.extraDomainFiltersSettings = "true";
+    replaced.forEach(child => { child.dataset.edfReplaced = "true"; });
+    main.prepend(panel);
+    void renderSettings(panel, context.signal)
+        .catch(error => context.logger.warn("Could not render extension preferences", error));
+    context.scope.add(() => {
+        panel.remove();
+        replaced.forEach(child => delete child.dataset.edfReplaced);
+    });
+}
+
 export async function mountProfileSettings(context: PageContext): Promise<void> {
-    await waitForElement(() => findDomainProfileHosts()?.navigationList, context.signal);
+    await waitForHydration(context.signal);
+    const navigation = await waitForElement(() => findDomainProfileHosts()?.navigationList, context.signal, {
+        timeoutMs: 6000,
+    }).catch(() => undefined);
+    if (context.signal.aborted) return;
+    if (!navigation) {
+        mountStandaloneSettings(context);
+        return;
+    }
     injectSettingsTab(context);
 
     const slot = createReplacementSlot(context.scope, {
@@ -77,10 +125,7 @@ export async function mountProfileSettings(context: PageContext): Promise<void> 
         owner: "profile-settings",
         render: async root => {
             if (root.childElementCount > 0) return;
-            root.append(createSettingsContent(await getSettings(), {
-                sectionHeading: "h3",
-                titleHeading: "h2",
-            }));
+            await renderSettings(root, context.signal);
         },
         resolve: () => {
             if (!isSettingsView()) return undefined;

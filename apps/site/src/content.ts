@@ -2,7 +2,7 @@ import { SUPPORT_EMAIL } from "@extra-domain-filters/shared/config/links";
 
 export { CHROME_WEB_STORE_URL, GITHUB_URL, SUPPORT_EMAIL } from "@extra-domain-filters/shared/config/links";
 
-export type SiteRoute = "/" | "/privacy/" | "/terms/" | "/data-deletion/";
+export type SiteRoute = "/" | "/support/" | "/privacy/" | "/terms/" | "/data-deletion/";
 
 export interface LegalSection {
     body: readonly string[];
@@ -19,12 +19,71 @@ export interface LegalPage {
 export const EFFECTIVE_DATE = "12 August 2026";
 
 export const capabilities = [
-    ["Adaptable filters", "Refine results around the details that matter to you."],
-    ["Saved searches", "Keep useful searches close and revisit them without starting over."],
-    ["More control", "Blacklist listings and keep your search experience focused."],
+    ["Could-haves, your way", "Tick the extras you want, add your own, and see matching listings tagged gold in results and on the map."],
+    ["Filters Domain doesn't have", "Exclude keywords, cap strata fees and hide property types, including listings described as one."],
+    ["A blacklist that sticks", "Hide a listing, an agency or an agent once, and it stays out of every search."],
+    ["Saved searches, in sync", "Keep your searches and alerts in one place, synced across your browsers when you sign in."],
 ] as const;
 
 export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = {
+    "/support/": {
+        title: "Support",
+        intro: "How to get the most out of Extra Domain Filters, and how to reach us when something isn't working.",
+        sections: [
+            {
+                id: "getting-started",
+                title: "Getting started",
+                body: [
+                    "Install the extension, then open any search on domain.com.au. Your extra filters appear in Domain's own filter panel, under its filters, and apply to every search.",
+                    "The extension's toolbar button opens your saved searches, your filters and your blacklist, plus preferences for every feature. The same preferences are on Domain under your profile, as Extension preferences.",
+                ],
+            },
+            {
+                id: "filters",
+                title: "Filters",
+                body: [
+                    "Could-haves are extras you'd like, such as a pool or a dishwasher. Tick the ones you want, add your own (\"ocean view / sea view\" matches either), or reset to the defaults. Listings that mention one get a gold tag in results and a gold pin on the map. You can also hide listings that mention none of them.",
+                    "Exclude keywords hides listings whose description mentions any of your words. The strata slider hides listings whose quarterly strata fee is above your maximum.",
+                    "Property types you untick in Domain's type filter are hidden, along with listings whose description names them as that type, such as a \"3 bedroom townhouse\" tagged as a house.",
+                    "Filters read listing descriptions in the background, one at a time, so a listing can take a moment to be filtered after it first appears. You can turn this off, or change its pace, in preferences.",
+                ],
+            },
+            {
+                id: "blacklist",
+                title: "Blacklist",
+                body: [
+                    "Use the bin on a listing to hide it from every search. Hover a listing's agency strip for a bin that hides every listing from that agency or one of its agents.",
+                    "Hidden listings are summarised at the end of each page of results, with why each one is hidden and a button to show it again. Your blacklist, with tabs for properties, agencies and agents, is in the toolbar popup and in Domain's account menu.",
+                ],
+            },
+            {
+                id: "sync",
+                title: "Accounts and sync",
+                body: [
+                    "An account is optional. Signing in keeps your filters, blacklist and saved searches the same on every browser you use.",
+                    "On Chrome you can sign in with Google, Apple or Facebook, or with an email and password. On other browsers, sign in with an email and password.",
+                    "Saved searches sync with your Domain account while you're signed in to domain.com.au in the same browser.",
+                ],
+            },
+            {
+                id: "troubleshooting",
+                title: "Troubleshooting",
+                body: [
+                    "If the extra filters don't appear, reload the Domain page, and check that Extra Domain Filters is switched on in its preferences and in your browser's extension settings.",
+                    "If a listing is hidden and you don't know why, open the hidden listings summary at the end of the results: each listing shows the filter or blacklist entry that hides it.",
+                    "Domain changes its website from time to time, which can briefly break a feature until the extension is updated. Reporting it helps us fix it sooner.",
+                ],
+            },
+            {
+                id: "contact",
+                title: "Contact",
+                body: [
+                    `Email ${SUPPORT_EMAIL} with questions, problems or ideas. Include your browser and what you were doing on Domain when it happened.`,
+                    "You can also report a problem or request a feature on GitHub, at github.com/IronExcavater/extra-domain-filters/issues.",
+                ],
+            },
+        ],
+    },
     "/privacy/": {
         title: "Privacy Policy",
         intro: "This Privacy Policy explains how Extra Domain Filters handles personal information when you use the browser extension or this website.",

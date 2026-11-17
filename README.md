@@ -1,58 +1,89 @@
-# 🏡 [Extra Domain Filters](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg)
+# Extra Domain Filters
 
-Public site: [extra-domain-filters.web.app](https://extra-domain-filters.web.app/) · [Privacy Policy](https://extra-domain-filters.web.app/privacy/) · [Terms of Service](https://extra-domain-filters.web.app/terms/) · [Data deletion](https://extra-domain-filters.web.app/data-deletion/)
+The filters Domain.com.au doesn't have, right inside Domain.
 
-## 🚀 Overview
-This browser extension supercharges domain.com.au by adding advanced filtering options, making it easier to find your dream property! 🎯
+Tick the extras you'd love 🏊, hide the listings you never want to see again 🚫, and keep every saved search one click away 🔖. It works on domain.com.au in Chrome, Edge, Firefox, Opera and Safari.
+
+![Every saved search, one click away](docs/store/screenshot-1-saved-searches.png)
 
 ## ✨ Features
-- ✅ **Preference Matches** – Labels listings that contain your optional “Could-Have” features.
-- ❌ **Exclude Keywords** – Automatically hides listings containing unwanted keywords in their descriptions.
-- 🏢 **Studio Property Fix** – Ensures studios are correctly identified based on descriptions, not just tags.
-- 💰 **Strata Fee Filter** – Adds a slider to exclude properties with excessively high strata fees.
-- 🗺 **Map Integration** – Highlights preferred listings directly on the map for easy identification.
-- 🔄 **Persistent Filters** – Saves your filters and preferences across browsing sessions.
-- ⚡ **Real-Time Updates** – Instantly applies changes as filters are adjusted.
-- 🚫 **Blacklist Listings** – Allows you to hide specific listings you don't want to see.
-- 🗑 **Manage Blacklist** – Adds a dedicated page to review and restore blacklisted listings.
-- 🔔 **Saved Search Alerts** – Creates and edits real Domain email alerts with Daily, Weekly, and Never options.
-- 🔐 **Unified Account Login** – Supports email/password and Google, with optional Apple and Facebook providers.
 
-## 🛠 Installation
-### 🔹 Chrome Web Store (Recommended)
-1. Visit the extension page: **[Extra Domain Filters](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg)**
-2. Click **Add to Chrome** and confirm the installation.
+### 🎯 Could-haves
 
-### 🔹 Manual Installation (Developer)
-1. **Download or clone** this repository.
-2. Run `pnpm install`.
-3. Run `pnpm dev`.
-4. In Chrome's extension developer mode, choose **Load unpacked** and select the generated `apps/extension/.output/chrome-mv3` directory.
-5. Keep the command running while developing. It starts the extension (via [WXT](https://wxt.dev)) and the local authentication/site dev servers together through Turborepo, with content-script HMR/live reload.
+- Tick the extras you'd like, such as a pool, a dishwasher or double glazing.
+- Add your own 🖊️. "Ocean view / sea view" matches either phrase.
+- Listings that mention one get a gold tag in results and a gold pin on the map 📍.
+- Hide listings that mention none of them, or reset the list to the defaults.
 
-### 🔹 Release Build
-1. Run `pnpm build`.
-2. The extension build output is `apps/extension/.output/chrome-mv3`.
-3. The packaged zip is produced by `pnpm --filter @extra-domain-filters/extension zip` and written to `apps/extension/.output`.
+### 🧹 Filters Domain doesn't have
 
-### 🔐 Authentication providers
+- **Exclude keywords**: hide listings whose description mentions words like "studio" or "tenanted".
+- **Strata fees**: hide listings whose quarterly strata is above your maximum 💰.
+- **Property types**: types you untick in Domain's filter stay hidden, including listings described as one, like a "3 bedroom townhouse" tagged as a house.
+- Every filter lives in Domain's own filter panel, and on the Filters page in the toolbar popup.
 
-Email/password, Google, Apple, and Facebook use the same Firebase account. Apple and Facebook use the included hosted federated-authentication bridge plus provider-console setup. Follow [the authentication setup guide](docs/authentication.md) for the exact Firebase, Meta, Apple, local-development, deployment, and verification steps. Provider secrets stay in Firebase/Apple/Meta and must never be added to `.env`.
+### 🚫 Blacklist
 
-### 🌐 Public site and legal pages
+- Hide a listing with the bin on its card, and it stays out of every search.
+- Hide an agency or an agent, and every listing from them goes too 🏢.
+- Hidden listings fold into one tidy summary at the end of the results, each with why it's hidden and a button to bring it back.
+- Pins of hidden listings disappear from the map 🗺️.
 
-Run `npm run deploy:hosting` to build and deploy both the public website and authentication bridge to Firebase Hosting. The landing page, privacy policy, terms, and deletion instructions are served from the URLs above; the `/auth/` route remains reserved for federated sign-in.
+### 🔖 Saved searches
 
-## 🎯 Usage
-1. Search for properties on **[Domain.com.au](https://www.domain.com.au)**.
-2. Use the new filtering options in the menus to refine your search.
-3. Listings that include optional preferences receive concise match labels.
-4. Blacklisted or filtered listings collapse into recoverable rows, so you can unblacklist them or choose **Show anyway** without changing all filters.
-5. Manage your **blacklist** through the user profile menu (top-right corner).
+- Every saved search in one place, with what's new, its filters and its alerts 🔔.
+- Choose Daily, Weekly or Never for Domain's email alerts.
+- Share a search, filters included, with a link 🔗.
 
-## 🤝 Contribute
-Want to make this extension even better? 🚀 Feel free to **submit issues** or **open a pull request** with your improvements!
+### 🔄 Sync
 
-## 📜 License
-This project is licensed under the **MIT License**. 📄
+Sign in to keep your filters, blacklist and saved searches the same on every browser you use. On Chrome, sign in with Google, Apple, Facebook or email; on other browsers, with email.
 
+![Filters Domain doesn't have](docs/store/screenshot-2-filters.png)
+
+## 🌐 Browsers
+
+| Browser            | Filters and blacklist | Sign in with Google, Apple or Facebook | Sign in with email | Store                             |
+| ------------------ | :-------------------: | :------------------------------------: | :----------------: | --------------------------------- |
+| Chrome             |          ✅           |                   ✅                   |         ✅         | [Chrome Web Store][chrome]        |
+| Edge               |          ✅           |               Coming soon              |         ✅         | Microsoft Edge Add-ons            |
+| Firefox            |          ✅           |                   ❌                   |         ✅         | Firefox Add-ons                   |
+| Opera and Opera GX |          ✅           |               Coming soon              |         ✅         | Opera add-ons or Chrome Web Store |
+| Safari for Mac     |          ✅           |                   ❌                   |         ✅         | App Store                         |
+| Brave and Vivaldi  |          ✅           |                   ✅                   |         ✅         | [Chrome Web Store][chrome]        |
+
+## 🚀 Get started
+
+1. Install Extra Domain Filters from your browser's extension store 🧩.
+2. Pin it to your toolbar 📌.
+3. Open a search on [domain.com.au](https://www.domain.com.au): your filters appear in Domain's filter panel.
+
+![Hide it once, and it stays hidden](docs/store/screenshot-3-blacklist.png)
+
+## ❓ Questions
+
+**Do I need an account?**
+
+No. Everything works without one. An account only syncs your setup between browsers.
+
+**Why is a listing hidden?**
+
+Open the hidden listings summary at the end of the results. Each listing shows the filter or blacklist entry that hides it, and a button to show it again.
+
+**Where are the settings?**
+
+In the toolbar popup under your avatar, and on Domain under your profile as **Extension preferences**.
+
+More answers are on the [support page](https://extra-domain-filters.web.app/support/).
+
+## 🔒 Privacy
+
+Your filters and blacklist stay in your browser unless you sign in to sync them. Listing descriptions are read from Domain in the background, one at a time, only to apply your filters. The extension talks to domain.com.au and, when you sign in, its own sync service, and nothing else. Read the [privacy policy](https://extra-domain-filters.web.app/privacy/).
+
+## 💚 Credits
+
+Extra Domain Filters is made by [Niclas Rogulski](https://github.com/IronExcavater) and released under the [MIT License](LICENSE). Want to help? See [Contributing](CONTRIBUTING.md).
+
+Extra Domain Filters is not affiliated with, endorsed by or sponsored by Domain Holdings Australia.
+
+[chrome]: https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg

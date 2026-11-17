@@ -1,7 +1,9 @@
 import connectedSvg from "../../../../packages/assets/icons/account/connected.svg?raw";
 import disconnectedSvg from "../../../../packages/assets/icons/account/disconnected.svg?raw";
 import doorSvg from "../../../../packages/assets/icons/account/door.svg?raw";
+import personSvg from "../../../../packages/assets/icons/account/person.svg?raw";
 import settingsSvg from "../../../../packages/assets/icons/account/settings.svg?raw";
+import syncSvg from "../../../../packages/assets/icons/account/sync.svg?raw";
 import checkSvg from "../../../../packages/assets/icons/actions/check.svg?raw";
 import closeSvg from "../../../../packages/assets/icons/actions/close.svg?raw";
 import externalSvg from "../../../../packages/assets/icons/actions/external.svg?raw";
@@ -25,6 +27,9 @@ import couldHavesFilterSvg from "../../../../packages/assets/icons/filters/could
 import excludeKeywordsFilterSvg from "../../../../packages/assets/icons/filters/exclude-keywords.svg?raw";
 import slidersSvg from "../../../../packages/assets/icons/filters/sliders.svg?raw";
 import strataFilterSvg from "../../../../packages/assets/icons/filters/strata.svg?raw";
+import appleSvg from "../../../../packages/assets/icons/providers/apple.svg?raw";
+import facebookSvg from "../../../../packages/assets/icons/providers/facebook.svg?raw";
+import googleSvg from "../../../../packages/assets/icons/providers/google.svg?raw";
 import chevronSvg from "../../../../packages/assets/icons/navigation/chevron.svg?raw";
 import bellFilledSvg from "../../../../packages/assets/icons/search/bell-filled.svg?raw";
 import bellOutlineSvg from "../../../../packages/assets/icons/search/bell.svg?raw";
@@ -215,3 +220,18 @@ export function replaceWithGripHorizontalIcon(target: SVGElement): void {
 export function replaceWithGripVerticalIcon(target: SVGElement): void {
     setSvgIcon(target, gripVerticalSvg);
 }
+
+export function replaceWithPersonIcon(target: SVGElement): void {
+    setSvgIcon(target, personSvg);
+}
+
+export function replaceWithSyncIcon(target: SVGElement): void {
+    setSvgIcon(target, syncSvg);
+}
+
+/** Sign-in provider logos, in their brand colours (Apple follows the text colour). */
+export const PROVIDER_ICONS = {
+    apple: (target: SVGElement) => setSvgIcon(target, appleSvg),
+    facebook: (target: SVGElement) => setSvgIcon(target, facebookSvg),
+    google: (target: SVGElement) => setSvgIcon(target, googleSvg),
+} as const;

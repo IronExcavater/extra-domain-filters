@@ -1,6 +1,6 @@
 import { createCollectionController } from "../../collections/controller";
 import type { SavedSearch } from "../../domain/searches/savedSearches";
-import { createEmptyState } from "../../ui/collection";
+import { createEmptyState, createSearchAction } from "../../ui/collection";
 import { createCollectionFrame } from "../../ui/collectionView";
 import { replaceWithSavedSearchBellIcon } from "../../ui/icons";
 import {
@@ -28,7 +28,6 @@ export interface SavedSearchCollectionOptions {
     cardsClassName: string;
     className?: string;
     density?: "comfortable" | "compact";
-    emptyMessage?: string;
     items: readonly SavedSearch[];
     onNotify(message: string): void;
     onRemove(search: SavedSearch): Promise<void>;
@@ -38,12 +37,29 @@ export interface SavedSearchCollectionOptions {
     signal: AbortSignal;
 }
 
+// Worded for the tab in view, like the shortlist's.
+const EMPTY_COPY: Record<SavedSearchType, { description: string; title: string }> = {
+    all: {
+        title: "No saved searches yet",
+        description: "Save a search on Domain to get alerts for new listings and find it here.",
+    },
+    buy: {
+        title: "No saved searches for buying",
+        description: "Save a search for properties for sale and it will show up here.",
+    },
+    rent: {
+        title: "No saved rental searches",
+        description: "Save a search for rentals and it will show up here.",
+    },
+};
+
 export function createSavedSearchCollection(
     options: SavedSearchCollectionOptions,
 ): SavedSearchCollection {
     const selectionTransitionMs = 160;
     let items = [...options.items];
     let animateNext = options.animate ?? false;
+    let activeType: SavedSearchType = "all";
     let cardsController = new AbortController();
     let selectionCommitTimer: number | undefined;
     const controls = document.createElement("div");
@@ -88,6 +104,7 @@ export function createSavedSearchCollection(
         active: "all",
         onChange: type => {
             animateNext = true;
+            activeType = type;
             controller.setFilter(type);
         },
         options: [
@@ -147,12 +164,12 @@ export function createSavedSearchCollection(
             selected: selection.has(search.id),
             signal: cardsController.signal,
         })), animateNext);
+        const empty = EMPTY_COPY[activeType];
         frame.setEmptyState(visible.length === 0 ? createEmptyState(
-            items.length === 0 ? "No saved searches yet" : "No matching saved searches",
-            items.length === 0
-                ? options.emptyMessage ?? "Save a search on domain.com.au to see it here."
-                : "Try another search category.",
+            empty.title,
+            empty.description,
             replaceWithSavedSearchBellIcon,
+            createSearchAction(activeType === "rent" ? "rent" : "buy", options.openLinksInNewTab),
         ) : undefined);
         animateNext = false;
     };

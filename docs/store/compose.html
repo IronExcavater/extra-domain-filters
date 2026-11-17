@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Store screenshot</title>
+<!--
+  Frames a popup capture (raw/*.png, 760x600) as a 1280x800 store screenshot.
+  Open with ?shot=<name> and screenshot the viewport at 1280x800. See CONTRIBUTING.md.
+-->
+<style>
+    @font-face {
+        font-family: "F37 Bolton";
+        font-weight: 100 900;
+        src: url("../../packages/assets/fonts/F37Bolton-VF.ttf") format("truetype");
+    }
+
+    html,
+    body {
+        height: 800px;
+        margin: 0;
+        overflow: hidden;
+        width: 1280px;
+    }
+
+    body {
+        background:
+            radial-gradient(circle at 8% 0%, rgb(14 168 0 / 12%), transparent 46%),
+            radial-gradient(circle at 100% 100%, rgb(14 168 0 / 8%), transparent 40%),
+            #f6f3ec;
+        color: #131212;
+        display: grid;
+        font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
+        grid-template-columns: 430px 1fr;
+        align-items: center;
+        padding: 0 64px 0 76px;
+        box-sizing: border-box;
+        gap: 40px;
+    }
+
+    .copy img {
+        display: block;
+        height: 30px;
+        margin-bottom: 40px;
+    }
+
+    h1 {
+        font-size: 46px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 52px;
+        margin: 0 0 20px;
+    }
+
+    p {
+        color: #3c475b;
+        font-size: 21px;
+        line-height: 31px;
+        margin: 0;
+    }
+
+    .shot {
+        border: 1px solid #e1e1df;
+        border-radius: 18px;
+        box-shadow: 0 30px 70px rgb(19 18 18 / 16%), 0 6px 18px rgb(19 18 18 / 8%);
+        display: block;
+        height: auto;
+        overflow: hidden;
+        width: 680px;
+    }
+</style>
+</head>
+<body>
+<div class="copy">
+    <img src="../../packages/assets/icons/brand/wordmark.svg" alt="Extra Domain Filters">
+    <h1 id="title"></h1>
+    <p id="text"></p>
+</div>
+<img class="shot" id="shot" alt="">
+<script>
+    const SHOTS = {
+        "saved-searches": [
+            "Every saved search, one click away",
+            "See what's new in each search, change its alerts, and keep it in sync with your Domain account.",
+        ],
+        filters: [
+            "Filters Domain doesn't have",
+            "Pick your could-haves, exclude keywords, cap strata fees and hide property types. Changes apply straight away.",
+        ],
+        blacklist: [
+            "Hide it once, and it stays hidden",
+            "Blacklist listings, agencies and agents across every search, and bring any of them back in a click.",
+        ],
+        "sign-in": [
+            "Your setup, on every browser",
+            "Sign in to sync your filters, blacklist and saved searches wherever you search.",
+        ],
+    };
+    const name = new URLSearchParams(location.search).get("shot") ?? "saved-searches";
+    const [title, text] = SHOTS[name];
+    document.getElementById("title").textContent = title;
+    document.getElementById("text").textContent = text;
+    document.getElementById("shot").src = `raw/${name}.png`;
+</script>
+</body>
+</html>

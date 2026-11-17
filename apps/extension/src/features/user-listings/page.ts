@@ -175,16 +175,21 @@ export function restorePageActions(container: HTMLElement, id: string): void {
     container.querySelector(`[data-testid="${getControlsTestId(id)}"]`)?.remove();
 }
 
-type ListingFilter = "all" | "buy" | "rent";
-
-function isListingFilter(value: string): value is ListingFilter {
-    return value === "all" || value === "buy" || value === "rent";
+/** The page's own tabs in place of Domain's (the blacklist page's Properties/Agencies/Agents). */
+export interface OwnListingTabs {
+    onChange(value: string): void;
+    options: ReadonlyArray<readonly [value: string, label: string]>;
+    selected: string;
 }
 
+/**
+ * Domain's listing tabs, restyled: either mirrored (shortlist: All/Buy/Rent/New Homes, which
+ * still drive Domain's list) or replaced by the page's own (`own`).
+ */
 export function replaceUserListingTabs(
     container: HTMLElement,
     signal: AbortSignal,
-    onChange?: (filter: ListingFilter) => void,
+    own?: OwnListingTabs,
     actions?: HTMLElement,
 ): () => void {
     const native = container.querySelector<HTMLElement>('[role="tablist"]');
@@ -195,11 +200,11 @@ export function replaceUserListingTabs(
     const originalHidden = native.hidden;
     const readNative = (): string | undefined =>
         nativeTabs.find(tab => tab.ariaSelected === "true")?.textContent?.trim().toLowerCase();
-    // With `onChange` (blacklist page) the hidden native tabs never change, so the selection
-    // is ours; otherwise Domain's tabs drive it (shortlist page).
-    let selected = readNative() ?? "all";
+    // With our own tabs the hidden native ones never change, so the selection is ours;
+    // otherwise Domain's tabs drive it.
+    let selected = own?.selected ?? readNative() ?? "all";
     const sync = (): void => {
-        if (!onChange) selected = readNative() ?? selected;
+        if (!own) selected = readNative() ?? selected;
         tabs.querySelectorAll<HTMLButtonElement>("button").forEach(button => {
             const next = String(button.dataset.filter === selected);
             if (button.ariaSelected !== next) button.ariaSelected = next;
@@ -208,25 +213,24 @@ export function replaceUserListingTabs(
 
     tabs.className = "edf-collection-tabs edf-listing-tabs";
     tabs.setAttribute("role", "tablist");
-    nativeTabs.forEach(nativeTab => {
+    const entries = own?.options ?? nativeTabs.flatMap(nativeTab => {
         const filter = nativeTab.textContent?.trim().toLowerCase();
-        // Our own filtering (blacklist page) only knows buy/rent; Domain's tabs (shortlist,
-        // which also has "New Homes") are mirrored as they are.
-        if (!filter || (onChange && !isListingFilter(filter))) return;
-
+        return filter ? [[filter, filter] as const] : [];
+    });
+    for (const [value, label] of entries) {
         const tab = document.createElement("button");
         tab.className = "edf-collection-tab edf-listing-tab";
-        tab.dataset.filter = filter;
+        tab.dataset.filter = value;
         tab.setAttribute("role", "tab");
-        tab.textContent = filter;
+        tab.textContent = label;
         tab.addEventListener("click", () => {
-            selected = filter;
-            if (onChange && isListingFilter(filter)) onChange(filter);
-            else nativeTab.click();
+            selected = value;
+            if (own) own.onChange(value);
+            else nativeTabs.find(nativeTab => nativeTab.textContent?.trim().toLowerCase() === value)?.click();
             sync();
         }, { signal });
         tabs.append(tab);
-    });
+    }
 
     const actionsParent = actions?.parentNode;
     const actionsNextSibling = actions?.nextSibling;

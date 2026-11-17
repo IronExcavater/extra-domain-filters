@@ -1,3 +1,4 @@
+import { browser } from "wxt/browser";
 import type { SavedSearch, SearchNotificationFrequency } from "../domain/searches/savedSearches";
 import { isDomainPageResult, type DomainPageResult } from "../site-dom/action";
 import { getFromStorage, setInStorage } from "./storage";
@@ -43,19 +44,19 @@ async function sendToDomainPage(
     url: string,
     message: DomainAlertApplyMessage | DomainSavedSearchRemoveMessage | DomainSavedSearchSyncMessage,
 ): Promise<DomainPageResult> {
-    const tab = await chrome.tabs.create({ active: false, url });
+    const tab = await browser.tabs.create({ active: false, url });
     if (tab.id === undefined) throw new Error("Could not open Domain to complete this change.");
 
     try {
         let lastError: unknown;
         for (let attempt = 0; attempt < MAX_TAB_READY_ATTEMPTS; attempt++) {
-            const currentTab = await chrome.tabs.get(tab.id).catch(() => undefined);
+            const currentTab = await browser.tabs.get(tab.id).catch(() => undefined);
             const currentUrl = currentTab?.url ?? currentTab?.pendingUrl;
             if (currentUrl && new URL(currentUrl).hostname === "auth.domain.com.au") {
                 throw new DomainSignedOutError("Sign in to Domain to sync saved searches.");
             }
             try {
-                const result: unknown = await chrome.tabs.sendMessage(tab.id, message);
+                const result: unknown = await browser.tabs.sendMessage(tab.id, message);
                 if (!isDomainPageResult(result)) {
                     throw new Error("Domain returned an invalid response.");
                 }
@@ -73,7 +74,7 @@ async function sendToDomainPage(
             ? lastError
             : new Error("Domain did not become ready to complete this change.");
     } finally {
-        await chrome.tabs.remove(tab.id).catch(() => undefined);
+        await browser.tabs.remove(tab.id).catch(() => undefined);
     }
 }
 

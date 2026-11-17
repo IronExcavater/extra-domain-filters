@@ -9,14 +9,17 @@ import {
     getBlacklistListing,
     type BlacklistEntry,
 } from "../domain/matching";
-import { isProfileEntry } from "../domain/blacklist/profiles";
+import { isProfileEntry, type ProfileKind } from "../domain/blacklist/profiles";
 import { createBlacklistCard } from "../features/blacklist/card";
-import { createProfileSection, PROFILE_SECTION_TEST_ID } from "../features/blacklist/profiles";
 import {
-    filterBlacklistEntries,
+    createProfileCard,
+    getProfileEntries,
+    PROFILE_EMPTY_COPY,
+    PROPERTIES_EMPTY_COPY,
+} from "../features/blacklist/profiles";
+import {
     sortBlacklistEntries,
     updateStableNewestOrder,
-    type BlacklistFilter,
     type BlacklistSort,
 } from "../features/blacklist/sort";
 import { enableStickyHeader } from "../features/navigation";
@@ -32,7 +35,7 @@ import {
 } from "../features/user-listings/page";
 import { PageMount } from "../platform/router";
 import { onStorageChange } from "../platform/storage";
-import { createEmptyState } from "../ui/collection";
+import { createEmptyState, createSearchAction } from "../ui/collection";
 import { replaceWithBinIcon } from "../ui/icons";
 import {
     renderSelectionControls,
@@ -42,8 +45,17 @@ import {
 
 const selectedUrls = new Set<string>();
 const retainedUnblacklistedEntries = new Map<string, BlacklistEntry>();
-let listingFilter: BlacklistFilter = "all";
+type BlacklistScope = "properties" | ProfileKind;
+
+// The tab survives re-renders and remounts.
+let scope: BlacklistScope = "properties";
 let listingSort: BlacklistSort = "newest";
+const PROFILES_TEST_ID = "extra-domain-filters-blacklist-profiles";
+const SUBTITLES: Record<BlacklistScope, string> = {
+    properties: "Blacklisted properties are hidden from your Domain searches.",
+    agency: "Every listing from these agencies is hidden from your Domain searches.",
+    agent: "Every listing from these agents is hidden from your Domain searches.",
+};
 const stableNewestOrder = new Map<string, number>();
 
 function getRowVersion(entry: BlacklistEntry): string {
@@ -159,34 +171,52 @@ function reconcileRows(
     list.replaceChildren(...cards);
 }
 
+/** Agencies or agents: their cards, or the tab's empty state, in place of the listings. */
+function renderProfiles(container: HTMLElement, list: HTMLElement, blacklist: readonly BlacklistEntry[]): void {
+    let grid = container.querySelector<HTMLElement>(`[data-testid="${PROFILES_TEST_ID}"]`);
+    if (!grid) {
+        grid = markOwned(document.createElement("div"), "blacklist-profiles");
+        grid.dataset.testid = PROFILES_TEST_ID;
+        list.after(grid);
+    }
+    grid.hidden = scope === "properties";
+    if (scope === "properties") return;
+
+    const profiles = getProfileEntries(blacklist, scope);
+    grid.className = profiles.length > 0 ? "edf-profile-grid edf-blacklist-profile-grid" : "";
+    grid.replaceChildren(...(profiles.length > 0
+        ? profiles.map(profile => createProfileCard(profile))
+        : [createEmptyState(
+            PROFILE_EMPTY_COPY[scope].title,
+            PROFILE_EMPTY_COPY[scope].description,
+            replaceWithBinIcon,
+            createSearchAction(),
+        )]));
+}
+
 async function render(container: HTMLElement, list: HTMLElement): Promise<void> {
     const blacklist = await getBlacklist();
-    const strip = createProfileSection(blacklist);
-    const currentStrip = container.querySelector(`[data-testid="${PROFILE_SECTION_TEST_ID}"]`);
-    if (strip) {
-        markOwned(strip, "blacklist-profiles");
-        if (currentStrip) currentStrip.replaceWith(strip);
-        else list.before(strip);
-    } else {
-        currentStrip?.remove();
-    }
+    const sortActions = container.querySelector<HTMLElement>(
+        '[data-testid="extra-domain-filters-blacklist-sort-actions"]',
+    );
+    setListingsSubtitle(container, SUBTITLES[scope]);
+    renderProfiles(container, list, blacklist);
+    list.hidden = scope !== "properties";
+    if (sortActions) sortActions.hidden = scope !== "properties";
+    if (scope !== "properties") return;
+
     const all = blacklist.filter(entry => !isProfileEntry(entry));
     const active = all.filter(entry => !entry.removedAt);
     const activeUrls = new Set(active.map(entry => entry.url));
     const retained = [...retainedUnblacklistedEntries.values()]
         .filter(entry => !activeUrls.has(entry.url));
     updateStableNewestOrder(stableNewestOrder, [...active, ...retained]);
-    const entries = sortBlacklistEntries(
-        filterBlacklistEntries([...active, ...retained], listingFilter),
-        listingSort,
-        stableNewestOrder,
-    );
+    const entries = sortBlacklistEntries([...active, ...retained], listingSort, stableNewestOrder);
     const controls = getPageActions({
         container,
         fallbackAnchor: list,
         id: "blacklist",
     });
-    setListingsSubtitle(container, "Blacklisted properties are hidden from your Domain searches.");
     const renderRows = (): void => void render(container, list);
     const visibleIds = entries.map(entry => getBlacklistListing(entry).url);
     const syncCheckboxes = (): void => {
@@ -223,9 +253,10 @@ async function render(container: HTMLElement, list: HTMLElement): Promise<void> 
     renderControls();
     if (entries.length === 0) {
         list.replaceChildren(createEmptyState(
-            "No blacklisted properties",
-            "Properties hidden from Domain results will appear here.",
+            PROPERTIES_EMPTY_COPY.title,
+            PROPERTIES_EMPTY_COPY.description,
             replaceWithBinIcon,
+            createSearchAction(),
         ));
     } else {
         reconcileRows(list, entries, renderRows, renderControls);
@@ -250,9 +281,13 @@ const mountBlacklistPage: PageMount = async context => {
         const actions = container.querySelector<HTMLElement>(
             '[data-testid="extra-domain-filters-blacklist-sort-actions"]',
         ) ?? undefined;
-        const restoreTabs = replaceUserListingTabs(container, signal, filter => {
-            listingFilter = filter;
-            renderRows();
+        const restoreTabs = replaceUserListingTabs(container, signal, {
+            onChange: value => {
+                scope = value as BlacklistScope;
+                renderRows();
+            },
+            options: [["properties", "Properties"], ["agency", "Agencies"], ["agent", "Agents"]],
+            selected: scope,
         }, actions);
         const restoreSort = installSortControl(container, {
             actionsTestId: "extra-domain-filters-blacklist-sort-actions",
@@ -270,6 +305,7 @@ const mountBlacklistPage: PageMount = async context => {
             signal,
         });
         return () => {
+            container.querySelector(`[data-testid="${PROFILES_TEST_ID}"]`)?.remove();
             restoreTabs();
             restoreSort();
             restorePageActions(container, "blacklist");

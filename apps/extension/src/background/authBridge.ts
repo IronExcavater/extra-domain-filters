@@ -1,10 +1,11 @@
+import { browser } from "wxt/browser";
 import {
     isAuthResponse,
     type OffscreenAuthRequest,
 } from "@extra-domain-filters/shared/authMessages";
 import { getBundledAuthRuntime, type FederatedAuthProvider } from "@extra-domain-filters/shared/config/auth";
 
-const OFFSCREEN_PATH = "offscreen.html";
+const OFFSCREEN_PATH = "/offscreen.html";
 const { bridgeUrl } = getBundledAuthRuntime();
 let creatingDocument: Promise<void> | undefined;
 let activeFlow: Promise<Record<string, unknown>> | undefined;
@@ -17,9 +18,9 @@ export class AuthBridgeError extends Error {
 }
 
 async function hasOffscreenDocument(): Promise<boolean> {
-    const url = chrome.runtime.getURL(OFFSCREEN_PATH);
-    const contexts = await chrome.runtime.getContexts({
-        contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+    const url = browser.runtime.getURL(OFFSCREEN_PATH);
+    const contexts = await browser.runtime.getContexts({
+        contextTypes: [browser.runtime.ContextType.OFFSCREEN_DOCUMENT],
         documentUrls: [url],
     });
     return contexts.length > 0;
@@ -27,9 +28,9 @@ async function hasOffscreenDocument(): Promise<boolean> {
 
 async function ensureOffscreenDocument(): Promise<void> {
     if (await hasOffscreenDocument()) return;
-    creatingDocument ??= chrome.offscreen.createDocument({
+    creatingDocument ??= browser.offscreen.createDocument({
         justification: `Complete federated authentication through ${new URL(bridgeUrl).host}.`,
-        reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING],
+        reasons: [browser.offscreen.Reason.IFRAME_SCRIPTING],
         url: OFFSCREEN_PATH,
     }).finally(() => {
         creatingDocument = undefined;
@@ -38,7 +39,7 @@ async function ensureOffscreenDocument(): Promise<void> {
 }
 
 async function closeOffscreenDocument(): Promise<void> {
-    if (await hasOffscreenDocument()) await chrome.offscreen.closeDocument();
+    if (await hasOffscreenDocument()) await browser.offscreen.closeDocument();
 }
 
 async function runFlow(provider: FederatedAuthProvider): Promise<Record<string, unknown>> {
@@ -50,7 +51,7 @@ async function runFlow(provider: FederatedAuthProvider): Promise<Record<string, 
         type: "federated-auth:start",
     };
     try {
-        const response: unknown = await chrome.runtime.sendMessage(request);
+        const response: unknown = await browser.runtime.sendMessage(request);
         if (!isAuthResponse(response) || response.requestId !== request.requestId) {
             throw new Error("The hosted authentication page returned an invalid response.");
         }

@@ -110,6 +110,31 @@
     border-bottom-right-radius: 8px;
 }
 
+/* Opened upwards (sort.ts, when there's no room below): the joined corners swap. */
+.edf-sort-dropdown[data-placement="top"][open] .edf-sort-dropdown-button {
+    border-radius: 0 0 var(--edf-radius-control) var(--edf-radius-control);
+}
+
+.edf-sort-dropdown[data-placement="top"] .edf-sort-dropdown-menu {
+    border-radius: 8px 8px 0 0;
+    bottom: 100%;
+    box-shadow: 0 -2px 6px rgb(60 71 91 / 12%);
+    top: auto;
+}
+
+.edf-sort-dropdown[data-placement="top"] .edf-sort-dropdown-menu > :first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.edf-sort-dropdown[data-placement="top"] .edf-sort-dropdown-menu > :last-child {
+    border-radius: 0;
+}
+
+.edf-sort-dropdown[data-placement="top"] .edf-sort-dropdown-menu[data-edf-round-top-left="true"],
+.edf-sort-dropdown[data-placement="top"] .edf-sort-dropdown-menu[data-edf-round-top-left="true"] > :last-child {
+    border-bottom-left-radius: 8px;
+}
+
 .edf-sort-dropdown-option {
     background: var(--edf-color-surface);
     border: 0;

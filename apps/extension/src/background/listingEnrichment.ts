@@ -1,3 +1,4 @@
+import { browser } from "wxt/browser";
 import { cacheListing, getCachedListingEntries } from "../domain/listings/cache";
 import {
     enrichListingSnapshot,
@@ -24,7 +25,7 @@ const ALARM_NAME = "extra-domain-filters-listing-enrichment";
 let draining = false;
 
 function arm(delayMs = ENRICHMENT_ALARM_DELAY_MS): void {
-    chrome.alarms.create(ALARM_NAME, {
+    browser.alarms.create(ALARM_NAME, {
         delayInMinutes: Math.max(ENRICHMENT_ALARM_DELAY_MS, delayMs) / 60_000,
     });
 }
@@ -222,7 +223,7 @@ export async function drainListingEnrichmentQueue(): Promise<void> {
 }
 
 export function startListingEnrichment(): void {
-    chrome.alarms.onAlarm.addListener(alarm => {
+    browser.alarms.onAlarm.addListener(alarm => {
         if (alarm.name === ALARM_NAME) void drainListingEnrichmentQueue();
     });
     arm();

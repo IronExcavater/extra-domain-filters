@@ -11,7 +11,7 @@ import {
     type SiteRoute,
 } from "./content";
 
-const legalRoutes = new Set<SiteRoute>(["/privacy/", "/terms/", "/data-deletion/"]);
+const legalRoutes = new Set<SiteRoute>(["/support/", "/privacy/", "/terms/", "/data-deletion/"]);
 
 function escapeHtml(value: string): string {
     return value.replaceAll("&", "&amp;")
@@ -47,6 +47,7 @@ function navigation(): string {
                 </button>
                 <nav class="site-navigation" id="site-navigation" aria-label="Primary navigation">
                     <a href="/">Product</a>
+                    <a href="/support/">Support</a>
                     <a href="/privacy/">Privacy</a>
                     <a href="/terms/">Terms</a>
                     <a class="site-install-link" href="${CHROME_WEB_STORE_URL}" target="_blank" rel="noopener noreferrer">Get the extension<span aria-hidden="true">↗</span></a>
@@ -61,6 +62,7 @@ function footer(): string {
             <div class="site-shell site-footer-inner">
                 <p>Extra Domain Filters</p>
                 <nav aria-label="Footer navigation">
+                    <a href="/support/">Support</a>
                     <a href="/privacy/">Privacy</a>
                     <a href="/terms/">Terms</a>
                     <a href="/data-deletion/">Data deletion</a>

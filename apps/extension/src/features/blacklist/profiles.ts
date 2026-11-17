@@ -3,8 +3,6 @@ import { addOrReplaceBlacklistEntry, removeBlacklistUrls } from "../../domain/bl
 import type { BlacklistEntry } from "../../domain/matching";
 import { showToast, type ToastScope } from "../../ui/toast";
 
-export const PROFILE_SECTION_TEST_ID = "extra-domain-filters-blacklist-profiles";
-
 export interface ProfileEntry {
     entry: BlacklistEntry;
     profile: BlacklistProfile;
@@ -89,26 +87,19 @@ export function createProfileCard(
     return card;
 }
 
-/**
- * Domain's blacklist page: hidden agencies and agents as their own section above the hidden
- * listings. Undefined when there are none.
- */
-export function createProfileSection(entries: readonly BlacklistEntry[]): HTMLElement | undefined {
-    const profiles = getProfileEntries(entries);
-    if (profiles.length === 0) return undefined;
+/** Empty states for the blacklist's tabs, shared by the popup and Domain's blacklist page. */
+export const PROPERTIES_EMPTY_COPY = {
+    title: "No blacklisted properties",
+    description: "Use the bin on any listing to hide it from your searches. It will show up here.",
+};
 
-    const section = document.createElement("section");
-    const heading = document.createElement("h2");
-    const count = document.createElement("span");
-    const grid = document.createElement("div");
-    section.className = "edf-profile-section";
-    section.dataset.testid = PROFILE_SECTION_TEST_ID;
-    heading.className = "edf-profile-section-heading";
-    count.className = "edf-profile-section-count";
-    count.textContent = String(profiles.length);
-    heading.append("Agencies and agents", count);
-    grid.className = "edf-profile-grid";
-    grid.append(...profiles.map(profile => createProfileCard(profile)));
-    section.append(heading, grid);
-    return section;
-}
+export const PROFILE_EMPTY_COPY: Record<ProfileKind, { description: string; title: string }> = {
+    agency: {
+        title: "No blacklisted agencies",
+        description: "Use the bin in a listing's agency strip, or on an agency's page, to hide all of its listings.",
+    },
+    agent: {
+        title: "No blacklisted agents",
+        description: "Use the bin in a listing's agency strip to hide every listing from one agent.",
+    },
+};

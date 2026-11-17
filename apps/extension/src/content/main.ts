@@ -1,3 +1,4 @@
+import { browser } from "wxt/browser";
 import { waitForElement } from "../dom/wait";
 import { trackTelemetry } from "../domain/telemetry/client";
 import { getSavedSearches } from "../domain/searches/savedSearches";
@@ -27,7 +28,7 @@ const logger = createLogger("Extra Domain Filters");
 const router = createRouter(routes, logger);
 const appScope = createLifecycleScope(undefined, "content-script");
 
-chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
     if (
         !isDomainAlertApplyMessage(message) &&
         !isDomainSavedSearchRemoveMessage(message) &&
@@ -82,7 +83,7 @@ console.info("[Extra Domain Filters] Content script bootstrap loaded");
 logger.info("Content script loaded");
 void trackTelemetry({
     name: "extension_started",
-    version: chrome.runtime.getManifest().version,
+    version: browser.runtime.getManifest().version,
 }).catch(error => logger.warn("Failed to track extension startup", error));
 
 void (async () => {

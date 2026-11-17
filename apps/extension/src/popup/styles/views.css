@@ -60,325 +60,475 @@
     font-size: 11px;
 }
 
+/* Sign-in (views/login.ts): a form panel beside a home photo. */
 .edf-popup-login {
     background: var(--edf-color-surface);
     display: grid;
-    grid-template-columns: minmax(350px, 47%) minmax(0, 53%);
+    grid-template-columns: minmax(360px, 50%) minmax(0, 50%);
     height: 100%;
     min-height: 0;
     overflow: hidden;
 }
 
-.edf-popup-login-panel {
+.edf-login-panel {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding: 18px 24px 20px;
+    padding: 14px 28px 24px;
+    scrollbar-gutter: stable;
     width: 100%;
 }
 
-.edf-popup-login-header {
+.edf-login-header {
     align-items: center;
     display: flex;
-    justify-content: space-between;
+    gap: 8px;
 }
 
-.edf-popup-login-brand {
-    display: block;
-    height: auto;
-    margin: 0;
-    max-width: 190px;
-    width: 50%;
-}
-
-.edf-popup-login-back {
+.edf-login-back {
     align-items: center;
     background: transparent;
     border: 0;
-    color: var(--edf-color-green);
+    border-radius: 50%;
+    color: var(--edf-color-heading);
     cursor: pointer;
     display: inline-flex;
-    font: inherit;
-    font-size: 15px;
-    gap: 3px;
-    line-height: 22px;
-    padding: 0;
-    text-align: left;
-}
-
-.edf-popup-login-back svg {
-    height: 18px;
-    transform: rotate(90deg);
-    width: 18px;
-}
-
-.edf-popup-login-back:hover {
-    color: var(--edf-color-green-hover);
-}
-
-.edf-popup-login-content {
-    margin: auto;
-    max-width: 330px;
-    padding: 16px 0 0;
-    width: 100%;
-}
-
-.edf-popup-login-panel h1 {
-    color: var(--edf-color-heading);
-    font-size: 28px;
-    line-height: 36px;
-    margin: 0;
-}
-
-.edf-popup-login-introduction {
-    color: var(--edf-color-muted);
-    font-size: 14px;
-    line-height: 20px;
-    margin: 2px 0 10px;
-}
-
-.edf-popup-login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-
-.edf-popup-login-field {
-    color: var(--edf-color-heading);
-    display: flex;
-    flex-direction: column;
-    font-size: 13px;
-    font-weight: 700;
-    gap: 2px;
-    line-height: 18px;
-}
-
-.edf-popup-login-field[hidden] {
-    display: none;
-}
-
-.edf-popup-login-input {
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: var(--edf-radius-control);
-    box-sizing: border-box;
-    color: var(--edf-color-heading);
-    font: inherit;
-    font-size: 14px;
-    font-weight: 400;
+    flex: 0 0 auto;
     height: 36px;
-    padding: 8px 11px;
-    width: 100%;
-}
-
-.edf-popup-login-input:focus-visible {
-    border-color: var(--edf-color-green);
-    box-shadow: var(--edf-focus-ring);
-    outline: 0;
-}
-
-.edf-popup-login-password-control {
-    display: block;
-    position: relative;
-}
-
-.edf-popup-login-password-control .edf-popup-login-input {
-    padding-right: 54px;
-}
-
-.edf-popup-login-password-toggle {
-    background: transparent;
-    border: 0;
-    color: var(--edf-color-green-hover);
-    cursor: pointer;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 5px;
-    position: absolute;
-    right: 7px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.edf-popup-login-forgot {
-    align-self: flex-end;
-    background: transparent;
-    border: 0;
-    color: var(--edf-color-green-hover);
-    cursor: pointer;
-    font: inherit;
-    font-size: 13px;
-    line-height: 18px;
-    margin-top: -2px;
+    justify-content: center;
+    margin-left: -8px;
     padding: 0;
+    transition: background-color 150ms ease, color 150ms ease;
+    width: 36px;
 }
 
-.edf-popup-login-submit {
-    align-items: center;
-    background: var(--edf-color-green);
-    border: 1px solid var(--edf-color-green);
-    border-radius: var(--edf-radius-control);
-    color: #fff;
-    cursor: pointer;
-    font: inherit;
-    font-size: 15px;
-    display: inline-flex;
-    font-weight: 700;
-    gap: 8px;
-    justify-content: center;
-    min-height: 40px;
-    padding: 9px 16px;
+.edf-login-back svg {
+    height: 20px;
+    transform: rotate(90deg);
+    width: 20px;
 }
 
-.edf-popup-login-submit:hover:not(:disabled) {
-    background: var(--edf-color-green-hover);
-    border-color: var(--edf-color-green-hover);
-}
-
-.edf-popup-login-status {
-    color: var(--edf-color-muted);
-    font-size: 12px;
-    line-height: 17px;
-    margin: -1px 0 0;
-    min-height: 17px;
-}
-
-.edf-popup-login-status[data-tone="error"] {
-    color: var(--edf-color-danger);
-}
-
-.edf-popup-login-divider {
-    align-items: center;
-    color: var(--edf-color-muted);
-    display: flex;
-    font-size: 12px;
-    gap: 10px;
-    line-height: 18px;
-    margin: 14px 0 10px;
-}
-
-.edf-popup-login-divider::before,
-.edf-popup-login-divider::after {
-    background: var(--edf-color-border);
-    content: "";
-    flex: 1;
-    height: 1px;
-}
-
-.edf-popup-login-providers {
-    display: grid;
-    gap: 8px;
-    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
-    margin-top: 14px;
-}
-
-.edf-popup-auth-provider {
-    align-items: center;
-    background: var(--edf-color-surface);
-    border: 1px solid #d0d3d9;
-    border-radius: var(--edf-radius-control);
-    color: var(--edf-color-text);
-    cursor: pointer;
-    display: flex;
-    font: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    gap: 8px;
-    justify-content: center;
-    min-height: 40px;
-    padding: 8px 10px;
-    transition:
-        background-color 150ms ease,
-        border-color 150ms ease,
-        opacity 150ms ease;
-    width: 100%;
-}
-
-.edf-popup-auth-provider:disabled {
-    cursor: default;
-    opacity: 0.5;
-}
-
-.edf-popup-auth-provider[data-busy="true"] {
-    border-color: var(--edf-color-green);
-    cursor: progress;
-    opacity: 1;
-}
-
-.edf-popup-auth-provider:is(:hover, :focus-visible):not(:disabled) {
-    background: #f4fbee;
-    border-color: var(--edf-color-green);
+.edf-login-back:is(:hover, :focus-visible) {
+    background: var(--edf-color-surface-muted);
+    color: var(--edf-color-green-hover);
     outline: none;
 }
 
-/* The provider mark and a spinner share one cell and cross-fade while signing in. */
-.edf-popup-auth-provider-mark {
+.edf-login-brand {
+    display: block;
+    height: 22px;
+    width: auto;
+}
+
+.edf-login-content {
+    margin: auto;
+    max-width: 320px;
+    padding: 18px 0 4px;
+    width: 100%;
+}
+
+.edf-login-content h1 {
+    color: var(--edf-color-heading);
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    line-height: 32px;
+    margin: 0;
+}
+
+.edf-login-introduction {
+    color: var(--edf-color-muted);
+    font-size: 14px;
+    line-height: 20px;
+    margin: 6px 0 18px;
+}
+
+.edf-login-introduction:empty {
+    display: none;
+}
+
+.edf-login-providers {
     display: grid;
-    flex: 0 0 auto;
+    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+}
+
+.edf-login-providers[hidden],
+.edf-login-divider[hidden] {
+    display: none;
+}
+
+.edf-login-provider {
+    align-items: center;
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: 10px;
+    color: var(--edf-color-heading);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    gap: 7px;
+    height: 42px;
+    justify-content: center;
+    padding: 0 10px;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        opacity 150ms ease;
+}
+
+.edf-login-provider:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+}
+
+.edf-login-provider:disabled {
+    cursor: progress;
+    opacity: 0.5;
+}
+
+.edf-login-provider[data-busy="true"] {
+    opacity: 1;
+}
+
+.edf-login-provider:is(:hover, :focus-visible):not(:disabled) {
+    background: var(--edf-color-surface-muted);
+    border-color: #c9ccd2;
+    outline: none;
+}
+
+/* The provider logo and a spinner share one cell and cross-fade while signing in. */
+.edf-login-provider-mark {
+    display: grid;
     height: 18px;
     place-items: center;
     width: 18px;
 }
 
-.edf-popup-auth-provider-mark > * {
+.edf-login-provider-mark > * {
     grid-area: 1 / 1;
     transition: opacity 150ms ease, transform 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-.edf-popup-auth-provider-mark svg {
+.edf-login-provider-mark svg {
     height: 18px;
     width: 18px;
 }
 
-.edf-popup-login-spinner {
-    animation: edf-popup-login-spin 800ms linear infinite;
+.edf-login-divider {
+    align-items: center;
+    color: var(--edf-color-muted);
+    display: flex;
+    font-size: 13px;
+    gap: 12px;
+    margin: 16px 0 6px;
+}
+
+.edf-login-divider::before,
+.edf-login-divider::after {
+    border-top: 1px solid var(--edf-color-border);
+    content: "";
+    flex: 1;
+}
+
+.edf-login-form {
+    display: grid;
+    gap: 14px;
+}
+
+.edf-login-form[hidden],
+.edf-login-field[hidden] {
+    display: none;
+}
+
+.edf-login-banner {
+    background: #fdecec;
+    border-radius: 8px;
+    color: #a61b1b;
+    font-size: 13px;
+    line-height: 18px;
+    margin: 0;
+    padding: 9px 12px;
+}
+
+.edf-login-banner[data-tone="info"] {
+    background: var(--edf-color-green-tint);
+    color: var(--edf-color-green-hover);
+}
+
+.edf-login-banner[hidden] {
+    display: none;
+}
+
+.edf-login-field {
+    display: grid;
+    gap: 6px;
+}
+
+/* "Password" and "Forgot password?" share the label row. */
+.edf-login-field-password {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.edf-login-field-password > :not(.edf-login-label, .edf-login-forgot) {
+    grid-column: 1 / -1;
+}
+
+.edf-login-label {
+    color: var(--edf-color-heading);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+}
+
+.edf-login-required {
+    color: var(--edf-color-danger);
+    font-weight: 700;
+    margin-left: 3px;
+}
+
+.edf-login-control {
+    position: relative;
+}
+
+.edf-login-input {
+    background: var(--edf-color-surface);
+    border: 1px solid #d0d3d9;
+    border-radius: 10px;
+    box-sizing: border-box;
+    color: var(--edf-color-text);
+    font: inherit;
+    font-size: 15px;
+    height: 42px;
+    padding: 9px 12px;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    width: 100%;
+}
+
+.edf-login-input::placeholder {
+    color: #9aa0aa;
+}
+
+.edf-login-input:focus {
+    border-color: var(--edf-color-green);
+    box-shadow: var(--edf-focus-ring);
+    outline: none;
+}
+
+.edf-login-input:hover:not(:focus) {
+    border-color: #a9afba;
+}
+
+.edf-login-input[type="password"],
+.edf-login-control:has(.edf-login-visibility) .edf-login-input {
+    padding-right: 44px;
+}
+
+.edf-login-field[data-invalid="true"] .edf-login-input {
+    border-color: var(--edf-color-danger);
+}
+
+.edf-login-field[data-invalid="true"] .edf-login-input:focus {
+    box-shadow: 0 0 0 3px rgb(220 38 38 / 16%);
+}
+
+.edf-login-error {
+    color: var(--edf-color-danger);
+    font-size: 13px;
+    line-height: 18px;
+    margin: 0;
+}
+
+.edf-login-error[hidden] {
+    display: none;
+}
+
+/* Show/hide: the open and crossed eyes swap with a turn. */
+.edf-login-visibility {
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: var(--edf-color-muted);
+    cursor: pointer;
+    display: grid;
+    height: 34px;
+    place-items: center;
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    transition: background-color 150ms ease, color 150ms ease;
+    width: 34px;
+}
+
+.edf-login-visibility:is(:hover, :focus-visible) {
+    background: var(--edf-color-surface-muted);
+    color: var(--edf-color-heading);
+    outline: none;
+}
+
+.edf-login-visibility > svg {
+    grid-area: 1 / 1;
+    height: 18px;
+    transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0, 0, 1);
+    width: 18px;
+}
+
+.edf-login-visibility[data-visible="false"] .edf-login-visibility-hide,
+.edf-login-visibility[data-visible="true"] .edf-login-visibility-show {
+    opacity: 0;
+    transform: rotate(-30deg) scale(0.6);
+}
+
+.edf-login-forgot {
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: var(--edf-color-green-hover);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+    padding: 0;
+}
+
+.edf-login-forgot:is(:hover, :focus-visible) {
+    outline: none;
+    text-decoration: underline;
+}
+
+.edf-login-forgot[hidden] {
+    display: none;
+}
+
+/* New-password requirements, ticked off as they're met. */
+.edf-login-rules {
+    display: grid;
+    gap: 3px;
+    list-style: none;
+    margin: 2px 0 0;
+    padding: 0;
+}
+
+.edf-login-rules[hidden] {
+    display: none;
+}
+
+.edf-login-rules li {
+    align-items: center;
+    color: var(--edf-color-muted);
+    display: flex;
+    font-size: 13px;
+    gap: 7px;
+    line-height: 18px;
+    transition: color 160ms ease;
+}
+
+.edf-login-rule-icon {
+    background: #eceef1;
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: transparent;
+    flex: 0 0 auto;
+    height: 16px;
+    padding: 3px;
+    transition: background-color 160ms ease, color 160ms ease, transform 220ms cubic-bezier(0.2, 0, 0, 1);
+    width: 16px;
+}
+
+.edf-login-rules li[data-met="true"] {
+    color: var(--edf-color-green-hover);
+}
+
+.edf-login-rules li[data-met="true"] .edf-login-rule-icon {
+    background: var(--edf-color-green);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.edf-login-submit {
+    align-items: center;
+    background: var(--edf-color-green);
+    border: 0;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    gap: 0;
+    height: 44px;
+    justify-content: center;
+    margin-top: 4px;
+    transition: background-color 150ms ease, gap 200ms ease, opacity 150ms ease;
+    width: 100%;
+}
+
+.edf-login-submit:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+}
+
+.edf-login-submit:disabled {
+    cursor: progress;
+    opacity: 0.7;
+}
+
+.edf-login-submit[data-busy="true"] {
+    gap: 8px;
+    opacity: 1;
+}
+
+.edf-login-submit:is(:hover, :focus-visible):not(:disabled) {
+    background: var(--edf-color-green-hover);
+    outline: none;
+}
+
+.edf-login-spinner {
+    animation: edf-popup-login-spin 700ms linear infinite;
     border: 2px solid currentcolor;
     border-radius: 50%;
     border-right-color: transparent;
     box-sizing: border-box;
     height: 16px;
     opacity: 0;
-    transform: scale(0.6);
     width: 16px;
 }
 
-.edf-popup-login-submit .edf-popup-login-spinner {
-    display: none;
+.edf-login-submit .edf-login-spinner {
+    transition: opacity 150ms ease, width 200ms ease;
+    width: 0;
 }
 
-.edf-popup-auth-provider[data-busy="true"] .edf-popup-auth-provider-mark svg {
+.edf-login-submit[data-busy="true"] .edf-login-spinner {
+    opacity: 1;
+    width: 16px;
+}
+
+.edf-login-provider[data-busy="true"] .edf-login-provider-mark svg {
     opacity: 0;
     transform: scale(0.6);
 }
 
-.edf-popup-auth-provider[data-busy="true"] .edf-popup-login-spinner {
-    color: var(--edf-color-green);
+.edf-login-provider[data-busy="true"] .edf-login-spinner {
     opacity: 1;
-    transform: none;
 }
 
-.edf-popup-login-submit[data-busy="true"] {
-    cursor: progress;
-    opacity: 0.9;
-}
-
-.edf-popup-login-submit[data-busy="true"] .edf-popup-login-spinner {
-    display: block;
-    opacity: 1;
-    transform: none;
-}
-
-.edf-popup-login-switch {
+.edf-login-switch {
     color: var(--edf-color-muted);
-    font-size: 13px;
-    line-height: 18px;
-    margin: 14px 0 0;
+    font-size: 14px;
+    line-height: 20px;
+    margin: 18px 0 0;
     text-align: center;
 }
 
-.edf-popup-login-switch button {
+.edf-login-switch[hidden] {
+    display: none;
+}
+
+.edf-login-switch button {
     background: transparent;
     border: 0;
     color: var(--edf-color-green-hover);
@@ -388,9 +538,46 @@
     padding: 0;
 }
 
-.edf-popup-login-switch button:is(:hover, :focus-visible) {
+.edf-login-switch button:is(:hover, :focus-visible) {
     outline: none;
     text-decoration: underline;
+}
+
+/* Reset link sent. */
+.edf-login-done {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+}
+
+.edf-login-done[hidden] {
+    display: none;
+}
+
+.edf-login-done-icon {
+    background: #ebf6e6;
+    border-radius: 50%;
+    box-sizing: content-box;
+    color: var(--edf-color-green-hover);
+    height: 26px;
+    margin: 8px 0 14px;
+    padding: 14px;
+    width: 26px;
+}
+
+.edf-login-done-title {
+    color: var(--edf-color-heading);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 24px;
+    margin: 0;
+}
+
+.edf-login-done-text {
+    color: var(--edf-color-muted);
+    font-size: 14px;
+    line-height: 20px;
+    margin: 6px 0 18px;
 }
 
 @keyframes edf-popup-login-spin {
@@ -408,6 +595,13 @@
     min-width: 0;
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .edf-login-visibility > svg,
+    .edf-login-rule-icon {
+        transition: none;
+    }
+}
+
 @media (width <= 600px) {
     .edf-popup-login {
         grid-template-columns: 1fr;
@@ -417,8 +611,8 @@
         display: none;
     }
 
-    .edf-popup-login-panel {
-        padding: 24px;
+    .edf-login-panel {
+        padding: 16px 24px 24px;
     }
 }
 
@@ -515,257 +709,4 @@
 
 .edf-popup-domain-notice > a:hover {
     text-decoration: underline;
-}
-
-/* Filters page (views/filters.ts): one card per filter, chips you tick or remove. */
-.edf-popup-page-header {
-    margin-bottom: 18px;
-}
-
-.edf-popup-page-header h1 {
-    color: var(--edf-color-heading);
-    font-size: var(--edf-settings-page-title-size);
-    line-height: var(--edf-settings-page-title-line-height);
-    margin: 0;
-}
-
-.edf-popup-page-header p {
-    color: var(--edf-color-muted);
-    font-size: 14px;
-    line-height: 20px;
-    margin: 4px 0 0;
-}
-
-.edf-popup-filters .edf-settings-section + .edf-settings-section {
-    margin-top: 16px;
-}
-
-.edf-filters-card-head {
-    align-items: center;
-    display: flex;
-    gap: 12px;
-    justify-content: space-between;
-}
-
-.edf-filters-card-head .edf-settings-section-title {
-    align-items: center;
-    display: inline-flex;
-    gap: 8px;
-}
-
-.edf-filters-card-icon {
-    color: var(--edf-color-green);
-    flex: 0 0 auto;
-    height: 20px;
-    width: 20px;
-}
-
-.edf-filters-card-body {
-    display: grid;
-    gap: 12px;
-    margin-top: 12px;
-}
-
-.edf-filters-text-action {
-    background: transparent;
-    border: 0;
-    border-radius: 6px;
-    color: var(--edf-color-green-hover);
-    cursor: pointer;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 4px 8px;
-    white-space: nowrap;
-}
-
-.edf-filters-text-action:is(:hover, :focus-visible) {
-    background: #f4fbee;
-    outline: none;
-}
-
-.edf-filters-text-action[hidden] {
-    display: none;
-}
-
-.edf-filters-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.edf-filters-chip {
-    align-items: center;
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: 999px;
-    color: var(--edf-color-text);
-    display: inline-flex;
-    font-size: 14px;
-    line-height: 20px;
-    max-width: 100%;
-    min-height: 34px;
-    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
-}
-
-.edf-filters-chip[data-selected="true"] {
-    background: #ebf6e6;
-    border-color: var(--edf-color-green);
-    color: var(--edf-color-green-hover);
-}
-
-.edf-filters-chip[data-removing="true"] {
-    opacity: 0.4;
-    pointer-events: none;
-}
-
-.edf-filters-chip-label {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    border-radius: 999px 0 0 999px;
-    color: inherit;
-    display: inline-flex;
-    font: inherit;
-    font-weight: 500;
-    gap: 6px;
-    min-width: 0;
-    overflow: hidden;
-    padding: 6px 4px 6px 14px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-button.edf-filters-chip-label {
-    cursor: pointer;
-}
-
-button.edf-filters-chip-label:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: none;
-}
-
-.edf-filters-chip-check {
-    flex: 0 0 auto;
-    height: 14px;
-    margin-left: -4px;
-    transition: width 150ms ease, opacity 150ms ease;
-    width: 0;
-}
-
-.edf-filters-chip[data-selected="true"] .edf-filters-chip-check {
-    margin-left: 0;
-    opacity: 1;
-    width: 14px;
-}
-
-.edf-filters-chip:not([data-selected="true"]) .edf-filters-chip-check {
-    opacity: 0;
-}
-
-.edf-filters-chip-remove {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    border-radius: 50%;
-    color: currentcolor;
-    cursor: pointer;
-    display: inline-flex;
-    flex: 0 0 26px;
-    height: 26px;
-    justify-content: center;
-    margin-right: 4px;
-    opacity: 0.6;
-    padding: 0;
-    transition: opacity 150ms ease, background-color 150ms ease;
-}
-
-.edf-filters-chip-remove .domain-icon {
-    height: 14px;
-    width: 14px;
-}
-
-.edf-filters-chip-remove:is(:hover, :focus-visible) {
-    background: rgb(19 18 18 / 6%);
-    opacity: 1;
-    outline: none;
-}
-
-.edf-filters-empty {
-    color: var(--edf-color-muted);
-    font-size: 14px;
-    line-height: 20px;
-    margin: 0;
-}
-
-.edf-filters-adder {
-    display: flex;
-    gap: 8px;
-}
-
-.edf-filters-input {
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: var(--edf-radius-control);
-    box-sizing: border-box;
-    color: var(--edf-color-heading);
-    flex: 1 1 auto;
-    font: inherit;
-    font-size: 14px;
-    height: 38px;
-    min-width: 0;
-    padding: 8px 12px;
-}
-
-.edf-filters-input:focus-visible {
-    border-color: var(--edf-color-green);
-    box-shadow: var(--edf-focus-ring);
-    outline: 0;
-}
-
-.edf-filters-add {
-    align-items: center;
-    background: var(--edf-color-surface);
-    border: 1px solid var(--edf-color-border);
-    border-radius: var(--edf-radius-control);
-    color: var(--edf-color-heading);
-    cursor: pointer;
-    display: inline-flex;
-    flex: 0 0 auto;
-    font: inherit;
-    font-size: 14px;
-    font-weight: 700;
-    gap: 4px;
-    height: 38px;
-    padding: 0 14px 0 10px;
-    transition: background-color 150ms ease, border-color 150ms ease;
-}
-
-.edf-filters-add .domain-icon {
-    height: 18px;
-    width: 18px;
-}
-
-.edf-filters-add:is(:hover, :focus-visible) {
-    background: #f4fbee;
-    border-color: var(--edf-color-green);
-    outline: none;
-}
-
-.edf-filters-range-value {
-    color: var(--edf-color-heading);
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 20px;
-}
-
-.edf-filters-range {
-    accent-color: var(--edf-color-green);
-    width: 100%;
-}
-
-.edf-filters-card-body > div:last-child > .edf-settings-row {
-    border-top: 1px solid var(--edf-color-border);
-    margin-top: 4px;
-    padding-bottom: 0;
 }

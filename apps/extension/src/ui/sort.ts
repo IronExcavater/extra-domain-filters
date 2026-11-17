@@ -25,6 +25,19 @@ export interface SortControlOptions {
     value?: string;
 }
 
+/** The part of the window the element's scrolling ancestors leave visible. */
+function getVisibleBand(element: Element): { bottom: number; top: number } {
+    let top = 0;
+    let bottom = window.innerHeight;
+    for (let node = element.parentElement; node; node = node.parentElement) {
+        if (getComputedStyle(node).overflowY === "visible") continue;
+        const rect = node.getBoundingClientRect();
+        top = Math.max(top, rect.top);
+        bottom = Math.min(bottom, rect.bottom);
+    }
+    return { bottom, top };
+}
+
 function createChevron(): SVGSVGElement {
     const icon = createSvgIcon(replaceWithChevronIcon);
 
@@ -83,6 +96,13 @@ export function createDropdownControl(options: DropdownControlOptions): SortCont
     }, { signal: options.signal });
     details.addEventListener("toggle", () => {
         if (!details.open) return;
+        // Open upwards when the menu won't fit below but has more room above.
+        const button = summary.getBoundingClientRect();
+        const band = getVisibleBand(details);
+        const below = band.bottom - button.bottom;
+        details.dataset.placement = below < menu.offsetHeight + 8 && button.top - band.top > below
+            ? "top"
+            : "bottom";
         requestAnimationFrame(syncMenuCorner);
     }, { signal: options.signal });
     document.addEventListener("pointerdown", event => {

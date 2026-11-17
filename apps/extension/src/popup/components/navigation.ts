@@ -1,3 +1,4 @@
+import { browser } from "wxt/browser";
 import wordmarkUrl from "../../../../../packages/assets/icons/brand/wordmark.svg?url";
 import { signOut } from "../../domain/account/client";
 import type { AccountState } from "../../domain/account/model";
@@ -5,13 +6,16 @@ import type { DomainSessionState } from "../../platform/domainPageClient";
 import { createButton, createSvgIcon, type IconRenderer } from "../../ui/elements";
 import {
     replaceWithBinIcon,
+    replaceWithChevronIcon,
     replaceWithConnectedIcon,
     replaceWithDisconnectedIcon,
+    replaceWithPersonIcon,
     replaceWithPopupCogIcon,
     replaceWithPopupDoorIcon,
     replaceWithPopupSavedSearchIcon,
     replaceWithPopupStarIcon,
     replaceWithSlidersIcon,
+    replaceWithSyncIcon,
 } from "../../ui/icons";
 import { attachTooltip } from "../../ui/tooltip";
 import type { PopupData, PopupView } from "../model";
@@ -39,29 +43,16 @@ const NAV_ITEMS = [
     { icon: replaceWithSlidersIcon, label: "Filters", view: "filters" },
     { icon: replaceWithBinIcon, label: "Blacklist", view: "blacklist" },
 ] satisfies Array<{ icon: IconRenderer; label: string; view: PopupView }>;
+const DOMAIN_HOME_URL = "https://www.domain.com.au/";
 const DOMAIN_SIGN_IN_URL = "https://www.domain.com.au/user/saved-searches";
 const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 
 const reducedMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-function renderMenuIcon(icon: SVGElement): void {
-    icon.setAttribute("viewBox", "0 0 24 24");
-    icon.replaceChildren();
-    for (const y of [6, 12, 18]) {
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        line.setAttribute("d", `M4 ${y}h16`);
-        line.setAttribute("fill", "none");
-        line.setAttribute("stroke", "currentColor");
-        line.setAttribute("stroke-linecap", "round");
-        line.setAttribute("stroke-width", "2");
-        icon.append(line);
-    }
-}
-
 /**
- * The one header item: optional icon, optional label, and its own underline (CSS ::after),
- * shown while it is the active view or its menu is open. The underline is part of the item,
- * so it always sits under it and animates in place.
+ * A header tab: icon, label and its own underline (CSS ::after), shown while it is the active
+ * view. The underline is part of the item, so it always sits under it; switching tabs slides
+ * it across (slideUnderline).
  */
 function createNavItem(options: { icon?: IconRenderer; label?: string; className?: string }): HTMLButtonElement {
     const item = createButton("", ["edf-popup-nav-item", options.className].filter(Boolean).join(" "));
@@ -77,21 +68,49 @@ function createNavItem(options: { icon?: IconRenderer; label?: string; className
     return item;
 }
 
-function createAvatar(state: AccountState): HTMLElement {
-    if (state.status === "signed-in" && state.profile?.photoUrl) {
+/** Domain's avatar: the photo, else an initial, else (signed out) a person outline. */
+function createAvatar(state: AccountState | undefined): HTMLElement {
+    const avatar = document.createElement("span");
+    avatar.className = "edf-popup-avatar";
+    avatar.ariaHidden = "true";
+    if (state?.status !== "signed-in") {
+        avatar.append(createSvgIcon(replaceWithPersonIcon, "edf-popup-avatar-icon"));
+    } else if (state.profile?.photoUrl) {
         const image = document.createElement("img");
-        image.className = "edf-popup-avatar";
         image.alt = "";
         image.src = state.profile.photoUrl;
-        return image;
+        avatar.append(image);
+    } else {
+        avatar.dataset.initial = "true";
+        avatar.textContent = (state.profile?.displayName ?? state.profile?.email ?? "E").slice(0, 1).toUpperCase();
     }
-
-    const avatar = document.createElement("span");
-    avatar.className = "edf-popup-avatar edf-popup-avatar-fallback";
-    avatar.textContent = (state.profile?.displayName ?? state.profile?.email ?? "E")
-        .slice(0, 1)
-        .toUpperCase();
     return avatar;
+}
+
+/**
+ * Moves the active underline from one tab to the next: the new tab's own line starts over
+ * the old one and eases into place. Their CSS transitions are paused meanwhile, as a
+ * transition would otherwise override the animation.
+ */
+function slideUnderline(from: HTMLElement, to: HTMLElement): void {
+    if (reducedMotion() || !from.isConnected || from.offsetWidth === 0 || to.offsetWidth === 0) return;
+    const start = from.getBoundingClientRect();
+    const end = to.getBoundingClientRect();
+    from.dataset.sliding = "true";
+    to.dataset.sliding = "true";
+    const animation = to.animate(
+        [
+            { transform: `translateX(${start.left - end.left}px) scaleX(${start.width / end.width})` },
+            { transform: "translateX(0) scaleX(1)" },
+        ],
+        { duration: 300, easing: EASE, pseudoElement: "::after" },
+    );
+    const settle = (): void => {
+        delete from.dataset.sliding;
+        delete to.dataset.sliding;
+    };
+    animation.addEventListener("finish", settle);
+    animation.addEventListener("cancel", settle);
 }
 
 function createMenuItem(
@@ -154,29 +173,30 @@ function describeDomain(
     session: DomainSessionState,
     syncing: boolean,
 ): { label: string; state: DomainPillState; tooltip: string } {
-    if (syncing) return { label: "Syncing", state: "syncing", tooltip: "Syncing saved searches with Domain.com.au…" };
+    if (syncing) return { label: "Syncing", state: "syncing", tooltip: "Syncing your saved searches with Domain\u2026" };
     if (session.status === "signed-in") {
         return {
             label: "Synced",
             state: "connected",
-            tooltip: `Connected to Domain.com.au, ${formatCheckedAt(session.checkedAt)}. Click to sync now.`,
+            tooltip: `Saved searches ${formatCheckedAt(session.checkedAt)} with Domain. Click to sync again.`,
         };
     }
     if (session.status === "signed-out") {
         return {
             label: "Sign in",
             state: "signed-out",
-            tooltip: "Signed out of Domain.com.au, so saved searches can't sync. Click to sign in.",
+            tooltip: "You're signed out of Domain, so saved searches can't sync. Click to sign in.",
         };
     }
     return session.checkedAt === undefined
-        ? { label: "Connect", state: "offline", tooltip: "Not synced with Domain.com.au yet. Click to sync." }
-        : { label: "Offline", state: "offline", tooltip: "Couldn't reach Domain.com.au. Click to try again." };
+        ? { label: "Sync", state: "offline", tooltip: "Not synced with Domain yet. Click to sync your saved searches." }
+        : { label: "Offline", state: "offline", tooltip: "Couldn't reach Domain. Click to try again." };
 }
 
 /**
- * Domain.com.au connection, as a small pill beside the wordmark. The icon (linked, unlinked,
- * spinner) cross-fades and the pill eases to its new width when the state changes.
+ * The Domain connection, as a small pill beside the wordmark: linked, unlinked, or turning
+ * sync arrows while it syncs. The icon cross-fades, the pill eases to its new width, and a
+ * finished sync pops once.
  */
 function createDomainPill(onSync: () => void): {
     element: HTMLButtonElement;
@@ -185,23 +205,21 @@ function createDomainPill(onSync: () => void): {
     const pill = createButton("", "edf-popup-domain-pill");
     const icon = document.createElement("span");
     const label = document.createElement("span");
-    const spinner = document.createElement("span");
     const tooltip = attachTooltip(pill, "", { placement: "bottom" });
     let state: DomainPillState | undefined;
 
     icon.className = "edf-popup-domain-pill-icon";
     icon.ariaHidden = "true";
-    spinner.className = "edf-popup-domain-pill-spinner";
     icon.append(
         createSvgIcon(replaceWithConnectedIcon, "edf-popup-domain-pill-connected"),
         createSvgIcon(replaceWithDisconnectedIcon, "edf-popup-domain-pill-disconnected"),
-        spinner,
+        createSvgIcon(replaceWithSyncIcon, "edf-popup-domain-pill-sync"),
     );
     label.className = "edf-popup-domain-pill-label";
     pill.append(icon, label);
     pill.addEventListener("click", () => {
         if (state === "syncing") return;
-        if (state === "signed-out") void chrome.tabs.create({ url: DOMAIN_SIGN_IN_URL });
+        if (state === "signed-out") void browser.tabs.create({ url: DOMAIN_SIGN_IN_URL });
         else onSync();
     });
 
@@ -209,6 +227,12 @@ function createDomainPill(onSync: () => void): {
         element: pill,
         update(session, syncing) {
             const next = describeDomain(session, syncing);
+            if (state === "syncing" && next.state === "connected" && !reducedMotion()) {
+                pill.animate(
+                    [{ transform: "scale(1)" }, { transform: "scale(1.08)" }, { transform: "scale(1)" }],
+                    { duration: 360, easing: EASE },
+                );
+            }
             state = next.state;
             pill.dataset.state = next.state;
             pill.ariaBusy = String(next.state === "syncing");
@@ -237,7 +261,8 @@ export function createNavigation(options: NavigationOptions): Navigation {
     const navigation = document.createElement("nav");
     const actions = document.createElement("div");
     const account = document.createElement("div");
-    const trigger = createNavItem({ className: "edf-popup-menu-trigger" });
+    const trigger = createButton("", "edf-popup-menu-trigger");
+    const chevron = createSvgIcon(replaceWithChevronIcon, "edf-popup-menu-chevron");
     const menu = document.createElement("div");
     const tabs = NAV_ITEMS.map(item => {
         const tab = createNavItem({ icon: item.icon, label: item.label });
@@ -252,7 +277,6 @@ export function createNavigation(options: NavigationOptions): Navigation {
 
     const setOpen = (next: boolean): void => {
         open = next;
-        header.dataset.menuOpen = String(open);
         account.dataset.open = String(open);
         menu.inert = !open;
         trigger.setAttribute("aria-expanded", String(open));
@@ -267,9 +291,9 @@ export function createNavigation(options: NavigationOptions): Navigation {
     logo.className = "edf-popup-wordmark";
     logo.alt = "Extra Domain Filters";
     logo.src = wordmarkUrl;
-    brand.ariaLabel = "Extra Domain Filters";
+    brand.ariaLabel = "Open Domain.com.au";
     brand.append(logo);
-    brand.addEventListener("click", () => options.onNavigate("saved-searches"));
+    brand.addEventListener("click", () => void browser.tabs.create({ url: DOMAIN_HOME_URL }));
     start.append(brand, domain.element);
 
     navigation.className = "edf-popup-primary-navigation";
@@ -283,7 +307,7 @@ export function createNavigation(options: NavigationOptions): Navigation {
         if (event.key === "Escape" && open) setOpen(false);
     });
     trigger.setAttribute("aria-haspopup", "menu");
-    trigger.ariaLabel = "Open menu";
+    trigger.ariaLabel = "Account and menu";
     trigger.addEventListener("click", () => setOpen(!open));
     menu.className = "edf-popup-account-menu";
     menu.setAttribute("role", "menu");
@@ -292,6 +316,30 @@ export function createNavigation(options: NavigationOptions): Navigation {
     actions.append(account);
     header.append(start, navigation, actions);
     setOpen(false);
+
+    // When the labelled tabs no longer fit beside the wordmark (a narrower popup), they fold
+    // to icons rather than overflowing onto the Domain pill; they unfold once the room they
+    // needed is back. The labels' width and opacity transition, so the tabs glide.
+    let labelledWidth = 0;
+    // Folded tabs name themselves in a tooltip; labelled ones don't need one.
+    const tabTooltips = tabs.map(tab => {
+        const label = tab.querySelector(".edf-popup-nav-item-label")?.textContent ?? "";
+        tab.ariaLabel = label;
+        return { label, tooltip: attachTooltip(tab, "", { placement: "bottom" }) };
+    });
+    const setCompact = (compact: boolean): void => {
+        header.dataset.compact = String(compact);
+        for (const { label, tooltip } of tabTooltips) tooltip.setText(compact ? label : "");
+    };
+    new ResizeObserver(() => {
+        const compact = header.dataset.compact === "true";
+        if (!compact && navigation.scrollWidth > navigation.clientWidth + 1) {
+            labelledWidth = navigation.scrollWidth;
+            setCompact(true);
+        } else if (compact && navigation.clientWidth >= labelledWidth) {
+            setCompact(false);
+        }
+    }).observe(navigation);
 
     const renderMenu = ({ activeView, data }: NavigationState): void => {
         const signedIn = data.account?.status === "signed-in";
@@ -305,9 +353,9 @@ export function createNavigation(options: NavigationOptions): Navigation {
             data.savedSearches.length,
             activeView === "saved-searches",
         ));
-        if (signedIn) {
+        if (data.domainSession.status === "signed-in") {
             items.push(createMenuItem("Shortlist", replaceWithPopupStarIcon, () => {
-                void chrome.tabs.create({ url: "https://www.domain.com.au/user/shortlist" });
+                void browser.tabs.create({ url: "https://www.domain.com.au/user/shortlist" });
                 setOpen(false);
             }));
         }
@@ -367,19 +415,18 @@ export function createNavigation(options: NavigationOptions): Navigation {
         },
         update(state) {
             const { activeView, data } = state;
-            for (const tab of tabs) tab.dataset.active = String(tab.dataset.popupView === activeView);
-            // Views that only live in the menu (Preferences) mark the menu trigger instead.
-            trigger.dataset.active = String(!NAV_ITEMS.some(item => item.view === activeView));
+            const previous = tabs.find(tab => tab.dataset.active === "true");
+            const next = tabs.find(tab => tab.dataset.popupView === activeView);
+            for (const tab of tabs) tab.dataset.active = String(tab === next);
+            if (previous && next && previous !== next) slideUnderline(previous, next);
 
             const user = data.account;
             const nextTriggerKey = user?.status === "signed-in"
                 ? `avatar:${user.profile?.photoUrl ?? user.profile?.displayName ?? user.profile?.email ?? ""}`
-                : "menu";
+                : "signed-out";
             if (nextTriggerKey !== triggerKey) {
                 triggerKey = nextTriggerKey;
-                trigger.replaceChildren(user?.status === "signed-in"
-                    ? createAvatar(user)
-                    : createSvgIcon(renderMenuIcon, "edf-popup-nav-item-icon"));
+                trigger.replaceChildren(createAvatar(user), chevron);
             }
 
             session = data.domainSession;

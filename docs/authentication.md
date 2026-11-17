@@ -5,7 +5,7 @@ The extension uses one Firebase Authentication account across every login method
 | Method | Extension transport |
 | --- | --- |
 | Email/password | Firebase Auth Web Extension SDK |
-| Google | Chrome Identity, converted to a Firebase credential |
+| Google | Shared offscreen federated-authentication bridge |
 | Apple | Shared offscreen federated-authentication bridge |
 | Facebook | Shared offscreen federated-authentication bridge |
 
@@ -164,6 +164,6 @@ Before publishing, inspect `apps/extension/.output/chrome-mv3/manifest.json`:
 | Firebase reports an unauthorized domain | Add the exact unpacked or production `chrome-extension://...` origin to Firebase Authorized domains. |
 | Meta or Apple reports a redirect mismatch | Compare `https://extra-domain-filters.firebaseapp.com/__/auth/handler` character-for-character with the provider console. |
 | Bridge times out | Confirm the mode-specific bridge is reachable and that the built manifest contains the matching origin. |
-| Google fails while Apple/Facebook work | Check the Chrome Extension OAuth client ID and its registered extension ID; Google does not use the bridge. |
+| Google fails while Apple/Facebook work | Check the Google provider is enabled in Firebase Authentication. Google uses the same hosted bridge as Apple and Facebook. |
 
 Primary references: [Firebase Chrome extension authentication](https://firebase.google.com/docs/auth/web/chrome-extension), [Firebase Facebook login](https://firebase.google.com/docs/auth/web/facebook-login), [Firebase Apple login](https://firebase.google.com/docs/auth/web/apple), [Chrome Identity](https://developer.chrome.com/docs/extensions/reference/api/identity), and [Apple web configuration](https://developer.apple.com/help/account/capabilities/configure-sign-in-with-apple-for-the-web/).

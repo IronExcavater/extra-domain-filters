@@ -1,3 +1,4 @@
+import { browser } from "wxt/browser";
 import {
     isAuthBridgeReady,
     isAuthResponse,
@@ -35,7 +36,7 @@ iframe.hidden = true;
 iframe.src = bridgeUrl;
 document.body.append(iframe);
 
-chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
     if (!isOffscreenAuthRequest(message)) return false;
     let settled = false;
     let timeout = 0;

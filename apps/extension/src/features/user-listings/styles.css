@@ -90,3 +90,13 @@
 #shortlist:has(.edf-listing-tabs) [role="tablist"]:not(.edf-listing-tabs) {
     display: none !important;
 }
+
+/* The blacklist page's tabs swap the listings and their sort bar for agency/agent cards. */
+.edf-sort-actions[hidden],
+.edf-blacklist-page-grid[hidden] {
+    display: none !important;
+}
+
+.edf-blacklist-profile-grid {
+    margin-top: 8px;
+}

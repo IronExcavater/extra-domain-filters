@@ -1,16 +1,16 @@
 .edf-settings-panel,
 .edf-settings-popup {
     --edf-settings-border: #e1e1df;
-    --edf-settings-card-padding: 28px;
-    --edf-settings-description-line-height: 22px;
-    --edf-settings-description-size: 16px;
+    --edf-settings-card-padding: 20px 24px;
+    --edf-settings-description-line-height: 20px;
+    --edf-settings-description-size: 14px;
     --edf-settings-muted: #646463;
-    --edf-settings-page-title-line-height: 38px;
-    --edf-settings-page-title-size: 30px;
-    --edf-settings-row-title-line-height: 24px;
-    --edf-settings-row-title-size: 17px;
-    --edf-settings-section-title-line-height: 34px;
-    --edf-settings-section-title-size: 26px;
+    --edf-settings-page-title-line-height: 32px;
+    --edf-settings-page-title-size: 25px;
+    --edf-settings-row-title-line-height: 22px;
+    --edf-settings-row-title-size: 16px;
+    --edf-settings-section-title-line-height: 28px;
+    --edf-settings-section-title-size: 20px;
     --edf-settings-surface: #fff;
     --edf-settings-text: #3c475b;
 
@@ -20,12 +20,11 @@
 
 .edf-settings-panel {
     max-width: 648px;
-    margin-top: 32px;
     scroll-margin-top: 104px;
 }
 
 .edf-settings-introduction {
-    margin-bottom: 40px;
+    margin-bottom: 20px;
 }
 
 .edf-settings-title {
@@ -40,7 +39,7 @@
     color: var(--edf-settings-muted);
     font-size: var(--edf-settings-description-size);
     line-height: var(--edf-settings-description-line-height);
-    margin: 12px 0 0;
+    margin: 4px 0 0;
 }
 
 .edf-settings-section {
@@ -51,7 +50,7 @@
 }
 
 .edf-settings-section + .edf-settings-section {
-    margin-top: 24px;
+    margin-top: 16px;
 }
 
 .edf-settings-section-title {
@@ -59,7 +58,7 @@
     font-size: var(--edf-settings-section-title-size);
     font-weight: 400;
     line-height: var(--edf-settings-section-title-line-height);
-    margin: 0 0 8px;
+    margin: 0 0 4px;
 }
 
 .edf-settings-row {
@@ -68,7 +67,7 @@
     gap: 16px;
     justify-content: space-between;
     min-height: 0;
-    padding: 16px 0;
+    padding: 12px 0;
 }
 
 .edf-settings-row + .edf-settings-row {
@@ -106,8 +105,11 @@
 }
 
 .edf-settings-choice {
-    flex: 0 1 220px;
-    max-width: 48%;
+    flex: 0 0 auto;
+}
+
+.edf-settings-choice .edf-sort-dropdown-button {
+    min-width: 148px;
 }
 
 .edf-settings-support-version {
@@ -197,14 +199,134 @@
     width: 16px;
 }
 
-.edf-settings-section[data-section="support"] {
-    padding: 24px;
+/* Account (view.ts createAccountSection): identity and Log out, or the sign-in providers. */
+.edf-settings-account {
+    align-items: center;
+    color: var(--edf-settings-muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--edf-settings-description-size);
+    gap: 12px 14px;
+    line-height: var(--edf-settings-description-line-height);
+    min-height: 44px;
+    padding: 8px 0 12px;
 }
 
-.edf-settings-section[data-section="support"] .edf-settings-section-title {
-    font-size: 24px;
-    line-height: 30px;
-    margin-bottom: 6px;
+/* Loading: the signed-in row's shapes, shimmering. */
+.edf-settings-skeleton {
+    animation: edf-settings-shimmer 1.2s ease-in-out infinite;
+    background: linear-gradient(90deg, #eeeeec 0%, #f7f7f5 50%, #eeeeec 100%) 0 0 / 200% 100%;
+    border-radius: 6px;
+    display: block;
+    height: 12px;
+}
+
+.edf-settings-skeleton-avatar {
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 44px;
+    width: 44px;
+}
+
+.edf-settings-skeleton-lines {
+    display: grid;
+    flex: 1 1 auto;
+    gap: 8px;
+}
+
+@keyframes edf-settings-shimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edf-settings-skeleton {
+        animation: none;
+    }
+}
+
+.edf-settings-account > :not(.edf-settings-skeleton, .edf-settings-skeleton-lines) {
+    animation: edf-settings-account-enter 220ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@keyframes edf-settings-account-enter {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+}
+
+.edf-settings-account > .edf-settings-copy {
+    flex: 1 1 220px;
+}
+
+.edf-settings-account-avatar {
+    align-items: center;
+    background: #ebf6e6;
+    border-radius: 50%;
+    color: var(--edf-color-green-hover);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 17px;
+    font-weight: 700;
+    height: 44px;
+    justify-content: center;
+    overflow: hidden;
+    width: 44px;
+}
+
+.edf-settings-account-avatar > img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.edf-settings-providers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.edf-settings-provider {
+    align-items: center;
+    background: var(--edf-settings-surface);
+    border: 1px solid var(--edf-settings-border);
+    border-radius: var(--edf-radius-control, 8px);
+    color: var(--edf-color-heading, #131212);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    gap: 8px;
+    height: 38px;
+    padding: 0 14px 0 12px;
+    transition: background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
+.edf-settings-provider:disabled {
+    cursor: progress;
+    opacity: 0.55;
+}
+
+.edf-settings-provider[data-busy="true"] {
+    opacity: 1;
+}
+
+.edf-settings-provider:is(:hover, :focus-visible):not(:disabled) {
+    background: var(--edf-color-surface-muted, #f7f7f5);
+    border-color: var(--color-neutral-trim-hover, #a9afba);
+    outline: none;
+}
+
+.edf-settings-provider-icon {
+    height: 18px;
+    width: 18px;
+}
+
+.edf-settings-section[data-section="account"] .edf-settings-row {
+    border-top: 1px solid var(--edf-settings-border);
 }
 
 .edf-settings-support-group + .edf-settings-support-meta {
@@ -295,4 +417,277 @@
 .edf-settings-toggle-input:focus-visible + .edf-settings-toggle-indicator {
     outline: 2px solid var(--edf-color-green);
     outline-offset: 2px;
+}
+
+/* Filters page (settings/filters.ts), in the popup and on Domain's settings page: one card per filter, chips you tick or remove. */
+.edf-popup-page-header {
+    margin-bottom: 18px;
+}
+
+.edf-popup-page-header h1 {
+    color: var(--edf-color-heading);
+    font-size: var(--edf-settings-page-title-size);
+    line-height: var(--edf-settings-page-title-line-height);
+    margin: 0;
+}
+
+.edf-popup-page-header p {
+    color: var(--edf-color-muted);
+    font-size: 14px;
+    line-height: 20px;
+    margin: 4px 0 0;
+}
+
+.edf-popup-filters .edf-settings-section + .edf-settings-section {
+    margin-top: 16px;
+}
+
+.edf-filters-card-head {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.edf-filters-card-head .edf-settings-section-title {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+}
+
+.edf-filters-card-icon {
+    color: var(--edf-color-green);
+    flex: 0 0 auto;
+    height: 20px;
+    width: 20px;
+}
+
+.edf-filters-card-body {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.edf-filters-text-action {
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: var(--edf-color-green-hover);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 8px;
+    white-space: nowrap;
+}
+
+.edf-filters-text-action:is(:hover, :focus-visible) {
+    background: #f4fbee;
+    outline: none;
+}
+
+.edf-filters-text-action[hidden] {
+    display: none;
+}
+
+.edf-filters-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.edf-filters-chip {
+    align-items: center;
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: 999px;
+    color: var(--edf-color-text);
+    display: inline-flex;
+    font-size: 14px;
+    line-height: 20px;
+    max-width: 100%;
+    min-height: 34px;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+.edf-filters-chip[data-selected="true"] {
+    background: #ebf6e6;
+    border-color: var(--edf-color-green);
+    color: var(--edf-color-green-hover);
+}
+
+.edf-filters-chip[data-removing="true"] {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.edf-filters-chip-label {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 999px 0 0 999px;
+    color: inherit;
+    display: inline-flex;
+    font: inherit;
+    font-weight: 500;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+    padding: 6px 4px 6px 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+button.edf-filters-chip-label {
+    cursor: pointer;
+}
+
+button.edf-filters-chip-label:focus-visible {
+    box-shadow: var(--edf-focus-ring);
+    outline: none;
+}
+
+.edf-filters-chip-check {
+    flex: 0 0 auto;
+    height: 14px;
+    margin-left: -4px;
+    transition: width 150ms ease, opacity 150ms ease;
+    width: 0;
+}
+
+.edf-filters-chip[data-selected="true"] .edf-filters-chip-check {
+    margin-left: 0;
+    opacity: 1;
+    width: 14px;
+}
+
+.edf-filters-chip:not([data-selected="true"]) .edf-filters-chip-check {
+    opacity: 0;
+}
+
+.edf-filters-chip-remove {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: currentcolor;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 26px;
+    height: 26px;
+    justify-content: center;
+    margin-right: 4px;
+    opacity: 0.6;
+    padding: 0;
+    transition: opacity 150ms ease, background-color 150ms ease;
+}
+
+.edf-filters-chip-remove .domain-icon {
+    height: 14px;
+    width: 14px;
+}
+
+.edf-filters-chip-remove:is(:hover, :focus-visible) {
+    background: rgb(19 18 18 / 6%);
+    opacity: 1;
+    outline: none;
+}
+
+.edf-filters-empty {
+    color: var(--edf-color-muted);
+    font-size: 14px;
+    line-height: 20px;
+    margin: 0;
+}
+
+.edf-filters-adder {
+    display: flex;
+    gap: 8px;
+}
+
+.edf-filters-input {
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: var(--edf-radius-control);
+    box-sizing: border-box;
+    color: var(--edf-color-heading);
+    flex: 1 1 auto;
+    font: inherit;
+    font-size: 14px;
+    height: 38px;
+    min-width: 0;
+    padding: 8px 12px;
+}
+
+.edf-filters-input:focus-visible {
+    border-color: var(--edf-color-green);
+    box-shadow: var(--edf-focus-ring);
+    outline: 0;
+}
+
+.edf-filters-add {
+    align-items: center;
+    background: var(--edf-color-surface);
+    border: 1px solid var(--edf-color-border);
+    border-radius: var(--edf-radius-control);
+    color: var(--edf-color-heading);
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    gap: 4px;
+    height: 38px;
+    padding: 0 14px 0 10px;
+    transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.edf-filters-add .domain-icon {
+    height: 18px;
+    width: 18px;
+}
+
+.edf-filters-add:is(:hover, :focus-visible) {
+    background: #f4fbee;
+    border-color: var(--edf-color-green);
+    outline: none;
+}
+
+.edf-filters-range-value {
+    color: var(--edf-color-heading);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+}
+
+.edf-filters-card-body > div:last-child > .edf-settings-row {
+    border-top: 1px solid var(--edf-color-border);
+    margin-top: 4px;
+    padding-bottom: 0;
+}
+
+/* The Filters cards inside Domain's settings page (profile.ts). */
+.edf-settings-filters {
+    display: grid;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.edf-settings-filters > .edf-settings-section + .edf-settings-section {
+    margin-top: 0;
+}
+
+.edf-settings-panel .edf-settings-filters + .edf-settings-section {
+    margin-top: 16px;
+}
+
+/* Signed out, the settings stand in for the page's own content (profile.ts). */
+.edf-settings-standalone {
+    margin: 40px auto 64px;
+    padding: 0 16px;
+}
+
+.edf-settings-section[data-section="support"] .edf-settings-section-title {
+    margin-bottom: 2px;
 }

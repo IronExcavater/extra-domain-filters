@@ -131,29 +131,36 @@
     margin-left: 8px;
 }
 
+/* Empty state (collection.ts createEmptyState): icon in a soft disc, title, how to fill it,
+ * and Domain's green search button. */
 .edf-empty-state {
     align-items: center;
+    animation: edf-empty-state-enter var(--edf-motion-base, 220ms) cubic-bezier(0.2, 0, 0, 1) both;
     color: var(--edf-color-heading);
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 190px;
-    padding: 30px;
+    min-height: 240px;
+    padding: 40px 24px;
     text-align: center;
 }
 
 .edf-empty-state-icon {
-    color: var(--edf-color-icon);
-    height: 40px;
-    margin-bottom: 12px;
-    width: 40px;
+    background: #f1f8ec;
+    border-radius: 50%;
+    box-sizing: content-box;
+    color: var(--edf-color-green-hover, #0c8a00);
+    height: 28px;
+    margin-bottom: 16px;
+    padding: 16px;
+    width: 28px;
 }
 
 .edf-empty-state-title {
     color: var(--edf-color-heading);
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
-    line-height: 26px;
+    line-height: 28px;
     margin: 0;
 }
 
@@ -162,7 +169,46 @@
     font-size: 15px;
     line-height: 22px;
     margin: 6px 0 0;
-    max-width: 380px;
+    max-width: 400px;
+}
+
+.edf-empty-state-action {
+    background: #0ea800;
+    border: 0.8px solid #0ea800;
+    border-radius: 3px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 24px;
+    margin-top: 20px;
+    padding: 8px 26px;
+    text-decoration: none;
+    transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.edf-empty-state-action:is(:hover, :focus-visible) {
+    background: #0c8a00;
+    border-color: #0c8a00;
+    color: #fff;
+    outline: none;
+}
+
+@keyframes edf-empty-state-enter {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edf-empty-state {
+        animation: none;
+    }
+}
+
+/* Domain's own empty state, replaced by ours (pages/shortlist.ts). */
+[data-edf-replaced="true"] {
+    display: none !important;
 }
 
 .edf-segmented-control {

@@ -1,3 +1,8 @@
+/** Our settings inside Domain's profile page; also linked from the header while signed out. */
+export const SETTINGS_QUERY = "extra-domain-filters";
+export const SETTINGS_VALUE = "settings";
+export const PROFILE_SETTINGS_URL = `https://www.domain.com.au/user/user-profile?${SETTINGS_QUERY}=${SETTINGS_VALUE}`;
+
 export interface DomainProfileHosts {
     contentHost: HTMLElement;
     nativeContent: HTMLElement;
