@@ -48,9 +48,22 @@ Google, Apple and Facebook sign-in runs in an offscreen document, which only Chr
 
 `pnpm deploy:hosting` builds the website and the sign-in page and deploys both to Firebase Hosting. Log in once with `npx firebase-tools login` first. The live site is [extra-domain-filters.web.app](https://extra-domain-filters.web.app/), with support at [/support/](https://extra-domain-filters.web.app/support/).
 
-## Store screenshots
+## Store images
 
-The screenshots in `docs/store` are 1280×800. To make new ones:
+`docs/store` holds everything the store listings ask for, built from real popup captures:
 
-1. Capture the popup at 760×600 into `docs/store/raw/` (for example from a local build).
-2. With `pnpm dev` running, open `http://localhost:3000/@fs/<repo>/docs/store/compose.html?shot=<name>` at 1280×800 and save a screenshot. The headlines are in `compose.html`.
+| File                              | Size     | Use                                            |
+| --------------------------------- | -------- | ---------------------------------------------- |
+| `screenshot-*.png`                | 1280×800 | Store screenshots                              |
+| `promo-small-440x280.png`         | 440×280  | Chrome Web Store small promo tile              |
+| `promo-marquee-1400x560.png`      | 1400×560 | Chrome Web Store marquee tile, README banner   |
+| `raw/*.png`                       | 1520×1200 | The popup captured at 2× (760×600 popup)      |
+| `web/*.webp`                      | 1520×1200 | Lighter copies the website uses               |
+
+The store icon is `packages/assets/icons/brand/icon.png` (128×128).
+
+To make new ones:
+
+1. Capture the popup at 2× into `docs/store/raw/`: open the popup page at a 1520×1200 viewport with `html { zoom: 2 }`.
+2. With `pnpm dev` running, open `http://localhost:3000/@fs/<repo>/docs/store/compose.html` with `?shot=<name>`, `?tile=small` or `?tile=marquee`, at the image's size, and save a screenshot. Headlines and callouts are in `compose.html`.
+3. The stores want 24-bit PNGs without alpha: convert with `python -c "from PIL import Image; im = Image.open('x.png'); im.convert('RGB').save('x.png')"`.

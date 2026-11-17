@@ -1,9 +1,13 @@
 import "./site.css";
 
+import blacklistShot from "../../../docs/store/web/blacklist.webp";
+import filtersShot from "../../../docs/store/web/filters.webp";
+import savedSearchesShot from "../../../docs/store/web/saved-searches.webp";
+import signInShot from "../../../docs/store/web/sign-in.webp";
 import {
-    capabilities,
     CHROME_WEB_STORE_URL,
     EFFECTIVE_DATE,
+    features,
     GITHUB_URL,
     legalPages,
     SUPPORT_EMAIL,
@@ -73,57 +77,54 @@ function footer(): string {
         </footer>`;
 }
 
-function preview(): string {
+/** Real popup captures (docs/store/web: WebP copies of the 2x captures the store screenshots use). */
+const SHOTS: Record<(typeof features)[number][0], string> = {
+    blacklist: blacklistShot,
+    filters: filtersShot,
+    "saved-searches": savedSearchesShot,
+    "sign-in": signInShot,
+};
+
+function shot(name: keyof typeof SHOTS, alt: string, className = ""): string {
+    return `<figure class="site-shot ${className}"><img src="${SHOTS[name]}" alt="${escapeHtml(alt)}" width="760" height="600" loading="lazy"></figure>`;
+}
+
+function hero(): string {
     return `
-        <div class="site-preview" aria-label="Illustrative Extra Domain Filters extension preview">
-            <div class="site-preview-browserbar"><span></span><span></span><span></span><p>domain.com.au/buy</p></div>
-            <div class="site-preview-layout">
-                <section class="site-preview-rail">
-                    <img src="/icons/brand/wordmark.svg" alt="" aria-hidden="true">
-                    <p class="site-preview-tab">Filters</p>
-                    <p>Saved searches</p>
-                    <p>Settings</p>
-                    <span class="site-preview-rule"></span>
-                    <strong>Property type</strong>
-                    <div class="site-preview-options"><span class="is-selected">House</span><span>Unit</span><span>Townhouse</span></div>
-                    <strong>Price range</strong>
-                    <div class="site-preview-fields"><span>$700k</span><span>$1.5m</span></div>
-                    <strong>Preferences</strong>
-                    <div class="site-preview-options"><span class="is-selected">3+ beds</span><span>2+ baths</span></div>
-                    <div class="site-preview-apply">Apply filters</div>
-                </section>
-                <section class="site-preview-results">
-                    <div class="site-preview-results-head"><p><strong>Buy</strong> · 1,236 results</p><span>Sort: Newest</span></div>
-                    <article class="site-preview-listing">
-                        <div class="site-preview-image"><span>Saved</span></div>
-                        <div class="site-preview-listing-copy"><strong>$1,250,000</strong><p>12 Example Street, Newtown NSW 2042</p><small>House · 3 bed · 2 bath · 2 car</small></div>
-                    </article>
-                    <div class="site-preview-prompt"><span>⌁</span><p><strong>Make this search yours.</strong><br>Save filters and keep the details that matter.</p></div>
-                </section>
-            </div>
+        <div class="site-hero-shots" aria-hidden="true">
+            ${shot("saved-searches", "", "site-shot-back")}
+            ${shot("filters", "", "site-shot-front")}
+            <p class="site-callout"><span>🏊</span>Pool matched</p>
+            <p class="site-callout site-callout-low"><span>🚫</span>12 listings hidden</p>
         </div>`;
 }
 
 function landing(): string {
-    const capabilityList = capabilities.map(([title, description], index) => `
-        <li><span>${String(index + 1).padStart(2, "0")}</span><div><h2>${title}</h2><p>${description}</p></div></li>`).join("");
+    const rows = features.map(([name, accent, rest, text], index) => `
+        <section class="site-feature${index % 2 ? " site-feature-flip" : ""}">
+            <div class="site-feature-copy">
+                <p class="site-feature-number">${String(index + 1).padStart(2, "0")}</p>
+                <h2><em>${accent}</em> ${rest}</h2>
+                <p>${text}</p>
+            </div>
+            ${shot(name, `${accent} ${rest}: the Extra Domain Filters popup`)}
+        </section>`).join("");
 
     return `
         <main id="site-main">
             <section class="site-hero">
                 <div class="site-shell site-hero-grid">
                     <div class="site-hero-copy">
-                        <h1>A more personal way to search property.</h1>
-                        <p>Extra Domain Filters helps you shape Domain.com.au searches around what matters to you.</p>
-                        <a class="site-button" href="${CHROME_WEB_STORE_URL}" target="_blank" rel="noopener noreferrer">Get the extension <span aria-hidden="true">↗</span></a>
+                        <p class="site-eyebrow">For domain.com.au</p>
+                        <h1>The filters <em>Domain doesn't have</em>.</h1>
+                        <p>Could-haves, keyword and strata filters, and a blacklist for listings, agencies and agents, right inside Domain's own search.</p>
+                        <a class="site-button" href="${CHROME_WEB_STORE_URL}" target="_blank" rel="noopener noreferrer">Add to Chrome <span aria-hidden="true">↗</span></a>
+                        <p class="site-hero-note">Free. Works on Chrome, Edge, Firefox, Opera and Safari.</p>
                     </div>
-                    ${preview()}
+                    ${hero()}
                 </div>
             </section>
-            <section class="site-capabilities site-shell" aria-labelledby="capabilities-heading">
-                <div class="site-section-heading"><p>Designed for the long search.</p><h2 id="capabilities-heading">Keep the useful details in view.</h2></div>
-                <ol>${capabilityList}</ol>
-            </section>
+            <div class="site-features site-shell">${rows}</div>
             <section class="site-closing">
                 <div class="site-shell site-closing-inner">
                     <div><p>Find a better starting point.</p><h2>Add the extension when you are ready.</h2></div>

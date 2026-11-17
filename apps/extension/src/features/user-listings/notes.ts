@@ -3,9 +3,9 @@ import { normalizeListingUrl } from "../../domain/listings/url";
 import { getFromStorage, onStorageChange, setInStorage } from "../../platform/storage";
 
 const STORAGE_KEY = "shortlistNotes";
-const NOTE_TEST_ID = "extra-domain-filters-shortlist-note";
-const NATIVE_NOTES_LABEL = /^(?:add|edit|view) notes$/i;
-const NOTE_MAX_HEIGHT = 144;
+const NOTE_VIEW_TEST_ID = "extra-domain-filters-shortlist-note";
+const NATIVE_NOTES_LABEL = /^(?:(?:add|edit|view) notes?|view details)$/i;
+const SAVE_DELAY_MS = 500;
 
 type ShortlistNotes = Record<string, { text: string; updatedAt: number }>;
 
@@ -57,82 +57,127 @@ export function watchShortlistNotes(onChange: () => void): () => void {
     });
 }
 
-function resize(field: HTMLTextAreaElement): void {
-    field.style.height = "auto";
-    const borders = field.offsetHeight - field.clientHeight;
-    field.style.height = `${Math.min(field.scrollHeight, NOTE_MAX_HEIGHT) + borders}px`;
-    field.style.overflowY = field.scrollHeight > NOTE_MAX_HEIGHT ? "auto" : "hidden";
+function formatSaved(updatedAt: number | undefined): string {
+    if (!updatedAt) return "Saves as you type";
+    const date = new Date(updatedAt);
+    const today = new Date().toDateString() === date.toDateString();
+    return `Saved ${today
+        ? date.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })
+        : date.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`;
 }
 
-function createField(key: string, rerender: () => void): HTMLTextAreaElement {
-    const field = markOwned(document.createElement("textarea"), "shortlist-note");
-    field.className = "edf-shortlist-note";
-    field.dataset.testid = NOTE_TEST_ID;
-    field.placeholder = "Add notes…";
-    field.ariaLabel = "Notes";
-    field.rows = 2;
+/** The card's other side: a title, when it was saved, and the note filling the card. */
+function createNoteView(key: string, onClose: () => void): { element: HTMLElement; field: HTMLTextAreaElement; status: HTMLElement } {
+    const element = markOwned(document.createElement("section"), "shortlist-note");
+    const head = document.createElement("div");
+    const title = document.createElement("p");
+    const status = document.createElement("span");
+    const field = document.createElement("textarea");
 
-    let reverting = false;
-    field.addEventListener("input", () => resize(field));
-    field.addEventListener("keydown", event => {
-        if (event.key === "Escape") {
-            reverting = true;
-            field.blur();
-        } else if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-            field.blur();
-        }
-    });
-    field.addEventListener("blur", () => void readNotes().then(async notes => {
+    element.className = "edf-shortlist-note-view";
+    element.dataset.testid = NOTE_VIEW_TEST_ID;
+    element.ariaLabel = "Your note on this listing";
+    head.className = "edf-shortlist-note-head";
+    title.className = "edf-shortlist-note-title";
+    title.textContent = "Your note";
+    status.className = "edf-shortlist-note-status";
+    status.ariaLive = "polite";
+    head.append(title, status);
+    field.className = "edf-shortlist-note-field";
+    field.placeholder = "What did you think? Inspection times, questions for the agent, what to check…";
+    field.ariaLabel = "Note";
+
+    let timer: number | undefined;
+    const save = async (): Promise<void> => {
+        window.clearTimeout(timer);
+        timer = undefined;
         const text = field.value.trim();
-        if (!reverting && text !== noteFor(notes, key)) await writeNote(key, text);
-        reverting = false;
-        rerender();
-    }));
-    return field;
+        if (text === noteFor(await readNotes(), key)) return;
+        await writeNote(key, text);
+        status.textContent = formatSaved(Date.now());
+    };
+    field.addEventListener("input", () => {
+        status.textContent = "Saving…";
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => void save(), SAVE_DELAY_MS);
+    });
+    field.addEventListener("blur", () => void save());
+    field.addEventListener("keydown", event => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        void save().then(onClose);
+    });
+    // The card's address link stretches over the whole card; the note must not follow it.
+    for (const type of ["click", "pointerdown", "mousedown"] as const) {
+        element.addEventListener(type, event => event.stopPropagation());
+    }
+    element.append(head, field);
+    return { element, field, status };
 }
 
 /**
- * Shortlist notes as Domain's old shortlist card had them: every card carries a notes box you
- * click into and type; it grows with the note, saves when focus leaves (or Ctrl/⌘+Enter) and
- * Escape reverts. Domain's own "Add notes" now just opens the listing page, so the button
- * jumps into the box instead.
+ * Shortlist notes as a second view of the card: "Add note" (or "View note" once there is one)
+ * turns the card over to its note, which fills the card and saves as you type; "View details"
+ * turns it back. Domain's own notes button now only opens the listing page, so it becomes
+ * that switch.
  */
 export function bindShortlistNotes(card: HTMLElement, url: string): void {
     const actions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
-    const native = actions && [...actions.querySelectorAll<HTMLButtonElement>("button")]
-        .find(button => NATIVE_NOTES_LABEL.test(button.textContent?.trim() ?? ""));
-    if (!actions || !native) return;
+    const button = actions && [...actions.querySelectorAll<HTMLButtonElement>("button")]
+        .find(candidate => NATIVE_NOTES_LABEL.test(candidate.textContent?.trim() ?? ""));
+    if (!actions || !button) return;
     const key = normalizeListingUrl(url);
+    const open = (): boolean => card.dataset.edfNoteView === "true";
 
-    const findField = (): HTMLTextAreaElement | null =>
-        card.querySelector<HTMLTextAreaElement>(`[data-testid="${NOTE_TEST_ID}"]`);
-    const render = (focus = false): void => {
+    const sync = (): void => {
         void readNotes().then(notes => {
-            if (!actions.isConnected) return;
+            if (!card.isConnected) return;
             const note = noteFor(notes, key);
-            const label = note ? "Edit notes" : "Add notes";
-            if (native.textContent !== label) native.textContent = label;
-
-            let field = findField();
-            if (field && document.activeElement === field) return;
-            field ??= createField(key, render);
-            if (field.value !== note) field.value = note;
-            if (field.nextElementSibling !== actions) actions.before(field);
-            resize(field);
-            if (focus) {
-                field.focus();
-                field.setSelectionRange(field.value.length, field.value.length);
-            }
+            const label = open() ? "View details" : note ? "View note" : "Add note";
+            if (button.textContent !== label) button.textContent = label;
+            button.ariaPressed = String(open());
+            card.dataset.edfHasNote = String(Boolean(note));
+            const view = card.querySelector<HTMLElement>(`[data-testid="${NOTE_VIEW_TEST_ID}"]`);
+            const field = view?.querySelector("textarea");
+            if (field && document.activeElement !== field && field.value !== note) field.value = note;
         });
     };
+    const setOpen = (next: boolean): void => {
+        let view = card.querySelector<HTMLElement>(`[data-testid="${NOTE_VIEW_TEST_ID}"]`);
+        if (next && !view) {
+            const created = createNoteView(key, () => setOpen(false));
+            view = created.element;
+            card.append(view);
+            void readNotes().then(notes => {
+                created.field.value = noteFor(notes, key);
+                created.status.textContent = formatSaved(notes[key]?.updatedAt);
+            });
+        }
+        if (!view) return;
+        // The note covers the card down to its buttons, which stay where they are.
+        view.style.bottom = `${card.getBoundingClientRect().bottom - actions.getBoundingClientRect().top}px`;
+        card.dataset.edfNoteView = String(next);
+        view.inert = !next;
+        if (next) {
+            const field = view.querySelector("textarea");
+            window.setTimeout(() => {
+                field?.focus({ preventScroll: true });
+                field?.setSelectionRange(field.value.length, field.value.length);
+            }, 120);
+        } else if (view.contains(document.activeElement)) {
+            button.focus({ preventScroll: true });
+        }
+        sync();
+    };
 
-    if (native.dataset.edfNotesBound !== "true") {
-        native.dataset.edfNotesBound = "true";
-        native.addEventListener("click", event => {
+    if (button.dataset.edfNotesBound !== "true") {
+        button.dataset.edfNotesBound = "true";
+        card.dataset.edfNoteCard = "true";
+        button.addEventListener("click", event => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            render(true);
+            setOpen(!open());
         }, { capture: true });
     }
-    render();
+    sync();
 }

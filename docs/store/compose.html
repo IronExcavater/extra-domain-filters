@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Store screenshot</title>
+<title>Store image</title>
 <!--
-  Frames a popup capture (raw/*.png, 760x600) as a 1280x800 store screenshot.
-  Open with ?shot=<name> and screenshot the viewport at 1280x800. See CONTRIBUTING.md.
+  Builds the store images from popup captures (raw/*.png, 760x600 popups captured at 2x):
+    ?shot=<name>    1280x800 screenshot
+    ?tile=small     440x280 small promo tile
+    ?tile=marquee   1400x560 marquee promo tile
+  Screenshot the viewport at that size, then save it as a 24-bit PNG. See CONTRIBUTING.md.
 -->
 <style>
     @font-face {
@@ -14,92 +17,358 @@
         src: url("../../packages/assets/fonts/F37Bolton-VF.ttf") format("truetype");
     }
 
+    * {
+        box-sizing: border-box;
+    }
+
     html,
     body {
-        height: 800px;
         margin: 0;
         overflow: hidden;
-        width: 1280px;
     }
 
     body {
         background:
-            radial-gradient(circle at 8% 0%, rgb(14 168 0 / 12%), transparent 46%),
-            radial-gradient(circle at 100% 100%, rgb(14 168 0 / 8%), transparent 40%),
+            radial-gradient(circle at 0% 0%, rgb(14 168 0 / 14%), transparent 44%),
+            radial-gradient(circle at 100% 100%, rgb(14 168 0 / 10%), transparent 42%),
             #f6f3ec;
         color: #131212;
-        display: grid;
         font-family: "F37 Bolton", Helvetica, Arial, sans-serif;
-        grid-template-columns: 430px 1fr;
-        align-items: center;
-        padding: 0 64px 0 76px;
-        box-sizing: border-box;
-        gap: 40px;
-    }
-
-    .copy img {
-        display: block;
-        height: 30px;
-        margin-bottom: 40px;
+        position: relative;
     }
 
     h1 {
-        font-size: 46px;
         font-weight: 700;
         letter-spacing: -0.02em;
-        line-height: 52px;
-        margin: 0 0 20px;
+        margin: 0;
+    }
+
+    h1 em {
+        color: #0ea800;
+        font-style: normal;
     }
 
     p {
         color: #3c475b;
-        font-size: 21px;
-        line-height: 31px;
         margin: 0;
     }
 
-    .shot {
-        border: 1px solid #e1e1df;
-        border-radius: 18px;
-        box-shadow: 0 30px 70px rgb(19 18 18 / 16%), 0 6px 18px rgb(19 18 18 / 8%);
+    .brand-icon {
+        border-radius: 22%;
+        box-shadow: 0 8px 20px rgb(6 80 0 / 25%);
         display: block;
-        height: auto;
+    }
+
+    .popup {
+        background: #fdfcfb;
+        border: 1px solid #e1e1df;
+        border-radius: 20px;
+        box-shadow: 0 30px 80px rgb(19 18 18 / 18%), 0 6px 18px rgb(19 18 18 / 8%);
         overflow: hidden;
-        width: 680px;
+        position: absolute;
+    }
+
+    .popup img {
+        display: block;
+        width: 100%;
+    }
+
+    /* A floating callout naming one feature. */
+    .callout {
+        align-items: center;
+        background: #fff;
+        border-radius: 999px;
+        box-shadow: 0 14px 34px rgb(19 18 18 / 16%), 0 2px 6px rgb(19 18 18 / 8%);
+        color: #131212;
+        display: inline-flex;
+        font-size: 19px;
+        font-weight: 600;
+        gap: 10px;
+        padding: 12px 22px 12px 12px;
+        position: absolute;
+        white-space: nowrap;
+        z-index: 2;
+    }
+
+    .callout span {
+        align-items: center;
+        background: #ebf6e6;
+        border-radius: 50%;
+        display: inline-flex;
+        font-size: 18px;
+        height: 36px;
+        justify-content: center;
+        width: 36px;
+    }
+
+    .callout.gold span {
+        background: #fff1c2;
+    }
+
+    /* 1280x800 screenshot: headline across the top, the popup running off the bottom. */
+    body.screenshot {
+        height: 800px;
+        padding: 50px 140px 0;
+        width: 1280px;
+    }
+
+    .screenshot .top {
+        align-items: flex-end;
+        display: flex;
+        gap: 40px;
+        justify-content: space-between;
+    }
+
+    .screenshot h1 {
+        font-size: 48px;
+        line-height: 54px;
+    }
+
+    .screenshot .top p {
+        font-size: 21px;
+        line-height: 30px;
+        margin-top: 10px;
+        max-width: 690px;
+    }
+
+    .screenshot .brand-icon {
+        height: 64px;
+        width: 64px;
+    }
+
+    .screenshot .popup {
+        border-bottom: 0;
+        border-radius: 20px 20px 0 0;
+        left: 140px;
+        top: 214px;
+        width: 1000px;
+    }
+
+    /* The promo tiles: Domain green, the pitch in white, popups rising on the right. */
+    body.tile {
+        background:
+            radial-gradient(circle at 85% 15%, rgb(255 255 255 / 18%), transparent 38%),
+            radial-gradient(circle at 10% 110%, rgb(255 255 255 / 12%), transparent 40%),
+            linear-gradient(135deg, #12b000, #078000 70%, #056800);
+        color: #fff;
+    }
+
+    .tile p {
+        color: rgb(255 255 255 / 86%);
+    }
+
+    .tile .brand {
+        align-items: center;
+        display: flex;
+        gap: 14px;
+    }
+
+    .tile .brand-icon {
+        border: 3px solid rgb(255 255 255 / 92%);
+        box-shadow: 0 10px 24px rgb(0 40 0 / 30%);
+    }
+
+    .tile .name {
+        font-weight: 700;
+        letter-spacing: -0.01em;
+    }
+
+    .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .chips span {
+        background: rgb(255 255 255 / 16%);
+        border: 1px solid rgb(255 255 255 / 30%);
+        border-radius: 999px;
+        color: #fff;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .tile .popup {
+        border: 0;
+        box-shadow: 0 30px 70px rgb(0 30 0 / 40%), 0 6px 16px rgb(0 30 0 / 20%);
+    }
+
+    /* 1400x560 marquee. */
+    body.marquee {
+        height: 560px;
+        padding: 74px 0 0 88px;
+        width: 1400px;
+    }
+
+    .marquee .pitch {
+        position: relative;
+        width: 560px;
+        z-index: 3;
+    }
+
+    .marquee .brand-icon {
+        height: 60px;
+        width: 60px;
+    }
+
+    .marquee .name {
+        font-size: 28px;
+    }
+
+    .marquee h1 {
+        font-size: 58px;
+        line-height: 62px;
+        margin-top: 30px;
+    }
+
+    .marquee .pitch p {
+        font-size: 22px;
+        line-height: 31px;
+        margin-top: 14px;
+    }
+
+    .marquee .chips {
+        margin-top: 26px;
+    }
+
+    .marquee .chips span {
+        font-size: 16px;
+        padding: 7px 14px;
+    }
+
+    .marquee .back {
+        left: 700px;
+        top: 40px;
+        transform: rotate(-4deg);
+        width: 560px;
+    }
+
+    .marquee .front {
+        left: 840px;
+        top: 150px;
+        transform: rotate(3deg);
+        width: 600px;
+    }
+
+    .marquee .callout {
+        font-size: 17px;
+    }
+
+    /* 440x280 small tile. */
+    body.small {
+        height: 280px;
+        padding: 30px 0 0 28px;
+        width: 440px;
+    }
+
+    .small .pitch {
+        position: relative;
+        width: 236px;
+        z-index: 2;
+    }
+
+    .small .brand-icon {
+        height: 52px;
+        width: 52px;
+    }
+
+    .small .name {
+        font-size: 26px;
+        line-height: 28px;
+        margin-top: 16px;
+    }
+
+    .small .pitch p {
+        font-size: 15px;
+        line-height: 20px;
+        margin-top: 8px;
+    }
+
+    .small .chips {
+        gap: 6px;
+        margin-top: 14px;
+    }
+
+    .small .chips span {
+        font-size: 12px;
+        padding: 4px 9px;
+    }
+
+    .small .popup {
+        border-radius: 12px;
+        left: 280px;
+        top: 38px;
+        transform: rotate(4deg);
+        width: 300px;
     }
 </style>
 </head>
 <body>
-<div class="copy">
-    <img src="../../packages/assets/icons/brand/wordmark.svg" alt="Extra Domain Filters">
-    <h1 id="title"></h1>
-    <p id="text"></p>
-</div>
-<img class="shot" id="shot" alt="">
 <script>
+    // Headline (with an <em> accent), line, and callouts: [emoji, text, left, top, gold?].
     const SHOTS = {
-        "saved-searches": [
-            "Every saved search, one click away",
-            "See what's new in each search, change its alerts, and keep it in sync with your Domain account.",
-        ],
-        filters: [
-            "Filters Domain doesn't have",
-            "Pick your could-haves, exclude keywords, cap strata fees and hide property types. Changes apply straight away.",
-        ],
-        blacklist: [
-            "Hide it once, and it stays hidden",
-            "Blacklist listings, agencies and agents across every search, and bring any of them back in a click.",
-        ],
-        "sign-in": [
-            "Your setup, on every browser",
-            "Sign in to sync your filters, blacklist and saved searches wherever you search.",
-        ],
+        "saved-searches": {
+            title: "Every saved search, <em>one click away</em>",
+            text: "See what's new in each search, change its alerts, and keep it in sync with your Domain account.",
+            callouts: [["✨", "New listings counted for you", 90, 690], ["🔔", "Daily, weekly or never alerts", 60, 548]],
+        },
+        filters: {
+            title: "Filters <em>Domain doesn't have</em>",
+            text: "Pick your could-haves, exclude keywords, cap strata fees and hide property types. Changes apply straight away.",
+            callouts: [["🏊", "Tick extras, or add your own", 920, 470, true], ["💰", "Strata caps and keyword filters", 60, 735]],
+        },
+        blacklist: {
+            title: "Hide it once, and <em>it stays hidden</em>",
+            text: "Blacklist listings, agencies and agents across every search, and bring any of them back in a click.",
+            callouts: [["🏢", "Hide whole agencies and agents", 60, 520], ["↩️", "Bring any back in a click", 940, 640]],
+        },
+        "sign-in": {
+            title: "Your setup, <em>on every browser</em>",
+            text: "Sign in to sync your filters, blacklist and saved searches wherever you search.",
+            callouts: [["🔄", "Synced across your browsers", 920, 330], ["🔒", "Google, Apple, Facebook or email", 860, 610]],
+        },
     };
-    const name = new URLSearchParams(location.search).get("shot") ?? "saved-searches";
-    const [title, text] = SHOTS[name];
-    document.getElementById("title").textContent = title;
-    document.getElementById("text").textContent = text;
-    document.getElementById("shot").src = `raw/${name}.png`;
+    const params = new URLSearchParams(location.search);
+    const tile = params.get("tile");
+    const icon = '<img class="brand-icon" src="../../packages/assets/icons/brand/icon.png" alt="">';
+    const popup = (name, className = "") => `<div class="popup ${className}"><img src="raw/${name}.png" alt=""></div>`;
+    const callout = ([emoji, text, left, top, gold]) =>
+        `<div class="callout${gold ? " gold" : ""}" style="left:${left}px;top:${top}px"><span>${emoji}</span>${text}</div>`;
+
+    if (tile === "small") {
+        document.body.className = "tile small";
+        document.body.innerHTML = `
+            <div class="pitch">
+                ${icon}
+                <div class="name">Extra Domain Filters</div>
+                <p>The filters Domain doesn't have</p>
+                <div class="chips"><span>Could-haves</span><span>Blacklist</span><span>Strata</span></div>
+            </div>
+            ${popup("filters")}`;
+    } else if (tile === "marquee") {
+        document.body.className = "tile marquee";
+        document.body.innerHTML = `
+            <div class="pitch">
+                <div class="brand">${icon}<span class="name">Extra Domain Filters</span></div>
+                <h1>The filters Domain doesn't have</h1>
+                <p>Shape every domain.com.au search around what matters to you.</p>
+                <div class="chips"><span>Could-haves</span><span>Keyword filters</span><span>Strata cap</span><span>Blacklist</span></div>
+            </div>
+            ${popup("saved-searches", "back")}
+            ${popup("filters", "front")}
+            ${callout(["🏊", "Pool matched", 760, 420, true])}`;
+    } else {
+        const shot = SHOTS[params.get("shot") ?? "filters"];
+        document.body.className = "screenshot";
+        document.body.innerHTML = `
+            <div class="top">
+                <div><h1>${shot.title}</h1><p></p></div>
+                ${icon}
+            </div>
+            ${popup(params.get("shot") ?? "filters")}
+            ${shot.callouts.map(callout).join("")}`;
+        document.querySelector(".top p").textContent = shot.text;
+    }
 </script>
 </body>
 </html>

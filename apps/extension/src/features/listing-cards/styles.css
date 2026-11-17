@@ -278,42 +278,99 @@
     min-height: 0 !important;
 }
 
-/* Shortlist notes (features/user-listings/notes.ts): the always-present notes box of Domain's
- * old shortlist card (60px tall, growing to 144px). Sits above the address link's stretched
- * hit area (z-index 1), like Domain's own button row. */
-.edf-shortlist-note {
-    background: var(--edf-color-surface);
+/* Shortlist notes (features/user-listings/notes.ts): the card's other side. It covers the
+ * card down to its button row and turns in over the details; "View details" turns it back. */
+[data-edf-note-card="true"] {
+    position: relative;
+}
+
+.edf-shortlist-note-view {
+    background: var(--edf-color-surface, #fff);
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    inset: 0 0 auto;
+    opacity: 0;
+    padding: 18px 18px 12px;
+    position: absolute;
+    transform: perspective(1200px) rotateY(-10deg) scale(0.98);
+    transform-origin: right center;
+    transition:
+        opacity 200ms ease,
+        transform 300ms cubic-bezier(0.2, 0, 0, 1),
+        visibility 0s linear 300ms;
+    visibility: hidden;
+    z-index: 3;
+}
+
+[data-edf-note-view="true"] > .edf-shortlist-note-view {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0s;
+    visibility: visible;
+}
+
+.edf-shortlist-note-head {
+    align-items: baseline;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.edf-shortlist-note-title {
+    color: var(--color-neutral-heavy-default, #131212);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 24px;
+    margin: 0;
+}
+
+.edf-shortlist-note-status {
+    color: var(--edf-color-muted, #646463);
+    font-size: 13px;
+    line-height: 18px;
+    white-space: nowrap;
+}
+
+.edf-shortlist-note-field {
+    background: #fffdf6;
     border: 1px solid var(--color-neutral-trim-default, #d0d3d9);
-    border-radius: 8px;
+    border-radius: 10px;
     box-sizing: border-box;
     color: var(--color-neutral-heavy-default, #131212);
-    display: block;
+    flex: 1 1 auto;
     font: inherit;
-    font-size: 14px;
-    line-height: 20px;
-    margin: 12px 0 0;
-    min-height: 60px;
-    padding: 8px 12px;
-    position: relative;
+    font-size: 15px;
+    line-height: 22px;
+    min-height: 0;
+    padding: 10px 12px;
     resize: none;
-    transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, background-color 0.2s ease-out;
+    transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
     width: 100%;
-    z-index: 2;
 }
 
-.edf-shortlist-note::placeholder {
-    color: var(--edf-color-muted);
+.edf-shortlist-note-field::placeholder {
+    color: var(--edf-color-muted, #646463);
 }
 
-.edf-shortlist-note:hover {
+.edf-shortlist-note-field:hover {
     border-color: var(--color-neutral-trim-hover, #a9afba);
 }
 
-.edf-shortlist-note:focus {
-    background: var(--edf-color-surface);
+.edf-shortlist-note-field:focus {
     border-color: var(--color-interactive-base-default, #0ea800);
     box-shadow: 0 0 0 2px var(--color-interactive-subdued-pressed, #7fc468);
     outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edf-shortlist-note-view {
+        transform: none;
+        transition: opacity 120ms ease, visibility 0s linear 120ms;
+    }
 }
 
 .edf-blacklist-row-list [data-edf-blacklist-row="true"] .edf-blacklist-action {

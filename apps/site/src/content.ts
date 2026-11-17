@@ -18,11 +18,12 @@ export interface LegalPage {
 
 export const EFFECTIVE_DATE = "12 August 2026";
 
-export const capabilities = [
-    ["Could-haves, your way", "Tick the extras you want, add your own, and see matching listings tagged gold in results and on the map."],
-    ["Filters Domain doesn't have", "Exclude keywords, cap strata fees and hide property types, including listings described as one."],
-    ["A blacklist that sticks", "Hide a listing, an agency or an agent once, and it stays out of every search."],
-    ["Saved searches, in sync", "Keep your searches and alerts in one place, synced across your browsers when you sign in."],
+/** The landing page's feature rows, as in the store screenshots: [image, accent, rest, text]. */
+export const features = [
+    ["saved-searches", "One click away:", "every saved search", "See what's new in each search, choose Daily, Weekly or Never alerts, and keep them in sync with your Domain account."],
+    ["filters", "Filters", "Domain doesn't have", "Tick the could-haves you'd love, add your own, exclude keywords, cap strata fees and hide property types, including listings described as one."],
+    ["blacklist", "Hide it once,", "and it stays hidden", "Blacklist a listing, an agency or an agent and it's gone from every search, with a tidy summary of what's hidden and a way back."],
+    ["sign-in", "Your setup,", "on every browser", "Sign in with Google, Apple, Facebook or email to sync your filters, blacklist and saved searches wherever you search."],
 ] as const;
 
 export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = {
