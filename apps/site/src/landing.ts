@@ -110,10 +110,7 @@ function tour(): string {
     return `
         <section class="site-section site-section-mist" id="toolbar">
             <div class="site-shell">
-                <div class="site-section-head">
                 <h2 class="site-section-title">All in the toolbar</h2>
-                <p class="site-section-lede">The extension's button opens your filters, blacklist and saved searches from any tab, and signs you in to sync them.</p>
-            </div>
                 <div class="site-tour">
                     <ul class="site-tour-list">${items}</ul>
                     <figure class="site-tour-shot">${shots}</figure>
@@ -176,44 +173,38 @@ function onDomain(): string {
         </li>`).join("");
     return `
         <section class="site-section site-shell" id="features">
-            <div class="site-section-head">
-                <h2 class="site-section-title">Right inside Domain</h2>
-                <p class="site-section-lede">What changes on domain.com.au once it's installed. Nothing to learn: it works in Domain's own pages.</p>
-            </div>
+            <h2 class="site-section-title">Right inside Domain</h2>
             <ul class="site-places">${items}</ul>
         </section>`;
 }
 
 /**
- * One card per store, with its own icon and every browser that installs from it. The visitor's
- * store is filled in, their browser is ringed wherever it appears, and buttons name it.
+ * One row per store: its icon, the browsers that install from it (their own first), and one
+ * button. The visitor's store is filled in and their browser named in bold.
  */
 function browsers(): string {
     const visitor = detectBrowser();
-    const cards = STORES.map(store => {
+    const rows = STORES.map(store => {
         const isCurrent = store === visitor.store;
-        const chips = store.browsers.map(item => {
-            const yours = item.id === visitor.browser.id;
-            return `<li${yours ? " data-current" : ""}${item.logo ? "" : " data-plain"}>${item.logo}${item.name}${yours ? '<span class="site-visually-hidden"> (your browser)</span>' : ""}</li>`;
-        }).join("");
+        const names = store.browsers.map(item => item.id === visitor.browser.id
+            ? `<strong>${item.logo}${item.name}<span class="site-visually-hidden"> (your browser)</span></strong>`
+            : `<span>${item.logo}${item.name}</span>`);
+        const list = store.others
+            ? `${names.join(", ")} ${store.others}`
+            : names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0];
         const action = store.browsers.some(item => item.id === visitor.browser.id) ? visitor.browser.action : store.browsers[0].action;
         return `
         <li class="site-store"${isCurrent ? " data-current" : ""}>
-            <div class="site-store-head">
-                <span class="site-store-icon">${store.icon}</span>
-                <h3>${store.name}</h3>
-            </div>
-            <ul class="site-store-browsers" aria-label="Browsers that install from ${store.name}">${chips}${store.others ? `<li class="site-store-others">${store.others}</li>` : ""}</ul>
+            <span class="site-store-icon">${store.icon}</span>
+            <h3>${store.name}</h3>
+            <p class="site-store-browsers">${list}</p>
             ${externalLink(store.href, action, "site-store-button")}
         </li>`;
     }).join("");
     return `
         <section class="site-section site-shell" id="browsers">
-            <div class="site-section-head">
-                <h2 class="site-section-title">Get it for your browser</h2>
-                <p class="site-section-lede">Each store lists the browsers that install from it. Chromium browsers, Edge and Opera included, can all use the Chrome Web Store.</p>
-            </div>
-            <ul class="site-stores">${cards}</ul>
+            <h2 class="site-section-title">Get it for your browser</h2>
+            <ul class="site-stores">${rows}</ul>
         </section>`;
 }
 

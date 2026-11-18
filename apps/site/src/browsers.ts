@@ -61,7 +61,7 @@ const SAFARI = browser("safari", "Safari", safariLogo);
 const ALL_STORES: readonly Store[] = [
     {
         id: "chrome-web-store",
-        browsers: [CHROME, EDGE, OPERA, BRAVE, VIVALDI, OPERA_GX, ARC],
+        browsers: [CHROME, EDGE, OPERA, BRAVE, VIVALDI, ARC],
         href: STORE_LINKS.chrome,
         icon: image(chromeWebStoreIcon),
         name: "Chrome Web Store",

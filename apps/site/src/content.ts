@@ -23,43 +23,39 @@ export const features: readonly Feature[] = [
         id: "filters",
         icon: "could-haves",
         title: "Extra filters",
-        summary: "Filter by what Domain's filters can't",
+        summary: "What Domain's filters can't do",
         shot: "filters-more",
         alt: "The extension's Filters page: excluded keywords, a strata limit of $1,200 a quarter, and property types",
         bullets: [
-            "Tick could-haves like a pool, solar or a dishwasher, or add your own",
-            "Listings with one are tagged on their photo and get a gold pin on the map",
-            "Hide listings whose description mentions words like \"tenanted\" or \"studio\"",
-            "Set the most you'll pay in strata fees a quarter",
-            "Untick a property type and listings described as one go too, not only those tagged as it",
+            "Could-haves like a pool or solar, or your own",
+            "Hide listings that mention words like \"tenanted\"",
+            "A strata limit, and property types that stay hidden",
         ],
     },
     {
         id: "blacklist",
         icon: "bin",
         title: "Blacklist",
-        summary: "Hide a listing once and it stays hidden",
+        summary: "Hide a listing once, for good",
         shot: "blacklist",
         alt: "The extension's blacklist, with tabs for properties, agencies and agents, and one listing selected",
         bullets: [
-            "Hide a listing from every search with the bin on its card",
-            "Hide every listing from an agency, or from one of its agents",
-            "Each page of results ends with what's hidden, and why",
-            "Select several in the popup to unblacklist them at once",
+            "Hide listings, agencies or agents from every search",
+            "See what's hidden, and why, at the end of each page",
+            "Unblacklist several at once",
         ],
     },
     {
         id: "saved-searches",
         icon: "bell",
         title: "Better saved searches",
-        summary: "Keep a search saved without the emails",
+        summary: "Saved without the emails",
         shot: "saved-searches",
         alt: "The extension's saved searches, each with its filters, new listings and email alert setting",
         bullets: [
-            "Choose Never when you save a search, not only daily or weekly emails",
-            "See each search's filters on its card, sorted and split into buy and rent",
-            "Share a search with a link that keeps your extra filters",
-            "Open your saved searches from the toolbar, on any tab",
+            "Set any search's emails to Never",
+            "Each search's filters at a glance",
+            "Share a search with your extra filters",
         ],
     },
     {
@@ -70,9 +66,8 @@ export const features: readonly Feature[] = [
         shot: "sign-in",
         alt: "The extension's sign-in page, with Google, Apple, Facebook and email",
         bullets: [
-            "Optional: everything works without an account",
-            "Sign in with Google, Apple, Facebook or email",
-            "Your filters, blacklist and saved searches stay in sync",
+            "Optional: it all works without an account",
+            "Google, Apple, Facebook or email",
         ],
     },
 ];
@@ -86,10 +81,10 @@ export interface Place {
 
 /** What the extension adds to each part of domain.com.au. */
 export const places: readonly Place[] = [
-    { id: "results", title: "Search results", text: "Listings with your could-haves are tagged on their photo, every listing gets a bin, and each page ends with what's hidden and why." },
-    { id: "filter-panel", title: "Filter panel", text: "Could-haves, excluded keywords and a strata limit sit under Domain's own filters and apply to every search." },
-    { id: "shortlist", title: "Shortlist", text: "Turn a card over to write a note on it. It saves as you type, and notes you wrote on Domain before show there too." },
-    { id: "saved-searches", title: "Saved searches", text: "Set a search's emails to Never, see its filters on its card, and share it with your extra filters included." },
+    { id: "results", title: "Search results", text: "Could-haves tagged on photos, and a bin on every listing." },
+    { id: "filter-panel", title: "Filter panel", text: "Could-have, keyword and strata filters under Domain's own." },
+    { id: "shortlist", title: "Shortlist", text: "A note on every card, saved as you type." },
+    { id: "saved-searches", title: "Saved searches", text: "Alerts set to Never, and searches you can share." },
 ];
 
 export interface Faq {
