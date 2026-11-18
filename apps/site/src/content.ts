@@ -18,15 +18,18 @@ export interface LegalPage {
 
 export const EFFECTIVE_DATE = "12 August 2026";
 
+/** The extension's own icons the landing page uses (landing.ts ICONS). */
+export type IconName = "bell" | "bin" | "could-haves" | "search" | "settings" | "sliders" | "star" | "sync";
+
 export interface Feature {
-    /** The part of the title in green. */
-    accent: string;
+    /** Describes the popup capture shown with it. */
+    alt: string;
     bullets: readonly string[];
-    /** One of the extension's own icons (landing.ts ICONS). */
-    icon: "bell" | "bin" | "could-haves" | "sync";
+    icon: IconName;
     id: string;
-    rest: string;
-    shot: "blacklist" | "filters" | "saved-searches" | "sign-in";
+    shot: "blacklist" | "filters" | "filters-more" | "saved-searches" | "sign-in";
+    summary: string;
+    title: string;
 }
 
 /** The landing page's features, each with its popup capture (docs/store/web). */
@@ -34,53 +37,104 @@ export const features: readonly Feature[] = [
     {
         id: "filters",
         icon: "could-haves",
-        accent: "Filters",
-        rest: "Domain doesn't have",
-        shot: "filters",
+        title: "Filters",
+        summary: "Filter by the extras you want",
+        shot: "filters-more",
+        alt: "The extension's Filters page: excluded keywords, a strata limit of $1,200 a quarter, and property types",
         bullets: [
-            "Tick could-haves like a pool or a dishwasher, or add your own",
-            "Matches get a gold tag in results and a gold pin on the map",
-            "Exclude keywords such as \"studio\" or \"tenanted\"",
-            "Cap strata fees, and hide property types, even mis-tagged ones",
+            "Tick could-haves like a pool, solar or a dishwasher, or add your own",
+            "Listings that have them get a gold tag, and a gold pin on the map",
+            "Hide listings that mention words like \"tenanted\" or \"studio\"",
+            "Set the most you'll pay in strata fees a quarter",
+            "Hide property types, even when a listing is tagged as the wrong one",
         ],
     },
     {
         id: "blacklist",
         icon: "bin",
-        accent: "Hide it once,",
-        rest: "it stays hidden",
+        title: "Blacklist",
+        summary: "Hide a listing once and it stays hidden",
         shot: "blacklist",
+        alt: "The extension's blacklist, with tabs for properties, agencies and agents, and one listing selected",
         bullets: [
-            "Bin a listing and it's gone from every search",
+            "Hide a listing from every search in one click",
             "Hide every listing from an agency, or from one agent",
-            "See why each listing is hidden, and bring it back in a click",
-            "Hidden listings' pins disappear from the map too",
+            "Each page of results ends with what was hidden, and why",
+            "Select several listings to unblacklist them at once",
         ],
     },
     {
         id: "saved-searches",
         icon: "bell",
-        accent: "Saved searches,",
-        rest: "without the inbox",
+        title: "Saved searches",
+        summary: "Keep searches without the emails",
         shot: "saved-searches",
+        alt: "The extension's saved searches, each with its new listings and email alert setting",
         bullets: [
-            "Every saved search in one place, with what's new",
-            "Daily or weekly emails, or none at all: save a search with no alerts",
+            "All your saved searches in one place, with new listings counted",
+            "Choose daily, weekly or no emails for each search",
             "Share a search, filters included, with a link",
-            "Notes on shortlisted listings, on the back of each card",
+            "Add notes to the listings on your shortlist",
         ],
     },
     {
         id: "sync",
         icon: "sync",
-        accent: "Your setup,",
-        rest: "on every browser",
+        title: "Sync",
+        summary: "The same setup on every browser",
         shot: "sign-in",
+        alt: "The extension's sign-in page, with Google, Apple, Facebook and email",
         bullets: [
             "Optional: everything works without an account",
             "Sign in with Google, Apple, Facebook or email",
-            "Filters, blacklist and searches follow you everywhere",
+            "Your filters, blacklist and saved searches stay in sync",
         ],
+    },
+];
+
+export interface Place {
+    /** One of the extension's icons, or its own toolbar icon. */
+    icon: IconName | "extension";
+    text: string;
+    title: string;
+}
+
+/** Where the extension shows up on domain.com.au. */
+export const places: readonly Place[] = [
+    { icon: "search", title: "Search results", text: "Gold tags on listings with your could-haves, gold map pins, and a summary of what's hidden." },
+    { icon: "sliders", title: "Filter panel", text: "Could-haves, excluded keywords and a strata limit, under Domain's own filters." },
+    { icon: "star", title: "Shortlist", text: "A note on every listing, and select several to blacklist or unshortlist at once." },
+    { icon: "bell", title: "Saved searches", text: "New listings counted, daily, weekly or no emails, and a link to share each search." },
+    { icon: "settings", title: "Your profile", text: "Extension preferences, next to Domain's own settings." },
+    { icon: "extension", title: "Toolbar button", text: "Your searches, filters and blacklist, from any tab." },
+];
+
+export interface Faq {
+    /** May hold a link. */
+    answer: string;
+    question: string;
+}
+
+export const faqs: readonly Faq[] = [
+    {
+        question: "Is it made by Domain?",
+        answer: "No. Extra Domain Filters is an independent extension and isn't affiliated with Domain. It only changes how Domain's pages work in your own browser.",
+    },
+    {
+        question: "Do I need an account?",
+        answer: "No, everything works without one. Sign in with Google, Apple, Facebook or email only if you want the same setup on more than one browser.",
+    },
+    {
+        question: "Where are my filters stored?",
+        answer: "In your browser. If you sign in, they're also synced to your account so your other browsers can load them. The <a href=\"/privacy/\">privacy policy</a> has the details.",
+    },
+    {
+        question: "Will it slow Domain down?",
+        answer: "No. Filters read listing descriptions in the background, one at a time. You can change the pace, or turn it off, in preferences.",
+    },
+    {
+        question: "Something stopped working. What now?",
+        answer: "Domain updates its website from time to time, which can break a feature until the extension catches up. <a href=\"/support/#contact\">Let us know</a> and it'll be fixed in an update.",
     },
 ];
 

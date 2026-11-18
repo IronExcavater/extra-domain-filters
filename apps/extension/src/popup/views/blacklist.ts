@@ -140,7 +140,7 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
         controls.className = "edf-page-actions";
         renderSelectionControls({
             buttonClassName: "edf-selection-action",
-            clearLabel: "Restore selected",
+            clearLabel: "Unblacklist",
             controls,
             onClear: ids => {
                 void removeBlacklistUrls(ids).then(() => {

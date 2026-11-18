@@ -204,7 +204,10 @@
     opacity: 0.65;
 }
 
+/* Selection controls (ui/selection.ts): Select all first, then the actions for a selection.
+ * They unfold and fold with WAAPI; labels roll inside the clipped button. */
 .edf-selection-action {
+    align-items: center;
     appearance: none;
     background: var(--edf-color-surface);
     border: 0.8px solid var(--edf-color-border);
@@ -212,25 +215,103 @@
     box-sizing: border-box;
     color: var(--edf-color-text);
     cursor: pointer;
+    display: inline-flex;
+    flex-shrink: 0;
     font: inherit;
     font-size: 16px;
-    min-height: 40px;
+    gap: 10px;
     line-height: 22px;
+    min-height: 40px;
+    overflow: hidden;
     padding: 8px 16px;
+    position: relative;
     transition:
         background-color 150ms ease,
         border-color 150ms ease,
-        color 150ms ease,
-        opacity 150ms ease;
+        color 150ms ease;
+    white-space: nowrap;
+}
+
+.edf-selection-action[hidden] {
+    display: none;
 }
 
 .edf-selection-action[data-edf-selection-visible="false"] {
-    opacity: 0;
     pointer-events: none;
 }
 
-.edf-selection-action[data-edf-selection-visible="true"] {
+.edf-selection-action-label {
+    display: block;
+}
+
+.edf-selection-action-label[data-leaving] {
+    pointer-events: none;
+    position: absolute;
+}
+
+.edf-select-all-box {
+    background: var(--edf-color-surface);
+    border: 0.8px solid #b9bec7;
+    border-radius: 3px;
+    box-sizing: border-box;
+    color: #fff;
+    display: grid;
+    flex-shrink: 0;
+    height: 18px;
+    place-items: center;
+    position: relative;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease;
+    width: 18px;
+}
+
+/* Part-selected: a dash; all selected: the tick. Each scales in from the centre. */
+.edf-select-all-box::after {
+    background: currentcolor;
+    border-radius: 1px;
+    content: "";
+    height: 2px;
+    position: absolute;
+    transform: scaleX(0);
+    transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+    width: 8px;
+}
+
+.edf-select-all-tick {
+    height: 14px;
+    opacity: 0;
+    transform: scale(0.4);
+    transition:
+        opacity 140ms ease,
+        transform 200ms cubic-bezier(0.2, 0, 0, 1);
+    width: 14px;
+}
+
+.edf-selection-action:not([data-state="none"]) > .edf-select-all-box {
+    background: var(--edf-selected-border);
+    border-color: var(--edf-selected-border);
+}
+
+.edf-selection-action[data-state="some"] > .edf-select-all-box::after {
+    transform: scaleX(1);
+}
+
+.edf-selection-action[data-state="all"] > .edf-select-all-box > .edf-select-all-tick {
     opacity: 1;
+    transform: none;
+}
+
+.edf-selection-action[data-state="none"]:hover > .edf-select-all-box {
+    border-color: var(--edf-selected-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .edf-select-all-box,
+    .edf-select-all-box::after,
+    .edf-select-all-tick {
+        transition: none;
+    }
 }
 
 .edf-selection-action:disabled {

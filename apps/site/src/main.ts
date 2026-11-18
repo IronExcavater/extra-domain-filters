@@ -1,6 +1,6 @@
 import "./site.css";
 
-import { detectBrowser, installButton } from "./browsers";
+import { BROWSERS, detectBrowser, installButton } from "./browsers";
 import {
     EFFECTIVE_DATE,
     GITHUB_URL,
@@ -9,9 +9,28 @@ import {
     type LegalPage,
     type SiteRoute,
 } from "./content";
-import { bindLanding, landing } from "./landing";
+import { bindLanding, CHEVRON, landing } from "./landing";
 
-const legalRoutes = new Set<SiteRoute>(["/support/", "/privacy/", "/terms/", "/data-deletion/"]);
+type PageRoute = Exclude<SiteRoute, "/">;
+
+/** The legal pages, grouped: one "Legal" item in the header, with tabs between them (short
+ * names, as they sit under "Legal"); the footer uses the full names. */
+const LEGAL_TABS: readonly (readonly [PageRoute, string, string])[] = [
+    ["/privacy/", "Privacy", "Privacy policy"],
+    ["/terms/", "Terms", "Terms of service"],
+    ["/data-deletion/", "Data deletion", "Data deletion"],
+];
+const LEGAL_ROUTES = new Set<SiteRoute>(LEGAL_TABS.map(([route]) => route));
+const PAGE_ROUTES = new Set<SiteRoute>(["/support/", ...LEGAL_ROUTES]);
+
+/** The landing page's sections the header links to; "Right inside Domain" counts as Features. */
+const SECTIONS = [
+    { href: "#features", label: "Features", ids: ["features", "on-domain"] },
+    { href: "#browsers", label: "Browsers", ids: ["browsers"] },
+    { href: "#faq", label: "FAQ", ids: ["faq"] },
+] as const;
+
+const ISSUES_URL = `${GITHUB_URL}/issues`;
 
 function escapeHtml(value: string): string {
     return value.replaceAll("&", "&amp;")
@@ -21,85 +40,216 @@ function escapeHtml(value: string): string {
         .replaceAll("'", "&#039;");
 }
 
-function mailto(): string {
-    return `mailto:${SUPPORT_EMAIL}`;
-}
-
 function pageTitle(route: SiteRoute): string {
     return route === "/" ? "Extra Domain Filters" : `${legalPages[route].title} | Extra Domain Filters`;
 }
 
 export function normalizeSiteRoute(pathname: string): SiteRoute {
     const normalized = pathname.endsWith("/") ? pathname : `${pathname}/`;
-    return legalRoutes.has(normalized as SiteRoute) ? normalized as SiteRoute : "/";
+    return PAGE_ROUTES.has(normalized as SiteRoute) ? normalized as SiteRoute : "/";
 }
 
 /**
- * The header: the product's sections (on the landing page, or linking back to them), Support,
- * and the install button for the visitor's browser.
+ * The header, in Domain's style: plain text links, the current one green with a bar along the
+ * header's bottom edge, and the install button for the visitor's browser.
  */
 function navigation(route: SiteRoute): string {
     const home = route === "/" ? "" : "/";
-    const link = (href: string, label: string, current = false) =>
-        `<a class="site-nav-link" href="${href}"${current ? ' aria-current="page"' : ""}>${label}</a>`;
+    const current = (on: boolean) => on ? ' aria-current="page"' : "";
     return `
         <header class="site-header">
             <div class="site-shell site-header-inner">
                 <a class="site-brand" href="/" aria-label="Extra Domain Filters home">
-                    <img class="site-wordmark" src="/icons/brand/wordmark.svg" alt="Extra Domain Filters">
+                    <img class="site-wordmark" src="/icons/brand/wordmark.svg" alt="Extra Domain Filters" width="230" height="28">
                 </a>
                 <button class="site-menu-toggle" type="button" aria-controls="site-navigation" aria-expanded="false" aria-label="Menu">
                     <span class="site-menu-toggle-icon" aria-hidden="true"><i></i><i></i><i></i></span>
                 </button>
                 <nav class="site-navigation" id="site-navigation" aria-label="Primary navigation">
-                    ${link(`${home}#filters`, "Features")}
-                    ${link(`${home}#try`, "Try it")}
-                    ${link(`${home}#browsers`, "Browsers")}
-                    ${link("/support/", "Support", route === "/support/")}
-                    ${installButton(detectBrowser(), "site-button site-button-small")}
+                    <div class="site-nav-links">
+                        ${SECTIONS.map(section => `<a class="site-nav-link" href="${home}${section.href}" data-section="${section.ids[0]}">${section.label}</a>`).join("")}
+                        <a class="site-nav-link" href="/support/"${current(route === "/support/")}>Support</a>
+                        <a class="site-nav-link" href="/privacy/"${current(LEGAL_ROUTES.has(route))}>Legal</a>
+                        <span class="site-nav-bar" aria-hidden="true"></span>
+                    </div>
+                    ${installButton(detectBrowser(), "small")}
                 </nav>
             </div>
         </header>`;
 }
 
+/** The footer: what the site has, grouped, then the copyright line. */
 function footer(): string {
+    const group = (title: string, links: readonly string[]) =>
+        `<div class="site-footer-group"><h2>${title}</h2><ul>${links.map(link => `<li>${link}</li>`).join("")}</ul></div>`;
+    const external = (href: string, label: string) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
     return `
         <footer class="site-footer">
-            <div class="site-shell site-footer-inner">
-                <div class="site-footer-brand">
-                    <img src="/icons/brand/wordmark.svg" alt="Extra Domain Filters" width="190" height="23">
-                    <p>Made in Australia for people searching on domain.com.au. Not affiliated with Domain.</p>
+            <div class="site-shell">
+                <div class="site-footer-top">
+                    <div class="site-footer-brand">
+                        <img src="/icons/brand/wordmark.svg" alt="Extra Domain Filters" width="190" height="23">
+                        <p>Filters, a blacklist and saved searches for house hunting on domain.com.au.</p>
+                    </div>
+                    <nav class="site-footer-nav" aria-label="Sitemap">
+                        ${group("Extension", ['<a href="/#features">Features</a>', '<a href="/#on-domain">Where it works</a>', '<a href="/#browsers">Browsers</a>', '<a href="/#faq">Questions</a>'])}
+                        ${group("Get it", BROWSERS.map(browser => external(browser.href, browser.name)))}
+                        ${group("Help", ['<a href="/support/">Support</a>', '<a href="/support/#contact">Contact</a>', external(ISSUES_URL, "Report a problem"), external(GITHUB_URL, "Source code")])}
+                        ${group("Legal", LEGAL_TABS.map(([href, , label]) => `<a href="${href}">${label}</a>`))}
+                    </nav>
                 </div>
-                <nav aria-label="Footer navigation">
-                    <a href="/support/">Support</a>
-                    <a href="/privacy/">Privacy</a>
-                    <a href="/terms/">Terms</a>
-                    <a href="/data-deletion/">Data deletion</a>
-                    <a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer">GitHub</a>
-                    <a href="${mailto()}">Contact</a>
-                </nav>
+                <div class="site-footer-bottom">
+                    <p>© ${new Date().getFullYear()} Extra Domain Filters. An independent extension, not affiliated with Domain.</p>
+                    <a href="/sitemap.xml">Sitemap</a>
+                </div>
             </div>
         </footer>`;
 }
 
-function legalPage(route: Exclude<SiteRoute, "/">, page: LegalPage): string {
-    const toc = page.sections.map(section => `<li><a href="#${section.id}">${section.title}</a></li>`).join("");
+/** Support's Contact section: the address to copy or open, and GitHub issues. */
+function contactCard(): string {
+    return `
+        <div class="site-contact">
+            <div class="site-contact-row">
+                <div><p class="site-contact-label">Email</p><a class="site-contact-value" href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></div>
+                <button class="site-contact-copy" type="button" data-copy="${SUPPORT_EMAIL}">Copy</button>
+            </div>
+            <div class="site-contact-row">
+                <div><p class="site-contact-label">GitHub</p><a class="site-contact-value" href="${ISSUES_URL}" target="_blank" rel="noopener noreferrer">Report a problem or ask for a feature</a></div>
+            </div>
+            <p class="site-contact-note">Say which browser you use and what you were doing on Domain when it happened.</p>
+        </div>`;
+}
+
+/** Tabs between the legal pages; the current one carries the bar that slides between them. */
+function legalTabs(route: SiteRoute): string {
+    return `
+        <nav class="site-legal-tabs" aria-label="Legal">
+            <div class="site-shell">
+                ${LEGAL_TABS.map(([href, label]) => `<a href="${href}"${href === route ? ' aria-current="page"' : ""}>${label}${href === route ? '<span class="site-legal-tab-bar"></span>' : ""}</a>`).join("")}
+            </div>
+        </nav>`;
+}
+
+function legalPage(route: PageRoute, page: LegalPage): string {
+    const toc = page.sections.map(section => `<li><a href="#${section.id}" data-toc="${section.id}">${section.title}</a></li>`).join("");
     const sections = page.sections.map(section => `
         <section id="${section.id}" class="site-legal-section">
             <h2>${section.title}</h2>
-            ${section.body.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join("")}
+            ${route === "/support/" && section.id === "contact"
+                ? contactCard()
+                : section.body.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join("")}
         </section>`).join("");
+    const isLegal = LEGAL_ROUTES.has(route);
 
     return `
         <main id="site-main" class="site-legal-main">
+            ${isLegal ? legalTabs(route) : ""}
             <div class="site-shell site-legal-layout">
-                <aside class="site-legal-toc" aria-label="On this page"><p>On this page</p><ol>${toc}</ol></aside>
+                <aside class="site-legal-toc">
+                    <details class="site-toc" open>
+                        <summary>On this page${CHEVRON}</summary>
+                        <ol>${toc}<li class="site-toc-bar" aria-hidden="true"></li></ol>
+                    </details>
+                </aside>
                 <article class="site-legal-copy">
-                    <header><p>Last updated: ${EFFECTIVE_DATE}</p><h1>${page.title}</h1><p class="site-legal-intro">${page.intro}</p></header>
+                    <header class="site-legal-head">
+                        <h1>${page.title}</h1>
+                        <p class="site-legal-intro">${page.intro}</p>
+                        ${isLegal ? `<p class="site-legal-meta">Last updated ${EFFECTIVE_DATE}</p>` : ""}
+                    </header>
                     ${sections}
                 </article>
             </div>
         </main>`;
+}
+
+/** Slides the header's bar under the current link, or hides it when there is none. */
+function moveNavBar(root: HTMLElement): void {
+    const bar = root.querySelector<HTMLElement>(".site-nav-bar");
+    const current = root.querySelector<HTMLElement>(".site-nav-link[aria-current]");
+    if (!bar) return;
+    bar.style.opacity = current ? "1" : "0";
+    if (!current) return;
+    bar.style.transform = `translateX(${current.offsetLeft}px)`;
+    bar.style.width = `${current.offsetWidth}px`;
+}
+
+/** On the landing page, the link for the section in the middle of the screen is current. */
+function bindScrollSpy(root: HTMLElement): void {
+    const links = [...root.querySelectorAll<HTMLAnchorElement>(".site-nav-link[data-section]")];
+    const visible = new Set<string>();
+    const observer = new IntersectionObserver(entries => {
+        for (const entry of entries) {
+            if (entry.isIntersecting) visible.add(entry.target.id);
+            else visible.delete(entry.target.id);
+        }
+        const section = SECTIONS.find(item => item.ids.some(id => visible.has(id)));
+        for (const link of links) {
+            if (section && link.dataset.section === section.ids[0]) link.setAttribute("aria-current", "location");
+            else link.removeAttribute("aria-current");
+        }
+        moveNavBar(root);
+    }, { rootMargin: "-45% 0px -50% 0px" });
+    SECTIONS.flatMap(section => section.ids).forEach(id => {
+        const element = document.getElementById(id);
+        if (element) observer.observe(element);
+    });
+}
+
+/** The contents list follows the reading position, its bar sliding to the current section. */
+function bindToc(root: HTMLElement): void {
+    const toc = root.querySelector<HTMLDetailsElement>(".site-toc");
+    const bar = root.querySelector<HTMLElement>(".site-toc-bar");
+    const links = [...root.querySelectorAll<HTMLAnchorElement>("[data-toc]")];
+    if (!toc || !bar || links.length === 0) return;
+
+    // Open beside the page on wide screens; a collapsed list above it on narrow ones.
+    const wide = window.matchMedia("(width > 860px)");
+    const fit = (): void => { toc.open = wide.matches; };
+    wide.addEventListener("change", fit);
+    fit();
+
+    const setCurrent = (id: string): void => {
+        for (const link of links) {
+            if (link.dataset.toc === id) link.setAttribute("aria-current", "location");
+            else link.removeAttribute("aria-current");
+        }
+        const current = links.find(link => link.dataset.toc === id)?.parentElement;
+        if (!current) return;
+        bar.style.transform = `translateY(${current.offsetTop}px)`;
+        bar.style.height = `${current.offsetHeight}px`;
+    };
+    const sections = links.map(link => document.getElementById(link.dataset.toc ?? "")).filter(section => section !== null);
+    const update = (): void => {
+        // The last section whose heading has passed the top third of the screen.
+        const line = window.innerHeight / 3;
+        const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+        const current = atEnd ? sections.at(-1) : sections.findLast(section => section.getBoundingClientRect().top <= line) ?? sections[0];
+        if (current) setCurrent(current.id);
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
+    requestAnimationFrame(() => bar.classList.add("is-ready"));
+    toc.addEventListener("click", event => {
+        if (!wide.matches && event.target instanceof HTMLAnchorElement) toc.open = false;
+    });
+}
+
+function bindCopy(root: HTMLElement): void {
+    for (const button of root.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
+        button.addEventListener("click", () => {
+            void navigator.clipboard.writeText(button.dataset.copy ?? "").then(() => {
+                button.textContent = "Copied";
+                button.dataset.copied = "";
+                window.setTimeout(() => {
+                    button.textContent = "Copy";
+                    delete button.dataset.copied;
+                }, 2000);
+            });
+        });
+    }
 }
 
 function bindMenu(root: HTMLElement): void {
@@ -125,15 +275,28 @@ function bindMenu(root: HTMLElement): void {
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     navigationElement.addEventListener("click", event => {
-        if (event.target instanceof HTMLAnchorElement) close();
+        if (event.target instanceof Element && event.target.closest("a")) close();
     });
+    window.addEventListener("resize", () => moveNavBar(root));
+    // The bar's first position is set without sliding in from the left.
+    moveNavBar(root);
+    requestAnimationFrame(() => root.querySelector(".site-nav-bar")?.classList.add("is-ready"));
 }
 
 export function renderSite(route: SiteRoute, root: HTMLElement): void {
     document.title = pageTitle(route);
     root.innerHTML = `${navigation(route)}${route === "/" ? landing() : legalPage(route, legalPages[route])}${footer()}`;
+    document.documentElement.dataset.page = route === "/" ? "home" : "page";
     bindMenu(root);
-    if (route === "/") bindLanding(root);
+    if (route === "/") {
+        bindLanding(root);
+        bindScrollSpy(root);
+    } else {
+        bindToc(root);
+        bindCopy(root);
+    }
+    // The page is rendered after load, so a #section in the address is scrolled to here.
+    if (window.location.hash) document.getElementById(window.location.hash.slice(1))?.scrollIntoView();
 }
 
 const root = document.querySelector<HTMLElement>("#app");

@@ -98,6 +98,9 @@ importers:
       '@browser-logos/safari':
         specifier: ^2.1.0
         version: 2.1.0
+      '@browser-logos/safari-ios':
+        specifier: 1.0.15
+        version: 1.0.15
       '@types/node':
         specifier: ^26.1.0
         version: 26.2.0
@@ -171,6 +174,9 @@ packages:
 
   '@browser-logos/opera@1.1.11':
     resolution: {integrity: sha512-vfQvWhLf7iGuHRe+8l9NjWp1U9DTucoaOlN1Dmwll5UCcjcMzKV1GkxNsCPuojHecqXqtJBHgE0LmXncgheqQA==}
+
+  '@browser-logos/safari-ios@1.0.15':
+    resolution: {integrity: sha512-Wia4FKbQvDGSGzbzBEaW1BPr7f/rZEGGVAnukpD+2RgAVvEs42Pr6wKitLk7bFhYwDSt/cP5g+MTmKP0Qet+qQ==}
 
   '@browser-logos/safari@2.1.0':
     resolution: {integrity: sha512-diidPiK62E4hlAh0dyLfWQDZXi2SSAGiOuw6iqD1x8ztw7L/Sz3He46FhcxEzYa1hKi1blCkjnKDjqw6rQfgcA==}
@@ -2200,6 +2206,8 @@ snapshots:
   '@browser-logos/firefox@3.0.10': {}
 
   '@browser-logos/opera@1.1.11': {}
+
+  '@browser-logos/safari-ios@1.0.15': {}
 
   '@browser-logos/safari@2.1.0': {}
 

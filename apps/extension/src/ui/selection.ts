@@ -19,7 +19,14 @@ export interface SelectionAction {
 }
 
 const CHECKBOX_TRANSITION_MS = 160;
-const visibilityTimers = new WeakMap<HTMLButtonElement, number>();
+const MOTION: KeyframeAnimationOptions = { duration: 240, easing: "cubic-bezier(0.2, 0, 0, 1)" };
+const pendingHides = new WeakMap<HTMLButtonElement, Animation>();
+
+type SelectAllState = "all" | "none" | "some";
+
+function prefersReducedMotion(): boolean {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function getControlButton(
     controls: HTMLElement,
@@ -34,34 +41,109 @@ function getControlButton(
     button.dataset.edfSelectionControl = key;
     button.dataset.edfSelectionVisible = "false";
     button.hidden = true;
+    if (key === "select-all") {
+        // A small checkbox mirroring the cards' own: empty, part-filled or ticked.
+        const box = document.createElement("span");
+        box.className = "edf-select-all-box";
+        box.ariaHidden = "true";
+        box.append(createSvgIcon(replaceWithCheckIcon, "edf-select-all-tick"));
+        button.append(box);
+    }
     return button;
 }
 
+/** The button at its natural size, or folded to nothing (its gap included), so showing or
+ * hiding it slides its neighbours along instead of making them jump. */
+function sizeFrame(button: HTMLButtonElement, open: boolean): Keyframe {
+    if (!open) {
+        const gap = Number.parseFloat(getComputedStyle(button.parentElement ?? button).columnGap) || 0;
+        return {
+            borderLeftWidth: "0px",
+            borderRightWidth: "0px",
+            marginRight: `${-gap}px`,
+            opacity: 0,
+            paddingLeft: "0px",
+            paddingRight: "0px",
+            width: "0px",
+        };
+    }
+    const style = getComputedStyle(button);
+    return {
+        borderLeftWidth: style.borderLeftWidth,
+        borderRightWidth: style.borderRightWidth,
+        marginRight: "0px",
+        opacity: 1,
+        paddingLeft: style.paddingLeft,
+        paddingRight: style.paddingRight,
+        width: `${button.getBoundingClientRect().width}px`,
+    };
+}
+
 function setControlVisible(button: HTMLButtonElement, visible: boolean): void {
-    const pending = visibilityTimers.get(button);
-    if (pending !== undefined) window.clearTimeout(pending);
+    if (button.dataset.edfSelectionVisible === String(visible)) return;
+    button.dataset.edfSelectionVisible = String(visible);
+
+    // Shown again while still folding away: unfold from where it is.
+    const pending = pendingHides.get(button);
+    if (pending) {
+        pendingHides.delete(button);
+        if (visible) {
+            pending.onfinish = () => pending.cancel();
+            pending.reverse();
+            return;
+        }
+        pending.cancel();
+    }
 
     // A control rendered for the first time (e.g. "Select all" on page load) appears in its
-    // final state; only later visibility changes fade.
-    if (!button.isConnected) {
+    // final state; only later changes animate.
+    if (!button.isConnected || prefersReducedMotion()) {
         button.hidden = !visible;
-        button.dataset.edfSelectionVisible = String(visible);
         return;
     }
 
     if (visible) {
         button.hidden = false;
-        requestAnimationFrame(() => {
-            if (button.isConnected) button.dataset.edfSelectionVisible = "true";
-        });
+        button.animate([sizeFrame(button, false), sizeFrame(button, true)], MOTION);
         return;
     }
 
-    button.dataset.edfSelectionVisible = "false";
-    visibilityTimers.set(button, window.setTimeout(() => {
-        if (button.dataset.edfSelectionVisible === "false") button.hidden = true;
-        visibilityTimers.delete(button);
-    }, CHECKBOX_TRANSITION_MS));
+    const hide = button.animate([sizeFrame(button, true), sizeFrame(button, false)], { ...MOTION, fill: "forwards" });
+    pendingHides.set(button, hide);
+    hide.onfinish = () => {
+        pendingHides.delete(button);
+        button.hidden = true;
+        hide.cancel();
+    };
+}
+
+/** Changes a button's label by rolling the old one up and the new one in, while the button
+ * eases to its new width. */
+function setControlLabel(button: HTMLButtonElement, text: string): void {
+    const current = button.querySelector<HTMLElement>(":scope > .edf-selection-action-label:not([data-leaving])");
+    if (current?.textContent === text) return;
+
+    const next = document.createElement("span");
+    next.className = "edf-selection-action-label";
+    next.textContent = text;
+    if (!current || button.hidden || !button.isConnected || prefersReducedMotion()) {
+        button.querySelectorAll(":scope > .edf-selection-action-label").forEach(label => label.remove());
+        button.append(next);
+        return;
+    }
+
+    const from = button.getBoundingClientRect().width;
+    current.style.left = `${current.offsetLeft}px`;
+    current.style.top = `${current.offsetTop}px`;
+    current.dataset.leaving = "true";
+    current.after(next);
+    const to = button.getBoundingClientRect().width;
+    if (from !== to) button.animate([{ width: `${from}px` }, { width: `${to}px` }], MOTION);
+    current.animate(
+        [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-80%)" }],
+        MOTION,
+    ).onfinish = () => current.remove();
+    next.animate([{ opacity: 0, transform: "translateY(80%)" }, { opacity: 1, transform: "none" }], MOTION);
 }
 
 export function replaceSelection(selection: Set<string>, ids: readonly string[]): void {
@@ -130,7 +212,12 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
         );
     };
 
-    selectAllButton.textContent = selectedVisibleCount === visible.length ? "Deselect all" : "Select all";
+    const selectAllState: SelectAllState = selectedVisibleCount === 0
+        ? "none"
+        : selectedVisibleCount === visible.length ? "all" : "some";
+    selectAllButton.dataset.state = selectAllState;
+    selectAllButton.ariaPressed = selectAllState === "some" ? "mixed" : String(selectAllState === "all");
+    setControlLabel(selectAllButton, selectAllState === "all" ? "Deselect all" : "Select all");
     setControlVisible(selectAllButton, visible.length > 0);
     selectAllButton.onpointerdown = event => {
         event.preventDefault();
@@ -146,7 +233,7 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     };
 
     clearButton.ariaLabel = options.clearLabel ?? "Clear selected listings";
-    clearButton.textContent = options.clearLabel ?? "Clear selection";
+    setControlLabel(clearButton, options.clearLabel ?? "Clear selection");
     setControlVisible(clearButton, selectedVisibleCount > 0);
     clearButton.onclick = event => {
         event.preventDefault();
@@ -156,7 +243,7 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
 
     const actionButtons = (options.actions ?? []).map((action, index) => {
         const button = getControlButton(options.controls, `action-${index}`, options.buttonClassName);
-        button.textContent = action.label;
+        setControlLabel(button, action.label);
         setControlVisible(button, selectedVisibleCount > 0);
         button.onclick = event => {
             event.preventDefault();
@@ -170,5 +257,10 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
         .forEach(button => {
             if (!actionButtons.includes(button)) button.remove();
         });
-    options.controls.append(...actionButtons, clearButton, selectAllButton);
+    // Select all stays first, on the left; the actions for a selection unfold after it.
+    // Only nodes out of place move, so running animations aren't cut off.
+    [selectAllButton, ...actionButtons, clearButton].forEach((button, index) => {
+        const slot = options.controls.children[index] ?? null;
+        if (slot !== button) options.controls.insertBefore(button, slot);
+    });
 }
