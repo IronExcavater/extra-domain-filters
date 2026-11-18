@@ -8,7 +8,7 @@ const appRoot = fileURLToPath(new URL(".", import.meta.url));
 const repositoryRoot = resolve(appRoot, "../..");
 
 const name = "Extra Domain Filters";
-const description = "Enhance domain.com.au with extra filters to empower your search.";
+const description = "Extra filters, a blacklist and better saved searches for house hunting on domain.com.au.";
 const icons = {
     16: "icons/brand/icon-16.png",
     32: "icons/brand/icon-32.png",

@@ -1,11 +1,12 @@
 import "./site.css";
 
-import { BROWSERS, detectBrowser, installButton } from "./browsers";
+import { detectBrowser, externalLink, installButton, MAIN_BROWSERS } from "./browsers";
 import {
     EFFECTIVE_DATE,
     GITHUB_URL,
     legalPages,
     SUPPORT_EMAIL,
+    type Faq,
     type LegalPage,
     type SiteRoute,
 } from "./content";
@@ -23,11 +24,11 @@ const LEGAL_TABS: readonly (readonly [PageRoute, string, string])[] = [
 const LEGAL_ROUTES = new Set<SiteRoute>(LEGAL_TABS.map(([route]) => route));
 const PAGE_ROUTES = new Set<SiteRoute>(["/support/", ...LEGAL_ROUTES]);
 
-/** The landing page's sections the header links to; "Right inside Domain" counts as Features. */
+/** The landing page's sections the header links to; "Right inside Domain" counts as Features.
+ * Questions live on the Support page, with the contact details. */
 const SECTIONS = [
     { href: "#features", label: "Features", ids: ["features", "on-domain"] },
     { href: "#browsers", label: "Browsers", ids: ["browsers"] },
-    { href: "#faq", label: "FAQ", ids: ["faq"] },
 ] as const;
 
 const ISSUES_URL = `${GITHUB_URL}/issues`;
@@ -78,30 +79,26 @@ function navigation(route: SiteRoute): string {
         </header>`;
 }
 
-/** The footer: what the site has, grouped, then the copyright line. */
+/** The footer: every page of the site, grouped, then the copyright line. */
 function footer(): string {
     const group = (title: string, links: readonly string[]) =>
         `<div class="site-footer-group"><h2>${title}</h2><ul>${links.map(link => `<li>${link}</li>`).join("")}</ul></div>`;
-    const external = (href: string, label: string) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
     return `
         <footer class="site-footer">
             <div class="site-shell">
                 <div class="site-footer-top">
                     <div class="site-footer-brand">
                         <img src="/icons/brand/wordmark.svg" alt="Extra Domain Filters" width="190" height="23">
-                        <p>Filters, a blacklist and saved searches for house hunting on domain.com.au.</p>
+                        <p>Extra filters, a blacklist and better saved searches for house hunting on domain.com.au.</p>
                     </div>
-                    <nav class="site-footer-nav" aria-label="Sitemap">
-                        ${group("Extension", ['<a href="/#features">Features</a>', '<a href="/#on-domain">Where it works</a>', '<a href="/#browsers">Browsers</a>', '<a href="/#faq">Questions</a>'])}
-                        ${group("Get it", BROWSERS.map(browser => external(browser.href, browser.name)))}
-                        ${group("Help", ['<a href="/support/">Support</a>', '<a href="/support/#contact">Contact</a>', external(ISSUES_URL, "Report a problem"), external(GITHUB_URL, "Source code")])}
+                    <nav class="site-footer-nav" aria-label="Site pages">
+                        ${group("Extension", ['<a href="/#features">Features</a>', '<a href="/#on-domain">Right inside Domain</a>', '<a href="/#browsers">Browsers</a>'])}
+                        ${group("Get it", MAIN_BROWSERS.map(browser => externalLink(browser.stores[0].href, `${browser.logo}${browser.name}`, "site-footer-browser")))}
+                        ${group("Help", ['<a href="/support/">Questions</a>', '<a href="/support/#contact">Contact</a>', externalLink(ISSUES_URL, "Report a problem"), externalLink(GITHUB_URL, "Source code")])}
                         ${group("Legal", LEGAL_TABS.map(([href, , label]) => `<a href="${href}">${label}</a>`))}
                     </nav>
                 </div>
-                <div class="site-footer-bottom">
-                    <p>© ${new Date().getFullYear()} Extra Domain Filters. An independent extension, not affiliated with Domain.</p>
-                    <a href="/sitemap.xml">Sitemap</a>
-                </div>
+                <p class="site-footer-bottom">© ${new Date().getFullYear()} Extra Domain Filters. An independent extension, not affiliated with Domain.</p>
             </div>
         </footer>`;
 }
@@ -115,10 +112,15 @@ function contactCard(): string {
                 <button class="site-contact-copy" type="button" data-copy="${SUPPORT_EMAIL}">Copy</button>
             </div>
             <div class="site-contact-row">
-                <div><p class="site-contact-label">GitHub</p><a class="site-contact-value" href="${ISSUES_URL}" target="_blank" rel="noopener noreferrer">Report a problem or ask for a feature</a></div>
+                <div><p class="site-contact-label">GitHub</p>${externalLink(ISSUES_URL, "Report a problem or ask for a feature", "site-contact-value")}</div>
             </div>
             <p class="site-contact-note">Say which browser you use and what you were doing on Domain when it happened.</p>
         </div>`;
+}
+
+/** Questions that open to their answers (trusted copy from content.ts, which may hold links). */
+function faqList(questions: readonly Faq[]): string {
+    return `<div class="site-faq-list">${questions.map(item => `<details><summary>${item.question}${CHEVRON}</summary><p>${item.answer}</p></details>`).join("")}</div>`;
 }
 
 /** Tabs between the legal pages; the current one carries the bar that slides between them. */
@@ -136,9 +138,9 @@ function legalPage(route: PageRoute, page: LegalPage): string {
     const sections = page.sections.map(section => `
         <section id="${section.id}" class="site-legal-section">
             <h2>${section.title}</h2>
-            ${route === "/support/" && section.id === "contact"
-                ? contactCard()
-                : section.body.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join("")}
+            ${route === "/support/" && section.id === "contact" ? contactCard() : ""}
+            ${section.body.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join("")}
+            ${section.questions ? faqList(section.questions) : ""}
         </section>`).join("");
     const isLegal = LEGAL_ROUTES.has(route);
 

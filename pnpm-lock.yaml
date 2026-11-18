@@ -79,6 +79,15 @@ importers:
 
   apps/site:
     dependencies:
+      '@browser-logos/brave':
+        specifier: 3.0.13
+        version: 3.0.13
+      '@browser-logos/opera-gx':
+        specifier: 1.0.7
+        version: 1.0.7
+      '@browser-logos/vivaldi':
+        specifier: 2.1.10
+        version: 2.1.10
       '@extra-domain-filters/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -163,6 +172,9 @@ packages:
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
 
+  '@browser-logos/brave@3.0.13':
+    resolution: {integrity: sha512-Dvd3INXrmtenzdDRl0QFL5UFiK+Rg/225dYzMevczfTdNBzuA5Z6w8OO8btTrQ7BLez6zl9JaicNhVakusKqsg==}
+
   '@browser-logos/chrome@2.0.0':
     resolution: {integrity: sha512-JDr78z/3x4zTtBgZ0bunFq9D4QhjT5gPBy90rpJQ5VlJugK/7xGFUgwUIkVT5vfU7lTi2F0wB/5XeOPrV67ErA==}
 
@@ -172,6 +184,9 @@ packages:
   '@browser-logos/firefox@3.0.10':
     resolution: {integrity: sha512-Bys3b02btUOvZyt02fFXfqPiNhYX6ukCtdvs4ERCSYnf6BVqCqeBR8niRYgyaECTdZwzqNCaUUKwQ0JX7lV1/A==}
 
+  '@browser-logos/opera-gx@1.0.7':
+    resolution: {integrity: sha512-l4+O1hu189oyBDB60rYzZ7jLXjG0gGGBCCZr0BeKIrZ1M1SGUhLclib5e710t6hGKkKMVLx298Iyz89/fhPC0w==}
+
   '@browser-logos/opera@1.1.11':
     resolution: {integrity: sha512-vfQvWhLf7iGuHRe+8l9NjWp1U9DTucoaOlN1Dmwll5UCcjcMzKV1GkxNsCPuojHecqXqtJBHgE0LmXncgheqQA==}
 
@@ -180,6 +195,9 @@ packages:
 
   '@browser-logos/safari@2.1.0':
     resolution: {integrity: sha512-diidPiK62E4hlAh0dyLfWQDZXi2SSAGiOuw6iqD1x8ztw7L/Sz3He46FhcxEzYa1hKi1blCkjnKDjqw6rQfgcA==}
+
+  '@browser-logos/vivaldi@2.1.10':
+    resolution: {integrity: sha512-1UOTvxWR4e172SqF01qGKVgQriQTzQigIdY+MwxKarBvK/jyExkyQFDx146I/0ICPvlB6Z4upFiNJJiA6DpapQ==}
 
   '@cacheable/memory@2.2.0':
     resolution: {integrity: sha512-CTLKqLItRCEixEAewD3/j9DB3/o96gpTPD4eJ1v+DGOlxZRZncRQkGYqqnAGCscYd6RNeXfGeiuCphsPtqyIfQ==}
@@ -2199,17 +2217,23 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
+  '@browser-logos/brave@3.0.13': {}
+
   '@browser-logos/chrome@2.0.0': {}
 
   '@browser-logos/edge@2.0.7': {}
 
   '@browser-logos/firefox@3.0.10': {}
 
+  '@browser-logos/opera-gx@1.0.7': {}
+
   '@browser-logos/opera@1.1.11': {}
 
   '@browser-logos/safari-ios@1.0.15': {}
 
   '@browser-logos/safari@2.1.0': {}
+
+  '@browser-logos/vivaldi@2.1.10': {}
 
   '@cacheable/memory@2.2.0':
     dependencies:

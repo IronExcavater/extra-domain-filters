@@ -4,20 +4,6 @@ export { CHROME_WEB_STORE_URL, GITHUB_URL, SUPPORT_EMAIL } from "@extra-domain-f
 
 export type SiteRoute = "/" | "/support/" | "/privacy/" | "/terms/" | "/data-deletion/";
 
-export interface LegalSection {
-    body: readonly string[];
-    id: string;
-    title: string;
-}
-
-export interface LegalPage {
-    intro: string;
-    sections: readonly LegalSection[];
-    title: string;
-}
-
-export const EFFECTIVE_DATE = "12 August 2026";
-
 /** The extension's own icons the landing page uses (landing.ts ICONS). */
 export type IconName = "bell" | "bin" | "could-haves" | "search" | "settings" | "sliders" | "star" | "sync";
 
@@ -32,21 +18,22 @@ export interface Feature {
     title: string;
 }
 
-/** The landing page's features, each with its popup capture (docs/store/web). */
+/** The landing page's features, each with its popup capture (docs/store/web). Each says what
+ * the extension adds to Domain, not what Domain already does. */
 export const features: readonly Feature[] = [
     {
         id: "filters",
         icon: "could-haves",
-        title: "Filters",
-        summary: "Filter by the extras you want",
+        title: "Extra filters",
+        summary: "Filter by what Domain's filters can't",
         shot: "filters-more",
         alt: "The extension's Filters page: excluded keywords, a strata limit of $1,200 a quarter, and property types",
         bullets: [
             "Tick could-haves like a pool, solar or a dishwasher, or add your own",
-            "Listings that have them get a gold tag, and a gold pin on the map",
-            "Hide listings that mention words like \"tenanted\" or \"studio\"",
+            "Listings with one get a gold tag in results and a gold pin on the map",
+            "Hide listings whose description mentions words like \"tenanted\" or \"studio\"",
             "Set the most you'll pay in strata fees a quarter",
-            "Hide property types, even when a listing is tagged as the wrong one",
+            "Untick a property type and listings described as one go too, not just those tagged as it",
         ],
     },
     {
@@ -57,24 +44,24 @@ export const features: readonly Feature[] = [
         shot: "blacklist",
         alt: "The extension's blacklist, with tabs for properties, agencies and agents, and one listing selected",
         bullets: [
-            "Hide a listing from every search in one click",
-            "Hide every listing from an agency, or from one agent",
-            "Each page of results ends with what was hidden, and why",
-            "Select several listings to unblacklist them at once",
+            "Hide a listing from every search with the bin on its card",
+            "Hide every listing from an agency, or from one of its agents",
+            "Each page of results ends with what's hidden, and why",
+            "Select several in the popup to unblacklist them at once",
         ],
     },
     {
         id: "saved-searches",
         icon: "bell",
-        title: "Saved searches",
-        summary: "Keep searches without the emails",
+        title: "Better saved searches",
+        summary: "Keep a search saved without the emails",
         shot: "saved-searches",
-        alt: "The extension's saved searches, each with its new listings and email alert setting",
+        alt: "The extension's saved searches, each with its filters, new listings and email alert setting",
         bullets: [
-            "All your saved searches in one place, with new listings counted",
-            "Choose daily, weekly or no emails for each search",
-            "Share a search, filters included, with a link",
-            "Add notes to the listings on your shortlist",
+            "Choose Never when you save a search, not only daily or weekly emails",
+            "See each search's filters on its card, sorted and split into buy and rent",
+            "Share a search with a link that keeps your extra filters",
+            "Open your saved searches from the toolbar, on any tab",
         ],
     },
     {
@@ -99,14 +86,14 @@ export interface Place {
     title: string;
 }
 
-/** Where the extension shows up on domain.com.au. */
+/** What the extension adds to each part of domain.com.au. */
 export const places: readonly Place[] = [
-    { icon: "search", title: "Search results", text: "Gold tags on listings with your could-haves, gold map pins, and a summary of what's hidden." },
+    { icon: "search", title: "Search results", text: "Gold tags and gold map pins for your could-haves, a bin on every listing, and a summary of what's hidden at the end of each page." },
     { icon: "sliders", title: "Filter panel", text: "Could-haves, excluded keywords and a strata limit, under Domain's own filters." },
-    { icon: "star", title: "Shortlist", text: "A note on every listing, and select several to blacklist or unshortlist at once." },
-    { icon: "bell", title: "Saved searches", text: "New listings counted, daily, weekly or no emails, and a link to share each search." },
-    { icon: "settings", title: "Your profile", text: "Extension preferences, next to Domain's own settings." },
-    { icon: "extension", title: "Toolbar button", text: "Your searches, filters and blacklist, from any tab." },
+    { icon: "star", title: "Shortlist", text: "Notes on your cards that save as you type, and select several listings to blacklist or remove at once." },
+    { icon: "bell", title: "Saved searches", text: "Each search's filters on its card, buy and rent tabs, sorting, and a share link that keeps your extra filters." },
+    { icon: "settings", title: "Your profile", text: "Preferences for every feature, next to Domain's own settings." },
+    { icon: "extension", title: "Toolbar button", text: "Your saved searches, filters and blacklist, from any tab." },
 ];
 
 export interface Faq {
@@ -115,85 +102,149 @@ export interface Faq {
     question: string;
 }
 
-export const faqs: readonly Faq[] = [
-    {
-        question: "Is it made by Domain?",
-        answer: "No. Extra Domain Filters is an independent extension and isn't affiliated with Domain. It only changes how Domain's pages work in your own browser.",
-    },
-    {
-        question: "Do I need an account?",
-        answer: "No, everything works without one. Sign in with Google, Apple, Facebook or email only if you want the same setup on more than one browser.",
-    },
-    {
-        question: "Where are my filters stored?",
-        answer: "In your browser. If you sign in, they're also synced to your account so your other browsers can load them. The <a href=\"/privacy/\">privacy policy</a> has the details.",
-    },
-    {
-        question: "Will it slow Domain down?",
-        answer: "No. Filters read listing descriptions in the background, one at a time. You can change the pace, or turn it off, in preferences.",
-    },
-    {
-        question: "Something stopped working. What now?",
-        answer: "Domain updates its website from time to time, which can break a feature until the extension catches up. <a href=\"/support/#contact\">Let us know</a> and it'll be fixed in an update.",
-    },
-];
+export interface LegalSection {
+    body: readonly string[];
+    id: string;
+    /** Support's sections are questions, each opening to its answer. */
+    questions?: readonly Faq[];
+    title: string;
+}
+
+export interface LegalPage {
+    intro: string;
+    sections: readonly LegalSection[];
+    title: string;
+}
+
+export const EFFECTIVE_DATE = "12 August 2026";
 
 export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = {
     "/support/": {
         title: "Support",
-        intro: "How to get the most out of Extra Domain Filters, and how to reach us when something isn't working.",
+        intro: "Answers to common questions about Extra Domain Filters, and how to reach us if yours isn't here.",
         sections: [
             {
                 id: "getting-started",
                 title: "Getting started",
-                body: [
-                    "Install the extension, then open any search on domain.com.au. Your extra filters appear in Domain's own filter panel, under its filters, and apply to every search.",
-                    "The extension's toolbar button opens your saved searches, your filters and your blacklist, plus preferences for every feature. The same preferences are on Domain under your profile, as Extension preferences.",
+                body: [],
+                questions: [
+                    {
+                        question: "How do I start using it?",
+                        answer: "<a href=\"/#browsers\">Install it</a> from your browser's store, then open any search on domain.com.au. The extra filters are in Domain's filter panel, under its own filters. The extension's toolbar button opens your saved searches, filters and blacklist from any tab.",
+                    },
+                    {
+                        question: "Do I need an account?",
+                        answer: "No, everything works without one. Signing in only keeps your setup the same on every browser you use.",
+                    },
+                    {
+                        question: "Is it made by Domain?",
+                        answer: "No. It's an independent extension and isn't affiliated with Domain. It only changes how domain.com.au works in your own browser.",
+                    },
+                    {
+                        question: "Which browsers does it work in?",
+                        answer: "Chrome, Edge, Firefox, Opera and Safari on Mac. Brave, Vivaldi, Arc and other Chromium browsers install it from the Chrome Web Store, and Zen, LibreWolf and other Firefox-based browsers from Firefox Add-ons. <a href=\"/#browsers\">Get it for your browser</a>.",
+                    },
                 ],
             },
             {
                 id: "filters",
                 title: "Filters",
-                body: [
-                    "Could-haves are extras you'd like, such as a pool or a dishwasher. Tick the ones you want, add your own (\"ocean view / sea view\" matches either), or reset to the defaults. Listings that mention one get a gold tag in results and a gold pin on the map. You can also hide listings that mention none of them.",
-                    "Exclude keywords hides listings whose description mentions any of your words. The strata slider hides listings whose quarterly strata fee is above your maximum.",
-                    "Property types you untick in Domain's type filter are hidden, along with listings whose description names them as that type, such as a \"3 bedroom townhouse\" tagged as a house.",
-                    "Filters read listing descriptions in the background, one at a time, so a listing can take a moment to be filtered after it first appears. You can turn this off, or change its pace, in preferences.",
+                body: [],
+                questions: [
+                    {
+                        question: "What are could-haves?",
+                        answer: "Extras you'd like but don't need, such as a pool or a dishwasher. Listings that mention one get a gold tag in results and a gold pin on the map. Tick the ones you want, add your own (\"ocean view / sea view\" matches either), or hide listings that mention none of them.",
+                    },
+                    {
+                        question: "How do the keyword and strata filters work?",
+                        answer: "Exclude keywords hides listings whose description mentions any of your words, such as \"tenanted\". The strata slider hides listings whose quarterly strata fee is above your maximum.",
+                    },
+                    {
+                        question: "How is the property type filter different from Domain's?",
+                        answer: "Domain's goes by how a listing is tagged. The extension also hides listings whose description names a type you unticked, such as a \"3 bedroom townhouse\" tagged as a house.",
+                    },
+                    {
+                        question: "Will it slow Domain down?",
+                        answer: "No. Filters read listing descriptions in the background, one at a time, so a listing can take a moment to be filtered after it appears. You can change the pace, or turn it off, in preferences.",
+                    },
                 ],
             },
             {
                 id: "blacklist",
                 title: "Blacklist",
-                body: [
-                    "Use the bin on a listing to hide it from every search. Hover a listing's agency strip for a bin that hides every listing from that agency or one of its agents.",
-                    "Hidden listings are summarised at the end of each page of results, with why each one is hidden and a button to show it again. Your blacklist, with tabs for properties, agencies and agents, is in the toolbar popup and in Domain's account menu.",
+                body: [],
+                questions: [
+                    {
+                        question: "How do I hide a listing?",
+                        answer: "Use the bin on its card, and it's hidden from every search until you unblacklist it. Hover a listing's agency strip for a bin that hides every listing from that agency, or from one of its agents.",
+                    },
+                    {
+                        question: "Why is a listing hidden?",
+                        answer: "Open the summary of hidden listings at the end of the results. Each listing shows the filter or blacklist entry that hides it, with a button to show it again.",
+                    },
+                    {
+                        question: "How do I get a listing back?",
+                        answer: "Open your blacklist in the toolbar popup, or from Domain's account menu. Select the listings, agencies or agents you want back and choose Unblacklist.",
+                    },
                 ],
             },
             {
-                id: "sync",
+                id: "saved-searches",
+                title: "Saved searches and shortlist",
+                body: [],
+                questions: [
+                    {
+                        question: "Can I save a search without the emails?",
+                        answer: "Yes. When you save a search, Domain asks for daily or weekly emails; the extension adds Never. You can change it on the search's card at any time.",
+                    },
+                    {
+                        question: "What does sharing a search include?",
+                        answer: "The link opens the same search with your extra filters too, such as your could-haves and excluded keywords. Anyone with the link can open it until it expires, after seven days.",
+                    },
+                    {
+                        question: "How do I add a note to a shortlisted listing?",
+                        answer: "Choose Add note on its card. The card turns over to your note, which saves as you type, and View details turns it back. Notes you wrote on Domain before show there too.",
+                    },
+                ],
+            },
+            {
+                id: "accounts",
                 title: "Accounts and sync",
-                body: [
-                    "An account is optional. Signing in keeps your filters, blacklist and saved searches the same on every browser you use.",
-                    "Sign in with Google, Apple, Facebook or an email and password, in any browser. On Chrome, Google, Apple and Facebook sign-in finishes in the popup; in other browsers it finishes in a sign-in tab that closes by itself.",
-                    "Saved searches sync with your Domain account while you're signed in to domain.com.au in the same browser.",
+                body: [],
+                questions: [
+                    {
+                        question: "What does signing in do?",
+                        answer: "It keeps your filters, blacklist and saved searches the same on every browser you use. Sign in with Google, Apple, Facebook or email.",
+                    },
+                    {
+                        question: "Why did sign-in open a new tab?",
+                        answer: "On Chrome, sign-in finishes in the popup. Other browsers finish it in a sign-in tab, which closes by itself.",
+                    },
+                    {
+                        question: "Where is my data kept?",
+                        answer: "In your browser. If you sign in, it's also synced to your account so your other browsers can load it. The <a href=\"/privacy/\">privacy policy</a> has the details, and <a href=\"/data-deletion/\">data deletion</a> explains how to have it deleted.",
+                    },
                 ],
             },
             {
                 id: "troubleshooting",
                 title: "Troubleshooting",
-                body: [
-                    "If the extra filters don't appear, reload the Domain page, and check that Extra Domain Filters is switched on in its preferences and in your browser's extension settings.",
-                    "If a listing is hidden and you don't know why, open the hidden listings summary at the end of the results: each listing shows the filter or blacklist entry that hides it.",
-                    "Domain changes its website from time to time, which can briefly break a feature until the extension is updated. Reporting it helps us fix it sooner.",
+                body: [],
+                questions: [
+                    {
+                        question: "The extra filters don't show up on Domain.",
+                        answer: "Reload the page, then check that Extra Domain Filters is switched on in its preferences and in your browser's extension settings.",
+                    },
+                    {
+                        question: "Something stopped working.",
+                        answer: "Domain changes its website from time to time, which can break a feature until the extension is updated. <a href=\"#contact\">Tell us</a> what happened and it'll be fixed sooner.",
+                    },
                 ],
             },
             {
                 id: "contact",
                 title: "Contact",
-                body: [
-                    `Email ${SUPPORT_EMAIL} with questions, problems or ideas. Include your browser and what you were doing on Domain when it happened.`,
-                    "You can also report a problem or request a feature on GitHub, at github.com/IronExcavater/extra-domain-filters/issues.",
-                ],
+                body: [],
             },
         ],
     },

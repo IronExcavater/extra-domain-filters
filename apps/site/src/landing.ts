@@ -13,8 +13,8 @@ import slidersSvg from "../../../packages/assets/icons/filters/sliders.svg?raw";
 import chevronSvg from "../../../packages/assets/icons/navigation/chevron.svg?raw";
 import bellSvg from "../../../packages/assets/icons/search/bell.svg?raw";
 import searchSvg from "../../../packages/assets/icons/search/search.svg?raw";
-import { BROWSERS, detectBrowser, installButton } from "./browsers";
-import { faqs, features, places, type Feature, type IconName } from "./content";
+import { BROWSERS, CHROME_WEB_STORE, detectBrowser, externalLink, FIREFOX_ADD_ONS, installButton } from "./browsers";
+import { features, places, type Feature, type IconName } from "./content";
 
 /** Real popup captures (docs/store/web: WebP copies of the 2x captures the store screenshots use). */
 const SHOTS: Record<Feature["shot"], string> = {
@@ -77,7 +77,6 @@ function heroArt(): string {
                 <div class="site-hero-shots">${shots}</div>
                 <div class="site-hero-tabs" role="tablist" aria-label="Popup pages">${tabs}</div>
             </figure>
-            <p class="site-hero-hint">${icon(chevronSvg, "site-icon site-hint-arrow")}Try the popup's tabs</p>
         </div>`;
 }
 
@@ -88,7 +87,7 @@ function hero(): string {
             <div class="site-shell site-hero-grid">
                 <div class="site-hero-copy">
                     <h1>The filters domain.com.au doesn't&nbsp;have</h1>
-                    <p class="site-hero-lede">A browser extension for house hunting on Domain. Filter by the extras you want, hide listings for good, and keep saved searches without the emails.</p>
+                    <p class="site-hero-lede">A browser extension for house hunting on Domain. Filter by the extras you want, hide listings for good, and keep searches saved without the emails.</p>
                     <div class="site-hero-actions">
                         ${installButton(browser)}
                         <a class="site-text-link" href="#browsers">Other browsers</a>
@@ -144,32 +143,19 @@ function browsers(): string {
     const ordered = [current, ...BROWSERS.filter(browser => browser !== current)];
     const rows = ordered.map(browser => {
         const isCurrent = browser === current;
+        const stores = browser.stores.map(store => externalLink(store.href, store.name, "site-store-link")).join("");
         return `
         <li class="site-browser"${isCurrent ? " data-current" : ""}>
             ${browser.logo}
-            <div class="site-browser-copy">
-                <h3>${browser.name}${isCurrent ? '<span class="site-browser-yours">You\'re using it</span>' : ""}</h3>
-                ${browser.family ? `<p>${browser.family}</p>` : ""}
-            </div>
-            <a class="site-browser-link" href="${browser.href}" target="_blank" rel="noopener noreferrer">${browser.store}<span class="site-visually-hidden"> (opens in a new tab)</span></a>
+            <h3>${browser.name}${isCurrent ? "<span class=\"site-browser-yours\">You're using it</span>" : ""}</h3>
+            <div class="site-browser-stores">${stores}</div>
         </li>`;
     }).join("");
     return `
         <section class="site-section site-shell" id="browsers">
             <h2 class="site-section-title">Get it for your browser</h2>
             <ul class="site-browsers">${rows}</ul>
-        </section>`;
-}
-
-function faq(): string {
-    return `
-        <section class="site-section site-section-mist" id="faq">
-            <div class="site-shell site-faq">
-                <h2 class="site-section-title">Questions</h2>
-                <div class="site-faq-list">
-                    ${faqs.map(item => `<details><summary>${item.question}${CHEVRON}</summary><p>${item.answer}</p></details>`).join("")}
-                </div>
-            </div>
+            <p class="site-browsers-more">Arc and other Chromium browsers install it from the ${externalLink(CHROME_WEB_STORE.href, CHROME_WEB_STORE.name)}, and Zen, LibreWolf, Waterfox and other Firefox-based browsers from ${externalLink(FIREFOX_ADD_ONS.href, FIREFOX_ADD_ONS.name)}.</p>
         </section>`;
 }
 
@@ -180,7 +166,6 @@ export function landing(): string {
             ${tour()}
             ${onDomain()}
             ${browsers()}
-            ${faq()}
         </main>`;
 }
 
@@ -197,7 +182,6 @@ function bindHero(root: HTMLElement): void {
         tab.addEventListener("click", () => {
             for (const other of tabs) other.ariaSelected = String(other === tab);
             showShot(shots, tab.dataset.heroTab ?? "", "data-hero-shot");
-            root.querySelector(".site-hero-hint")?.setAttribute("data-used", "");
         });
     }
 }

@@ -1,7 +1,7 @@
 {
   "name": "extra-domain-filters",
   "version": "1.0.0",
-  "description": "Enhance domain.com.au with extra filters to empower your search.",
+  "description": "Extra filters, a blacklist and better saved searches for house hunting on domain.com.au.",
   "author": "Niclas Rogulski",
   "type": "module",
   "private": true,

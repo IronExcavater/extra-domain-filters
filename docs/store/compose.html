@@ -315,9 +315,9 @@
     // icons are the extension's own (packages/assets/icons), inlined below.
     const SHOTS = {
         "saved-searches": {
-            title: "Every saved search, <em>one click away</em>",
-            text: "See what's new in each search, choose daily, weekly or no emails, and share any search with a link.",
-            callouts: [["search", "New listings counted for you", 960, 545], ["bell", "Daily, weekly or no emails at all", 60, 700]],
+            title: "Saved searches, <em>without the emails</em>",
+            text: "Keep a search saved with no email alerts, see its filters at a glance, and share it with your extra filters.",
+            callouts: [["share", "Share with your extra filters", 925, 545], ["bell", "Never, daily or weekly emails", 60, 700]],
         },
         filters: {
             title: "Filters <em>Domain doesn't have</em>",
@@ -341,7 +341,7 @@
     const popup = (name, className = "") => `<div class="popup ${className}"><img src="raw/${name}.png" alt=""></div>`;
     const ICON_PATHS = {
         bell: "search/bell", "could-haves": "filters/could-haves", hide: "actions/hide", person: "account/person",
-        restore: "actions/restore", search: "search/search", strata: "filters/strata", sync: "account/sync", trash: "actions/trash",
+        restore: "actions/restore", search: "search/search", share: "actions/share", strata: "filters/strata", sync: "account/sync", trash: "actions/trash",
     };
     const callout = ([icon, text, left, top, gold]) =>
         `<div class="callout${gold ? " gold" : ""}" style="left:${left}px;top:${top}px"><span data-icon="${icon}"></span>${text}</div>`;

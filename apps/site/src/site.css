@@ -50,6 +50,9 @@ img { max-width: 100%; }
 
 .site-icon { display: block; flex: 0 0 auto; height: 20px; width: 20px; }
 
+/* Links to other sites carry this mark, sized to their text (browsers.ts externalLink). */
+.site-external { display: inline-block; flex: 0 0 auto; height: 0.8em; margin-left: 0.3em; opacity: 0.65; vertical-align: -0.02em; width: 0.8em; }
+
 .site-visually-hidden { clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
 
 .site-skip-link { background: var(--site-heading); border-radius: 6px; color: #fff; left: 16px; padding: 10px 14px; position: fixed; text-decoration: none; top: -60px; z-index: 50; }
@@ -86,33 +89,35 @@ img { max-width: 100%; }
 
 .site-menu-toggle { display: none; }
 
-/* The install button: the browser's logo on a white tile, "Add to <browser>", the store it
- * opens and an external-link mark (browsers.ts installButton). */
-.site-button { align-items: center; background: var(--site-green); border-radius: 10px; color: #fff; display: inline-flex; gap: 14px; min-height: 62px; padding: 0 18px 0 11px; text-decoration: none; transition: background-color 160ms ease; white-space: nowrap; }
+/* The install button: the browser's logo on a white tile, "Add to <browser>" over the store it
+ * opens, and the external mark, which nudges toward its corner on hover. */
+.site-button { align-items: center; background: var(--site-green); border-radius: 10px; box-shadow: inset 0 -2px 0 rgb(0 0 0 / 12%); color: #fff; display: inline-flex; gap: 14px; min-height: 60px; padding: 0 18px 0 10px; text-decoration: none; transition: background-color 160ms ease, transform 120ms ease; white-space: nowrap; }
 
 .site-button:hover { background: var(--site-green-hover); }
 
-.site-button-logo { background: #fff; border-radius: 8px; display: grid; flex: 0 0 auto; height: 40px; padding: 6px; place-items: center; transition: transform 300ms var(--site-ease); width: 40px; }
+.site-button:active { transform: translateY(1px); }
 
-.site-button:hover .site-button-logo { transform: rotate(-8deg) scale(1.05); }
+.site-button-logo { background: #fff; border-radius: 7px; display: grid; flex: 0 0 auto; height: 40px; padding: 6px; place-items: center; width: 40px; }
 
 .site-button-logo img { display: block; height: 100%; width: 100%; }
 
-.site-button-text { display: grid; gap: 1px; line-height: 1.15; text-align: left; }
+.site-button-text { display: grid; gap: 2px; line-height: 1.1; text-align: left; }
 
-.site-button-text strong { font-size: 18px; font-weight: 700; }
+.site-button-text strong { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
 
-.site-button-text small { font-size: 13px; font-weight: 500; opacity: 0.86; }
+.site-button-text small { font-size: 13px; font-weight: 500; opacity: 0.88; }
 
-.site-button-external { height: 16px; margin-left: 6px; opacity: 0.8; width: 16px; }
+.site-button .site-external { height: 15px; margin-left: 2px; opacity: 0.85; transition: transform 200ms var(--site-ease); width: 15px; }
 
-.site-button-small { border-radius: 8px; gap: 10px; min-height: 40px; padding: 0 14px 0 6px; }
+.site-button:hover .site-external { transform: translate(2px, -2px); }
 
-.site-button-small .site-button-logo { border-radius: 6px; height: 28px; padding: 4px; width: 28px; }
+.site-button-small { border-radius: 8px; gap: 9px; min-height: 40px; padding: 0 13px 0 6px; }
+
+.site-button-small .site-button-logo { border-radius: 5px; height: 28px; padding: 4px; width: 28px; }
 
 .site-button-small .site-button-text strong { font-size: 15px; }
 
-.site-button-small .site-button-external { display: none; }
+.site-button-small .site-external { height: 12px; width: 12px; }
 
 .site-text-link { color: var(--site-heading); font-size: 16px; font-weight: 700; text-decoration: underline; text-decoration-color: var(--site-green); text-decoration-thickness: 2px; }
 
@@ -175,12 +180,6 @@ img { max-width: 100%; }
 
 .site-hero-tab[aria-selected="true"]:hover { background: transparent; }
 
-.site-hero-hint { align-items: center; color: var(--site-muted); display: flex; font-size: 14px; gap: 6px; justify-content: flex-end; margin: 14px 0 0; transition: opacity 300ms ease; }
-
-.site-hero-hint .site-icon { height: 16px; transform: rotate(180deg); width: 16px; }
-
-.site-hero-hint[data-used] { opacity: 0; }
-
 @keyframes site-popup-open { from { opacity: 0; transform: translateY(-8px) scale(0.97); } }
 
 @keyframes site-rise { from { opacity: 0; transform: translateY(14px); } }
@@ -242,7 +241,7 @@ img { max-width: 100%; }
 /* Where it shows up on Domain: a ruled list, not cards. */
 .site-places { display: grid; gap: 0 40px; grid-template-columns: repeat(3, minmax(0, 1fr)); list-style: none; margin: 40px 0 0; padding: 0; }
 
-.site-places li { border-top: 1px solid var(--site-rule); display: grid; gap: 6px 14px; grid-template-columns: 24px minmax(0, 1fr); padding: 24px 0 28px; }
+.site-places li { align-content: start; border-top: 1px solid var(--site-rule); display: grid; gap: 6px 14px; grid-template-columns: 24px minmax(0, 1fr); padding: 24px 0 28px; }
 
 .site-place-icon { color: var(--site-green-hover); grid-row: span 2; padding-top: 2px; }
 
@@ -253,51 +252,58 @@ img { max-width: 100%; }
 
 .site-places p { color: var(--site-text); font-size: 15px; line-height: 1.5; margin: 0; }
 
-/* Browsers: one row each, the visitor's own first and filled in; others name their store. */
-.site-browsers { display: grid; gap: 8px; list-style: none; margin: 40px 0 0; padding: 0; }
+/* Browsers: the visitor's own first and filled in; each links to every store it installs from. */
+.site-browsers { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); list-style: none; margin: 40px 0 0; padding: 0; }
 
-.site-browser { align-items: center; border: 1px solid var(--site-border); border-radius: 14px; display: grid; gap: 20px; grid-template-columns: 44px minmax(0, 1fr) auto; padding: 18px 20px 18px 22px; }
+.site-browser { align-items: center; border: 1px solid var(--site-border); border-radius: 14px; display: grid; gap: 16px; grid-template-columns: 40px minmax(0, 1fr) auto; min-height: 76px; padding: 14px 16px 14px 18px; }
 
-.site-browser > img { height: 44px; width: 44px; }
+.site-browser > img { height: 40px; width: 40px; }
 
-.site-browser h3 { align-items: center; display: flex; flex-wrap: wrap; font-size: 19px; gap: 6px 12px; letter-spacing: -0.01em; margin: 0; }
+.site-browser h3 { align-items: center; display: flex; flex-wrap: wrap; font-size: 18px; gap: 4px 10px; letter-spacing: -0.01em; margin: 0; }
 
-.site-browser p { color: var(--site-muted); font-size: 15px; line-height: 1.45; margin: 4px 0 0; }
+.site-browser-yours { background: var(--site-green); border-radius: 999px; color: #fff; font-size: 12px; font-weight: 700; letter-spacing: 0; padding: 3px 9px; }
 
-.site-browser-yours { background: var(--site-green); border-radius: 999px; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 0; padding: 3px 10px; }
+.site-browser-stores { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 
-.site-browser-link { border: 1px solid var(--site-rule); border-radius: 8px; color: var(--site-heading); font-size: 15px; font-weight: 700; padding: 11px 16px; text-decoration: none; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease; white-space: nowrap; }
+.site-store-link { align-items: center; border: 1px solid var(--site-rule); border-radius: 8px; color: var(--site-heading); display: inline-flex; font-size: 14px; font-weight: 700; padding: 9px 12px; text-decoration: none; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease; white-space: nowrap; }
 
-.site-browser-link:hover { border-color: var(--site-green); color: var(--site-green-hover); }
+.site-store-link:hover { border-color: var(--site-green); color: var(--site-green-hover); }
 
 .site-browser[data-current] { background: var(--site-green-tint); border-color: rgb(14 168 0 / 35%); }
 
-.site-browser[data-current] .site-browser-link { background: var(--site-green); border-color: var(--site-green); color: #fff; }
+.site-browser[data-current] .site-store-link:first-child { background: var(--site-green); border-color: var(--site-green); color: #fff; }
 
-.site-browser[data-current] .site-browser-link:hover { background: var(--site-green-hover); border-color: var(--site-green-hover); }
+.site-browser[data-current] .site-store-link:first-child:hover { background: var(--site-green-hover); border-color: var(--site-green-hover); }
 
-/* FAQ: native disclosures; they open smoothly where ::details-content is supported. */
-.site-faq { display: grid; gap: 40px; grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr); }
+.site-browsers-more a { white-space: nowrap; }
 
-.site-faq-list { border-top: 1px solid var(--site-rule); }
+.site-browsers-more { color: var(--site-muted); font-size: 15px; line-height: 1.6; margin: 20px 0 0; max-width: 46em; }
 
-.site-faq details { border-bottom: 1px solid var(--site-rule); }
+.site-browsers-more a,
+.site-faq-list details a { color: var(--site-heading); text-decoration-color: var(--site-green); text-decoration-thickness: 2px; }
 
-.site-faq details::details-content { block-size: 0; overflow: hidden; transition: block-size 320ms var(--site-ease), content-visibility 320ms allow-discrete; }
+.site-browsers-more a:hover,
+.site-faq-list details a:hover { color: var(--site-green-hover); }
 
-.site-faq details[open]::details-content { block-size: auto; }
+/* Questions on the Support page: native disclosures, which open smoothly where
+ * ::details-content is supported. */
+.site-faq-list { border-top: 1px solid var(--site-rule); margin-top: 4px; }
 
-.site-faq summary { align-items: center; cursor: pointer; display: flex; font-size: 18px; font-weight: 700; gap: 16px; justify-content: space-between; letter-spacing: -0.01em; list-style: none; padding: 20px 0; }
+.site-faq-list details { border-bottom: 1px solid var(--site-rule); }
 
-.site-faq summary::-webkit-details-marker { display: none; }
+.site-faq-list details::details-content { block-size: 0; overflow: hidden; transition: block-size 320ms var(--site-ease), content-visibility 320ms allow-discrete; }
 
-.site-faq summary:hover { color: var(--site-green-hover); }
+.site-faq-list details[open]::details-content { block-size: auto; }
 
-.site-faq details[open] .site-chevron { transform: rotate(180deg); }
+.site-faq-list summary { align-items: center; cursor: pointer; display: flex; font-size: 17px; font-weight: 700; gap: 16px; justify-content: space-between; letter-spacing: -0.01em; line-height: 1.35; list-style: none; padding: 17px 0; }
 
-.site-faq details p { color: var(--site-text); font-size: 16px; line-height: 1.6; margin: 0; max-width: 40em; padding: 0 36px 22px 0; }
+.site-faq-list summary::-webkit-details-marker { display: none; }
 
-.site-faq details a { color: var(--site-heading); text-decoration-color: var(--site-green); text-decoration-thickness: 2px; }
+.site-faq-list summary:hover { color: var(--site-green-hover); }
+
+.site-faq-list details[open] .site-chevron { transform: rotate(180deg); }
+
+.site-faq-list details p { color: var(--site-text); font-size: 16px; line-height: 1.65; margin: 0; max-width: 40em; padding: 0 36px 20px 0; }
 
 /* Footer: the site's pages, grouped, then the copyright line. */
 .site-footer { background: var(--site-surface); border-top: 1px solid var(--site-border); }
@@ -318,11 +324,11 @@ img { max-width: 100%; }
 
 .site-footer a:hover { color: var(--site-green-hover); text-decoration: underline; }
 
-.site-footer-bottom { align-items: center; border-top: 1px solid var(--site-border); color: var(--site-muted); display: flex; flex-wrap: wrap; font-size: 14px; gap: 8px 24px; justify-content: space-between; padding: 22px 0 30px; }
+.site-footer-browser { align-items: center; display: inline-flex; }
 
-.site-footer-bottom p { margin: 0; }
+.site-footer-browser img { height: 18px; margin-right: 9px; width: 18px; }
 
-.site-footer-bottom a { font-size: 14px; }
+.site-footer-bottom { border-top: 1px solid var(--site-border); color: var(--site-muted); font-size: 14px; line-height: 1.5; margin: 0; padding: 22px 0 30px; }
 
 /* Support and the legal pages. The legal pages share tabs; each page's head rises in, and its
  * contents list follows the reading position (main.ts bindToc). */
@@ -413,19 +419,21 @@ img { max-width: 100%; }
     .site-nav-links { gap: 22px; }
 }
 
+@media (width <= 1100px) {
+    .site-browsers { grid-template-columns: minmax(0, 1fr); }
+}
+
 @media (width <= 960px) {
     :root { --site-section: 88px; }
 
     .site-hero-grid,
-    .site-tour,
-    .site-faq { grid-template-columns: minmax(0, 1fr); }
+    .site-tour { grid-template-columns: minmax(0, 1fr); }
     .site-hero { padding: 56px 0 64px; }
     .site-hero-grid { gap: 40px; }
     .site-hero-art { margin: 0 auto; max-width: 640px; width: 100%; }
     .site-tour { gap: 32px; }
     .site-tour-shot { position: relative; top: auto; }
     .site-places { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .site-faq { gap: 28px; }
     .site-footer-top { grid-template-columns: minmax(0, 1fr); gap: 36px; }
 }
 
@@ -471,20 +479,18 @@ img { max-width: 100%; }
     .site-toolbar-extension { height: 34px; width: 34px; }
     .site-hero-popup { width: 100%; }
     .site-hero-popup::before { right: 17px; }
-    .site-hero-hint { justify-content: center; }
     .site-tour { margin-top: 28px; }
     .site-tour-detail .site-ticks { padding-left: 0; }
     .site-places { grid-template-columns: minmax(0, 1fr); margin-top: 28px; }
     .site-browsers { margin-top: 28px; }
-    .site-browser { gap: 6px 14px; grid-template-columns: 36px minmax(0, 1fr); padding: 16px; }
+    .site-browser { gap: 10px 14px; grid-template-columns: 36px minmax(0, 1fr); padding: 14px 16px; }
     .site-browser > img { height: 36px; width: 36px; }
     .site-browser h3 { font-size: 17px; }
-    .site-browser p { font-size: 14px; }
-    .site-browser-link { grid-column: 2; justify-self: start; margin-top: 8px; padding: 9px 14px; }
-    .site-faq summary { font-size: 17px; }
+    .site-browser-stores { grid-column: 1 / -1; justify-content: flex-start; }
+    .site-faq-list summary { font-size: 16px; }
+    .site-faq-list details p { font-size: 15px; padding-right: 0; }
     .site-footer-top { padding-top: 44px; }
     .site-footer-nav { gap: 28px 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .site-footer-bottom { align-items: start; flex-direction: column; }
     .site-legal-copy h1 { font-size: 38px; }
     .site-legal-intro { font-size: 17px; }
     .site-legal-section { padding-top: 32px; }
@@ -503,7 +509,8 @@ img { max-width: 100%; }
     .site-legal-head > *,
     .site-legal-section { animation: none; }
 
-    .site-button-logo,
+    .site-button,
+    .site-button .site-external,
     .site-nav-bar.is-ready,
     .site-toc-bar.is-ready,
     .site-tour-detail,
@@ -511,7 +518,7 @@ img { max-width: 100%; }
     .site-tour-shot img,
     .site-chevron,
     .site-navigation,
-    .site-faq details::details-content { transition: none; }
+    .site-faq-list details::details-content { transition: none; }
 
     ::view-transition-group(*),
     ::view-transition-old(*),

@@ -9,6 +9,9 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
+        "@browser-logos/brave": "3.0.13",
+        "@browser-logos/opera-gx": "1.0.7",
+        "@browser-logos/vivaldi": "2.1.10",
         "@extra-domain-filters/shared": "workspace:*"
     },
     "devDependencies": {
