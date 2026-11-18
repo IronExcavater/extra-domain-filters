@@ -162,7 +162,7 @@ export function createFiltersView(options: FiltersViewOptions): HTMLElement {
     // Could-haves
     const couldHaves = createCard(
         "Could-haves",
-        "Tick the extras you'd like. Listings that mention one get a gold tag in results and a gold pin on the map.",
+        "Tick the extras you'd like. Listings that mention one are tagged on their photo and get a gold pin on the map.",
         replaceWithCouldHavesFilterIcon,
         level,
     );

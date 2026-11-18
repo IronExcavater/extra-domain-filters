@@ -1,11 +1,9 @@
-import { SUPPORT_EMAIL } from "@extra-domain-filters/shared/config/links";
-
 export { CHROME_WEB_STORE_URL, GITHUB_URL, SUPPORT_EMAIL } from "@extra-domain-filters/shared/config/links";
 
 export type SiteRoute = "/" | "/support/" | "/privacy/" | "/terms/" | "/data-deletion/";
 
 /** The extension's own icons the landing page uses (landing.ts ICONS). */
-export type IconName = "bell" | "bin" | "could-haves" | "search" | "settings" | "sliders" | "star" | "sync";
+export type IconName = "bell" | "bin" | "could-haves" | "sync";
 
 export interface Feature {
     /** Describes the popup capture shown with it. */
@@ -30,10 +28,10 @@ export const features: readonly Feature[] = [
         alt: "The extension's Filters page: excluded keywords, a strata limit of $1,200 a quarter, and property types",
         bullets: [
             "Tick could-haves like a pool, solar or a dishwasher, or add your own",
-            "Listings with one get a gold tag in results and a gold pin on the map",
+            "Listings with one are tagged on their photo and get a gold pin on the map",
             "Hide listings whose description mentions words like \"tenanted\" or \"studio\"",
             "Set the most you'll pay in strata fees a quarter",
-            "Untick a property type and listings described as one go too, not just those tagged as it",
+            "Untick a property type and listings described as one go too, not only those tagged as it",
         ],
     },
     {
@@ -80,20 +78,18 @@ export const features: readonly Feature[] = [
 ];
 
 export interface Place {
-    /** One of the extension's icons, or its own toolbar icon. */
-    icon: IconName | "extension";
+    /** Picks its picture of the extension's own UI there (landing.ts PLACE_ART). */
+    id: "filter-panel" | "results" | "saved-searches" | "shortlist";
     text: string;
     title: string;
 }
 
 /** What the extension adds to each part of domain.com.au. */
 export const places: readonly Place[] = [
-    { icon: "search", title: "Search results", text: "Gold tags and gold map pins for your could-haves, a bin on every listing, and a summary of what's hidden at the end of each page." },
-    { icon: "sliders", title: "Filter panel", text: "Could-haves, excluded keywords and a strata limit, under Domain's own filters." },
-    { icon: "star", title: "Shortlist", text: "Notes on your cards that save as you type, and select several listings to blacklist or remove at once." },
-    { icon: "bell", title: "Saved searches", text: "Each search's filters on its card, buy and rent tabs, sorting, and a share link that keeps your extra filters." },
-    { icon: "settings", title: "Your profile", text: "Preferences for every feature, next to Domain's own settings." },
-    { icon: "extension", title: "Toolbar button", text: "Your saved searches, filters and blacklist, from any tab." },
+    { id: "results", title: "Search results", text: "Listings with your could-haves are tagged on their photo, every listing gets a bin, and each page ends with what's hidden and why." },
+    { id: "filter-panel", title: "Filter panel", text: "Could-haves, excluded keywords and a strata limit sit under Domain's own filters and apply to every search." },
+    { id: "shortlist", title: "Shortlist", text: "Turn a card over to write a note on it. It saves as you type, and notes you wrote on Domain before show there too." },
+    { id: "saved-searches", title: "Saved searches", text: "Set a search's emails to Never, see its filters on its card, and share it with your extra filters included." },
 ];
 
 export interface Faq {
@@ -121,7 +117,7 @@ export const EFFECTIVE_DATE = "12 August 2026";
 export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = {
     "/support/": {
         title: "Support",
-        intro: "Answers to common questions about Extra Domain Filters, and how to reach us if yours isn't here.",
+        intro: "Answers about filters, the blacklist, saved searches and your account. If yours isn't here, <a href=\"#contact\">contact us</a>.",
         sections: [
             {
                 id: "getting-started",
@@ -142,7 +138,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                     },
                     {
                         question: "Which browsers does it work in?",
-                        answer: "Chrome, Edge, Firefox, Opera and Safari on Mac. Brave, Vivaldi, Arc and other Chromium browsers install it from the Chrome Web Store, and Zen, LibreWolf and other Firefox-based browsers from Firefox Add-ons. <a href=\"/#browsers\">Get it for your browser</a>.",
+                        answer: "Chrome, Edge, Firefox and Opera, and Safari on Mac once it's in the App Store. Brave, Vivaldi, Arc and other Chromium browsers install it from the Chrome Web Store, and Zen, LibreWolf and other Firefox-based browsers from Firefox Add-ons. <a href=\"/#browsers\">Get it for your browser</a>.",
                     },
                 ],
             },
@@ -153,7 +149,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 questions: [
                     {
                         question: "What are could-haves?",
-                        answer: "Extras you'd like but don't need, such as a pool or a dishwasher. Listings that mention one get a gold tag in results and a gold pin on the map. Tick the ones you want, add your own (\"ocean view / sea view\" matches either), or hide listings that mention none of them.",
+                        answer: "Extras you'd like but don't need, such as a pool or a dishwasher. Listings that mention one are tagged on their photo and get a gold pin on the map. Tick the ones you want, add your own (\"ocean view / sea view\" matches either), or hide listings that mention none of them.",
                     },
                     {
                         question: "How do the keyword and strata filters work?",
@@ -237,26 +233,21 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                     },
                     {
                         question: "Something stopped working.",
-                        answer: "Domain changes its website from time to time, which can break a feature until the extension is updated. <a href=\"#contact\">Tell us</a> what happened and it'll be fixed sooner.",
+                        answer: "Domain changes its website from time to time, which can break a feature until the extension is updated. <a href=\"#contact\">Contact us</a> with what happened and it'll be fixed sooner.",
                     },
                 ],
-            },
-            {
-                id: "contact",
-                title: "Contact",
-                body: [],
             },
         ],
     },
     "/privacy/": {
         title: "Privacy Policy",
-        intro: "This Privacy Policy explains how Extra Domain Filters handles personal information when you use the browser extension or this website.",
+        intro: "What Extra Domain Filters collects, what it's used for, where it's kept, and the choices you have.",
         sections: [
             {
                 id: "who-we-are",
                 title: "Who we are",
                 body: [
-                    `Extra Domain Filters is operated by Niclas Rogulski (we, us and our). You can contact us about privacy at ${SUPPORT_EMAIL}.`,
+                    "Extra Domain Filters is operated by Niclas Rogulski (we, us and our). You can <a href=\"/support/#contact\">contact us</a> about privacy at any time.",
                     "This policy applies to the Extra Domain Filters browser extension and this website. It does not apply to domain.com.au, Chrome, Firebase, Google, Meta, Apple or another third-party service, each of which has its own privacy practices.",
                 ],
             },
@@ -300,8 +291,8 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 title: "Your choices, access and correction",
                 body: [
                     "You can change many preferences in the extension, disable optional analytics or diagnostics in its settings, and remove local data by uninstalling the extension or using Chrome's extension-data controls.",
-                    `To request access to, correction of or deletion of personal information we hold, email ${SUPPORT_EMAIL}. For deletion instructions, see our Data Deletion page. We may need to verify that a request relates to your account before acting on it.`,
-                    "If you believe we have mishandled personal information, please contact us first so we can investigate. Privacy rights and complaint options may vary based on where you live.",
+                    "To request access to, correction of or deletion of personal information we hold, <a href=\"/support/#contact\">contact us</a>. For deletion, follow the <a href=\"/data-deletion/\">data deletion instructions</a>. We may need to verify that a request relates to your account before acting on it.",
+                    "If you believe we have mishandled personal information, please <a href=\"/support/#contact\">contact us</a> first so we can investigate. Privacy rights and complaint options may vary based on where you live.",
                 ],
             },
             {
@@ -322,14 +313,14 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 id: "contact",
                 title: "Contact",
                 body: [
-                    `For privacy questions, access, correction, complaints or deletion requests, email Niclas Rogulski at ${SUPPORT_EMAIL}.`,
+                    "For privacy questions, access, correction, complaints or deletion requests, contact Niclas Rogulski using the <a href=\"/support/#contact\">contact details on the Support page</a>.",
                 ],
             },
         ],
     },
     "/terms/": {
         title: "Terms of Service",
-        intro: "These Terms of Service set out the rules for using Extra Domain Filters and this website. They are effective from 12 August 2026.",
+        intro: "The terms you agree to when you use Extra Domain Filters or this website.",
         sections: [
             {
                 id: "agreement",
@@ -351,7 +342,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 id: "accounts",
                 title: "Accounts and security",
                 body: [
-                    "Some features require an account. You are responsible for providing accurate information, safeguarding your credentials and activity performed through your account. Tell us promptly if you believe your account has been accessed without permission.",
+                    "Some features require an account. You are responsible for providing accurate information, safeguarding your credentials and activity performed through your account. <a href=\"/support/#contact\">Tell us</a> promptly if you believe your account has been accessed without permission.",
                     "Your use of Google, Facebook or Apple sign-in is also subject to the relevant provider's terms and policies.",
                 ],
             },
@@ -426,20 +417,20 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 id: "contact",
                 title: "Contact",
                 body: [
-                    `Questions about these Terms can be sent to Niclas Rogulski at ${SUPPORT_EMAIL}.`,
+                    "Send questions about these Terms to Niclas Rogulski using the <a href=\"/support/#contact\">contact details on the Support page</a>.",
                 ],
             },
         ],
     },
     "/data-deletion/": {
         title: "Data Deletion Instructions",
-        intro: "You can ask us to delete personal information associated with your Extra Domain Filters account. This page explains the manual request process used by the service today.",
+        intro: "How to have your account and synced data deleted, and what a request covers.",
         sections: [
             {
                 id: "make-a-request",
                 title: "How to make a request",
                 body: [
-                    `Email ${SUPPORT_EMAIL} from the email address used for your Extra Domain Filters account. Use the subject line: Extra Domain Filters data deletion request.`,
+                    "Email us at the address in <a href=\"/support/#contact\">Support's contact details</a>, from the email address used for your Extra Domain Filters account. Use the subject line: Extra Domain Filters data deletion request.",
                     "Include the account email address and, if relevant, any shared-search links you created. Do not include your password, recovery codes, OAuth tokens or other credentials in an email.",
                 ],
             },
@@ -455,7 +446,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 title: "What a verified request covers",
                 body: [
                     "A verified request can cover the Firebase Authentication account, synced Firestore settings, saved-search records, blacklist records, owned shared-search records where identifiable, and eligible telemetry held by the service. Some records may remain temporarily in backups or provider systems before being overwritten under their normal retention processes.",
-                    "Uninstalling the extension or using Chrome's extension-data controls removes data stored locally in Chrome on that device. It does not automatically remove cloud-synced data, so email us if you also want the account and synced data deleted.",
+                    "Uninstalling the extension or using Chrome's extension-data controls removes data stored locally in Chrome on that device. It does not automatically remove cloud-synced data, so <a href=\"/support/#contact\">contact us</a> if you also want the account and synced data deleted.",
                 ],
             },
             {
@@ -469,7 +460,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                 id: "contact",
                 title: "Contact",
                 body: [
-                    `For questions about a deletion request, contact Niclas Rogulski at ${SUPPORT_EMAIL}.`,
+                    "For questions about a deletion request, contact Niclas Rogulski using the <a href=\"/support/#contact\">contact details on the Support page</a>.",
                 ],
             },
         ],

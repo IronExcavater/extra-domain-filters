@@ -1,5 +1,5 @@
 /* Map pins (map/pins.ts): pins of hidden listings go, and pins of listings matching a
- * could-have turn gold, like the could-have tags in results. */
+ * could-have turn gold, so they stand out from Domain's own pins. */
 gmp-advanced-marker[data-edf-pin="hidden"] {
     display: none !important;
 }

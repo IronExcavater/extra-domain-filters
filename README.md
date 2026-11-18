@@ -16,7 +16,7 @@ Tick the extras you'd love 🏊, **hide the listings you never want to see again
 
 - **Tick the extras you'd like**, such as a pool, a dishwasher or double glazing.
 - **Add your own** 🖊️. "Ocean view / sea view" matches either phrase.
-- Listings that mention one get a **gold tag** in results and a **gold pin** on the map 📍.
+- Listings that mention one are **tagged on their photo** and get a **gold pin** on the map 📍.
 - Hide listings that mention none of them, or **reset** the list to the defaults.
 
 ### 🧹 Filters Domain doesn't have
@@ -59,7 +59,7 @@ Tick the extras you'd love 🏊, **hide the listings you never want to see again
 | **Edge**            |          ✅           |                      ✅                       | [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/search/extra%20domain%20filters) or the [Chrome Web Store](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg) |
 | **Firefox**         |          ✅           |                      ✅                       | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/search/?q=extra%20domain%20filters)                   |
 | **Opera, Opera GX** |          ✅           |                      ✅                       | [Opera add-ons](https://addons.opera.com/en/search/?query=extra%20domain%20filters) or the [Chrome Web Store](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg) |
-| **Safari for Mac**  |          ✅           |                      ✅                       | [Build it for Safari](CONTRIBUTING.md#build-for-each-browser)                |
+| **Safari for Mac**  |          ✅           |                      ✅                       | App Store (coming soon); until then, [build it yourself](CONTRIBUTING.md#build-for-each-browser) |
 | **Brave, Vivaldi**  |          ✅           |                      ✅                       | [Chrome Web Store](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg)                      |
 
 On Chrome, Google, Apple and Facebook sign-in finishes **right in the popup**; in other browsers it finishes **in a sign-in tab** that closes by itself.

@@ -3,18 +3,18 @@ import filtersMoreShot from "../../../docs/store/web/filters-more.webp";
 import filtersShot from "../../../docs/store/web/filters.webp";
 import savedSearchesShot from "../../../docs/store/web/saved-searches.webp";
 import signInShot from "../../../docs/store/web/sign-in.webp";
-import settingsSvg from "../../../packages/assets/icons/account/settings.svg?raw";
 import syncSvg from "../../../packages/assets/icons/account/sync.svg?raw";
 import checkSvg from "../../../packages/assets/icons/actions/check.svg?raw";
+import closeSvg from "../../../packages/assets/icons/actions/close.svg?raw";
 import starSvg from "../../../packages/assets/icons/actions/star.svg?raw";
 import trashSvg from "../../../packages/assets/icons/actions/trash.svg?raw";
 import couldHavesSvg from "../../../packages/assets/icons/filters/could-haves.svg?raw";
-import slidersSvg from "../../../packages/assets/icons/filters/sliders.svg?raw";
+import strataSvg from "../../../packages/assets/icons/filters/strata.svg?raw";
 import chevronSvg from "../../../packages/assets/icons/navigation/chevron.svg?raw";
 import bellSvg from "../../../packages/assets/icons/search/bell.svg?raw";
-import searchSvg from "../../../packages/assets/icons/search/search.svg?raw";
-import { BROWSERS, CHROME_WEB_STORE, detectBrowser, externalLink, FIREFOX_ADD_ONS, installButton } from "./browsers";
-import { features, places, type Feature, type IconName } from "./content";
+import { detectBrowser, externalLink, installButton, STORES } from "./browsers";
+import { features, places, type Feature, type IconName, type Place } from "./content";
+import listingPhoto from "./images/listing-photo.webp";
 
 /** Real popup captures (docs/store/web: WebP copies of the 2x captures the store screenshots use). */
 const SHOTS: Record<Feature["shot"], string> = {
@@ -38,10 +38,6 @@ const ICONS: Record<IconName, string> = {
     bell: icon(bellSvg),
     bin: icon(trashSvg),
     "could-haves": icon(couldHavesSvg),
-    search: icon(searchSvg),
-    settings: icon(settingsSvg),
-    sliders: icon(slidersSvg),
-    star: icon(starSvg),
     sync: icon(syncSvg),
 };
 const CHECK = icon(checkSvg, "site-icon site-check");
@@ -86,8 +82,8 @@ function hero(): string {
         <section class="site-hero">
             <div class="site-shell site-hero-grid">
                 <div class="site-hero-copy">
-                    <h1>The filters domain.com.au doesn't&nbsp;have</h1>
-                    <p class="site-hero-lede">A browser extension for house hunting on Domain. Filter by the extras you want, hide listings for good, and keep searches saved without the emails.</p>
+                    <h1>Domain, with the filters it's&nbsp;missing</h1>
+                    <p class="site-hero-lede">Tick the extras you're after, like a pool or solar, set a strata limit, and hide listings you've ruled out for good. It all works inside domain.com.au's own search.</p>
                     <div class="site-hero-actions">
                         ${installButton(browser)}
                         <a class="site-text-link" href="#browsers">Other browsers</a>
@@ -121,10 +117,55 @@ function tour(): string {
         </section>`;
 }
 
+// The extension's could-have tag sparkle (extension: listing-cards/render/preferenceTags.ts).
+const SPARKLE = '<svg viewBox="0 0 16 13" aria-hidden="true"><path fill="currentColor" d="M8 1.5l1.4 3.6 3.6 1.4-3.6 1.4L8 11.5 6.6 7.9 3 6.5l3.6-1.4L8 1.5Z"/></svg>';
+const CLOSE = icon(closeSvg, "site-icon");
+
+/**
+ * Pictures of what the extension puts on each part of Domain, drawn from its own UI and labels
+ * (could-have tags on the photo, the hidden-listings summary, the filter cards, the note side of
+ * a shortlist card, the alert editor). They're decoration: each place's text says the same.
+ */
+const PLACE_ART: Record<Place["id"], string> = {
+    results: `
+        <div class="site-art-listing">
+            <div class="site-art-photo">
+                <img src="${listingPhoto}" alt="" width="640" height="480" loading="lazy" decoding="async">
+                <span class="site-art-photo-actions"><i>${icon(starSvg)}</i><i class="is-extension">${icon(trashSvg)}</i></span>
+                <span class="site-art-tags"><b class="is-domain">New</b><b>${SPARKLE}Pool</b><b>${SPARKLE}Solar</b></span>
+            </div>
+            <div class="site-art-lines"><i></i><i></i></div>
+        </div>
+        <div class="site-art-summary"><strong>3 listings hidden</strong><span>Show${CHEVRON}</span></div>`,
+    "filter-panel": `
+        <div class="site-art-card">
+            <p class="site-art-card-title">${icon(couldHavesSvg)}Could-haves</p>
+            <div class="site-art-chips"><span>Pool${CLOSE}</span><span>Solar${CLOSE}</span><span>Dishwasher${CLOSE}</span></div>
+        </div>
+        <div class="site-art-card">
+            <p class="site-art-card-title">${icon(strataSvg)}Strata fees</p>
+            <div class="site-art-slider"><i></i><b></b></div>
+            <p class="site-art-card-value">Up to $1,200 a quarter</p>
+        </div>`,
+    shortlist: `
+        <div class="site-art-note">
+            <p class="site-art-note-head"><strong>Your note</strong><span>Saved 3:12 pm</span></p>
+            <p class="site-art-note-text">Ask about the strata report and the second car space. Inspection Saturday.</p>
+            <span class="site-art-button">View details</span>
+        </div>`,
+    "saved-searches": `
+        <div class="site-art-card site-art-alert">
+            <p class="site-art-alert-title">${icon(bellSvg)}Edit property alert</p>
+            <p class="site-art-alert-text">How often would you like to receive email alerts for this search?</p>
+            <div class="site-art-select"><span>Never</span>${CHEVRON}</div>
+            <div class="site-art-actions"><span class="site-art-button">Cancel</span><span class="site-art-button is-primary">Update</span></div>
+        </div>`,
+};
+
 function onDomain(): string {
     const items = places.map(place => `
-        <li>
-            <span class="site-place-icon">${place.icon === "extension" ? '<img src="/icons/brand/icon-48.png" alt="" width="22" height="22">' : ICONS[place.icon]}</span>
+        <li class="site-place">
+            <div class="site-place-art site-place-art-${place.id}" aria-hidden="true">${PLACE_ART[place.id]}</div>
             <h3>${place.title}</h3>
             <p>${place.text}</p>
         </li>`).join("");
@@ -137,25 +178,30 @@ function onDomain(): string {
         </section>`;
 }
 
-/** Every browser, with where to get it; the visitor's own comes first, with the main button. */
+/**
+ * Every store it's on, each with the browsers that install from it first. The visitor's store
+ * is filled in and its button names their browser.
+ */
 function browsers(): string {
-    const current = detectBrowser();
-    const ordered = [current, ...BROWSERS.filter(browser => browser !== current)];
-    const rows = ordered.map(browser => {
-        const isCurrent = browser === current;
-        const stores = browser.stores.map(store => externalLink(store.href, store.name, "site-store-link")).join("");
+    const visitor = detectBrowser();
+    const cards = STORES.map(store => {
+        const isCurrent = store === visitor.store;
+        const chips = store.browsers.map(item => item === visitor.browser
+            ? `<li data-current>${item.logo}${item.name}<span class="site-visually-hidden"> (your browser)</span></li>`
+            : `<li>${item.logo}${item.name}</li>`).join("");
+        const action = isCurrent ? visitor.browser.action : store.browsers[0].action;
         return `
-        <li class="site-browser"${isCurrent ? " data-current" : ""}>
-            ${browser.logo}
-            <h3>${browser.name}${isCurrent ? "<span class=\"site-browser-yours\">You're using it</span>" : ""}</h3>
-            <div class="site-browser-stores">${stores}</div>
+        <li class="site-store"${isCurrent ? " data-current" : ""}>
+            <h3>${store.name}</h3>
+            <ul class="site-store-browsers" aria-label="Browsers that install from the ${store.name}">${chips}</ul>
+            ${store.note ? `<p class="site-store-note">${store.note}</p>` : ""}
+            ${store.href ? externalLink(store.href, action, "site-store-button") : '<span class="site-store-soon">Coming soon</span>'}
         </li>`;
     }).join("");
     return `
         <section class="site-section site-shell" id="browsers">
             <h2 class="site-section-title">Get it for your browser</h2>
-            <ul class="site-browsers">${rows}</ul>
-            <p class="site-browsers-more">Arc and other Chromium browsers install it from the ${externalLink(CHROME_WEB_STORE.href, CHROME_WEB_STORE.name)}, and Zen, LibreWolf, Waterfox and other Firefox-based browsers from ${externalLink(FIREFOX_ADD_ONS.href, FIREFOX_ADD_ONS.name)}.</p>
+            <ul class="site-stores">${cards}</ul>
         </section>`;
 }
 

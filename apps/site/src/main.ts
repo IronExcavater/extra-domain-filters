@@ -1,6 +1,6 @@
 import "./site.css";
 
-import { detectBrowser, externalLink, installButton, MAIN_BROWSERS } from "./browsers";
+import { detectBrowser, externalLink, installButton, STORES } from "./browsers";
 import {
     EFFECTIVE_DATE,
     GITHUB_URL,
@@ -32,14 +32,6 @@ const SECTIONS = [
 ] as const;
 
 const ISSUES_URL = `${GITHUB_URL}/issues`;
-
-function escapeHtml(value: string): string {
-    return value.replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
 
 function pageTitle(route: SiteRoute): string {
     return route === "/" ? "Extra Domain Filters" : `${legalPages[route].title} | Extra Domain Filters`;
@@ -93,7 +85,12 @@ function footer(): string {
                     </div>
                     <nav class="site-footer-nav" aria-label="Site pages">
                         ${group("Extension", ['<a href="/#features">Features</a>', '<a href="/#on-domain">Right inside Domain</a>', '<a href="/#browsers">Browsers</a>'])}
-                        ${group("Get it", MAIN_BROWSERS.map(browser => externalLink(browser.stores[0].href, `${browser.logo}${browser.name}`, "site-footer-browser")))}
+                        ${group("Get it", STORES.map(store => {
+                            const label = `${store.browsers[0].logo}${store.browsers[0].name}`;
+                            return store.href
+                                ? externalLink(store.href, label, "site-footer-browser")
+                                : `<span class="site-footer-browser">${label}<small>Coming soon</small></span>`;
+                        }))}
                         ${group("Help", ['<a href="/support/">Questions</a>', '<a href="/support/#contact">Contact</a>', externalLink(ISSUES_URL, "Report a problem"), externalLink(GITHUB_URL, "Source code")])}
                         ${group("Legal", LEGAL_TABS.map(([href, , label]) => `<a href="${href}">${label}</a>`))}
                     </nav>
@@ -103,19 +100,21 @@ function footer(): string {
         </footer>`;
 }
 
-/** Support's Contact section: the address to copy or open, and GitHub issues. */
-function contactCard(): string {
+/**
+ * Support's contact details, beside the questions (under the contents list) on wide screens and
+ * after them on narrow ones. Every "contact us" on the site links here (/support/#contact).
+ */
+function contactPanel(): string {
     return `
-        <div class="site-contact">
-            <div class="site-contact-row">
-                <div><p class="site-contact-label">Email</p><a class="site-contact-value" href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></div>
+        <section class="site-contact" id="contact" aria-labelledby="site-contact-title">
+            <h2 id="site-contact-title">Contact</h2>
+            <p>Questions, problems or ideas. Say which browser you use and what you were doing on Domain.</p>
+            <div class="site-contact-email">
+                <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a>
                 <button class="site-contact-copy" type="button" data-copy="${SUPPORT_EMAIL}">Copy</button>
             </div>
-            <div class="site-contact-row">
-                <div><p class="site-contact-label">GitHub</p>${externalLink(ISSUES_URL, "Report a problem or ask for a feature", "site-contact-value")}</div>
-            </div>
-            <p class="site-contact-note">Say which browser you use and what you were doing on Domain when it happened.</p>
-        </div>`;
+            ${externalLink(ISSUES_URL, "Report a problem on GitHub", "site-contact-github")}
+        </section>`;
 }
 
 /** Questions that open to their answers (trusted copy from content.ts, which may hold links). */
@@ -133,13 +132,13 @@ function legalTabs(route: SiteRoute): string {
         </nav>`;
 }
 
+/** Support and the legal pages. Their copy is trusted HTML from content.ts, which may hold links. */
 function legalPage(route: PageRoute, page: LegalPage): string {
     const toc = page.sections.map(section => `<li><a href="#${section.id}" data-toc="${section.id}">${section.title}</a></li>`).join("");
     const sections = page.sections.map(section => `
         <section id="${section.id}" class="site-legal-section">
             <h2>${section.title}</h2>
-            ${route === "/support/" && section.id === "contact" ? contactCard() : ""}
-            ${section.body.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join("")}
+            ${section.body.map(paragraph => `<p>${paragraph}</p>`).join("")}
             ${section.questions ? faqList(section.questions) : ""}
         </section>`).join("");
     const isLegal = LEGAL_ROUTES.has(route);
@@ -153,6 +152,7 @@ function legalPage(route: PageRoute, page: LegalPage): string {
                         <summary>On this page${CHEVRON}</summary>
                         <ol>${toc}<li class="site-toc-bar" aria-hidden="true"></li></ol>
                     </details>
+                    ${route === "/support/" ? contactPanel() : ""}
                 </aside>
                 <article class="site-legal-copy">
                     <header class="site-legal-head">
