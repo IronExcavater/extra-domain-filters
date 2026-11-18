@@ -20,6 +20,7 @@ export interface SelectionAction {
 
 const CHECKBOX_TRANSITION_MS = 160;
 const MOTION: KeyframeAnimationOptions = { duration: 240, easing: "cubic-bezier(0.2, 0, 0, 1)" };
+const FADE: KeyframeAnimationOptions = { duration: 180, easing: "ease" };
 const pendingHides = new WeakMap<HTMLButtonElement, Animation>();
 
 type SelectAllState = "all" | "none" | "some";
@@ -41,14 +42,6 @@ function getControlButton(
     button.dataset.edfSelectionControl = key;
     button.dataset.edfSelectionVisible = "false";
     button.hidden = true;
-    if (key === "select-all") {
-        // A small checkbox mirroring the cards' own: empty, part-filled or ticked.
-        const box = document.createElement("span");
-        box.className = "edf-select-all-box";
-        box.ariaHidden = "true";
-        box.append(createSvgIcon(replaceWithCheckIcon, "edf-select-all-tick"));
-        button.append(box);
-    }
     return button;
 }
 
@@ -117,8 +110,7 @@ function setControlVisible(button: HTMLButtonElement, visible: boolean): void {
     };
 }
 
-/** Changes a button's label by rolling the old one up and the new one in, while the button
- * eases to its new width. */
+/** Changes a button's label with a plain crossfade, while the button eases to its new width. */
 function setControlLabel(button: HTMLButtonElement, text: string): void {
     const current = button.querySelector<HTMLElement>(":scope > .edf-selection-action-label:not([data-leaving])");
     if (current?.textContent === text) return;
@@ -139,11 +131,8 @@ function setControlLabel(button: HTMLButtonElement, text: string): void {
     current.after(next);
     const to = button.getBoundingClientRect().width;
     if (from !== to) button.animate([{ width: `${from}px` }, { width: `${to}px` }], MOTION);
-    current.animate(
-        [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-80%)" }],
-        MOTION,
-    ).onfinish = () => current.remove();
-    next.animate([{ opacity: 0, transform: "translateY(80%)" }, { opacity: 1, transform: "none" }], MOTION);
+    current.animate([{ opacity: 1 }, { opacity: 0 }], FADE).onfinish = () => current.remove();
+    next.animate([{ opacity: 0 }, { opacity: 1 }], FADE);
 }
 
 export function replaceSelection(selection: Set<string>, ids: readonly string[]): void {
@@ -202,7 +191,6 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     const selectedVisibleCount = visible.filter(id => selected.has(id)).length;
     const selectAllButton = getControlButton(options.controls, "select-all", options.buttonClassName);
     const clearButton = getControlButton(options.controls, "clear", options.buttonClassName);
-    let selectAllHandledOnPointer = false;
 
     const toggleVisibleSelection = (): void => {
         options.onSelectionChange(
@@ -215,20 +203,24 @@ export function renderSelectionControls(options: SelectionControlOptions): void 
     const selectAllState: SelectAllState = selectedVisibleCount === 0
         ? "none"
         : selectedVisibleCount === visible.length ? "all" : "some";
-    selectAllButton.dataset.state = selectAllState;
     selectAllButton.ariaPressed = selectAllState === "some" ? "mixed" : String(selectAllState === "all");
     setControlLabel(selectAllButton, selectAllState === "all" ? "Deselect all" : "Select all");
     setControlVisible(selectAllButton, visible.length > 0);
+    // It acts on pointer down, so it answers at once; the click that follows is then skipped.
+    // The flag sits on the button: the controls can re-render between the two events.
     selectAllButton.onpointerdown = event => {
         event.preventDefault();
         event.stopPropagation();
-        selectAllHandledOnPointer = true;
+        selectAllButton.dataset.edfHandledOnPointer = "true";
         toggleVisibleSelection();
     };
     selectAllButton.onclick = event => {
         event.preventDefault();
         event.stopPropagation();
-        if (selectAllHandledOnPointer) return;
+        if (selectAllButton.dataset.edfHandledOnPointer === "true") {
+            delete selectAllButton.dataset.edfHandledOnPointer;
+            return;
+        }
         toggleVisibleSelection();
     };
 

@@ -3,6 +3,9 @@ import { replaceWithChevronIcon } from "./icons";
 
 export type SortOption = readonly [value: string, label: string];
 
+/** The menu's corner radius (sort.css .edf-sort-dropdown-menu). */
+const MENU_RADIUS = 8;
+
 export interface SortControl {
     element: HTMLElement;
     value(): string;
@@ -57,13 +60,22 @@ export function createDropdownControl(options: DropdownControlOptions): SortCont
     summary.ariaLabel = options.ariaLabel;
     menu.className = "edf-sort-dropdown-menu";
 
-    const syncMenuCorner = (): void => {
-        if (!details.open) return;
-
-        const menuRadius = 8;
-        const widthDifference = menu.getBoundingClientRect().width - summary.getBoundingClientRect().width;
-
-        menu.dataset.edfRoundTopLeft = String(widthDifference > menuRadius + 0.5);
+    /**
+     * Opens the menu and places it in the same task, before the browser paints: below the
+     * button, or above when it won't fit below but has more room there. (Placing it from the
+     * toggle event, which fires after a frame, showed it below first and then flipped it.)
+     */
+    const open = (): void => {
+        details.open = true;
+        const button = summary.getBoundingClientRect();
+        const band = getVisibleBand(details);
+        const below = band.bottom - button.bottom;
+        const menuBox = menu.getBoundingClientRect();
+        details.dataset.placement = below < menuBox.height + 8 && button.top - band.top > below
+            ? "top"
+            : "bottom";
+        // A menu wider than its button rounds the corner that sticks out past it.
+        menu.dataset.edfRoundTopLeft = String(menuBox.width - button.width > MENU_RADIUS + 0.5);
     };
 
     const renderSummary = (): void => {
@@ -94,26 +106,17 @@ export function createDropdownControl(options: DropdownControlOptions): SortCont
         details.open = false;
         summary.focus();
     }, { signal: options.signal });
-    details.addEventListener("toggle", () => {
-        if (!details.open) return;
-        // Open upwards when the menu won't fit below but has more room above.
-        const button = summary.getBoundingClientRect();
-        const band = getVisibleBand(details);
-        const below = band.bottom - button.bottom;
-        details.dataset.placement = below < menu.offsetHeight + 8 && button.top - band.top > below
-            ? "top"
-            : "bottom";
-        requestAnimationFrame(syncMenuCorner);
+    // Clicks (and Enter/Space, which click) open it here rather than through <details>' own
+    // toggle, so it can be placed before it's drawn.
+    summary.addEventListener("click", event => {
+        event.preventDefault();
+        if (details.open) details.open = false;
+        else open();
     }, { signal: options.signal });
     document.addEventListener("pointerdown", event => {
         if (!details.open || details.contains(event.target as Node)) return;
         details.open = false;
     }, { signal: options.signal });
-
-    const resizeObserver = new ResizeObserver(syncMenuCorner);
-    resizeObserver.observe(summary);
-    resizeObserver.observe(menu);
-    options.signal?.addEventListener("abort", () => resizeObserver.disconnect(), { once: true });
 
     renderSummary();
     details.append(summary, menu);

@@ -7,70 +7,93 @@ import operaLogo from "@browser-logos/opera/opera.svg?url";
 import safariLogo from "@browser-logos/safari-ios/safari-ios.svg?url";
 import vivaldiLogo from "@browser-logos/vivaldi/vivaldi.svg?url";
 import externalSvg from "../../../packages/assets/icons/actions/external.svg?raw";
+import chromeWebStoreIcon from "../../../packages/assets/icons/support/chrome-web-store.svg?url";
 import { STORE_LINKS } from "@extra-domain-filters/shared/config/links";
 
 export interface Browser {
     id: string;
     /** The install button: "Add to Edge". */
     action: string;
-    /** The browser's own logo, from the browser-logos packages (github.com/alrra/browser-logos). */
+    /** Its own logo (browser-logos packages, github.com/alrra/browser-logos); none for a few
+     * smaller browsers, which are named without one. */
     logo: string;
     name: string;
 }
 
 export interface Store {
     id: string;
-    /** Browsers that install from this store first. */
+    /** Every browser that installs from it, its own first. */
     browsers: readonly Browser[];
-    /** No link until the listing is live; the store shows as coming soon. */
+    /** Undefined until the listing is live; such a store isn't shown. */
     href: string | undefined;
+    /** The store's own icon. Firefox, Edge and Opera's stores use their browser's logo. */
+    icon: string;
     name: string;
-    /** Where else it installs from here, in a sentence. */
-    note?: string;
+    /** Named after the browsers: "and other Chromium browsers". */
+    others?: string;
 }
 
-function browser(id: string, name: string, src: string): Browser {
-    return { id, action: `Add to ${name}`, logo: `<img src="${src}" alt="" width="48" height="48" decoding="async">`, name };
+function image(src: string): string {
+    return `<img src="${src}" alt="" width="48" height="48" decoding="async">`;
+}
+
+function browser(id: string, name: string, src?: string): Browser {
+    return { id, action: `Add to ${name}`, logo: src ? image(src) : "", name };
 }
 
 const CHROME = browser("chrome", "Chrome", chromeLogo);
 const BRAVE = browser("brave", "Brave", braveLogo);
 const VIVALDI = browser("vivaldi", "Vivaldi", vivaldiLogo);
-const FIREFOX = browser("firefox", "Firefox", firefoxLogo);
+const ARC = browser("arc", "Arc");
 const EDGE = browser("edge", "Edge", edgeLogo);
 const OPERA = browser("opera", "Opera", operaLogo);
 const OPERA_GX = browser("opera-gx", "Opera GX", operaGxLogo);
-const SAFARI = browser("safari", "Safari on Mac", safariLogo);
+const FIREFOX = browser("firefox", "Firefox", firefoxLogo);
+const ZEN = browser("zen", "Zen");
+const LIBREWOLF = browser("librewolf", "LibreWolf");
+const WATERFOX = browser("waterfox", "Waterfox");
+const SAFARI = browser("safari", "Safari", safariLogo);
 
-/** Every store it's on, each with the browsers that use it first. Edge and Opera have their own
- * stores but can also install from the Chrome Web Store. */
-export const STORES: readonly Store[] = [
+/**
+ * Every store, with every browser that installs from it. Edge and Opera are Chromium browsers
+ * with their own stores, so they're under both. A store without a link yet is left off the site.
+ */
+const ALL_STORES: readonly Store[] = [
     {
         id: "chrome-web-store",
-        browsers: [CHROME, BRAVE, VIVALDI],
+        browsers: [CHROME, EDGE, OPERA, BRAVE, VIVALDI, OPERA_GX, ARC],
         href: STORE_LINKS.chrome,
+        icon: image(chromeWebStoreIcon),
         name: "Chrome Web Store",
-        note: "Also Arc and any other Chromium browser. Edge and Opera can install from here too.",
+        others: "and other Chromium browsers",
     },
     {
         id: "firefox-add-ons",
-        browsers: [FIREFOX],
+        browsers: [FIREFOX, ZEN, LIBREWOLF, WATERFOX],
         href: STORE_LINKS.firefox,
+        icon: FIREFOX.logo,
         name: "Firefox Add-ons",
-        note: "Also Zen, LibreWolf, Waterfox and any other Firefox-based browser.",
+        others: "and other Firefox-based browsers",
     },
-    { id: "edge-add-ons", browsers: [EDGE], href: STORE_LINKS.edge, name: "Edge Add-ons" },
-    { id: "opera-add-ons", browsers: [OPERA, OPERA_GX], href: STORE_LINKS.opera, name: "Opera add-ons" },
-    { id: "app-store", browsers: [SAFARI], href: STORE_LINKS.safari, name: "App Store" },
+    { id: "edge-add-ons", browsers: [EDGE], href: STORE_LINKS.edge, icon: EDGE.logo, name: "Edge Add-ons" },
+    { id: "opera-add-ons", browsers: [OPERA, OPERA_GX], href: STORE_LINKS.opera, icon: OPERA.logo, name: "Opera add-ons" },
+    { id: "app-store", browsers: [SAFARI], href: STORE_LINKS.safari, icon: SAFARI.logo, name: "App Store" },
 ];
+
+export const STORES = ALL_STORES.filter((store): store is Store & { href: string } => store.href !== undefined);
+
+/** Where each browser installs from first: its own store, if it has one that's live. */
+const HOME_STORE: Readonly<Record<string, string>> = { edge: "edge-add-ons", firefox: "firefox-add-ons", opera: "opera-add-ons" };
 
 export interface Visitor {
     browser: Browser;
-    /** The store this browser installs from first. */
-    store: Store;
+    store: (typeof STORES)[number];
 }
 
-/** The browser this page is open in, and its store, so install buttons can name it. Chrome otherwise. */
+/**
+ * The browser this page is open in and the store it installs from, so install buttons can name
+ * it. Anything else, including a browser whose store isn't live yet, gets Chrome's.
+ */
 export function detectBrowser(userAgent = navigator.userAgent): Visitor {
     // Brave and Vivaldi send Chrome's user agent; Brave says so on navigator.
     const id = /Edg\//.test(userAgent) ? "edge"
@@ -79,7 +102,9 @@ export function detectBrowser(userAgent = navigator.userAgent): Visitor {
         : /Safari\//.test(userAgent) && !/Chrome|Chromium|CriOS|Android/.test(userAgent) ? "safari"
         : "brave" in navigator ? "brave"
         : "chrome";
-    const store = STORES.find(candidate => candidate.browsers.some(item => item.id === id)) ?? STORES[0];
+    const store = STORES.find(candidate => candidate.id === HOME_STORE[id])
+        ?? STORES.find(candidate => candidate.browsers.some(item => item.id === id))
+        ?? STORES[0];
     return { browser: store.browsers.find(item => item.id === id) ?? store.browsers[0], store };
 }
 
@@ -94,15 +119,12 @@ export function externalLink(href: string, content: string, className = ""): str
     return `<a${className ? ` class="${className}"` : ""} href="${href}" target="_blank" rel="noopener noreferrer">${content}${EXTERNAL}<span class="site-visually-hidden"> (opens in a new tab)</span></a>`;
 }
 
-/**
- * The install button for the visitor's browser: its logo, "Add to <browser>" and, on the large
- * button, the store it opens. A store without a listing yet shows as coming soon, not a link.
- */
+/** The install button for the visitor's browser: its logo, "Add to <browser>" and, on the large button, the store it opens. */
 export function installButton({ browser, store }: Visitor, size: "large" | "small" = "large"): string {
-    const logo = `<span class="site-button-logo">${browser.logo}</span>`;
     const detail = size === "large" ? `<small>${store.name}</small>` : "";
-    if (!store.href) {
-        return `<span class="site-button site-button-${size} site-button-soon">${logo}<span class="site-button-text"><strong>Coming soon to ${browser.name}</strong>${detail}</span></span>`;
-    }
-    return externalLink(store.href, `${logo}<span class="site-button-text"><strong>${browser.action}</strong>${detail}</span>`, `site-button site-button-${size}`);
+    return externalLink(
+        store.href,
+        `<span class="site-button-logo">${browser.logo}</span><span class="site-button-text"><strong>${browser.action}</strong>${detail}</span>`,
+        `site-button site-button-${size}`,
+    );
 }

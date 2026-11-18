@@ -94,7 +94,7 @@ function hero(): string {
         </section>`;
 }
 
-/** Features: pick one to read its details and see it in the popup. */
+/** The toolbar popup: pick a feature to read its details and see its page in the popup. */
 function tour(): string {
     const items = features.map((feature, index) => `
         <li class="site-tour-item"${index === 0 ? " data-active" : ""}>
@@ -108,11 +108,16 @@ function tour(): string {
     const shots = features.map((feature, index) => `
         <img src="${SHOTS[feature.shot]}" alt="${feature.alt}" width="760" height="600" loading="lazy" decoding="async" data-shot="${feature.id}"${index === 0 ? " data-active" : ""}>`).join("");
     return `
-        <section class="site-section site-shell" id="features">
-            <h2 class="site-section-title">What it adds to Domain</h2>
-            <div class="site-tour">
-                <ul class="site-tour-list">${items}</ul>
-                <figure class="site-tour-shot">${shots}</figure>
+        <section class="site-section site-section-mist" id="toolbar">
+            <div class="site-shell">
+                <div class="site-section-head">
+                <h2 class="site-section-title">All in the toolbar</h2>
+                <p class="site-section-lede">The extension's button opens your filters, blacklist and saved searches from any tab, and signs you in to sync them.</p>
+            </div>
+                <div class="site-tour">
+                    <ul class="site-tour-list">${items}</ul>
+                    <figure class="site-tour-shot">${shots}</figure>
+                </div>
             </div>
         </section>`;
 }
@@ -170,37 +175,44 @@ function onDomain(): string {
             <p>${place.text}</p>
         </li>`).join("");
     return `
-        <section class="site-section site-section-mist" id="on-domain">
-            <div class="site-shell">
+        <section class="site-section site-shell" id="features">
+            <div class="site-section-head">
                 <h2 class="site-section-title">Right inside Domain</h2>
-                <ul class="site-places">${items}</ul>
+                <p class="site-section-lede">What changes on domain.com.au once it's installed. Nothing to learn: it works in Domain's own pages.</p>
             </div>
+            <ul class="site-places">${items}</ul>
         </section>`;
 }
 
 /**
- * Every store it's on, each with the browsers that install from it first. The visitor's store
- * is filled in and its button names their browser.
+ * One card per store, with its own icon and every browser that installs from it. The visitor's
+ * store is filled in, their browser is ringed wherever it appears, and buttons name it.
  */
 function browsers(): string {
     const visitor = detectBrowser();
     const cards = STORES.map(store => {
         const isCurrent = store === visitor.store;
-        const chips = store.browsers.map(item => item === visitor.browser
-            ? `<li data-current>${item.logo}${item.name}<span class="site-visually-hidden"> (your browser)</span></li>`
-            : `<li>${item.logo}${item.name}</li>`).join("");
-        const action = isCurrent ? visitor.browser.action : store.browsers[0].action;
+        const chips = store.browsers.map(item => {
+            const yours = item.id === visitor.browser.id;
+            return `<li${yours ? " data-current" : ""}${item.logo ? "" : " data-plain"}>${item.logo}${item.name}${yours ? '<span class="site-visually-hidden"> (your browser)</span>' : ""}</li>`;
+        }).join("");
+        const action = store.browsers.some(item => item.id === visitor.browser.id) ? visitor.browser.action : store.browsers[0].action;
         return `
         <li class="site-store"${isCurrent ? " data-current" : ""}>
-            <h3>${store.name}</h3>
-            <ul class="site-store-browsers" aria-label="Browsers that install from the ${store.name}">${chips}</ul>
-            ${store.note ? `<p class="site-store-note">${store.note}</p>` : ""}
-            ${store.href ? externalLink(store.href, action, "site-store-button") : '<span class="site-store-soon">Coming soon</span>'}
+            <div class="site-store-head">
+                <span class="site-store-icon">${store.icon}</span>
+                <h3>${store.name}</h3>
+            </div>
+            <ul class="site-store-browsers" aria-label="Browsers that install from ${store.name}">${chips}${store.others ? `<li class="site-store-others">${store.others}</li>` : ""}</ul>
+            ${externalLink(store.href, action, "site-store-button")}
         </li>`;
     }).join("");
     return `
         <section class="site-section site-shell" id="browsers">
-            <h2 class="site-section-title">Get it for your browser</h2>
+            <div class="site-section-head">
+                <h2 class="site-section-title">Get it for your browser</h2>
+                <p class="site-section-lede">Each store lists the browsers that install from it. Chromium browsers, Edge and Opera included, can all use the Chrome Web Store.</p>
+            </div>
             <ul class="site-stores">${cards}</ul>
         </section>`;
 }
@@ -209,8 +221,8 @@ export function landing(): string {
     return `
         <main id="site-main">
             ${hero()}
-            ${tour()}
             ${onDomain()}
+            ${tour()}
             ${browsers()}
         </main>`;
 }

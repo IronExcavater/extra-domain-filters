@@ -130,7 +130,10 @@ export function createSavedSearchCollection(
 
         replaceSelection(options.selectedIds, [...selection]);
         controls.className = "edf-page-actions";
-        renderSelectionControls({
+        const visibleIds = visible.map(search => search.id);
+        // The toolbar follows a selection straight away; the cards are rebuilt (by the
+        // controller) once their checkboxes have finished animating.
+        const renderControls = (selectedIds: readonly string[]): void => renderSelectionControls({
             buttonClassName: "edf-selection-action",
             clearLabel: "Remove selected",
             controls,
@@ -144,15 +147,17 @@ export function createSavedSearchCollection(
                         next.has(card.dataset.savedsearchId ?? ""),
                     );
                 }
+                renderControls(ids);
                 if (selectionCommitTimer !== undefined) window.clearTimeout(selectionCommitTimer);
                 selectionCommitTimer = window.setTimeout(() => {
                     selectionCommitTimer = undefined;
                     controller.replaceSelection(ids);
                 }, selectionTransitionMs);
             },
-            selectedIds: [...selection],
-            visibleIds: visible.map(search => search.id),
+            selectedIds,
+            visibleIds,
         });
+        renderControls([...selection]);
         frame.replaceCards(visible.map(search => createSavedSearchCard(search, {
             density: options.density,
             onRemove: removeSearch,

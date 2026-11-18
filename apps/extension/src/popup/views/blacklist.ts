@@ -138,7 +138,10 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
 
         replaceSelection(selectedUrls, [...selection]);
         controls.className = "edf-page-actions";
-        renderSelectionControls({
+        const visibleIds = visible.map(entry => getBlacklistListing(entry).url);
+        // The toolbar follows a selection straight away; the cards are rebuilt (by the
+        // controller) once their checkboxes have finished animating.
+        const renderControls = (selectedIds: readonly string[]): void => renderSelectionControls({
             buttonClassName: "edf-selection-action",
             clearLabel: "Unblacklist",
             controls,
@@ -157,11 +160,13 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
                     const input = card.querySelector<HTMLInputElement>(".edf-selection-checkbox input");
                     if (input) setSelectionCheckboxState(input, next.has(card.dataset.blacklistUrl ?? ""));
                 }
+                renderControls(ids);
                 window.setTimeout(() => controller.replaceSelection(ids), SELECTION_TRANSITION_MS);
             },
-            selectedIds: [...selection],
-            visibleIds: visible.map(entry => getBlacklistListing(entry).url),
+            selectedIds,
+            visibleIds,
         });
+        renderControls([...selection]);
         frame.replaceCards(visible.map(entry => {
             const url = getBlacklistListing(entry).url;
             const retainedEntry = retainedUnblacklistedEntries.has(url);

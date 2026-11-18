@@ -138,7 +138,7 @@ export const legalPages: Readonly<Record<Exclude<SiteRoute, "/">, LegalPage>> = 
                     },
                     {
                         question: "Which browsers does it work in?",
-                        answer: "Chrome, Edge, Firefox and Opera, and Safari on Mac once it's in the App Store. Brave, Vivaldi, Arc and other Chromium browsers install it from the Chrome Web Store, and Zen, LibreWolf and other Firefox-based browsers from Firefox Add-ons. <a href=\"/#browsers\">Get it for your browser</a>.",
+                        answer: "Chrome, Edge, Firefox and Opera. Brave, Vivaldi, Arc and other Chromium browsers install it from the Chrome Web Store, as Edge and Opera can, and Zen, LibreWolf and other Firefox-based browsers from Firefox Add-ons. <a href=\"/#browsers\">Get it for your browser</a>.",
                     },
                 ],
             },

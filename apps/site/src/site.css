@@ -29,7 +29,7 @@
     --site-shadow: 0 24px 56px rgb(19 18 18 / 12%), 0 4px 14px rgb(19 18 18 / 6%);
     --site-ease: cubic-bezier(0.2, 0, 0, 1);
     --site-header: 68px;
-    --site-section: 104px;
+    --site-section: 88px;
 
     interpolate-size: allow-keywords;
 }
@@ -119,18 +119,12 @@ img { max-width: 100%; }
 
 .site-button-small .site-external { height: 12px; width: 12px; }
 
-/* A store without a listing yet: the same button, outlined and inert. */
-.site-button-soon,
-.site-button-soon:hover { background: #fff; box-shadow: inset 0 0 0 1px var(--site-rule); color: var(--site-heading); cursor: default; }
-
-.site-button-soon:active { transform: none; }
-
 .site-text-link { color: var(--site-heading); font-size: 16px; font-weight: 700; text-decoration: underline; text-decoration-color: var(--site-green); text-decoration-thickness: 2px; }
 
 .site-text-link:hover { color: var(--site-green-hover); }
 
 /* Hero: what it is and that it's for domain.com.au, with the popup open under the toolbar. */
-.site-hero { background: var(--site-mist); border-bottom: 1px solid var(--site-border); overflow: hidden; padding: 72px 0 80px; }
+.site-hero { background: var(--site-mist); border-bottom: 1px solid var(--site-border); overflow: hidden; padding: 64px 0 72px; }
 
 .site-hero-grid { align-items: center; display: grid; gap: 56px; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
 
@@ -201,6 +195,11 @@ img { max-width: 100%; }
 
 .site-section-title { font-size: clamp(30px, 3.2vw, 44px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.08; margin: 0; }
 
+/* Each section opens with its title and, beside it, one line on what it shows. */
+.site-section-head { align-items: end; display: grid; gap: 14px 56px; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); margin-bottom: 40px; }
+
+.site-section-lede { color: var(--site-text); font-size: 17px; line-height: 1.55; margin: 0; max-width: 32em; }
+
 .site-ticks { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
 
 .site-ticks li { align-items: start; color: var(--site-text); display: grid; font-size: 16px; gap: 10px; grid-template-columns: 20px minmax(0, 1fr); line-height: 1.5; }
@@ -209,13 +208,13 @@ img { max-width: 100%; }
 
 /* Features: pick one to open its details and show it in the popup (landing.ts bindTour). The
  * open one becomes a panel. */
-.site-tour { align-items: start; display: grid; gap: 64px; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); margin-top: 40px; }
+.site-tour { align-items: start; display: grid; gap: 64px; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
 
 .site-tour-list { display: grid; gap: 4px; list-style: none; margin: 0; padding: 0; }
 
 .site-tour-item { border: 1px solid transparent; border-radius: 14px; transition: background-color 240ms ease, border-color 240ms ease; }
 
-.site-tour-item[data-active] { background: var(--site-mist); border-color: var(--site-border); }
+.site-tour-item[data-active] { background: #fff; border-color: var(--site-border); box-shadow: 0 6px 18px rgb(19 18 18 / 5%); }
 
 .site-tour-button { align-items: center; background: none; border: 0; border-radius: 14px; color: inherit; cursor: pointer; display: grid; font: inherit; gap: 16px; grid-template-columns: 24px minmax(0, 1fr) 20px; padding: 18px 20px; text-align: left; width: 100%; }
 
@@ -247,11 +246,11 @@ img { max-width: 100%; }
 
 /* Right inside Domain: each part of Domain with a picture of what the extension puts there,
  * drawn from its own UI (landing.ts PLACE_ART). */
-.site-places { display: grid; gap: 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); list-style: none; margin: 40px 0 0; padding: 0; }
+.site-places { display: grid; gap: 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); list-style: none; margin: 0; padding: 0; }
 
 .site-place { background: #fff; border: 1px solid var(--site-border); border-radius: 16px; overflow: hidden; padding-bottom: 26px; }
 
-.site-place-art { align-items: center; background: #e9efe5; border-bottom: 1px solid var(--site-border); display: flex; flex-direction: column; gap: 12px; height: 300px; justify-content: center; overflow: hidden; padding: 20px; }
+.site-place-art { align-items: center; background: #e9efe5; border-bottom: 1px solid var(--site-border); display: flex; flex-direction: column; gap: 12px; height: 280px; justify-content: center; overflow: hidden; padding: 20px; }
 
 .site-place > h3 { font-size: 20px; letter-spacing: -0.015em; margin: 22px 26px 6px; }
 
@@ -337,36 +336,40 @@ img { max-width: 100%; }
 
 .site-art-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
-/* Browsers: one card per store, with the browsers that install from it first. The visitor's
- * store is filled in, with their browser ringed. */
-.site-stores { display: grid; gap: 16px; grid-template-columns: repeat(6, minmax(0, 1fr)); list-style: none; margin: 40px 0 0; padding: 0; }
+/* Browsers: one card per store, with its own icon and every browser that installs from it. The
+ * Chrome Web Store, which most browsers use, spans the row. The visitor's store is filled in and
+ * their browser ringed. */
+.site-stores { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); list-style: none; margin: 0; padding: 0; }
 
-.site-store { border: 1px solid var(--site-border); border-radius: 16px; display: flex; flex-direction: column; gap: 14px; grid-column: span 2; padding: 22px; }
+.site-store { border: 1px solid var(--site-border); border-radius: 16px; display: flex; flex-direction: column; gap: 18px; padding: 22px; }
 
-.site-store:nth-child(-n + 2) { grid-column: span 3; }
+.site-store:first-child { grid-column: 1 / -1; }
+
+.site-store-head { align-items: center; display: flex; gap: 12px; }
+
+.site-store-icon { display: grid; flex: 0 0 auto; height: 36px; place-items: center; width: 36px; }
+
+.site-store-icon img { display: block; height: auto; max-height: 100%; max-width: 100%; width: 100%; }
 
 .site-store h3 { font-size: 20px; letter-spacing: -0.015em; margin: 0; }
 
 .site-store-browsers { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
 
-.site-store-browsers li { align-items: center; background: var(--site-mist); border-radius: 999px; display: inline-flex; font-size: 15px; font-weight: 500; gap: 8px; padding: 5px 14px 5px 5px; }
+.site-store-browsers li { align-items: center; background: var(--site-mist); border-radius: 999px; display: inline-flex; font-size: 15px; font-weight: 500; gap: 8px; min-height: 36px; padding: 5px 14px 5px 5px; }
+
+.site-store-browsers li[data-plain] { padding-left: 14px; }
 
 .site-store-browsers img { height: 26px; width: 26px; }
 
-.site-store-note { color: var(--site-muted); font-size: 14px; line-height: 1.5; margin: 0; }
+.site-store-browsers .site-store-others { background: none; color: var(--site-muted); font-weight: 400; padding: 5px 4px; }
 
-.site-store-button,
-.site-store-soon { align-items: center; align-self: flex-start; border: 1px solid var(--site-rule); border-radius: 8px; display: inline-flex; font-size: 15px; font-weight: 700; margin-top: auto; padding: 10px 14px; white-space: nowrap; }
-
-.site-store-button { color: var(--site-heading); text-decoration: none; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease; }
+.site-store-button { align-items: center; align-self: flex-start; border: 1px solid var(--site-rule); border-radius: 8px; color: var(--site-heading); display: inline-flex; font-size: 15px; font-weight: 700; margin-top: auto; padding: 10px 14px; text-decoration: none; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease; white-space: nowrap; }
 
 .site-store-button:hover { border-color: var(--site-green); color: var(--site-green-hover); }
 
-.site-store-soon { background: var(--site-mist); border-color: var(--site-mist); color: var(--site-muted); }
-
 .site-store[data-current] { background: var(--site-green-tint); border-color: rgb(14 168 0 / 35%); }
 
-.site-store[data-current] .site-store-browsers li { background: #fff; }
+.site-store[data-current] .site-store-browsers li:not(.site-store-others) { background: #fff; }
 
 .site-store-browsers li[data-current] { box-shadow: inset 0 0 0 2px var(--site-green); }
 
@@ -404,32 +407,67 @@ img { max-width: 100%; }
 .site-legal-intro a:hover { color: var(--site-green-hover); }
 
 /* Support's contact details: under the contents list on wide screens, after the questions on
- * narrow ones (main.ts contactPanel). A link to #contact flashes it. */
+ * narrow ones (main.ts contactPanel). The address is a field with its copy button inside; a link
+ * to #contact flashes the panel. */
 .site-contact { background: var(--site-mist); border: 1px solid var(--site-border); border-radius: 14px; margin-top: 28px; padding: 18px; scroll-margin-top: calc(var(--site-header) + 24px); }
 
 .site-contact h2 { font-size: 18px; letter-spacing: -0.01em; margin: 0 0 6px; }
 
-.site-contact p { color: var(--site-text); font-size: 14px; line-height: 1.5; margin: 0 0 14px; }
+.site-contact > p { color: var(--site-text); font-size: 14px; line-height: 1.5; margin: 0 0 14px; }
 
-.site-contact-email { background: #fff; border: 1px solid var(--site-border); border-radius: 10px; display: grid; gap: 8px; padding: 12px; }
+.site-contact-email { align-items: center; background: #fff; border: 1px solid var(--site-border); border-radius: 10px; display: flex; gap: 4px; padding: 4px 4px 4px 12px; }
 
-.site-contact-email a { color: var(--site-heading); font-size: 15px; font-weight: 500; overflow-wrap: anywhere; text-decoration: none; }
+.site-contact-email a { align-items: center; color: var(--site-heading); display: flex; flex: 1; font-size: 14px; font-weight: 500; gap: 8px; min-width: 0; text-decoration: none; }
 
-.site-contact-email a:hover { color: var(--site-green-hover); text-decoration: underline; }
+.site-contact-email a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.site-contact-copy { background: #fff; border: 1px solid var(--site-rule); border-radius: 8px; color: var(--site-heading); cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; padding: 7px 12px; transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease; }
+.site-contact-email a:hover span,
+.site-contact-github:hover span { color: var(--site-green-hover); text-decoration: underline; text-decoration-color: var(--site-green); text-decoration-thickness: 2px; }
 
-.site-contact-copy:hover { border-color: var(--site-green); color: var(--site-green-hover); }
+.site-contact-email a .site-icon { color: var(--site-green-hover); height: 16px; width: 16px; }
 
-.site-contact-copy[data-copied] { background: var(--site-green-tint); border-color: var(--site-green); color: var(--site-green-hover); }
+.site-contact-copy { background: transparent; border: 0; border-radius: 7px; color: var(--site-muted); cursor: pointer; display: grid; flex: 0 0 auto; height: 34px; padding: 0; place-items: center; position: relative; transition: background-color 150ms ease, color 150ms ease; width: 34px; }
 
-.site-contact-github { align-items: center; color: var(--site-heading); display: inline-flex; font-size: 14px; font-weight: 500; margin-top: 14px; text-decoration-color: var(--site-green); text-decoration-thickness: 2px; }
+.site-contact-copy:hover { background: var(--site-mist); color: var(--site-heading); }
 
-.site-contact-github:hover { color: var(--site-green-hover); }
+.site-contact-copy .site-icon { grid-area: 1 / 1; transition: opacity 160ms ease, transform 260ms var(--site-ease); }
+
+.site-copy-icon { height: 17px; width: 17px; }
+
+.site-copied-icon { color: var(--site-green-hover); height: 22px; opacity: 0; transform: scale(0.4); width: 22px; }
+
+.site-contact-copy[data-copied] { background: var(--site-green-tint); }
+
+.site-contact-copy[data-copied] .site-copy-icon { opacity: 0; transform: scale(0.4); }
+
+.site-contact-copy[data-copied] .site-copied-icon { opacity: 1; transform: none; }
+
+/* "Copy" on hover or focus, "Copied" once it has. */
+.site-contact-tip { background: var(--site-heading); border-radius: 6px; bottom: calc(100% + 8px); color: #fff; font-size: 12px; font-weight: 500; left: 50%; line-height: 1; opacity: 0; padding: 6px 8px; pointer-events: none; position: absolute; transform: translate(-50%, 4px); transition: opacity 150ms ease, transform 150ms ease; white-space: nowrap; }
+
+.site-contact-tip::after { border: 5px solid transparent; border-top-color: var(--site-heading); content: ""; left: 50%; position: absolute; top: 100%; transform: translateX(-50%); }
+
+.site-contact-copy:hover .site-contact-tip,
+.site-contact-copy:focus-visible .site-contact-tip,
+.site-contact-copy[data-copied] .site-contact-tip { opacity: 1; transform: translate(-50%, 0); }
+
+.site-contact-tip .is-done,
+.site-contact-copy[data-copied] .is-ready { display: none; }
+
+.site-contact-copy[data-copied] .is-done { display: inline; }
+
+.site-contact-github { align-items: center; color: var(--site-heading); display: inline-flex; font-size: 14px; font-weight: 500; gap: 8px; margin-top: 14px; text-decoration: none; }
+
+.site-contact-github .site-icon { height: 16px; width: 16px; }
 
 .site-contact:target { animation: site-contact-flash 1800ms ease; }
 
 @keyframes site-contact-flash { from { box-shadow: 0 0 0 4px var(--site-focus); } }
+
+/* Support's side column is wider than the legal pages', to fit the contact details. */
+@media (width > 860px) {
+    .site-legal-layout:has(.site-contact) { grid-template-columns: minmax(250px, 300px) minmax(0, 1fr); }
+}
 
 /* Footer: the site's pages, grouped, then the copyright line. */
 .site-footer { background: var(--site-surface); border-top: 1px solid var(--site-border); }
@@ -453,10 +491,6 @@ img { max-width: 100%; }
 .site-footer-browser { align-items: center; display: inline-flex; }
 
 .site-footer-browser img { height: 18px; margin-right: 9px; width: 18px; }
-
-span.site-footer-browser { color: var(--site-text); font-size: 15px; }
-
-.site-footer-browser small { color: var(--site-muted); font-size: 12px; margin-left: 8px; }
 
 .site-footer-bottom { border-top: 1px solid var(--site-border); color: var(--site-muted); font-size: 14px; line-height: 1.5; margin: 0; padding: 22px 0 30px; }
 
@@ -533,7 +567,7 @@ span.site-footer-browser { color: var(--site-text); font-size: 15px; }
 
 
 @media (width <= 960px) {
-    :root { --site-section: 88px; }
+    :root { --site-section: 76px; }
 
     .site-hero-grid,
     .site-tour { grid-template-columns: minmax(0, 1fr); }
@@ -570,11 +604,9 @@ span.site-footer-browser { color: var(--site-text); font-size: 15px; }
     .site-toc ol { border-left: 0; border-top: 1px solid var(--site-border); padding: 6px 0; }
     .site-toc a { padding: 9px 16px; }
     .site-toc-bar { display: none; }
+    .site-section-head { grid-template-columns: minmax(0, 1fr); margin-bottom: 32px; }
     .site-stores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
-    .site-store,
-    .site-store:nth-child(-n + 2) { grid-column: auto; }
-    .site-store:last-child { grid-column: 1 / -1; }
+    .site-store:last-child:nth-child(even) { grid-column: 1 / -1; }
 
     /* Support's contact panel leaves the contents list and follows the questions. */
     .site-legal-toc:has(.site-contact) { display: contents; }
@@ -582,7 +614,7 @@ span.site-footer-browser { color: var(--site-text); font-size: 15px; }
 }
 
 @media (width <= 600px) {
-    :root { --site-section: 72px; }
+    :root { --site-section: 60px; }
     .site-shell { padding-left: 16px; padding-right: 16px; }
     .site-wordmark { height: 21px; }
     .site-hero { padding: 40px 0 48px; }
@@ -597,15 +629,16 @@ span.site-footer-browser { color: var(--site-text); font-size: 15px; }
     .site-toolbar-extension { height: 34px; width: 34px; }
     .site-hero-popup { width: 100%; }
     .site-hero-popup::before { right: 17px; }
-    .site-tour { margin-top: 28px; }
-    .site-places { grid-template-columns: minmax(0, 1fr); margin-top: 28px; }
+    .site-places { grid-template-columns: minmax(0, 1fr); }
     .site-place-art { height: 290px; padding: 16px; }
     .site-place > h3 { font-size: 19px; margin: 18px 18px 6px; }
     .site-place > p { font-size: 15px; margin: 0 18px; }
     .site-tour-button { padding: 16px; }
     .site-tour-detail .site-ticks { padding: 0 16px 20px; }
-    .site-stores { grid-template-columns: minmax(0, 1fr); margin-top: 28px; }
-    .site-store:last-child { grid-column: auto; }
+    .site-section-head { margin-bottom: 26px; }
+    .site-section-lede { font-size: 16px; }
+    .site-stores { grid-template-columns: minmax(0, 1fr); }
+    .site-store:last-child:nth-child(even) { grid-column: auto; }
     .site-store { padding: 18px; }
     .site-faq-list summary { font-size: 16px; }
     .site-faq-list details p { font-size: 15px; padding-right: 0; }

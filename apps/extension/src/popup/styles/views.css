@@ -23,11 +23,6 @@
     padding: 7px 12px;
 }
 
-.edf-popup-content .edf-collection-toolbar .edf-select-all-box {
-    height: 16px;
-    width: 16px;
-}
-
 .edf-popup-content .edf-collection-toolbar .edf-sort-control {
     gap: 6px;
 }

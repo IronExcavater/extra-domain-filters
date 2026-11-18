@@ -10,7 +10,11 @@ import {
     type LegalPage,
     type SiteRoute,
 } from "./content";
-import { bindLanding, CHEVRON, landing } from "./landing";
+import checkSvg from "../../../packages/assets/icons/actions/check.svg?raw";
+import copySvg from "../../../packages/assets/icons/actions/copy.svg?raw";
+import githubSvg from "../../../packages/assets/icons/support/github.svg?raw";
+import mailSvg from "../../../packages/assets/icons/support/mail.svg?raw";
+import { bindLanding, CHEVRON, icon, landing } from "./landing";
 
 type PageRoute = Exclude<SiteRoute, "/">;
 
@@ -24,10 +28,10 @@ const LEGAL_TABS: readonly (readonly [PageRoute, string, string])[] = [
 const LEGAL_ROUTES = new Set<SiteRoute>(LEGAL_TABS.map(([route]) => route));
 const PAGE_ROUTES = new Set<SiteRoute>(["/support/", ...LEGAL_ROUTES]);
 
-/** The landing page's sections the header links to; "Right inside Domain" counts as Features.
+/** The landing page's sections the header links to; the toolbar popup counts as Features.
  * Questions live on the Support page, with the contact details. */
 const SECTIONS = [
-    { href: "#features", label: "Features", ids: ["features", "on-domain"] },
+    { href: "#features", label: "Features", ids: ["features", "toolbar"] },
     { href: "#browsers", label: "Browsers", ids: ["browsers"] },
 ] as const;
 
@@ -84,13 +88,8 @@ function footer(): string {
                         <p>Extra filters, a blacklist and better saved searches for house hunting on domain.com.au.</p>
                     </div>
                     <nav class="site-footer-nav" aria-label="Site pages">
-                        ${group("Extension", ['<a href="/#features">Features</a>', '<a href="/#on-domain">Right inside Domain</a>', '<a href="/#browsers">Browsers</a>'])}
-                        ${group("Get it", STORES.map(store => {
-                            const label = `${store.browsers[0].logo}${store.browsers[0].name}`;
-                            return store.href
-                                ? externalLink(store.href, label, "site-footer-browser")
-                                : `<span class="site-footer-browser">${label}<small>Coming soon</small></span>`;
-                        }))}
+                        ${group("Extension", ['<a href="/#features">Features</a>', '<a href="/#toolbar">Toolbar popup</a>', '<a href="/#browsers">Browsers</a>'])}
+                        ${group("Get it", STORES.map(store => externalLink(store.href, `${store.browsers[0].logo}${store.browsers[0].name}`, "site-footer-browser")))}
                         ${group("Help", ['<a href="/support/">Questions</a>', '<a href="/support/#contact">Contact</a>', externalLink(ISSUES_URL, "Report a problem"), externalLink(GITHUB_URL, "Source code")])}
                         ${group("Legal", LEGAL_TABS.map(([href, , label]) => `<a href="${href}">${label}</a>`))}
                     </nav>
@@ -100,6 +99,12 @@ function footer(): string {
         </footer>`;
 }
 
+// The asset clips to its own box, which icon() would collapse by dropping sizes: no clip needed.
+const GITHUB = icon(githubSvg
+    .replace(/<defs>[\s\S]*?<\/defs>/, "")
+    .replace(/\sclip-path="[^"]*"/, "")
+    .replace('fill="black"', 'fill="currentColor"'));
+
 /**
  * Support's contact details, beside the questions (under the contents list) on wide screens and
  * after them on narrow ones. Every "contact us" on the site links here (/support/#contact).
@@ -108,12 +113,16 @@ function contactPanel(): string {
     return `
         <section class="site-contact" id="contact" aria-labelledby="site-contact-title">
             <h2 id="site-contact-title">Contact</h2>
-            <p>Questions, problems or ideas. Say which browser you use and what you were doing on Domain.</p>
+            <p>Questions, problems or ideas? Say which browser you use and what you were doing on Domain.</p>
             <div class="site-contact-email">
-                <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a>
-                <button class="site-contact-copy" type="button" data-copy="${SUPPORT_EMAIL}">Copy</button>
+                <a href="mailto:${SUPPORT_EMAIL}">${icon(mailSvg)}<span>${SUPPORT_EMAIL}</span></a>
+                <button class="site-contact-copy" type="button" data-copy="${SUPPORT_EMAIL}" aria-label="Copy the email address">
+                    ${icon(copySvg, "site-icon site-copy-icon")}${icon(checkSvg, "site-icon site-copied-icon")}
+                    <span class="site-contact-tip" aria-hidden="true"><span class="is-ready">Copy</span><span class="is-done">Copied</span></span>
+                </button>
             </div>
-            ${externalLink(ISSUES_URL, "Report a problem on GitHub", "site-contact-github")}
+            <p class="site-visually-hidden" aria-live="polite" data-copy-status></p>
+            ${externalLink(ISSUES_URL, `${GITHUB}<span>Report a problem on GitHub</span>`, "site-contact-github")}
         </section>`;
 }
 
@@ -239,16 +248,24 @@ function bindToc(root: HTMLElement): void {
     });
 }
 
+/** The copy button: its icon turns into a tick and its tooltip says "Copied" for a moment. Without
+ * clipboard access, the address is selected instead, ready to copy by hand. */
 function bindCopy(root: HTMLElement): void {
+    const status = root.querySelector<HTMLElement>("[data-copy-status]");
     for (const button of root.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
+        let reset: number | undefined;
         button.addEventListener("click", () => {
-            void navigator.clipboard.writeText(button.dataset.copy ?? "").then(() => {
-                button.textContent = "Copied";
+            navigator.clipboard.writeText(button.dataset.copy ?? "").then(() => {
                 button.dataset.copied = "";
-                window.setTimeout(() => {
-                    button.textContent = "Copy";
+                if (status) status.textContent = "Email address copied";
+                window.clearTimeout(reset);
+                reset = window.setTimeout(() => {
                     delete button.dataset.copied;
-                }, 2000);
+                    if (status) status.textContent = "";
+                }, 1800);
+            }, () => {
+                const address = button.parentElement?.querySelector("a span");
+                if (address) window.getSelection()?.selectAllChildren(address);
             });
         });
     }
