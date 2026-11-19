@@ -1,4 +1,5 @@
 import { markOwned } from "../dom/ownership";
+import { hideTooltip } from "./tooltip";
 
 export interface PopoverHandle {
     close(): void;
@@ -60,8 +61,10 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
         element.style.top = `${Math.max(EDGE_GAP, Math.min(top, window.innerHeight - height - EDGE_GAP))}px`;
     };
 
-    // The control says whether its popover is open (and stays shown while it is).
+    // The control says whether its popover is open (and stays shown while it is); its tooltip
+    // would only cover the popover.
     options.anchor.ariaExpanded = "true";
+    hideTooltip(options.anchor);
 
     const finishClose = (): void => {
         if (removed) return;

@@ -511,7 +511,13 @@ function observeCarouselHydration(
                 }
                 if (state.memberCount > 1) syncSlideVisibility(carouselCard, context.signal);
 
-                const nextMemberCount = getCarouselMembers(carouselCard).length;
+                const members = getCarouselMembers(carouselCard);
+                const nextMemberCount = members.length;
+                // Slides Domain draws later (and the clones Slick makes) get their agency/agent
+                // bin here: page-wide passes skip the carousel's constant re-rendering.
+                if (nextMemberCount > 1) {
+                    bindCarouselProfileActions(carouselCard, members.map(member => ({ ...member, exclusionReason: "none" })));
+                }
                 const nativePropertyActions = findCarouselShortlistButtons(carouselCard).length;
                 const boundPropertyActions = countBoundCarouselPropertyButtons(carouselCard);
                 const host = carouselActionHosts.get(carouselCard)?.host;

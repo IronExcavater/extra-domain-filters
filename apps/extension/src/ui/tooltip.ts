@@ -19,9 +19,16 @@ interface InternalTooltipHandle extends TooltipHandle {
     setPlacement(placement: NonNullable<TooltipOptions["placement"]>): void;
 }
 
+/** Hides a control's tooltip if it's showing (its menu just opened over it). */
+export function hideTooltip(target: HTMLElement): void {
+    if (activeTooltip?.target === target) activeTooltip.hide();
+}
+
+/** No tooltip on a disabled or busy control, or one whose menu is open (it would cover it). */
 function isUnavailable(target: HTMLElement): boolean {
     return (target instanceof HTMLButtonElement && target.disabled)
-        || target.getAttribute("aria-busy") === "true";
+        || target.getAttribute("aria-busy") === "true"
+        || target.getAttribute("aria-expanded") === "true";
 }
 
 function setDescription(target: HTMLElement, id: string, original: string | null): void {
