@@ -17,14 +17,15 @@
     border-color: #c8cec5;
 }
 
-.edf-saved-search-card:has(.edf-saved-search-primary-link:focus-visible) {
-    box-shadow: var(--edf-focus-ring);
-}
-
 .edf-saved-search-primary-link {
     inset: 0;
     position: absolute;
     z-index: 1;
+}
+
+/* The card's link covers the whole card, so the card wears its focus ring. */
+.edf-saved-search-card:has(.edf-saved-search-primary-link:focus-visible) {
+    outline: auto;
 }
 
 .edf-saved-search-primary-link:focus-visible {

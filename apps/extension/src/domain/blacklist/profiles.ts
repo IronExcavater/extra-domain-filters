@@ -96,7 +96,8 @@ export function findBlacklistedProfile(
     const profiles = getBlacklistedProfiles(entries);
     if (profiles.length === 0) return undefined;
     const agentNames = new Set(listing.agentNames?.map(normalizeName));
+    const agencyName = listing.agencyName && normalizeName(listing.agencyName);
     return profiles.find(profile => profile.kind === "agency"
-        ? listing.agencyId === profile.id
+        ? listing.agencyId ? listing.agencyId === profile.id : agencyName === normalizeName(profile.name)
         : listing.agentIds?.includes(profile.id) || agentNames.has(normalizeName(profile.name)));
 }

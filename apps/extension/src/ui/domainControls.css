@@ -39,10 +39,6 @@
     display: none;
 }
 
-.edf-ui-button:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: 0;
-}
 
 .edf-ui-button:disabled,
 .edf-ui-button[aria-busy="true"] {
@@ -338,8 +334,6 @@
 
 .edf-selection-checkbox input:focus-visible {
     border-color: var(--edf-color-green);
-    box-shadow: 0 0 0 1.5px rgb(14 168 0 / 24%);
-    outline: 0;
 }
 
 .edf-selection-checkbox input:checked {

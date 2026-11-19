@@ -12,7 +12,6 @@
     --edf-color-green-tint: #f7fcf1;
     --edf-color-danger: #dc2626;
     --edf-color-danger-hover: #b91c1c;
-    --edf-color-focus: rgb(14 168 0 / 24%);
     --edf-color-overlay: rgb(19 18 18 / 12%);
     --edf-radius-control: 12px;
     --edf-radius-card: 3px;
@@ -25,7 +24,6 @@
     --edf-control-height-sm: 36px;
     --edf-control-height-md: 40px;
     --edf-control-height-lg: 44px;
-    --edf-focus-ring: 0 0 0 3px var(--edf-color-focus);
     --edf-motion-fast: 150ms;
     --edf-motion-base: 220ms;
     --edf-shadow-card: 0 1px 3px 0 #d0d3d9;
@@ -46,6 +44,14 @@
     --edf-color-shortlist-selected: #fc0;
     --edf-color-shortlist-active-hover: #ffa200;
     --edf-color-shortlist-inactive: #626a78;
+}
+
+/* Focus: the browser's own ring, as on Domain's own controls, for everything the extension adds
+ * to Domain (marked owned) and everything in its popup. Components don't draw their own. */
+[data-extra-domain-filters-owner]:focus-visible,
+[data-extra-domain-filters-owner] :focus-visible,
+.edf-settings-popup :focus-visible {
+    outline: auto;
 }
 
 .edf-theme-2026 {

@@ -40,10 +40,6 @@
         box-shadow 160ms ease;
 }
 
-.edf-sort-dropdown-button:focus-visible {
-    box-shadow: 0 0 0 2px rgb(14 168 0 / 24%);
-    outline: none;
-}
 
 .edf-sort-dropdown-button:hover {
     background: var(--edf-color-surface-muted);

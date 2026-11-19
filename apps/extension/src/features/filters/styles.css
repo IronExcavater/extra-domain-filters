@@ -28,10 +28,11 @@
     width: 24px;
 }
 
+/* Domain's own interactive green (its token), not the extension's brand green. */
 .edf-search-share-button:hover:not(:disabled) {
     background: var(--edf-color-green-tint);
-    border-color: var(--edf-color-green);
-    color: var(--edf-color-green);
+    border-color: var(--color-interactive-base-default, #008a08);
+    color: var(--color-interactive-base-default, #008a08);
 }
 
 .edf-search-share-button:active:not(:disabled) {
@@ -290,7 +291,6 @@
 
 .edf-filter-heading-action:is(:hover, :focus-visible) {
     background: var(--color-neutral-surface-hover, #f3f1ed);
-    outline: none;
 }
 
 .edf-filter-heading-action[hidden] {
@@ -336,7 +336,6 @@
 .edf-filter-could-have .edf-filter-could-have-remove:is(:hover, :focus-visible) {
     background: var(--color-neutral-surface-hover, #f3f1ed);
     color: var(--color-neutral-heavy-default, #131212);
-    outline: none;
 }
 
 .edf-filter-could-have[data-removing="true"] {
@@ -382,7 +381,6 @@
 .edf-filter-could-have-add:is(:hover, :focus-visible) {
     background: var(--color-neutral-surface-hover, #f3f1ed);
     border-color: var(--color-neutral-trim-hover, #a9afba);
-    outline: none;
 }
 
 .edf-filter-section-home .edf-filter-could-have-adder {

@@ -14,6 +14,7 @@ import { setBlacklistActionState } from "./actions/blacklistAction";
 import { ensureProfileAction } from "./actions/profileAction";
 import {
     getCarouselMembers,
+    bindCarouselProfileActions,
     updateCarouselCard,
     type CarouselListingDecision,
 } from "./cards/carousel";
@@ -183,11 +184,9 @@ export async function updateListingCards(
         }
 
         for (const carouselCard of carouselCards) {
-            updateCarouselCard(
-                carouselCard,
-                carouselDecisions.get(carouselCard) ?? [],
-                showBlacklistedView,
-            );
+            const decisions = carouselDecisions.get(carouselCard) ?? [];
+            updateCarouselCard(carouselCard, decisions, showBlacklistedView);
+            bindCarouselProfileActions(carouselCard, decisions);
         }
 
         if (showBlacklistedView) compactExcludedListingCards();

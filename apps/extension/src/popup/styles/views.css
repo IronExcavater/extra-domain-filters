@@ -116,7 +116,6 @@
 .edf-login-back:is(:hover, :focus-visible) {
     background: var(--edf-color-surface-muted);
     color: var(--edf-color-green-hover);
-    outline: none;
 }
 
 .edf-login-brand {
@@ -184,9 +183,6 @@
         opacity 150ms ease;
 }
 
-.edf-login-provider:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-}
 
 .edf-login-provider:disabled {
     cursor: progress;
@@ -200,7 +196,6 @@
 .edf-login-provider:is(:hover, :focus-visible):not(:disabled) {
     background: var(--edf-color-surface-muted);
     border-color: #c9ccd2;
-    outline: none;
 }
 
 /* The provider logo and a spinner share one cell and cross-fade while signing in. */
@@ -317,8 +312,6 @@
 
 .edf-login-input:focus {
     border-color: var(--edf-color-green);
-    box-shadow: var(--edf-focus-ring);
-    outline: none;
 }
 
 .edf-login-input:hover:not(:focus) {
@@ -369,7 +362,6 @@
 .edf-login-visibility:is(:hover, :focus-visible) {
     background: var(--edf-color-surface-muted);
     color: var(--edf-color-heading);
-    outline: none;
 }
 
 .edf-login-visibility > svg {
@@ -399,7 +391,6 @@
 }
 
 .edf-login-forgot:is(:hover, :focus-visible) {
-    outline: none;
     text-decoration: underline;
 }
 
@@ -471,9 +462,6 @@
     width: 100%;
 }
 
-.edf-login-submit:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-}
 
 .edf-login-submit:disabled {
     cursor: progress;
@@ -487,7 +475,6 @@
 
 .edf-login-submit:is(:hover, :focus-visible):not(:disabled) {
     background: var(--edf-color-green-hover);
-    outline: none;
 }
 
 .edf-login-spinner {
@@ -543,7 +530,6 @@
 }
 
 .edf-login-switch button:is(:hover, :focus-visible) {
-    outline: none;
     text-decoration: underline;
 }
 

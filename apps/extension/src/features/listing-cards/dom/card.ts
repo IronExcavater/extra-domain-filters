@@ -195,6 +195,9 @@ export function getListingImageUrls(card: Element): string[] {
 }
 
 interface ListingSnapshotOptions {
+    /** Where to read the agency from when the card has no branding strip of its own (a featured
+     * card's slides share the card's). */
+    brandingFallback?: Element;
     includeThumbnail?: boolean;
 }
 
@@ -204,6 +207,29 @@ function getOwnText(card: Element): string {
     const clone = card.cloneNode(true) as Element;
     clone.querySelectorAll("[data-extra-domain-filters-owner], [class*='edf-']").forEach(node => node.remove());
     return clone.textContent ?? "";
+}
+
+const BRANDING_SELECTOR = '[data-testid="listing-card-branding"]';
+
+/**
+ * The agency and agents a card's branding strip names, for cards Domain's search data doesn't
+ * cover (featured listings, pages loaded client-side): the logo's alt ("Logo for …") and, where
+ * the logo is served from Domain's agency image folder or links to the agency, its id.
+ */
+export function readCardBranding(card: Element, fallback?: Element): Pick<ListingSnapshot, "agencyId" | "agencyName" | "agentNames"> {
+    const branding = card.querySelector(BRANDING_SELECTOR) ?? fallback?.querySelector(BRANDING_SELECTOR);
+    if (!branding) return {};
+    const images = [...branding.querySelectorAll<HTMLImageElement>("img[alt]")];
+    const logo = images.find(image => /^logo for /i.test(image.alt));
+    const agencyLink = branding.querySelector<HTMLAnchorElement>('a[href*="/real-estate-agencies/"]');
+    const agencyId = (logo?.currentSrc || logo?.src)?.match(/\/agencys\/(\d+)\//i)?.[1] ??
+        agencyLink?.pathname.match(/-(\d+)\/?$/)?.[1];
+    const agentNames = images.flatMap(image => image.alt.match(/^agent\s*-\s*(.+)$/i)?.[1]?.trim() ?? []);
+    return {
+        agencyId,
+        agencyName: logo?.alt.replace(/^logo for /i, "").trim() || undefined,
+        agentNames: agentNames.length > 0 ? agentNames : undefined,
+    };
 }
 
 export function getListingSnapshot(
@@ -229,6 +255,7 @@ export function getListingSnapshot(
         propertyType: getPropertyType(card),
         thumbnailUrl: includeThumbnail ? getThumbnailUrl(card) : undefined,
         imageUrls: includeThumbnail ? getListingImageUrls(card) : undefined,
+        ...readCardBranding(card, options.brandingFallback),
     };
 }
 

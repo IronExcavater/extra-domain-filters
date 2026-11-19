@@ -50,7 +50,6 @@ function createShareButton(
         await writeClipboardText(shareUrl);
         void trackTelemetry({ name: "feature_used", feature: "filter_share" });
         showToast("Search link copied");
-        button.blur();
     }, { signal: context.signal });
 
     return markOwned(button, "share-filter-action");

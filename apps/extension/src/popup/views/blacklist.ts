@@ -8,9 +8,12 @@ import { isProfileEntry } from "../../domain/blacklist/profiles";
 import { createBlacklistCard } from "../../features/blacklist/card";
 import {
     createProfileCard,
+    createRemovedCard,
     getProfileEntries,
+    getRecentlyRemoved,
     PROFILE_EMPTY_COPY,
     PROPERTIES_EMPTY_COPY,
+    REMOVED_EMPTY_COPY,
 } from "../../features/blacklist/profiles";
 import {
     filterBlacklistEntries,
@@ -37,7 +40,7 @@ interface BlacklistViewOptions {
     signal: AbortSignal;
 }
 
-type BlacklistScope = "agency" | "agent" | "properties";
+type BlacklistScope = "agency" | "agent" | "properties" | "removed";
 
 const retainedUnblacklistedEntries = new Map<string, BlacklistEntry>();
 // The scope survives re-renders (e.g. after showing an agency again).
@@ -98,19 +101,18 @@ export function createBlacklistView(options: BlacklistViewOptions): HTMLElement 
             { label: "Properties", value: "properties" },
             { label: "Agencies", value: "agency" },
             { label: "Agents", value: "agent" },
+            { label: "Removed", value: "removed" },
         ],
         signal,
     });
     const renderProfiles = (scope: Exclude<BlacklistScope, "properties">): void => {
-        const list = profiles[scope];
-        profileList.replaceChildren(...(list.length > 0
-            ? list.map(profile => createProfileCard(profile, { openInNewTab: true, toastScope: "popup" }))
-            : [createEmptyState(
-                PROFILE_EMPTY_COPY[scope].title,
-                PROFILE_EMPTY_COPY[scope].description,
-                replaceWithBinIcon,
-                createSearchAction("buy", true),
-            )]));
+        const cards = scope === "removed"
+            ? getRecentlyRemoved(entries).map(entry => createRemovedCard(entry, { openInNewTab: true, toastScope: "popup" }))
+            : profiles[scope].map(profile => createProfileCard(profile, { openInNewTab: true, toastScope: "popup" }));
+        const empty = scope === "removed" ? REMOVED_EMPTY_COPY : PROFILE_EMPTY_COPY[scope];
+        profileList.replaceChildren(...(cards.length > 0
+            ? cards
+            : [createEmptyState(empty.title, empty.description, replaceWithBinIcon, createSearchAction("buy", true))]));
         if (animateNext) {
             profileList.removeAttribute("data-animate");
             void profileList.offsetWidth;

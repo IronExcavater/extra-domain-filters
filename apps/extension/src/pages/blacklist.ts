@@ -13,9 +13,12 @@ import { isProfileEntry, type ProfileKind } from "../domain/blacklist/profiles";
 import { createBlacklistCard } from "../features/blacklist/card";
 import {
     createProfileCard,
+    createRemovedCard,
     getProfileEntries,
+    getRecentlyRemoved,
     PROFILE_EMPTY_COPY,
     PROPERTIES_EMPTY_COPY,
+    REMOVED_EMPTY_COPY,
 } from "../features/blacklist/profiles";
 import {
     sortBlacklistEntries,
@@ -45,7 +48,7 @@ import {
 
 const selectedUrls = new Set<string>();
 const retainedUnblacklistedEntries = new Map<string, BlacklistEntry>();
-type BlacklistScope = "properties" | ProfileKind;
+type BlacklistScope = "properties" | "removed" | ProfileKind;
 
 // The tab survives re-renders and remounts.
 let scope: BlacklistScope = "properties";
@@ -55,6 +58,7 @@ const SUBTITLES: Record<BlacklistScope, string> = {
     properties: "Blacklisted properties are hidden from your Domain searches.",
     agency: "Every listing from these agencies is hidden from your Domain searches.",
     agent: "Every listing from these agents is hidden from your Domain searches.",
+    removed: "What you've unblacklisted in the last 30 days. Blacklist any of it again.",
 };
 const stableNewestOrder = new Map<string, number>();
 
@@ -182,16 +186,14 @@ function renderProfiles(container: HTMLElement, list: HTMLElement, blacklist: re
     grid.hidden = scope === "properties";
     if (scope === "properties") return;
 
-    const profiles = getProfileEntries(blacklist, scope);
-    grid.className = profiles.length > 0 ? "edf-profile-grid edf-blacklist-profile-grid" : "";
-    grid.replaceChildren(...(profiles.length > 0
-        ? profiles.map(profile => createProfileCard(profile))
-        : [createEmptyState(
-            PROFILE_EMPTY_COPY[scope].title,
-            PROFILE_EMPTY_COPY[scope].description,
-            replaceWithBinIcon,
-            createSearchAction(),
-        )]));
+    const cards = scope === "removed"
+        ? getRecentlyRemoved(blacklist).map(entry => createRemovedCard(entry))
+        : getProfileEntries(blacklist, scope).map(profile => createProfileCard(profile));
+    const empty = scope === "removed" ? REMOVED_EMPTY_COPY : PROFILE_EMPTY_COPY[scope];
+    grid.className = cards.length > 0 ? "edf-profile-grid edf-blacklist-profile-grid" : "";
+    grid.replaceChildren(...(cards.length > 0
+        ? cards
+        : [createEmptyState(empty.title, empty.description, replaceWithBinIcon, createSearchAction())]));
 }
 
 async function render(container: HTMLElement, list: HTMLElement): Promise<void> {
@@ -286,7 +288,7 @@ const mountBlacklistPage: PageMount = async context => {
                 scope = value as BlacklistScope;
                 renderRows();
             },
-            options: [["properties", "Properties"], ["agency", "Agencies"], ["agent", "Agents"]],
+            options: [["properties", "Properties"], ["agency", "Agencies"], ["agent", "Agents"], ["removed", "Removed"]],
             selected: scope,
         }, actions);
         const restoreSort = installSortControl(container, {

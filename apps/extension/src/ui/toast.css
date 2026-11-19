@@ -125,7 +125,6 @@
     background: #f4fbee;
     border-color: var(--edf-color-green, #0ea800);
     color: var(--edf-color-green-hover, #087f00);
-    outline: none;
 }
 
 .edf-toast-action:active:not(:disabled) {
@@ -181,10 +180,6 @@
     color: var(--edf-color-heading, #131212);
 }
 
-.edf-toast-close:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: 0;
-}
 
 .edf-toast-close-icon {
     height: 18px;

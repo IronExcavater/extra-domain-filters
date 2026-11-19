@@ -317,7 +317,6 @@
 .edf-settings-provider:is(:hover, :focus-visible):not(:disabled) {
     background: var(--edf-color-surface-muted, #f7f7f5);
     border-color: var(--color-neutral-trim-hover, #a9afba);
-    outline: none;
 }
 
 .edf-settings-provider-icon {
@@ -483,7 +482,6 @@
 
 .edf-filters-text-action:is(:hover, :focus-visible) {
     background: #f4fbee;
-    outline: none;
 }
 
 .edf-filters-text-action[hidden] {
@@ -542,10 +540,6 @@ button.edf-filters-chip-label {
     cursor: pointer;
 }
 
-button.edf-filters-chip-label:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: none;
-}
 
 .edf-filters-chip-check {
     flex: 0 0 auto;
@@ -590,7 +584,6 @@ button.edf-filters-chip-label:focus-visible {
 .edf-filters-chip-remove:is(:hover, :focus-visible) {
     background: rgb(19 18 18 / 6%);
     opacity: 1;
-    outline: none;
 }
 
 .edf-filters-empty {
@@ -621,8 +614,6 @@ button.edf-filters-chip-label:focus-visible {
 
 .edf-filters-input:focus-visible {
     border-color: var(--edf-color-green);
-    box-shadow: var(--edf-focus-ring);
-    outline: 0;
 }
 
 .edf-filters-add {
@@ -651,7 +642,6 @@ button.edf-filters-chip-label:focus-visible {
 .edf-filters-add:is(:hover, :focus-visible) {
     background: #f4fbee;
     border-color: var(--edf-color-green);
-    outline: none;
 }
 
 .edf-filters-range-value {

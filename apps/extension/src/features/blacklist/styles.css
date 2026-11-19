@@ -76,10 +76,6 @@
     width: 24px;
 }
 
-.edf-blacklist-card-toggle.edf-blacklist-action-popup:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: 0;
-}
 
 .edf-blacklist-card-toggle.edf-blacklist-action-popup:hover:not(:disabled) {
     background: transparent;
@@ -193,7 +189,6 @@
 
 .edf-card-profile-action:is(:hover, :focus-visible) {
     background: #fff;
-    outline: none;
 }
 
 .edf-card-profile-action:is(:focus-visible, [aria-expanded="true"]),
@@ -239,7 +234,6 @@ li:is(:hover, :focus-within) .edf-card-profile-action {
 
 .edf-profile-menu-item:is(:hover, :focus-visible):not(:disabled) {
     background: var(--edf-color-surface-muted, #f3f1ed);
-    outline: none;
 }
 
 .edf-profile-menu-name {
@@ -316,6 +310,11 @@ li:is(:hover, :focus-within) .edf-card-profile-action {
     width: 100%;
 }
 
+/* Removed listings show their photo, cropped to fill. */
+.edf-profile-card[data-kind="property"] .edf-profile-card-avatar > img {
+    object-fit: cover;
+}
+
 .edf-profile-card-text {
     display: grid;
     gap: 2px;
@@ -341,6 +340,9 @@ li:is(:hover, :focus-within) .edf-card-profile-action {
     color: var(--edf-color-muted, #646463);
     font-size: 13px;
     line-height: 18px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .edf-profile-card-action {
@@ -365,5 +367,4 @@ li:is(:hover, :focus-within) .edf-card-profile-action {
 .edf-profile-card-action:is(:hover, :focus-visible):not(:disabled) {
     background: var(--edf-color-surface-muted, #f3f1ed);
     border-color: var(--color-neutral-trim-hover, #a9afba);
-    outline: none;
 }

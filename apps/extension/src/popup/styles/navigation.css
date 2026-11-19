@@ -35,10 +35,6 @@
     opacity: 0.8;
 }
 
-.edf-popup-brand:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: none;
-}
 
 .edf-popup-wordmark {
     display: block;
@@ -98,7 +94,6 @@
 
 .edf-popup-nav-item:is(:hover, :focus-visible) {
     color: var(--edf-color-heading);
-    outline: none;
 }
 
 .edf-popup-nav-item[data-active="true"] {
@@ -163,12 +158,8 @@
 .edf-popup-menu-trigger:is(:hover, :focus-visible, [aria-expanded="true"]) {
     background: var(--edf-color-surface-muted, #f7f7f5);
     color: var(--edf-color-heading);
-    outline: none;
 }
 
-.edf-popup-menu-trigger:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-}
 
 /* Domain needs attention (signed out, unreachable): an amber dot on the avatar. */
 .edf-popup-menu-trigger::after {
@@ -347,7 +338,6 @@
 .edf-popup-account-menu-item:is(:hover, :focus-visible):not(:disabled) {
     background: var(--edf-hover-surface);
     color: var(--edf-color-heading);
-    outline: none;
 }
 
 .edf-popup-account-menu-item[data-active="true"] {

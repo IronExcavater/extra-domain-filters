@@ -111,7 +111,6 @@ ul[data-edf-settings-active="true"] > li:not(.edf-profile-settings-tab) > button
 .edf-header-settings-link:is(:hover, :focus-visible) {
     background: var(--edf-color-surface-muted, #f7f7f5);
     color: var(--edf-color-green-hover, #0c8a00);
-    outline: none;
 }
 
 .edf-header-settings-icon {

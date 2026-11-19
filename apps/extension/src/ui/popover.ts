@@ -17,6 +17,12 @@ export interface PopoverOptions {
 const EDGE_GAP = 8;
 const POPOVER_GAP = 8;
 let activePopover: PopoverHandle | undefined;
+let activeAnchor: HTMLElement | undefined;
+
+/** The control whose popover is open, if any (a carousel holds still while one of its own is). */
+export function getActivePopoverAnchor(): HTMLElement | undefined {
+    return activeAnchor;
+}
 
 export function openPopover(options: PopoverOptions): PopoverHandle {
     activePopover?.close();
@@ -54,6 +60,9 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
         element.style.top = `${Math.max(EDGE_GAP, Math.min(top, window.innerHeight - height - EDGE_GAP))}px`;
     };
 
+    // The control says whether its popover is open (and stays shown while it is).
+    options.anchor.ariaExpanded = "true";
+
     const finishClose = (): void => {
         if (removed) return;
         removed = true;
@@ -70,7 +79,11 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
         resizeObserver.disconnect();
         window.removeEventListener("scroll", place, true);
         options.signal?.removeEventListener("abort", close);
-        if (activePopover === handle) activePopover = undefined;
+        if (activePopover === handle) {
+            activePopover = undefined;
+            activeAnchor = undefined;
+        }
+        options.anchor.ariaExpanded = "false";
         element.dataset.state = "closing";
         element.inert = true;
         element.setAttribute("aria-hidden", "true");
@@ -97,6 +110,7 @@ export function openPopover(options: PopoverOptions): PopoverHandle {
     resizeObserver.observe(element);
 
     activePopover = handle;
+    activeAnchor = options.anchor;
     document.addEventListener("pointerdown", onDocumentPointerDown, true);
     document.addEventListener("keydown", onDocumentKeyDown, true);
     window.addEventListener("resize", place, { passive: true });

@@ -56,7 +56,6 @@
 .edf-featured-controls > button:is(:hover:not(:disabled), :focus-visible) {
     background: rgb(255 255 255 / 20%);
     border-color: color-mix(in srgb, var(--edf-featured-fg, rgb(19 18 18)) 20%, transparent);
-    outline: none;
 }
 
 .edf-featured-controls > button:active:not(:disabled) {

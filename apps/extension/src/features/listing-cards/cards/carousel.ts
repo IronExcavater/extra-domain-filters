@@ -1,8 +1,10 @@
 import { type ExclusionReason, type ListingSnapshot } from "../../../domain/matching";
 import { PageContext } from "../../../platform/router";
 import { createSvgIcon } from "../../../ui/elements";
+import { getActivePopoverAnchor } from "../../../ui/popover";
 import { attachTooltip, setTooltipText } from "../../../ui/tooltip";
 import { createBlacklistAction, setBlacklistActionState } from "../actions/blacklistAction";
+import { ensureProfileAction } from "../actions/profileAction";
 import { toggleBundleBlacklist } from "../blacklist/bundle";
 import { toggleBlacklist } from "../blacklist/toggle";
 import { getExclusionRow, setHiddenRowState } from "../exclusion/row";
@@ -22,9 +24,13 @@ export interface CarouselListingDecision {
     url: string;
 }
 
-interface PausedCarousel {
+/** Slick keeps sliding the track; a hold puts its transform back while the carousel should
+ * stand still. */
+interface CarouselHold {
     observer: MutationObserver;
+    /** Paused with its Pause button. */
     paused: boolean;
+    track: HTMLElement;
     transform: string;
 }
 
@@ -46,7 +52,7 @@ interface CarouselHydrationState {
 // Domain doesn't expose a stable data-testid for carousel navigation. If Domain swaps carousel
 // libraries, changes button copy, or serves a non-English locale, this feature silently stops
 // working rather than erroring — there's no reliable way to detect that from here.
-const pausedCarousels = new Map<HTMLElement, PausedCarousel>();
+const carouselHolds = new Map<HTMLElement, CarouselHold>();
 const carouselActionHosts = new Map<HTMLElement, CarouselActionHostState>();
 const carouselHydrationObservers = new Map<HTMLElement, CarouselHydrationState>();
 
@@ -72,11 +78,11 @@ export function disposeDetachedCarouselControls(): void {
     for (const carouselCard of frozenTracks.keys()) {
         if (!carouselCard.isConnected) freezeCarousel(carouselCard, false);
     }
-    for (const [carouselCard, state] of pausedCarousels) {
+    for (const [carouselCard, state] of carouselHolds) {
         if (carouselCard.isConnected) continue;
 
         state.observer.disconnect();
-        pausedCarousels.delete(carouselCard);
+        carouselHolds.delete(carouselCard);
     }
 
     for (const carouselCard of carouselActionHosts.keys()) {
@@ -92,8 +98,8 @@ export function disposeDetachedCarouselControls(): void {
 export function disposeCarouselControls(): void {
     for (const observer of frozenTracks.values()) observer.disconnect();
     frozenTracks.clear();
-    for (const state of pausedCarousels.values()) state.observer.disconnect();
-    pausedCarousels.clear();
+    for (const state of carouselHolds.values()) state.observer.disconnect();
+    carouselHolds.clear();
     for (const carouselCard of carouselActionHosts.keys()) removeCarouselActionHost(carouselCard);
     for (const carouselCard of carouselHydrationObservers.keys()) {
         removeCarouselHydrationObserver(carouselCard);
@@ -129,6 +135,41 @@ function createPauseButton(signal: AbortSignal): HTMLButtonElement {
     return button;
 }
 
+/** Someone is using the card: the pointer is on it, focus is in it, or a menu opened from it
+ * (they open over the page, outside the card) is still open. */
+function isCarouselInUse(carouselCard: HTMLElement): boolean {
+    const anchor = getActivePopoverAnchor();
+    return carouselCard.matches(":hover, :focus-within") || (anchor !== undefined && carouselCard.contains(anchor));
+}
+
+/** Holds the featured carousel still while it's paused or in use; it moves on by itself again after. */
+function ensureCarouselHold(carouselCard: HTMLElement, signal: AbortSignal): CarouselHold | undefined {
+    const track = carouselCard.querySelector<HTMLElement>(".slick-track");
+    const existing = carouselHolds.get(carouselCard);
+    if (!track || existing?.track === track) return existing;
+    existing?.observer.disconnect();
+
+    const state: CarouselHold = {
+        observer: new MutationObserver(() => {
+            if (!state.paused && !isCarouselInUse(carouselCard)) {
+                state.transform = track.style.transform;
+                return;
+            }
+            if (track.style.transform !== state.transform) track.style.transform = state.transform;
+        }),
+        paused: existing?.paused ?? false,
+        track,
+        transform: track.style.transform,
+    };
+    carouselHolds.set(carouselCard, state);
+    state.observer.observe(track, { attributes: true, attributeFilter: ["style"] });
+    signal.addEventListener("abort", () => {
+        state.observer.disconnect();
+        if (carouselHolds.get(carouselCard) === state) carouselHolds.delete(carouselCard);
+    }, { once: true });
+    return state;
+}
+
 function bindCarouselPauseControl(
     carouselCard: HTMLElement,
     controls: HTMLElement,
@@ -137,51 +178,32 @@ function bindCarouselPauseControl(
 ): void {
     const existing = controls.querySelector<HTMLButtonElement>('[data-testid="listing-card-carousel-pause"]');
     const button = existing ?? createPauseButton(signal);
-    const track = carouselCard.querySelector<HTMLElement>(".slick-track");
+    const hold = ensureCarouselHold(carouselCard, signal);
 
     button.dataset.testid = "listing-card-carousel-pause";
-    button.hidden = memberCount <= 1 || !track;
+    button.hidden = memberCount <= 1 || !hold;
     if (!existing) controls.append(button);
-    if (!track || pausedCarousels.has(carouselCard)) return;
+    if (existing || !hold) return;
 
-    const state = {
-        observer: new MutationObserver(() => {
-            if (!state.paused) {
-                state.transform = track.style.transform;
-                return;
-            }
-            if (track.style.transform !== state.transform) track.style.transform = state.transform;
-        }),
-        paused: false,
-        transform: track.style.transform,
-    };
-    pausedCarousels.set(carouselCard, state);
-    setPauseIcon(button, false);
-
+    setPauseIcon(button, hold.paused);
     button.addEventListener("click", event => {
         event.preventDefault();
         event.stopPropagation();
+        const state = carouselHolds.get(carouselCard);
+        if (!state) return;
         state.paused = !state.paused;
-        if (!state.paused) state.transform = track.style.transform;
+        if (!state.paused) state.transform = state.track.style.transform;
         setPauseIcon(button, state.paused);
         const label = state.paused ? "Play featured carousel" : "Pause featured carousel";
         button.ariaLabel = label;
         setTooltipText(button, label);
     }, { signal });
-    state.observer.observe(track, { attributes: true, attributeFilter: ["style"] });
-    signal.addEventListener("abort", () => {
-        state.observer.disconnect();
-        if (pausedCarousels.get(carouselCard) === state) pausedCarousels.delete(carouselCard);
-    }, { once: true });
 }
 
 function removeCarouselPauseControl(carouselCard: HTMLElement, controls: HTMLElement): void {
     controls.querySelector('[data-testid="listing-card-carousel-pause"]')?.remove();
-    const state = pausedCarousels.get(carouselCard);
-    if (!state) return;
-
-    state.observer.disconnect();
-    pausedCarousels.delete(carouselCard);
+    const state = carouselHolds.get(carouselCard);
+    if (state) state.paused = false;
 }
 
 function findChildSlides(carouselCard: HTMLElement): HTMLElement[] {
@@ -404,7 +426,7 @@ export function getCarouselMembers(carouselCard: HTMLElement): { url: string; sn
         .map(slide => {
             const url = getChildListingUrl(slide);
             return url
-                ? { url, snapshot: getListingSnapshot(slide, url) }
+                ? { url, snapshot: getListingSnapshot(slide, url, { brandingFallback: carouselCard }) }
                 : undefined;
         })
         .filter((entry): entry is { url: string; snapshot: ListingSnapshot } => entry !== undefined);
@@ -416,7 +438,7 @@ export function getCarouselMembers(carouselCard: HTMLElement): { url: string; sn
 
             return {
                 url,
-                snapshot: getListingSnapshot(getAnchorListingElement(anchor), url),
+                snapshot: getListingSnapshot(getAnchorListingElement(anchor), url, { brandingFallback: carouselCard }),
             };
         });
     const seen = new Set<string>();
@@ -461,8 +483,9 @@ function observeCarouselHydration(
                 const host = carouselActionHosts.get(carouselCard)?.host;
                 const needsAggregate = state.options.enableBlacklist && nextMemberCount > 1 &&
                     !host?.querySelector('.edf-featured-blacklist-button');
+                const pause = host?.querySelector<HTMLElement>('[data-testid="listing-card-carousel-pause"]');
                 const needsPause = state.options.enablePause && nextMemberCount > 1 &&
-                    !host?.querySelector('[data-testid="listing-card-carousel-pause"]');
+                    (!pause || (pause.hidden && carouselCard.querySelector(".slick-track") !== null));
                 const needsPropertyActions = state.options.enableBlacklist &&
                     boundPropertyActions !== nativePropertyActions;
                 if (
@@ -621,6 +644,28 @@ export function updateCarouselCard(
     }
 }
 
+/**
+ * The agency/agent bin on each featured listing: on every slide that has its own branding strip
+ * (clones too, which Slick shows while it loops), or else on the featured card's strip.
+ */
+export function bindCarouselProfileActions(
+    carouselCard: HTMLElement,
+    decisions: readonly CarouselListingDecision[],
+): void {
+    const listings = new Map(decisions.map(decision => [decision.url.replace(/\/+$/, ""), decision.snapshot]));
+    const slides = findSlickSlides(carouselCard);
+    let placed = false;
+    for (const slide of slides.length > 0 ? slides : findChildSlides(carouselCard)) {
+        if (!slide.querySelector('[data-testid="listing-card-branding"]')) continue;
+        const url = slide.matches(".slick-slide") ? getSlickSlideUrl(slide) : getChildListingUrl(slide);
+        const listing = url ? listings.get(url.replace(/\/+$/, "")) : undefined;
+        if (!listing) continue;
+        ensureProfileAction(slide, listing);
+        placed = true;
+    }
+    if (!placed && decisions[0]) ensureProfileAction(carouselCard, decisions[0].snapshot);
+}
+
 export function bindCarouselCard(
     carouselCard: HTMLElement,
     context: PageContext,
@@ -645,6 +690,7 @@ export function bindCarouselCard(
         return;
     }
 
+    ensureCarouselHold(carouselCard, context.signal);
     const actionHost = getCarouselActionHost(carouselCard, context.signal);
     if (!options.enablePause) removeCarouselPauseControl(carouselCard, actionHost);
 

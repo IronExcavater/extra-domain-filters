@@ -83,10 +83,6 @@ a.edf-exclusion-row-title:hover {
     transition: background-color 0.2s linear, border-color 0.2s linear, color 0.2s linear;
 }
 
-.edf-exclusion-row-button:focus-visible {
-    box-shadow: var(--edf-focus-ring);
-    outline: none;
-}
 
 .edf-exclusion-row-button:disabled {
     cursor: default;
@@ -156,10 +152,6 @@ a.edf-exclusion-row-title:hover {
     color: var(--color-neutral-heavy-default, #131212);
 }
 
-.edf-hidden-summary-header:focus-visible {
-    box-shadow: inset var(--edf-focus-ring);
-    outline: none;
-}
 
 .edf-hidden-summary-previews {
     display: inline-flex;
@@ -294,7 +286,6 @@ a.edf-exclusion-row-title:hover {
 
 .edf-hidden-group-action:is(:hover, :focus-visible) {
     background: var(--color-neutral-surface-hover, #f3f1ed);
-    outline: none;
 }
 
 .edf-hidden-group-list {
@@ -400,7 +391,6 @@ a.edf-hidden-item-title:hover {
 .edf-hidden-item-action:is(:hover, :focus-visible):not(:disabled) {
     background: var(--edf-color-surface, #fff);
     border-color: var(--color-neutral-trim-hover, #a9afba);
-    outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
