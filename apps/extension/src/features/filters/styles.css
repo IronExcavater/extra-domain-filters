@@ -28,9 +28,10 @@
     width: 24px;
 }
 
-/* Domain's own interactive green (its token), not the extension's brand green. */
+/* Domain's own interactive tokens (checked on a search page: #008a08 on #f7fcf1), not the
+ * extension's brand green. */
 .edf-search-share-button:hover:not(:disabled) {
-    background: var(--edf-color-green-tint);
+    background: var(--color-interactive-surface-hover, #f7fcf1);
     border-color: var(--color-interactive-base-default, #008a08);
     color: var(--color-interactive-base-default, #008a08);
 }

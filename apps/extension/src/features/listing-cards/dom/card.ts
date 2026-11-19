@@ -216,7 +216,7 @@ const BRANDING_SELECTOR = '[data-testid="listing-card-branding"]';
  * cover (featured listings, pages loaded client-side): the logo's alt ("Logo for …") and, where
  * the logo is served from Domain's agency image folder or links to the agency, its id.
  */
-export function readCardBranding(card: Element, fallback?: Element): Pick<ListingSnapshot, "agencyId" | "agencyName" | "agentNames"> {
+export function readCardBranding(card: Element, fallback?: Element): Pick<ListingSnapshot, "agencyId" | "agencyName" | "agentIds" | "agentNames"> {
     const branding = card.querySelector(BRANDING_SELECTOR) ?? fallback?.querySelector(BRANDING_SELECTOR);
     if (!branding) return {};
     const images = [...branding.querySelectorAll<HTMLImageElement>("img[alt]")];
@@ -224,10 +224,14 @@ export function readCardBranding(card: Element, fallback?: Element): Pick<Listin
     const agencyLink = branding.querySelector<HTMLAnchorElement>('a[href*="/real-estate-agencies/"]');
     const agencyId = (logo?.currentSrc || logo?.src)?.match(/\/agencys\/(\d+)\//i)?.[1] ??
         agencyLink?.pathname.match(/-(\d+)\/?$/)?.[1];
-    const agentNames = images.flatMap(image => image.alt.match(/^agent\s*-\s*(.+)$/i)?.[1]?.trim() ?? []);
+    const agents = images.filter(image => /^agent\s*-/i.test(image.alt));
+    const agentNames = agents.map(image => image.alt.replace(/^agent\s*-\s*/i, "").trim()).filter(Boolean);
+    // Agents' photos are served by id: …/img/6444/contact_2010895.jpeg.
+    const agentIds = agents.flatMap(image => (image.currentSrc || image.src).match(/\/contact_(\d+)\./i)?.[1] ?? []);
     return {
         agencyId,
         agencyName: logo?.alt.replace(/^logo for /i, "").trim() || undefined,
+        agentIds: agentIds.length > 0 ? agentIds : undefined,
         agentNames: agentNames.length > 0 ? agentNames : undefined,
     };
 }

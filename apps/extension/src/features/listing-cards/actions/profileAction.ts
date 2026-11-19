@@ -17,18 +17,26 @@ function titleCase(text: string): string {
         : text;
 }
 
-/** The agency and agents a card names: Domain's data for ids, its branding images for tidy names. */
+/**
+ * The agency and agents a card names. The branding strip gives tidy names and ids (the agency's
+ * from its logo's address, each agent's from their photo's: …/contact_2010895.jpeg), so agents
+ * link to their real Domain profile; Domain's data fills in when the strip has no agents.
+ */
 function readProfiles(branding: HTMLElement, listing: ListingSnapshot): BlacklistProfile[] {
     const images = [...branding.querySelectorAll<HTMLImageElement>("img[alt]")];
     const agencyName = images.map(image => image.alt.match(/^logo for (.+)$/i)?.[1]?.trim()).find(Boolean) ??
         (listing.agencyName && titleCase(listing.agencyName));
-    const agentNames = new Set([
-        ...images.flatMap(image => image.alt.match(/^agent\s*-\s*(.+)$/i)?.[1]?.trim() ?? []),
-        ...listing.agentNames ?? [],
-    ]);
+    const cardAgents = images.flatMap(image => {
+        const name = image.alt.match(/^agent\s*-\s*(.+)$/i)?.[1]?.trim();
+        const id = (image.currentSrc || image.src).match(/\/contact_(\d+)\./i)?.[1];
+        return name ? [createProfile("agent", name, id)] : [];
+    });
+    const agents = cardAgents.length > 0
+        ? cardAgents
+        : [...new Set(listing.agentNames ?? [])].map(name => createProfile("agent", titleCase(name)));
     return [
         ...(listing.agencyId && agencyName ? [createProfile("agency", agencyName, listing.agencyId)] : []),
-        ...[...agentNames].map(name => createProfile("agent", name)),
+        ...agents,
     ];
 }
 
