@@ -4,7 +4,8 @@ import { getFromStorage, onStorageChange, setInStorage } from "../../platform/st
 
 const STORAGE_KEY = "shortlistNotes";
 const NOTE_VIEW_TEST_ID = "extra-domain-filters-shortlist-note";
-const NATIVE_NOTES_LABEL = /^(?:(?:add|edit|view) notes?|view details)$/i;
+// Domain's notes button, whatever it says this week ("Add notes", "Edit note", "Notes", "View note").
+const NOTES_LABEL = /^(?:(?:add|edit|view)\s+(?:a\s+)?)?notes?$/i;
 const SAVE_DELAY_MS = 500;
 
 type ShortlistNotes = Record<string, { text: string; updatedAt: number }>;
@@ -66,23 +67,30 @@ function formatSaved(updatedAt: number | undefined): string {
         : date.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`;
 }
 
-/** The card's other side: a title, when it was saved, and the note filling the card. */
+/** The note overlay: covers the whole card with a title, when it was saved, the note, and Done. */
 function createNoteView(key: string, onClose: () => void): { element: HTMLElement; field: HTMLTextAreaElement; status: HTMLElement } {
     const element = markOwned(document.createElement("section"), "shortlist-note");
     const head = document.createElement("div");
+    const heading = document.createElement("div");
     const title = document.createElement("p");
     const status = document.createElement("span");
+    const done = document.createElement("button");
     const field = document.createElement("textarea");
 
     element.className = "edf-shortlist-note-view";
     element.dataset.testid = NOTE_VIEW_TEST_ID;
     element.ariaLabel = "Your note on this listing";
     head.className = "edf-shortlist-note-head";
+    heading.className = "edf-shortlist-note-heading";
     title.className = "edf-shortlist-note-title";
     title.textContent = "Your note";
     status.className = "edf-shortlist-note-status";
     status.ariaLive = "polite";
-    head.append(title, status);
+    heading.append(title, status);
+    done.type = "button";
+    done.className = "edf-shortlist-note-done";
+    done.textContent = "Done";
+    head.append(heading, done);
     field.className = "edf-shortlist-note-field";
     field.placeholder = "What did you think? Inspection times, questions for the agent, what to check…";
     field.ariaLabel = "Note";
@@ -102,7 +110,8 @@ function createNoteView(key: string, onClose: () => void): { element: HTMLElemen
         timer = window.setTimeout(() => void save(), SAVE_DELAY_MS);
     });
     field.addEventListener("blur", () => void save());
-    field.addEventListener("keydown", event => {
+    done.addEventListener("click", () => void save().then(onClose));
+    element.addEventListener("keydown", event => {
         if (event.key !== "Escape") return;
         event.preventDefault();
         void save().then(onClose);
@@ -115,17 +124,23 @@ function createNoteView(key: string, onClose: () => void): { element: HTMLElemen
     return { element, field, status };
 }
 
+/** Domain's notes button on a shortlist card ("Add notes", "Edit note", "Notes"…), not ours. */
+function findNotesButton(card: HTMLElement): HTMLElement | undefined {
+    return [...card.querySelectorAll<HTMLElement>("button, a[role='button']")]
+        .find(candidate => !candidate.closest(`[data-testid="${NOTE_VIEW_TEST_ID}"]`) &&
+            (candidate.dataset.edfNotesBound === "true" ||
+                NOTES_LABEL.test(candidate.textContent?.trim() ?? "") ||
+                NOTES_LABEL.test(candidate.getAttribute("aria-label") ?? "")));
+}
+
 /**
- * Shortlist notes as a second view of the card: "Add note" (or "View note" once there is one)
- * turns the card over to its note, which fills the card and saves as you type; "View details"
- * turns it back. Domain's own notes button now only opens the listing page, so it becomes
- * that switch.
+ * Shortlist notes as an overlay on the card. Domain's notes button opens it ("Add note", or
+ * "View note" once there is one) instead of Domain's own notes box, which stays hidden; the note
+ * saves as you type, and Done (or Escape) closes it.
  */
 export function bindShortlistNotes(card: HTMLElement, url: string): void {
-    const actions = card.querySelector<HTMLElement>('[data-testid="listing-card-buttons-wrapper"]');
-    const button = actions && [...actions.querySelectorAll<HTMLButtonElement>("button")]
-        .find(candidate => NATIVE_NOTES_LABEL.test(candidate.textContent?.trim() ?? ""));
-    if (!actions || !button) return;
+    const button = findNotesButton(card);
+    if (!button) return;
     const key = normalizeListingUrl(url);
     const open = (): boolean => card.dataset.edfNoteView === "true";
 
@@ -133,12 +148,11 @@ export function bindShortlistNotes(card: HTMLElement, url: string): void {
         void readNotes().then(notes => {
             if (!card.isConnected) return;
             const note = noteFor(notes, key);
-            const label = open() ? "View details" : note ? "View note" : "Add note";
+            const label = note ? "View note" : "Add note";
             if (button.textContent !== label) button.textContent = label;
-            button.ariaPressed = String(open());
+            button.ariaExpanded = String(open());
             card.dataset.edfHasNote = String(Boolean(note));
-            const view = card.querySelector<HTMLElement>(`[data-testid="${NOTE_VIEW_TEST_ID}"]`);
-            const field = view?.querySelector("textarea");
+            const field = card.querySelector<HTMLTextAreaElement>(`[data-testid="${NOTE_VIEW_TEST_ID}"] textarea`);
             if (field && document.activeElement !== field && field.value !== note) field.value = note;
         });
     };
@@ -154,8 +168,6 @@ export function bindShortlistNotes(card: HTMLElement, url: string): void {
             });
         }
         if (!view) return;
-        // The note covers the card down to its buttons, which stay where they are.
-        view.style.bottom = `${card.getBoundingClientRect().bottom - actions.getBoundingClientRect().top}px`;
         card.dataset.edfNoteView = String(next);
         view.inert = !next;
         if (next) {
@@ -173,6 +185,10 @@ export function bindShortlistNotes(card: HTMLElement, url: string): void {
     if (button.dataset.edfNotesBound !== "true") {
         button.dataset.edfNotesBound = "true";
         card.dataset.edfNoteCard = "true";
+        // Domain opens its own notes box from these; none of them reach it.
+        for (const type of ["pointerdown", "mousedown", "touchstart"] as const) {
+            button.addEventListener(type, event => event.stopImmediatePropagation(), { capture: true });
+        }
         button.addEventListener("click", event => {
             event.preventDefault();
             event.stopImmediatePropagation();

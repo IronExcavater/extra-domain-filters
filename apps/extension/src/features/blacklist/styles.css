@@ -21,6 +21,11 @@
     overflow: hidden;
 }
 
+/* The photo runs to the card's clipped edges: its ring is drawn inside it. */
+.edf-blacklist-card-media:focus-visible {
+    outline-offset: -3px;
+}
+
 .edf-blacklist-card-media img {
     display: block;
     height: 100%;

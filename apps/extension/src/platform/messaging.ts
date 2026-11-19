@@ -1,5 +1,6 @@
 import { defineExtensionMessaging } from "@webext-core/messaging";
 import type { AccountProvider, AccountState } from "../domain/account/model";
+import type { DomainSessionState } from "./domainPageClient";
 import type { ListingSnapshot } from "../domain/matching";
 import {
     normalizeSavedSearch,
@@ -27,6 +28,7 @@ export interface ExtensionProtocolMap {
         search: SavedSearch;
     }) => void;
     "domain-saved-search:remove": (data: { domainId: string }) => void;
+    "domain-saved-search:sync": () => DomainSessionState;
     "shared-search:create": (data: { params: string }) => SharedSearch;
     "shared-search:get": (data: { id: string }) => SharedSearch | undefined;
     "listing:enrich": (data: { listings: ListingSnapshot[] }) => void;
@@ -48,6 +50,7 @@ const REQUEST_VALIDATORS = {
     "domain-alert:apply": value => isDomainAlertRequest(value),
     "domain-saved-search:remove": value => typeof value.domainId === "string"
         && value.domainId.length > 0 && value.domainId.length <= 200,
+    "domain-saved-search:sync": () => true,
     "shared-search:create": isCreateSharedSearchInput,
     "shared-search:get": value => isSharedSearchId(value.id),
     "listing:enrich": value => Array.isArray(value.listings) && value.listings.length <= 24 &&

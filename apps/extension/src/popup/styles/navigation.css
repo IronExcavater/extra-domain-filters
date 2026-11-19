@@ -96,6 +96,11 @@
     color: var(--edf-color-heading);
 }
 
+/* The nav sits on the popup's top edge, which would clip a ring drawn outside. */
+.edf-popup-nav-item:focus-visible {
+    outline-offset: -2px;
+}
+
 .edf-popup-nav-item[data-active="true"] {
     color: var(--edf-selected-color);
 }

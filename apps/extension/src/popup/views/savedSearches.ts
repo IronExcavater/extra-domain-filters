@@ -4,11 +4,8 @@ import {
     type SavedSearch,
 } from "../../domain/searches/savedSearches";
 import { createSavedSearchCollection } from "../../features/saved-searches/collection";
-import {
-    applyDomainAlertFromExtensionPage,
-    type DomainSessionState,
-    removeDomainSavedSearchFromExtensionPage,
-} from "../../platform/domainPageClient";
+import type { DomainSessionState } from "../../platform/domainPageClient";
+import { sendExtensionMessage } from "../../platform/messaging";
 import { showPopupToast } from "../toast";
 
 export function createSavedSearchesView(
@@ -27,11 +24,12 @@ export function createSavedSearchesView(
         onNotify: showPopupToast,
         title: "My searches",
         onRemove: async search => {
-            if (search.domainId) await removeDomainSavedSearchFromExtensionPage(search.domainId);
+            // Through the background, which closes its hidden Domain tab even if the popup doesn't last.
+            if (search.domainId) await sendExtensionMessage("domain-saved-search:remove", { domainId: search.domainId });
             await removeSavedSearch(search.id);
         },
         onSave: async search => {
-            await applyDomainAlertFromExtensionPage(search, search.notificationFrequency);
+            await sendExtensionMessage("domain-alert:apply", { frequency: search.notificationFrequency, search });
             await saveSearch({ ...search, id: search.id });
         },
         openLinksInNewTab: true,

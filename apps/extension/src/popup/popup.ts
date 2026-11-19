@@ -16,11 +16,8 @@ import { getBlacklist } from "../domain/blacklist/store";
 import { getSavedSearches } from "../domain/searches/savedSearches";
 import { createSettingsContent } from "../features/settings/view";
 import { onStorageChange } from "../platform/storage";
-import {
-    getDomainSession,
-    isDomainSessionStale,
-    syncDomainSavedSearchesFromExtensionPage,
-} from "../platform/domainPageClient";
+import { getDomainSession, isDomainSessionStale } from "../platform/domainPageClient";
+import { sendExtensionMessage } from "../platform/messaging";
 import { getSettings } from "../state/settings";
 import { enableResizablePopup } from "../ui/resize";
 import { createNavigation } from "./components/navigation";
@@ -78,7 +75,9 @@ function refreshDomainSavedSearches(force = false): void {
         if (!force && !isDomainSessionStale(await getDomainSession())) return;
         navigation.setSyncing(true);
         try {
-            await syncDomainSavedSearchesFromExtensionPage();
+            // The background opens (and always closes) the hidden Domain tab, even if this popup
+            // closes first.
+            await sendExtensionMessage("domain-saved-search:sync", undefined);
         } finally {
             // Apply the stored result first, so the pill goes straight from syncing to it.
             data = { ...data, domainSession: await getDomainSession() };

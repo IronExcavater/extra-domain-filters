@@ -25,7 +25,8 @@
 
 /* The card's link covers the whole card, so the card wears its focus ring. */
 .edf-saved-search-card:has(.edf-saved-search-primary-link:focus-visible) {
-    outline: auto;
+    outline: auto 1px;
+    outline: -webkit-focus-ring-color auto 1px;
 }
 
 .edf-saved-search-primary-link:focus-visible {

@@ -147,6 +147,11 @@ a.edf-exclusion-row-title:hover {
     width: 100%;
 }
 
+/* The summary clips to its rounded box, so the header's ring is drawn inside it. */
+.edf-hidden-summary-header:focus-visible {
+    outline-offset: -2px;
+}
+
 .edf-hidden-summary-header:hover {
     background: var(--color-neutral-surface-hover, #f7f7f5);
     color: var(--color-neutral-heavy-default, #131212);

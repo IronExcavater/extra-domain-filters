@@ -278,46 +278,69 @@
     min-height: 0 !important;
 }
 
-/* Shortlist notes (features/user-listings/notes.ts): the card's other side. It covers the
- * card down to its button row and turns in over the details; "View details" turns it back. */
+/* Shortlist notes (features/user-listings/notes.ts): an overlay on the whole card, opened from
+ * Domain's notes button. Domain's own notes box never shows on these cards. */
 [data-edf-note-card="true"] {
     position: relative;
 }
 
+[data-edf-note-card="true"] textarea:not(.edf-shortlist-note-field) {
+    display: none !important;
+}
+
 .edf-shortlist-note-view {
     background: var(--edf-color-surface, #fff);
-    border-top-left-radius: inherit;
-    border-top-right-radius: inherit;
+    border-radius: inherit;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    inset: 0 0 auto;
+    gap: 12px;
+    inset: 0;
     opacity: 0;
-    padding: 18px 18px 12px;
+    padding: 16px;
     position: absolute;
-    transform: perspective(1200px) rotateY(-10deg) scale(0.98);
-    transform-origin: right center;
     transition:
-        opacity 200ms ease,
-        transform 300ms cubic-bezier(0.2, 0, 0, 1),
-        visibility 0s linear 300ms;
+        opacity 160ms ease,
+        visibility 0s linear 160ms;
     visibility: hidden;
-    z-index: 3;
+    z-index: 5;
 }
 
 [data-edf-note-view="true"] > .edf-shortlist-note-view {
     opacity: 1;
-    transform: none;
     transition-delay: 0s;
     visibility: visible;
 }
 
 .edf-shortlist-note-head {
-    align-items: baseline;
+    align-items: center;
     display: flex;
     gap: 12px;
     justify-content: space-between;
+}
+
+.edf-shortlist-note-heading {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.edf-shortlist-note-done {
+    background: var(--color-interactive-base-default, #008a08);
+    border: 0;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 20px;
+    padding: 8px 16px;
+}
+
+.edf-shortlist-note-done:hover {
+    background: var(--color-interactive-base-hover, #066414);
 }
 
 .edf-shortlist-note-title {
@@ -368,8 +391,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .edf-shortlist-note-view {
-        transform: none;
-        transition: opacity 120ms ease, visibility 0s linear 120ms;
+        transition: none;
     }
 }
 

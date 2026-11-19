@@ -46,12 +46,14 @@
     --edf-color-shortlist-inactive: #626a78;
 }
 
-/* Focus: the browser's own ring, as on Domain's own controls, for everything the extension adds
+/* Focus: the browser's own ring (its focus colour, not the text's; Firefox takes plain auto),
+ * as on Domain's own controls, for everything the extension adds
  * to Domain (marked owned) and everything in its popup. Components don't draw their own. */
 [data-extra-domain-filters-owner]:focus-visible,
 [data-extra-domain-filters-owner] :focus-visible,
 .edf-settings-popup :focus-visible {
-    outline: auto;
+    outline: auto 1px;
+    outline: -webkit-focus-ring-color auto 1px;
 }
 
 .edf-theme-2026 {

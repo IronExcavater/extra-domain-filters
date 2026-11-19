@@ -389,8 +389,10 @@
     right: auto;
 }
 
+/* The input is invisible; its track wears the ring. */
 .edf-settings-toggle-input:focus-visible + .edf-settings-toggle-indicator {
-    outline: 2px solid var(--edf-color-green);
+    outline: auto 1px;
+    outline: -webkit-focus-ring-color auto 1px;
     outline-offset: 2px;
 }
 
