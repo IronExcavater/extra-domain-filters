@@ -132,6 +132,8 @@ img { max-width: 100%; }
 
 .site-hero h1 { font-size: clamp(42px, 4.8vw, 66px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.02; margin: 0; max-width: 11em; text-wrap: balance; }
 
+.site-hero h1 em { color: var(--site-green); font-style: normal; }
+
 .site-hero-lede { color: var(--site-text); font-size: 19px; line-height: 1.55; margin: 24px 0 36px; max-width: 30em; }
 
 .site-hero-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 16px 28px; }

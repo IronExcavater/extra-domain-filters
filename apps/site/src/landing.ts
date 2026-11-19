@@ -82,8 +82,8 @@ function hero(): string {
         <section class="site-hero">
             <div class="site-shell site-hero-grid">
                 <div class="site-hero-copy">
-                    <h1>Domain, with the filters it's&nbsp;missing</h1>
-                    <p class="site-hero-lede">Tick the extras you're after, like a pool or solar, set a strata limit, and hide listings you've ruled out for good. It all works inside domain.com.au's own search.</p>
+                    <h1>Search Domain <em>your&nbsp;way.</em></h1>
+                    <p class="site-hero-lede">The filters, blacklist and saved-search tools Domain doesn't have, right inside its own search.</p>
                     <div class="site-hero-actions">
                         ${installButton(browser)}
                         <a class="site-text-link" href="#browsers">Other browsers</a>
