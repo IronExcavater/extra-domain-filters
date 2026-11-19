@@ -20,6 +20,12 @@
     display: none !important;
 }
 
+/* Domain's page header is a grid with a minimum height. With few listings its rows shared out
+ * the spare height, opening a gap under the subtitle; pack them to the top instead. */
+div:has(> [data-testid="shortlist__title"]) {
+    align-content: start !important;
+}
+
 .edf-page-actions {
     align-items: center;
     display: flex;

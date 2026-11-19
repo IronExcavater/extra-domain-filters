@@ -141,8 +141,10 @@ function findNotesButton(card: HTMLElement): HTMLElement | undefined {
 export function bindShortlistNotes(card: HTMLElement, url: string): void {
     const button = findNotesButton(card);
     if (!button) return;
+    // The visible card (its radius, shadow and clipping) sits inside Domain's padded container.
+    const surface = card.querySelector<HTMLElement>('[data-testid^="listing-card-wrapper"]') ?? card;
     const key = normalizeListingUrl(url);
-    const open = (): boolean => card.dataset.edfNoteView === "true";
+    const open = (): boolean => surface.dataset.edfNoteView === "true";
 
     const sync = (): void => {
         void readNotes().then(notes => {
@@ -151,24 +153,24 @@ export function bindShortlistNotes(card: HTMLElement, url: string): void {
             const label = note ? "View note" : "Add note";
             if (button.textContent !== label) button.textContent = label;
             button.ariaExpanded = String(open());
-            card.dataset.edfHasNote = String(Boolean(note));
-            const field = card.querySelector<HTMLTextAreaElement>(`[data-testid="${NOTE_VIEW_TEST_ID}"] textarea`);
+            surface.dataset.edfHasNote = String(Boolean(note));
+            const field = surface.querySelector<HTMLTextAreaElement>(`[data-testid="${NOTE_VIEW_TEST_ID}"] textarea`);
             if (field && document.activeElement !== field && field.value !== note) field.value = note;
         });
     };
     const setOpen = (next: boolean): void => {
-        let view = card.querySelector<HTMLElement>(`[data-testid="${NOTE_VIEW_TEST_ID}"]`);
+        let view = surface.querySelector<HTMLElement>(`[data-testid="${NOTE_VIEW_TEST_ID}"]`);
         if (next && !view) {
             const created = createNoteView(key, () => setOpen(false));
             view = created.element;
-            card.append(view);
+            surface.append(view);
             void readNotes().then(notes => {
                 created.field.value = noteFor(notes, key);
                 created.status.textContent = formatSaved(notes[key]?.updatedAt);
             });
         }
         if (!view) return;
-        card.dataset.edfNoteView = String(next);
+        surface.dataset.edfNoteView = String(next);
         view.inert = !next;
         if (next) {
             const field = view.querySelector("textarea");
@@ -184,7 +186,7 @@ export function bindShortlistNotes(card: HTMLElement, url: string): void {
 
     if (button.dataset.edfNotesBound !== "true") {
         button.dataset.edfNotesBound = "true";
-        card.dataset.edfNoteCard = "true";
+        surface.dataset.edfNoteCard = "true";
         // Domain opens its own notes box from these; none of them reach it.
         for (const type of ["pointerdown", "mousedown", "touchstart"] as const) {
             button.addEventListener(type, event => event.stopImmediatePropagation(), { capture: true });
