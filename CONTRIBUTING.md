@@ -80,3 +80,4 @@ To make new ones:
 1. Capture the popup at 2× into `docs/store/raw/`: open the popup page at a 1520×1200 viewport with `html { zoom: 2 }`, and hide its resize grips (`.edf-popup-resize-handle { visibility: hidden }`). Save a WebP copy of each into `docs/store/web/` for the website.
 2. With `pnpm dev` running, open `http://localhost:3000/@fs/<repo>/docs/store/compose.html` with `?shot=<name>`, `?tile=small` or `?tile=marquee`, at the image's size, and save a screenshot. Headlines and callouts are in `compose.html`.
 3. The stores want 24-bit PNGs without alpha: convert with `python -c "from PIL import Image; im = Image.open('x.png'); im.convert('RGB').save('x.png')"`.
+4. The README shows copies with rounded corners: run `python docs/store/readme-images.py` to write them to `docs/store/readme/`.

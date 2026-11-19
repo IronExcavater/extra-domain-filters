@@ -1,12 +1,12 @@
 # Extra Domain Filters
 
-![Extra Domain Filters: the filters Domain doesn't have](docs/store/promo-marquee-1400x560.png)
+![Extra Domain Filters: the filters Domain doesn't have](docs/store/readme/promo-marquee-1400x560.png)
 
 **The filters Domain.com.au doesn't have, right inside Domain.**
 
 Tick the extras you'd love 🏊, **hide the listings you never want to see again** 🚫, and keep searches saved without the emails 🔖. It works on domain.com.au in **Chrome, Edge, Firefox, Opera and Safari**.
 
-- 🧩 **Get it for** [**Chrome**](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg), [**Edge**](https://microsoftedge.microsoft.com/addons/search/extra%20domain%20filters), [**Firefox**](https://addons.mozilla.org/en-US/firefox/search/?q=extra%20domain%20filters) or [**Opera**](https://addons.opera.com/en/search/?query=extra%20domain%20filters)
+- 🧩 **Get it for** [**Chrome**](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg), [**Edge**](https://microsoftedge.microsoft.com/addons/search/extra%20domain%20filters), [**Firefox**](https://addons.mozilla.org/en-US/firefox/search/?q=extra%20domain%20filters), [**Opera**](https://addons.opera.com/en/search/?query=extra%20domain%20filters) or [**Safari**](https://apps.apple.com/au/mac/search?term=extra%20domain%20filters)
 - 🌐 **[Website](https://extra-domain-filters.web.app/)**
 - 💬 **[Support](https://extra-domain-filters.web.app/support/)**
 
@@ -26,7 +26,7 @@ Tick the extras you'd love 🏊, **hide the listings you never want to see again
 - **Property types**: types you untick stay hidden, **including listings described as one**, like a "3 bedroom townhouse" tagged as a house.
 - Every filter lives **in Domain's own filter panel**, and on the Filters page in the toolbar popup.
 
-![Filters Domain doesn't have](docs/store/screenshot-2-filters.png)
+![Filters Domain doesn't have](docs/store/readme/screenshot-2-filters.png)
 
 ### 🚫 Blacklist
 
@@ -35,7 +35,7 @@ Tick the extras you'd love 🏊, **hide the listings you never want to see again
 - Hidden listings fold into **one tidy summary** at the end of the results, each with why it's hidden and a button to bring it back.
 - Pins of hidden listings **disappear from the map** 🗺️.
 
-![Hide it once, and it stays hidden](docs/store/screenshot-3-blacklist.png)
+![Hide it once, and it stays hidden](docs/store/readme/screenshot-3-blacklist.png)
 
 ### 🔖 Better saved searches and shortlist
 
@@ -45,7 +45,7 @@ Tick the extras you'd love 🏊, **hide the listings you never want to see again
 - **Notes on shortlisted listings** 📝: "Add note" turns the card over to your note, and "View details" turns it back.
 - **Select several shortlisted listings** to blacklist or remove them at once.
 
-![Saved searches, without the emails](docs/store/screenshot-1-saved-searches.png)
+![Saved searches, without the emails](docs/store/readme/screenshot-1-saved-searches.png)
 
 ### 🔄 Sync
 
@@ -59,7 +59,7 @@ Tick the extras you'd love 🏊, **hide the listings you never want to see again
 | **Edge**            |          ✅           |                      ✅                       | [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/search/extra%20domain%20filters) or the [Chrome Web Store](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg) |
 | **Firefox**         |          ✅           |                      ✅                       | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/search/?q=extra%20domain%20filters)                   |
 | **Opera, Opera GX** |          ✅           |                      ✅                       | [Opera add-ons](https://addons.opera.com/en/search/?query=extra%20domain%20filters) or the [Chrome Web Store](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg) |
-| **Safari for Mac**  |          ✅           |                      ✅                       | [Build it yourself](CONTRIBUTING.md#build-for-each-browser) |
+| **Safari**          |          ✅           |                      ✅                       | [App Store](https://apps.apple.com/au/mac/search?term=extra%20domain%20filters) |
 | **Brave, Vivaldi**  |          ✅           |                      ✅                       | [Chrome Web Store](https://chromewebstore.google.com/detail/extra-domain-filters/opblibcobnkicpdjkinngfcbjjnjldkg)                      |
 
 On Chrome, Google, Apple and Facebook sign-in finishes **right in the popup**; in other browsers it finishes **in a sign-in tab** that closes by itself.
