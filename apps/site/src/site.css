@@ -348,12 +348,12 @@ img { max-width: 100%; }
 
 .site-store-browsers { color: var(--site-muted); font-size: 15px; line-height: 1.75; margin: 0; }
 
-.site-store-browsers span,
-.site-store-browsers strong { color: var(--site-text); font-weight: 500; white-space: nowrap; }
+/* Each browser is its logo and name, kept together with a fixed gap. */
+.site-store-browser { align-items: center; color: var(--site-text); display: inline-flex; font-weight: 500; gap: 4px; vertical-align: top; white-space: nowrap; }
 
-.site-store-browsers strong { color: var(--site-heading); font-weight: 700; }
+strong.site-store-browser { color: var(--site-heading); font-weight: 700; }
 
-.site-store-browsers img { height: 18px; margin-right: 6px; vertical-align: -4px; width: 18px; }
+.site-store-browser img { flex: 0 0 auto; height: 18px; width: 18px; }
 
 .site-store-button { align-items: center; border: 1px solid var(--site-rule); border-radius: 8px; color: var(--site-heading); display: inline-flex; font-size: 14px; font-weight: 700; padding: 9px 13px; text-decoration: none; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease; white-space: nowrap; }
 
@@ -596,10 +596,13 @@ img { max-width: 100%; }
     .site-toc ol { border-left: 0; border-top: 1px solid var(--site-border); padding: 6px 0; }
     .site-toc a { padding: 9px 16px; }
     .site-toc-bar { display: none; }
-    .site-store { grid-template-columns: 32px minmax(0, 1fr); padding: 16px; }
 
-    .site-store-browsers,
-    .site-store-button { grid-column: 2; justify-self: start; }
+    /* The store, the browsers that use it, then its button across the row. */
+    .site-store { gap: 10px 12px; grid-template-areas: "icon name" "list list" "button button"; grid-template-columns: 32px minmax(0, 1fr); padding: 14px 16px 16px; }
+    .site-store-icon { grid-area: icon; }
+    .site-store h3 { grid-area: name; }
+    .site-store-button { grid-area: button; justify-content: center; padding: 11px 13px; }
+    .site-store-browsers { grid-area: list; line-height: 1.9; }
 
     /* Support's contact panel leaves the contents list and follows the questions. */
     .site-legal-toc:has(.site-contact) { display: contents; }
@@ -626,7 +629,6 @@ img { max-width: 100%; }
     .site-tour-button { padding: 16px; }
     .site-tour-detail .site-ticks { padding: 0 16px 20px; }
     .site-section-title { margin-bottom: 22px; }
-    .site-store { padding: 18px; }
     .site-faq-list summary { font-size: 16px; }
     .site-faq-list details p { font-size: 15px; padding-right: 0; }
     .site-footer-top { padding-top: 44px; }

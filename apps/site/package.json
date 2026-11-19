@@ -22,7 +22,6 @@
         "@browser-logos/safari": "^2.1.0",
         "@browser-logos/safari-ios": "1.0.15",
         "@types/node": "^26.1.0",
-        "simple-icons": "16.36.0",
         "typescript": "^6.0.3",
         "vite": "^8.1.3"
     }

@@ -187,8 +187,8 @@ function browsers(): string {
     const rows = STORES.map(store => {
         const isCurrent = store === visitor.store;
         const names = store.browsers.map(item => item.id === visitor.browser.id
-            ? `<strong>${item.logo}${item.name}<span class="site-visually-hidden"> (your browser)</span></strong>`
-            : `<span>${item.logo}${item.name}</span>`);
+            ? `<strong class="site-store-browser">${item.logo}${item.name}<span class="site-visually-hidden"> (your browser)</span></strong>`
+            : `<span class="site-store-browser">${item.logo}${item.name}</span>`);
         const list = store.others
             ? `${names.join(", ")} ${store.others}`
             : names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0];

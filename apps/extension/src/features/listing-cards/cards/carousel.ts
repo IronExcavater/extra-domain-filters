@@ -55,6 +55,32 @@ interface CarouselHydrationState {
 const carouselHolds = new Map<HTMLElement, CarouselHold>();
 const carouselActionHosts = new Map<HTMLElement, CarouselActionHostState>();
 const carouselHydrationObservers = new Map<HTMLElement, CarouselHydrationState>();
+const slideVisibility = new Map<HTMLElement, IntersectionObserver>();
+
+/**
+ * Slides that aren't on screen can't be reached by keyboard (or read out): they're inert. What
+ * counts is what's showing in the carousel's frame, not Slick's "active" class, which moves on
+ * while the carousel is held still.
+ */
+function syncSlideVisibility(carouselCard: HTMLElement, signal: AbortSignal): void {
+    const frame = carouselCard.querySelector<HTMLElement>(".slick-list");
+    if (!frame) return;
+    let observer = slideVisibility.get(carouselCard);
+    if (observer?.root !== frame) {
+        observer?.disconnect();
+        const created = new IntersectionObserver(entries => {
+            for (const entry of entries) (entry.target as HTMLElement).inert = entry.intersectionRatio < 0.5;
+        }, { root: frame, threshold: 0.5 });
+        observer = created;
+        slideVisibility.set(carouselCard, created);
+        signal.addEventListener("abort", () => {
+            created.disconnect();
+            if (slideVisibility.get(carouselCard) === created) slideVisibility.delete(carouselCard);
+        }, { once: true });
+    }
+    // Observing a slide twice does nothing; new slides (Domain re-renders them) are picked up.
+    for (const slide of findSlickSlides(carouselCard)) observer.observe(slide);
+}
 
 function removeCarouselActionHost(carouselCard: HTMLElement): void {
     const state = carouselActionHosts.get(carouselCard);
@@ -93,6 +119,11 @@ export function disposeDetachedCarouselControls(): void {
         if (carouselCard.isConnected) continue;
         removeCarouselHydrationObserver(carouselCard);
     }
+    for (const [carouselCard, observer] of slideVisibility) {
+        if (carouselCard.isConnected) continue;
+        observer.disconnect();
+        slideVisibility.delete(carouselCard);
+    }
 }
 
 export function disposeCarouselControls(): void {
@@ -104,6 +135,8 @@ export function disposeCarouselControls(): void {
     for (const carouselCard of carouselHydrationObservers.keys()) {
         removeCarouselHydrationObserver(carouselCard);
     }
+    for (const observer of slideVisibility.values()) observer.disconnect();
+    slideVisibility.clear();
 }
 
 function renderPauseIcon(icon: SVGElement, paused: boolean): void {
@@ -476,6 +509,7 @@ function observeCarouselHydration(
                     removeCarouselHydrationObserver(carouselCard);
                     return;
                 }
+                if (state.memberCount > 1) syncSlideVisibility(carouselCard, context.signal);
 
                 const nextMemberCount = getCarouselMembers(carouselCard).length;
                 const nativePropertyActions = findCarouselShortlistButtons(carouselCard).length;
@@ -691,6 +725,7 @@ export function bindCarouselCard(
     }
 
     ensureCarouselHold(carouselCard, context.signal);
+    syncSlideVisibility(carouselCard, context.signal);
     const actionHost = getCarouselActionHost(carouselCard, context.signal);
     if (!options.enablePause) removeCarouselPauseControl(carouselCard, actionHost);
 

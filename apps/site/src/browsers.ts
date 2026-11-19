@@ -6,9 +6,15 @@ import operaGxLogo from "@browser-logos/opera-gx/opera-gx.svg?url";
 import operaLogo from "@browser-logos/opera/opera.svg?url";
 import safariLogo from "@browser-logos/safari-ios/safari-ios.svg?url";
 import vivaldiLogo from "@browser-logos/vivaldi/vivaldi.svg?url";
-import appStoreGlyph from "simple-icons/icons/appstore.svg?raw";
+// Logos browser-logos doesn't have: each browser's own (see each file for its source), and the
+// App Store's, Chrome Web Store's and Arc's from the SVG Logos set (CC0).
+import appStoreIcon from "./images/browsers/app-store.svg?url";
+import arcLogo from "./images/browsers/arc.svg?url";
+import chromeWebStoreIcon from "./images/browsers/chrome-web-store.svg?url";
+import librewolfLogo from "./images/browsers/librewolf.svg?url";
+import waterfoxLogo from "./images/browsers/waterfox.svg?url";
+import zenLogo from "./images/browsers/zen.svg?url";
 import externalSvg from "../../../packages/assets/icons/actions/external.svg?raw";
-import chromeWebStoreIcon from "../../../packages/assets/icons/support/chrome-web-store.svg?url";
 import { STORE_LINKS } from "@extra-domain-filters/shared/config/links";
 
 export interface Browser {
@@ -33,9 +39,6 @@ export interface Store {
     others?: string;
 }
 
-// The App Store's icon: its glyph (simple-icons) on the store's blue tile.
-const APP_STORE_ICON = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1ac0fb"/><stop offset="1" stop-color="#1d6ff2"/></linearGradient></defs><rect width="48" height="48" rx="11" fill="url(#g)"/><path transform="translate(11 11) scale(1.08)" fill="#fff" d="${appStoreGlyph.match(/ d="([^"]+)"/)?.[1] ?? ""}"/></svg>`)}`;
-
 function image(src: string): string {
     return `<img src="${src}" alt="" width="48" height="48" decoding="async">`;
 }
@@ -47,14 +50,14 @@ function browser(id: string, name: string, src?: string): Browser {
 const CHROME = browser("chrome", "Chrome", chromeLogo);
 const BRAVE = browser("brave", "Brave", braveLogo);
 const VIVALDI = browser("vivaldi", "Vivaldi", vivaldiLogo);
-const ARC = browser("arc", "Arc");
+const ARC = browser("arc", "Arc", arcLogo);
 const EDGE = browser("edge", "Edge", edgeLogo);
 const OPERA = browser("opera", "Opera", operaLogo);
 const OPERA_GX = browser("opera-gx", "Opera GX", operaGxLogo);
 const FIREFOX = browser("firefox", "Firefox", firefoxLogo);
-const ZEN = browser("zen", "Zen");
-const LIBREWOLF = browser("librewolf", "LibreWolf");
-const WATERFOX = browser("waterfox", "Waterfox");
+const ZEN = browser("zen", "Zen", zenLogo);
+const LIBREWOLF = browser("librewolf", "LibreWolf", librewolfLogo);
+const WATERFOX = browser("waterfox", "Waterfox", waterfoxLogo);
 const SAFARI = browser("safari", "Safari", safariLogo);
 
 /**
@@ -80,7 +83,7 @@ export const STORES: readonly Store[] = [
     },
     { id: "edge-add-ons", browsers: [EDGE], href: STORE_LINKS.edge, icon: EDGE.logo, name: "Edge Add-ons" },
     { id: "opera-add-ons", browsers: [OPERA, OPERA_GX], href: STORE_LINKS.opera, icon: OPERA.logo, name: "Opera add-ons" },
-    { id: "app-store", browsers: [SAFARI], href: STORE_LINKS.safari, icon: image(APP_STORE_ICON), name: "App Store" },
+    { id: "app-store", browsers: [SAFARI], href: STORE_LINKS.safari, icon: image(appStoreIcon), name: "App Store" },
 ];
 
 /** Where each browser installs from first: its own store. */
